@@ -51,6 +51,7 @@ def train_variational_wvfn(wvfn, Rs):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--N_particles', default=2, type=int)
     parser.add_argument('--N_samples', default=10000, type=int)
     parser.add_argument('--N_train', default=100000, type=int)
     parser.add_argument('--log10_learn_rate', default=3, type=int)
@@ -66,7 +67,8 @@ if __name__ == '__main__':
     optimizer = optim.Adam(wvfn.parameters(), lr=10**(-log10_learn_rate))
 
     # initialize random coordinate sample
-    Rs = 10*torch.rand(N_samples)
+    Rs = torch.reshape( 10*torch.rand(N_samples*3*N_particles), (N_samples, N_particles, 3) )
+    print(Rs.shape)
 
     # train
     wvfn = train_variational_wvfn(wvfn, Rs)
