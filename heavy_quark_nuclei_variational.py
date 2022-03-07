@@ -51,9 +51,9 @@ def train_variational_wvfn(wvfn, Rs):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--N_samples', default=1000, type=int)
-    parser.add_argument('--N_train', default=100, type=int)
-    parser.add_argument('--log10_learn_rate', default=2, type=int)
+    parser.add_argument('--N_samples', default=10000, type=int)
+    parser.add_argument('--N_train', default=100000, type=int)
+    parser.add_argument('--log10_learn_rate', default=3, type=int)
     globals().update(vars(parser.parse_args()))
 
     # initialize wvfn
