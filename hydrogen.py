@@ -5,9 +5,9 @@ This example shows how to work with the Hydrogen radial wavefunctions.
 """
 import math as m
 import numpy as np
-from sympy import sqrt, Eq, Integral, oo, pprint, symbols, Symbol, log, exp, diff, Sum, factorial, IndexedBase, Function, cos, sin, atan, acot, pi
+from sympy import summation, sqrt, Eq, Integral, oo, pprint, symbols, Symbol, log, exp, diff, Sum, factorial, IndexedBase, Function, cos, sin, atan, acot, pi
 from sympy.physics.hydrogen import R_nl, Psi_nlm
-
+from itertools import permutations
 
 def main():
 
@@ -36,13 +36,16 @@ def main():
     y = symbols('y0:%d'%nCoord);
     z = symbols('z0:%d'%nCoord);
 
+# Define color vector
+    v = symbols('v0:%d'%nCoord);
+
 #   Potential coupling and a0
     a, B = symbols("a B")
     print(sum(rr))
 
     def laPlaceSpher(f,r,t,p):
         return 1/r**2*diff(r**2*(diff(f,r)),r)+1/(r**2*sin(t))*diff(sin(t)*(diff(f,t)),t)+1/(r**2*sin(t)**2)*diff(diff(f,p),p)
-    print(laPlaceSpher(r**2*sin(t)+cos(p)*sin(t),r,t,p))
+    print(laPlaceSpher(r[1]*t[1],r[1],t[1],p[1]))
 
     def rInv(ri,rj):
         return 1/sqrt(ri**2-rj**2)
@@ -59,7 +62,7 @@ def main():
     print(Potential(rr,B,nCoord))
 
     # Define HWF quantum numbers
-    n, l, m, r, phi, theta, Z = symbols("n l m r phi theta Z")
+    n, l, m, phi, theta, Z = symbols("n l m phi theta Z")
 
     # Spher (i,j) to Cart(i),Cart(j) to Spher(i),Spher(j)
 
@@ -72,44 +75,63 @@ def main():
     def ttSpher(i,j,r,t,p):
         return  atan((r[i]*sin(t[i])*sin(p[i]) - r[j]*sin(t[j])*sin(p[j]))/(cos(p[i])*r[i]*sin(t[i]) - cos(p[j])*r[j]*sin(t[j])));
     print(ttSpher(1,2,r,t,p))
-
-     def Chi(k, nCoord, l, m, Z, rr, tt, pp, r, t, p, x, y, z, col):
-         if k!=j and j>=k:
-             return Chi = v[col]*Sum(1/(nCoord-1)*sum(Psi_nlm(n, l, m, rrSpher(k,j,r,t,p), ppSpher(k,j,r,t,p), ttSpher(k,j,r,t,p), Z),(j,k+1,nCoord-1))
-         elif k!=j and k>=j:
-             return Chi = v[col]*Sum(1/(nCoord-1)*sum(Psi_nlm(n, l, m, rrSpher(j,k,r,t,p), ppSpher(j,k,r,t,p), ttSpher(j,k,r,t,p), Z),(j,0,k-1))
-         else:
-             return None
- #rrTocart = [(rr[i][j],sqrt((x[i]-x[j])**2+(y[i]-y[j])**2+(z[i]-z[j])**2)) for i, j in zip(range(nCoord), range(nCoord)) if i!=j and j>=i]
- #        ChiCart=Chi;
- #        for i in range(nCoord):
- #            for j in range(nCoord):
- #                if i!=j and j>=i:
- #                    ChiCart = (ChiCart.subs(rr[i][j],rInv(r[i],r[j]))).subs(rr[i][j],rInv(r[i],r[j]))
- #        return V0
-     print(Chi(1, 2, 1, 1, 1, rr, tt, pp, r, t, p, x, y, z, 1))
+    print(Psi_nlm(2, 1, 1, rrSpher(1,2,r,t,p), ppSpher(1,2,r,t,p), ttSpher(1,2,r,t,p), 1))
 
 
-    #eq=r[1]**2+r[2]*2;
-    #print(diff(eq,r[1]))
+    jj = Symbol('jj', integer=True)
+    print(rrSpher(1,2,r,t,p))
+
+    #  Define chi(r_i) where psi(r1,..,rn)=chi(r1)*...*chi(rn)
+    def Chi(k, nCoord, n, l, m, Z, r, t, p, v, col):
+         Chi =  0
+         for j in range(0,nCoord-1):
+             if k!=j and j>=k:
+                 Chi = Chi + v[col]*1/(nCoord-1)*Sum(Psi_nlm(n, l, m, rrSpher(k,j,r,t,p), ppSpher(k,j,r,t,p), ttSpher(k,j,r,t,p), Z),(j,k+1,nCoord-1))
+             elif k!=j and k>=j:
+                 Chi = Chi + v[col]*1/(nCoord-1)*Psi_nlm(n, l, m, rrSpher(j,k,r,t,p), ppSpher(j,k,r,t,p), ttSpher(j,k,r,t,p), Z)
+             else:
+                 Chi = Chi
+         return Chi
+
+    # test chi
+    print(Chi(1, 2, 2, 1, 1, 1, r, t, p, v, 1))
+    # test laplacian of chi
+    print(laPlaceSpher(Chi(1, 2, 2, 1, 1, 1, r, t, p, v, 1),r[1],t[1],p[1]))
+    # test potential
     eq=rr[1][1]**2+rr[2][2]*2;
     print(diff(eq,rr[1,1]))
     print(rr[1][2].subs(rr[1][2],r[1]+r[2]))
     print(Potential(rr,B,nCoord))
 
-#
-    print("R_{21}:")
-    pprint(R_nl(2, 1, a, r[0]))
-    print("R_{60}:")
-    pprint(R_nl(6, 0, a, r[0]))
+    #  Define psi(r1,..,rn)=chi(r1)*...*chi(rn)
+    def psi(k, nCoord, n, l, m, Z, r, t, p, v):
+        psi =  1
+        for k in range(0,nCoord):
+            psi=Chi(k, nCoord, n, l, m, Z, r, t, p, v, k)*psi
+        return psi
 
-    print("Normalization:")
-    i = Integral(R_nl(1, 0, 1, r[0])**2 * r[0]**2, (r[0], 0, oo))
-    pprint(Eq(i, i.doit()))
-    i = Integral(R_nl(2, 0, 1, r[0])**2 * r[0]**2, (r[0], 0, oo))
-    pprint(Eq(i, i.doit()))
-    i = Integral(R_nl(2, 1, 1, r[0])**2 * r[0]**2, (r[0], 0, oo))
-    pprint(Eq(i, i.doit()))
+    #  Define Psi(r1,..,rn)=1/n!*Sum(perms of psi(r1,..,rn)) (not sure how..)
+    def Psi(k, nCoord, n, l, m, Z, r, t, p, v, col):
+        psi =  1
+        for k in range(0,nCoord):
+            psi=Chi(k, nCoord, n, l, m, Z, r, t, p, v, col)*psi
+        return psi
+
+    print(list(permutations(range(3))))
+
+#
+    #print("R_{21}:")
+    #pprint(R_nl(2, 1, a, r[0]))
+    #print("R_{60}:")
+    #pprint(R_nl(6, 0, a, r[0]))
+
+    #print("Normalization:")
+    #i = Integral(R_nl(1, 0, 1, r[0])**2 * r[0]**2, (r[0], 0, oo))
+    #pprint(Eq(i, i.doit()))
+    #i = Integral(R_nl(2, 0, 1, r[0])**2 * r[0]**2, (r[0], 0, oo))
+    #pprint(Eq(i, i.doit()))
+    #i = Integral(R_nl(2, 1, 1, r[0])**2 * r[0]**2, (r[0], 0, oo))
+    #pprint(Eq(i, i.doit()))
 
 if __name__ == '__main__':
     main()
