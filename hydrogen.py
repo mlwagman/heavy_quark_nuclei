@@ -5,14 +5,14 @@ This example shows how to work with the Hydrogen radial wavefunctions.
 """
 import math as m
 import numpy as np
-from sympy import summation, sqrt, Eq, Integral, oo, pprint, symbols, Symbol, log, exp, diff, Sum, factorial, IndexedBase, Function, cos, sin, atan, acot, pi
+from sympy import simplify, summation, sqrt, Eq, Integral, oo, pprint, symbols, Symbol, log, exp, diff, Sum, factorial, IndexedBase, Function, cos, sin, atan, acot, pi
 from sympy.physics.hydrogen import R_nl, Psi_nlm
 from itertools import permutations
 
 def main():
 
 # Defining difference spherical coords
-    nCoord = 6;
+    nCoord = 2;
     rr = np.full((nCoord,nCoord), fill_value = '',dtype=object)
     for i in range(nCoord):
         for j in range(nCoord):
@@ -41,15 +41,15 @@ def main():
 
 #   Potential coupling and a0
     a, B = symbols("a B")
-    print(sum(rr))
+    #print(sum(rr))
 
     def laPlaceSpher(f,r,t,p):
         return 1/r**2*diff(r**2*(diff(f,r)),r)+1/(r**2*sin(t))*diff(sin(t)*(diff(f,t)),t)+1/(r**2*sin(t)**2)*diff(diff(f,p),p)
-    print(laPlaceSpher(r[1]*t[1],r[1],t[1],p[1]))
+    #print(laPlaceSpher(r[1]*t[1],r[1],t[1],p[1]))
 
     def rInv(ri,rj):
         return 1/sqrt(ri**2-rj**2)
-    print(rInv(r[1],r[2]))
+    #print(rInv(r[1],r[2]))
 
 
     def Potential(rr,B,nCoord):
@@ -59,7 +59,7 @@ def main():
                 if i!=j and j>=i:
                     V0 = V0.subs(rr[i][j],rInv(r[i],r[j]))
         return V0
-    print(Potential(rr,B,nCoord))
+    #print(Potential(rr,B,nCoord))
 
     # Define HWF quantum numbers
     n, l, m, phi, theta, Z = symbols("n l m phi theta Z")
@@ -68,18 +68,18 @@ def main():
 
     def rrSpher(i,j,r,t,p):
         return  sqrt(r[j]*(r[j]-2*r[i]*(sin(t[i])*sin(t[j])*cos(p[i]-p[j])+cos(t[i])*cos(t[j]))) +r[i]**2);
-    print(rrSpher(1,2,r,t,p))
+    #print(rrSpher(1,2,r,t,p))
     def ppSpher(i,j,r,t,p):
         return acot((cos(t[i])*r[i] - cos(t[j])*r[j])/sqrt((cos(p[i])*r[i]*sin(t[i]) - cos(p[j])*r[j]*sin(t[j]))**2 + (r[i]*sin(t[i])*sin(p[i]) - r[j]*sin(t[j])*sin(p[j]))**2));
-    print(rrSpher(1,2,r,t,p))
+    #print(rrSpher(1,2,r,t,p))
     def ttSpher(i,j,r,t,p):
         return  atan((r[i]*sin(t[i])*sin(p[i]) - r[j]*sin(t[j])*sin(p[j]))/(cos(p[i])*r[i]*sin(t[i]) - cos(p[j])*r[j]*sin(t[j])));
-    print(ttSpher(1,2,r,t,p))
-    print(Psi_nlm(2, 1, 1, rrSpher(1,2,r,t,p), ppSpher(1,2,r,t,p), ttSpher(1,2,r,t,p), 1))
+    #print(ttSpher(1,2,r,t,p))
+    #print(Psi_nlm(2, 1, 1, rrSpher(1,2,r,t,p), ppSpher(1,2,r,t,p), ttSpher(1,2,r,t,p), 1))
 
 
     jj = Symbol('jj', integer=True)
-    print(rrSpher(1,2,r,t,p))
+    #print(rrSpher(1,2,r,t,p))
 
     #  Define chi(r_i) where psi(r1,..,rn)=chi(r1)*...*chi(rn)
     def Chi(k, nCoord, n, l, m, Z, r, t, p, v, col):
@@ -94,21 +94,27 @@ def main():
          return Chi
 
     # test chi
-    print(Chi(1, 2, 2, 1, 1, 1, r, t, p, v, 1))
+    #print(Chi(1, 2, 1, 0, 0, 1, r, t, p, v, 1).subs(r[0],0))
+
+    #print(Potential(rr,B,nCoord))
+
     # test laplacian of chi
-    print(laPlaceSpher(Chi(1, 2, 2, 1, 1, 1, r, t, p, v, 1),r[1],t[1],p[1]))
+    #print(laPlaceSpher(Chi(1, nCoord, 1, 0, 0, 1, r, t, p, v, 1),r[1],t[1],p[1]).subs(r[0],0))
+
     # test potential
-    eq=rr[1][1]**2+rr[2][2]*2;
-    print(diff(eq,rr[1,1]))
-    print(rr[1][2].subs(rr[1][2],r[1]+r[2]))
-    print(Potential(rr,B,nCoord))
+    #eq=rr[1][1]**2+rr[2][2]*2;
+    #print(diff(eq,rr[1,1]))
+    #print(rr[1][2].subs(rr[1][2],r[1]+r[2]))
+    #print(Potential(rr,B,nCoord))
 
     #  Define psi(r1,..,rn)=chi(r1)*...*chi(rn)
     def psi(k, nCoord, n, l, m, Z, r, t, p, v):
         psi =  1
         for k in range(0,nCoord):
-            psi=Chi(k, nCoord, n, l, m, Z, r, t, p, v, k)*psi
+            psi=Chi(k, nCoord-1, n, l, m, Z, r, t, p, v, k)*psi
         return psi
+
+
 
     #  Define Psi(r1,..,rn)=1/n!*Sum(perms of psi(r1,..,rn)) (not sure how..)
     def Psi(k, nCoord, n, l, m, Z, r, t, p, v, col):
@@ -117,7 +123,11 @@ def main():
             psi=Chi(k, nCoord, n, l, m, Z, r, t, p, v, col)*psi
         return psi
 
-    print(list(permutations(range(3))))
+    Hammy = laPlaceSpher(Chi(1, nCoord, 1, 0, 0, 1, r, t, p, v, 1),r[0],t[0],p[0]).subs(r[1],0)+(Potential(rr,B,nCoord)*Chi(1, nCoord, 1, 0, 0, 1, r, t, p, v, 1)).subs(r[1],0)
+
+    print(simplify(Hammy.subs(v[1],1)))
+
+    #print(list(permutations(range(3))))
 
 #
     #print("R_{21}:")
@@ -133,5 +143,5 @@ def main():
     #i = Integral(R_nl(2, 1, 1, r[0])**2 * r[0]**2, (r[0], 0, oo))
     #pprint(Eq(i, i.doit()))
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
