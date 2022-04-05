@@ -84,7 +84,7 @@ def Chi(k, nCoord, n, l, m, Z, r, t, p, v, col):
      Chi =  0
      for j in range(0,nCoord):
          if k!=j and j>=k:
-             Chi = Chi + v[col]*1/(nCoord-1)*Sum(Psi_nlm(n, l, m, rrSpher(k,j,r,t,p), ppSpher(k,j,r,t,p), ttSpher(k,j,r,t,p), Z),(j,k+1,nCoord-1))
+             Chi = Chi + v[col]*1/(nCoord-1)*Psi_nlm(n, l, m, rrSpher(k,j,r,t,p), ppSpher(k,j,r,t,p), ttSpher(k,j,r,t,p), Z)
          elif k!=j and k>=j:
              Chi = Chi + v[col]*1/(nCoord-1)*Psi_nlm(n, l, m, rrSpher(j,k,r,t,p), ppSpher(j,k,r,t,p), ttSpher(j,k,r,t,p), Z)
          else:
@@ -95,7 +95,7 @@ def Chi_no_v(k, nCoord, n, l, m, Z, r, t, p):
      Chi =  0
      for j in range(0,nCoord):
          if k!=j and j>=k:
-             Chi = Chi + 1/(nCoord-1)*Sum(Psi_nlm(n, l, m, rrSpher(k,j,r,t,p), ppSpher(k,j,r,t,p), ttSpher(k,j,r,t,p), Z),(j,k+1,nCoord-1))
+             Chi = Chi + 1/(nCoord-1)*Psi_nlm(n, l, m, rrSpher(k,j,r,t,p), ppSpher(k,j,r,t,p), ttSpher(k,j,r,t,p), Z)
          elif k!=j and k>=j:
              Chi = Chi + 1/(nCoord-1)*Psi_nlm(n, l, m, rrSpher(j,k,r,t,p), ppSpher(j,k,r,t,p), ttSpher(j,k,r,t,p), Z)
          else:
@@ -116,17 +116,18 @@ def Chi_no_v(k, nCoord, n, l, m, Z, r, t, p):
 #print(rr[1][2].subs(rr[1][2],r[1]+r[2]))
 print(Potential(rr,B,nCoord))
 
+
 #  Define psi(r1,..,rn)=chi(r1)*...*chi(rn)
 def psi(nCoord, n, l, m, Z, r, t, p, v):
     psi =  1
-    for k in range(0,nCoord):
-        psi=Chi(k, nCoord, n, l, m, Z, r, t, p, v, k)*psi
+    for j in range(0,nCoord):
+        psi = Chi(j, nCoord, n, l, m, Z, r, t, p, v, j)*psi
     return psi
 
 def psi_no_v(nCoord, n, l, m, Z, r, t, p):
     psi =  1
     for k in range(0,nCoord):
-        psi=Chi_no_v(k, nCoord, n, l, m, Z, r, t, p)*psi
+        psi = Chi_no_v(k, nCoord, n, l, m, Z, r, t, p)*psi
     return psi
 
 
@@ -152,9 +153,13 @@ def main():
     ll = 0
     mm = 0
     wvfn = Chi(1, nCoord, nn, ll, mm, 1/a, r, t, p, v, 1)
+
     print("about to")
-    psi(nCoord, nn, ll, mm, 1/a, r, t, p, v)
+    psi_no_v(nCoord, nn, ll, mm, 1/a, r, t, p)
+    #Chi(0, nCoord, nn, ll, mm, 1/a, r, t, p, v, 0)
+    #Chi_no_v(1, nCoord, nn, ll, mm, 1/a, r, t, p)
     print("break")
+
     Hammy = laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
     Enl = simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,-2/B))
     print(f"E(n={nn}, l={ll}) = {Enl}")
