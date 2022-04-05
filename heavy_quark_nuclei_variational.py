@@ -12,14 +12,124 @@ import tqdm.auto as tqdm
 import os
 import argparse
 
+from hydrogen import *
+
 plt.rcParams['text.usetex'] = True
 plt.rcParams.update({'font.size': 14})
+
+n_coord = 2
+
+def total_Psi_nlm(Rs, n, l, m, Z_n):
+    n_walkers = Rs.shape[0]
+    print(Rs.shape)
+    assert Rs.shape == (n_walkers, n_coord, 3)
+    Psi_nlm_s = np.zeros((n_walkers))
+    for i in range(n_walkers):
+        # convert to spherical
+        x = Rs[i,:,0]
+        y = Rs[i,:,1]
+        z = Rs[i,:,2]
+        r_n = np.sqrt(x**2 + y**2 + z**2)
+        t_n = np.arctan2(np.sqrt(x**2 + y**2), z) 
+        p_n = np.arctan2(y, x)
+        # evaluate wavefunction
+        sym_psi = psi_no_v(n_coord, n, l, m, Z, r, t, p)
+        for a in range(n_coords):
+            sym_psi = sym_psi.sub(r[a], r_n[a]).sub(t[a], t_n[a]).sub(p[a], p_n[a])
+        Psi_nlm_s[i] = sym_psi.sub(Z, Z_n)
+    return Psi_nlm_s
+
+def nabla_total_Psi_nlm(Rs, n, l, m, Z):
+    n_walkers = Rs.shape[0]
+    assert Rs.shape == (n_walkers, n_coord, 3)
+    nabla_Psi_nlm_s = np.zeros((n_walkers))
+    for i in range(n_walkers):
+        # convert to spherical
+        x = Rs[i,:,0]
+        y = Rs[i,:,1]
+        z = Rs[i,:,2]
+        r = np.sqrt(x**2 + y**2 + z**2)
+        t = np.arctan2(np.sqrt(x**2 + y**2), z) 
+        p = np.arctan2(y, x)
+        # evaluate wavefunction
+        wvfn = psi_no_v(n_coord, n, l, m, Z, r, t, p)
+        nabla_wvfn = 0
+        for a in range(n_coord):
+            nabla_wvfn += laPlaceSpher(wvfn, r[a], t[a], p[a])
+        nabla_Psi_nlm_s[i] = nabla_wvfn
+    return nabla_Psi_nlm_s
+
+def potential_total_Psi_nlm(Rs, n, l, m, Z):
+    n_walkers = Rs.shape[0]
+    assert Rs.shape == (n_walkers, n_coord, 3)
+    V_Psi_nlm_s = np.zeros((n_walkers))
+    wvfn = total_Psi_nlm(Rs, n, l, m, Z)
+    for i in range(n_walkers):
+        # convert to spherical
+        x = Rs[i,:,0]
+        y = Rs[i,:,1]
+        z = Rs[i,:,2]
+        # evaluate potential
+        V = 0
+        for a in range(n_coord):
+            for b in range(n_coord):
+                if b > a:
+                    V += 1/np.sqrt( (x[a]-x[b])**2 + (y[a]-y[b])**2 + (z[a]-z[b])**2 )
+        V_Psi_nlm_s[i] = V * wvfn[i]
+    return V_Psi_nlm_s
+
+def hammy_Psi_nlm(Rs, n, l, m, Z):
+    psistar = np.conjugate(total_Psi_nlm(Rs, n, l, m, Z))
+    H_psi = nabla_total_Psi_nlm(Rs, n, l, m, Z)/2 + potential_total_Psi_nlm
+    return psistar * H_psi
+
+    
+def draw_coordinates(shape, *, eps=1.0, axis=1):
+    dR = eps/np.sqrt(2) * np.random.normal(size=shape)
+    # subtract mean to keep center of mass fixed
+    dR -= np.mean(dR, axis=axis, keepdims=True)
+    return dR
+
+def metropolis_coordinate_ensemble(this_psi, *, n_therm, n_walkers, n_skip, eps):
+    # array of walkers to be generated
+    Rs = np.zeros((n_walkers, n_coord, 3))
+    psi2s = np.zeros((n_walkers))
+    this_walker = 0
+    # store acceptance ratio
+    acc = 0
+    # initial condition to start metropolis
+    R = np.random.normal(size=(1,n_coord,3))
+    # set center of mass position to 0
+    R -= np.mean(R, axis=1, keepdims=True)
+    # metropolis updates
+    for i in range(-n_therm, n_walkers*n_skip):
+        # update
+        dR = draw_coordinates(R.shape, eps=eps, axis=1)
+        new_R = R + dR
+        # accept/reject based on |psi(R)|^2
+        p_R = np.conjugate(this_psi(R))*this_psi(R)
+        p_new_R = np.conjugate(this_psi(new_R))*this_psi(new_R)
+        if np.random.random() < (p_new_R / p_R):
+            R = new_R #accept
+            p_R = p_new_R
+            acc += 1
+        # store walker every skip updates
+        if i >= 0 and (i+1) % n_skip == 0:
+            Rs[this_walker,:,:] = R
+            psi2s[this_walker] = p_R
+            this_walker += 1
+        print(f'Total acc frac = {acc} / {n_therm + n_walkers*n_skip}')
+    # return coordinates R and respective |psi(R)|^2
+    return Rs, psi2s
+
 
 def variational_wvfn(params, Rs):
     return np.exp(-Rs**2/params[0]**2)
 
 
 class wvfn(nn.Module):
+    # Psi(R) = sum_{n,l,m} c_{n,l,m} psi(n, l, m, R)
+    # register c_{n,l,m} as pytorch paramters
     def __init__(self):
         super(wvfn, self).__init__()
         self.sigma = nn.Parameter(torch.ones(1, dtype=torch.double))
@@ -28,6 +138,8 @@ class wvfn(nn.Module):
         return out 
 
 def loss_function(wvfn, Rs):
+    # <psi|H|psi> / <psi|psi>
+    # compute hammy
     return torch.sum( torch.pow( wvfn(Rs) - torch.exp(-torch.pow(Rs,2)/4), 2) )
     
 def train_variational_wvfn(wvfn, Rs):
@@ -56,6 +168,36 @@ if __name__ == '__main__':
     parser.add_argument('--N_train', default=100000, type=int)
     parser.add_argument('--log10_learn_rate', default=3, type=int)
     globals().update(vars(parser.parse_args()))
+
+    # test chi
+    #Hammy = hydrogen.laPlaceSpher(hydrogen.Chi(1, hydrogen.n_coord, 1, 0, 0, 1, hydrogen.r, hydrogen.t, hydrogen.p, hydrogen.v, 1),hydrogen.r[0],hydrogen.t[0],hydrogen.p[0]).subs(hydrogen.r[1],0)+(hydrogen.Potential(hydrogen.rr,hydrogen.B,hydrogen.n_coord)*hydrogen.Chi(1, hydrogen.n_coord, 1, 0, 0, 1, hydrogen.r, hydrogen.t, hydrogen.p, hydrogen.v, 1)).subs(hydrogen.r[1],0)
+
+    #print(hydrogen.simplify(Hammy.subs(hydrogen.v[1],1)))
+
+    B=1
+    a=-2/B
+    def psi0(Rs):
+        return total_Psi_nlm(Rs, 1, 0, 0, 1/a)
+
+    psi(n_coord, 1, 0, 0, 1, r, t, p, v)
+    print("yay")
+    psi_no_v(n_coord, 1, 0, 0, 1, r, t, p)
+
+    print("psi0")
+    print(psi0(np.array([[[1,1,1],[-1,-1,-1]]])))
+
+    n_walkers = 1000
+
+    Rs, psi2s = metropolis_coordinate_ensemble(psi0, n_therm=50, n_walkers=n_walkers, n_skip=10, eps=1.0)
+
+    hammy_ME = hammy_Psi_nlm(Rs, 1, 0, 0, 1/a)
+
+    E0 = hammy_ME / psi2s
+
+    print(np.mean(E0))
+    print(np.sqrt(np.var(E0)/n_walkers))
+
+    throw()
 
     # initialize wvfn
     wvfn = wvfn()

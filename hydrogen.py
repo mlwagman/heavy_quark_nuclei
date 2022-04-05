@@ -5,7 +5,7 @@ This example shows how to work with the Hydrogen radial wavefunctions.
 """
 import math as m
 import numpy as np
-from sympy import simplify, summation, sqrt, Eq, Integral, oo, pprint, symbols, Symbol, log, exp, diff, Sum, factorial, IndexedBase, Function, cos, sin, atan, acot, pi, atan2
+from sympy import simplify, summation, sqrt, Eq, Integral, oo, pprint, symbols, Symbol, log, exp, diff, Sum, factorial, IndexedBase, Function, cos, sin, atan, acot, pi, atan2, trigsimp
 from sympy.physics.hydrogen import R_nl, Psi_nlm
 from itertools import permutations
 
@@ -69,14 +69,11 @@ n, l, m, phi, theta, Z = symbols("n l m phi theta Z")
 
 def rrSpher(i,j,r,t,p):
     return  sqrt(r[j]*(r[j]-2*r[i]*(sin(t[i])*sin(t[j])*cos(p[i]-p[j])+cos(t[i])*cos(t[j]))) +r[i]**2);
-#print(rrSpher(1,2,r,t,p))
-def ppSpher(i,j,r,t,p):
-    return atan2((cos(t[i])*r[i] - cos(t[j])*r[j]), sqrt((cos(p[i])*r[i]*sin(t[i]) - cos(p[j])*r[j]*sin(t[j]))**2 + (r[i]*sin(t[i])*sin(p[i]) - r[j]*sin(t[j])*sin(p[j]))**2));
-#print(rrSpher(1,2,r,t,p))
 def ttSpher(i,j,r,t,p):
-    return  atan2((cos(p[i])*r[i]*sin(t[i]) - cos(p[j])*r[j]*sin(t[j])), (r[i]*sin(t[i])*sin(p[i]) - r[j]*sin(t[j])*sin(p[j])));
-#print(ttSpher(1,2,r,t,p))
-#print(Psi_nlm(2, 1, 1, rrSpher(1,2,r,t,p), ppSpher(1,2,r,t,p), ttSpher(1,2,r,t,p), 1))
+    # experimentally this works assuming atan2(y, x) = atan(y / x) + phase
+    return atan2(sqrt((cos(p[i])*r[i]*sin(t[i]) - cos(p[j])*r[j]*sin(t[j]))**2 + (r[i]*sin(t[i])*sin(p[i]) - r[j]*sin(t[j])*sin(p[j]))**2), (cos(t[i])*r[i] - cos(t[j])*r[j]));
+def ppSpher(i,j,r,t,p):
+    return  atan2((r[i]*sin(t[i])*sin(p[i]) - r[j]*sin(t[j])*sin(p[j])), (cos(p[i])*r[i]*sin(t[i]) - cos(p[j])*r[j]*sin(t[j])));
 
 
 jj = Symbol('jj', integer=True)
@@ -85,12 +82,22 @@ jj = Symbol('jj', integer=True)
 #  Define chi(r_i) where psi(r1,..,rn)=chi(r1)*...*chi(rn)
 def Chi(k, nCoord, n, l, m, Z, r, t, p, v, col):
      Chi =  0
-     for j in range(0,nCoord-1):
+     for j in range(0,nCoord):
          if k!=j and j>=k:
-             #Chi = Chi + v[col]*1/(nCoord-1)*Sum(Psi_nlm(n, l, m, rrSpher(k,j,r,t,p), ppSpher(k,j,r,t,p), ttSpher(k,j,r,t,p), Z),(j,k+1,nCoord-1))
-             Chi = Chi + v[col]*1/(nCoord-1)*Sum(Psi_nlm(n, l, m, rrSpher(k,j,r,t,p), ppSpher(k,j,r,t,p), ttSpher(k,j,r,t,p), 1/a),(j,k+1,nCoord-1))
+             Chi = Chi + v[col]*1/(nCoord-1)*Sum(Psi_nlm(n, l, m, rrSpher(k,j,r,t,p), ppSpher(k,j,r,t,p), ttSpher(k,j,r,t,p), Z),(j,k+1,nCoord-1))
          elif k!=j and k>=j:
-             Chi = Chi + v[col]*1/(nCoord-1)*Psi_nlm(n, l, m, rrSpher(j,k,r,t,p), ppSpher(j,k,r,t,p), ttSpher(j,k,r,t,p), 1/a)
+             Chi = Chi + v[col]*1/(nCoord-1)*Psi_nlm(n, l, m, rrSpher(j,k,r,t,p), ppSpher(j,k,r,t,p), ttSpher(j,k,r,t,p), Z)
+         else:
+             Chi = Chi
+     return Chi
+
+def Chi_no_v(k, nCoord, n, l, m, Z, r, t, p):
+     Chi =  0
+     for j in range(0,nCoord):
+         if k!=j and j>=k:
+             Chi = Chi + 1/(nCoord-1)*Sum(Psi_nlm(n, l, m, rrSpher(k,j,r,t,p), ppSpher(k,j,r,t,p), ttSpher(k,j,r,t,p), Z),(j,k+1,nCoord-1))
+         elif k!=j and k>=j:
+             Chi = Chi + 1/(nCoord-1)*Psi_nlm(n, l, m, rrSpher(j,k,r,t,p), ppSpher(j,k,r,t,p), ttSpher(j,k,r,t,p), Z)
          else:
              Chi = Chi
      return Chi
@@ -110,24 +117,30 @@ def Chi(k, nCoord, n, l, m, Z, r, t, p, v, col):
 print(Potential(rr,B,nCoord))
 
 #  Define psi(r1,..,rn)=chi(r1)*...*chi(rn)
-def psi(k, nCoord, n, l, m, Z, r, t, p, v):
+def psi(nCoord, n, l, m, Z, r, t, p, v):
     psi =  1
     for k in range(0,nCoord):
-        psi=Chi(k, nCoord-1, n, l, m, Z, r, t, p, v, k)*psi
+        psi=Chi(k, nCoord, n, l, m, Z, r, t, p, v, k)*psi
+    return psi
+
+def psi_no_v(nCoord, n, l, m, Z, r, t, p):
+    psi =  1
+    for k in range(0,nCoord):
+        psi=Chi_no_v(k, nCoord, n, l, m, Z, r, t, p)*psi
     return psi
 
 
 
 #  Define Psi(r1,..,rn)=1/n!*Sum(perms of psi(r1,..,rn)) (not sure how..)
-def Psi(k, nCoord, n, l, m, Z, r, t, p, v, col):
-    psi =  1
-    for k in range(0,nCoord):
-        psi=Chi(k, nCoord, n, l, m, Z, r, t, p, v, col)*psi
-    return psi
+#def Psi(k, nCoord, n, l, m, Z, r, t, p, v, col):
+#    psi =  1
+#    for k in range(0,nCoord):
+#        psi=Chi(k, nCoord, n, l, m, Z, r, t, p, v, col)*psi
+#    return psi
 
 def main():
 
-    Hammy = laPlaceSpher(Chi(1, nCoord, 1, 0, 0, 1, r, t, p, v, 1),r[0],t[0],p[0]).subs(r[1],0) + (Potential(rr,B,nCoord)*Chi(1, nCoord, 1, 0, 0, 1, r, t, p, v, 1)).subs(r[1],0)
+    Hammy = laPlaceSpher(Chi(1, nCoord, 1, 0, 0, 1/a, r, t, p, v, 1),r[0],t[0],p[0]).subs(r[1],0) + (Potential(rr,B,nCoord)*Chi(1, nCoord, 1, 0, 0, 1/a, r, t, p, v, 1)).subs(r[1],0)
     #Hammy = laPlaceSpher(Chi(1, nCoord, 1, 0, 0, Z, r, t, p, v, 1),r[0],t[0],p[0]).subs(r[1],0)
 
     print(simplify(Hammy.subs(v[1],1).subs(a,-2/B)))
@@ -138,7 +151,10 @@ def main():
     nn = 1
     ll = 0
     mm = 0
-    wvfn = Chi(1, nCoord, nn, ll, mm, 1, r, t, p, v, 1)
+    wvfn = Chi(1, nCoord, nn, ll, mm, 1/a, r, t, p, v, 1)
+    print("about to")
+    psi(nCoord, nn, ll, mm, 1/a, r, t, p, v)
+    print("break")
     Hammy = laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
     Enl = simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,-2/B))
     print(f"E(n={nn}, l={ll}) = {Enl}")
@@ -147,7 +163,7 @@ def main():
     nn = 2
     ll = 0
     mm = 0
-    wvfn = Chi(1, nCoord, nn, ll, mm, 1, r, t, p, v, 1)
+    wvfn = Chi(1, nCoord, nn, ll, mm, 1/a, r, t, p, v, 1)
     Hammy = laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
     Enl = simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,-2/B))
     print(f"E(n={nn}, l={ll}) = {Enl}")
@@ -156,7 +172,7 @@ def main():
     nn = 2
     ll = 1
     mm = 0
-    wvfn = Chi(1, nCoord, nn, ll, mm, 1, r, t, p, v, 1)
+    wvfn = Chi(1, nCoord, nn, ll, mm, 1/a, r, t, p, v, 1)
     Hammy = laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
     Enl = simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,-2/B))
     print(f"E(n={nn}, l={ll}) = {Enl}")
@@ -165,18 +181,18 @@ def main():
     nn = 2
     ll = 1
     mm = 1
-    wvfn = Chi(1, nCoord, nn, ll, mm, 1, r, t, p, v, 1)
+    wvfn = Chi(1, nCoord, nn, ll, mm, 1/a, r, t, p, v, 1)
     Hammy = laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
-    Enl = simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,-2/B))
+    Enl = trigsimp(simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,-2/B)))
     print(f"E(n={nn}, l={ll}) = {Enl}")
 
     print("\nn l m = 2 1 -1")
     nn = 2
     ll = 1
     mm = -1
-    wvfn = Chi(1, nCoord, nn, ll, mm, 1, r, t, p, v, 1)
+    wvfn = Chi(1, nCoord, nn, ll, mm, 1/a, r, t, p, v, 1)
     Hammy = laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
-    Enl = simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,-2/B))
+    Enl = trigsimp(simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,-2/B)))
     print(f"E(n={nn}, l={ll}) = {Enl}")
 
 
