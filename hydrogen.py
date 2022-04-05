@@ -44,8 +44,19 @@ B = symbols("B")
 #print(sum(rr))
 
 def laPlaceSpher(f,r,t,p):
-    return 1/r**2*diff(r**2*(diff(f,r)),r) + 1/(r**2*sin(t))*diff(sin(t)*(diff(f,t)),t) + 1/(r**2*sin(t)**2)*diff(diff(f,p),p)
-#print(laPlaceSpher(r[1]*t[1],r[1],t[1],p[1]))
+    dfdr = diff(f,r)
+    #print(f'dfdr = {dfdr}')
+    rpart = 1/r**2*diff(r**2*(diff(f,r)),r)
+    #print(f'rpart = {rpart}')
+    tpart = 1/(r**2*sin(t))*diff(sin(t)*(diff(f,t)),t)
+    #print(f'tpart = {tpart}')
+    ppart = 1/(r**2*sin(t)**2)*diff(diff(f,p),p)
+    #print(f'ppart = {ppart}')
+    nabla = rpart + tpart + ppart
+    #print(f'sum = {nabla}')
+    return nabla
+    #return 1/r**2*diff(r**2*(diff(f,r)),r) + 1/(r**2*sin(t))*diff(sin(t)*(diff(f,t)),t) + 1/(r**2*sin(t)**2)*diff(diff(f,p),p)
+print(laPlaceSpher(r[0]*exp(r[1])*t[1],r[1],t[1],p[1]))
 
 def rInv(i,j):
     return 1/sqrt(r[i]**2 + r[j]**2 - 2*r[j]*r[i]*sin(t[i])*sin(t[j])*cos(p[i]-p[j]) - 2*r[j]*r[i]*cos(t[i])*cos(t[j]))
@@ -163,6 +174,23 @@ def main():
     Hammy = laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
     Enl = simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,-2/B))
     print(f"E(n={nn}, l={ll}) = {Enl}")
+
+    print(f'psi = {wvfn}')
+    V = (Potential(rr,B,nCoord)*wvfn)
+    print(f'V = {V}')
+    K1 = laPlaceSpher(wvfn,r[0],t[0],p[0])/2
+    print(f'K1 = {K1}')
+    print(f'?? = {laPlaceSpher(wvfn,r[1],t[1],p[1])}')
+    K2 = laPlaceSpher(wvfn,r[1],t[1],p[1])/2
+    print(f'K2 = {K2}')
+    Hammy = K1 + K2 + V
+    print(f'H = {Hammy}')
+    print(f'presimp = {(Hammy / wvfn).subs(v[1],1).subs(a,-2/B).subs(r[0],1).subs(r[1],1).subs(t[0],1).subs(t[1],1).subs(p[0],1).subs(p[1],1).subs(B,1)}')
+    Enl = simplify((Hammy / wvfn).subs(v[1],1).subs(a,-2/B).subs(r[0],1).subs(r[1],1).subs(t[0],pi/2).subs(t[1],pi/2).subs(p[0],1).subs(p[1],-1).subs(B,1))
+    #Enl = simplify((Hammy / wvfn).subs(r[1],-r[0]/2).subs(r[0],r[0]/2).subs(v[1],1).subs(a,-2/B))
+    print(f"E(n={nn}, l={ll}) = {Enl}")
+
+    throw()
 
     print("\nn l m = 2 0 0")
     nn = 2

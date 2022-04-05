@@ -21,7 +21,6 @@ n_coord = 2
 
 def total_Psi_nlm(Rs, n, l, m, Z_n):
     n_walkers = Rs.shape[0]
-    print(Rs.shape)
     assert Rs.shape == (n_walkers, n_coord, 3)
     Psi_nlm_s = np.zeros((n_walkers))
     for i in range(n_walkers):
@@ -34,12 +33,12 @@ def total_Psi_nlm(Rs, n, l, m, Z_n):
         p_n = np.arctan2(y, x)
         # evaluate wavefunction
         sym_psi = psi_no_v(n_coord, n, l, m, Z, r, t, p)
-        for a in range(n_coords):
-            sym_psi = sym_psi.sub(r[a], r_n[a]).sub(t[a], t_n[a]).sub(p[a], p_n[a])
-        Psi_nlm_s[i] = sym_psi.sub(Z, Z_n)
+        for a in range(n_coord):
+            sym_psi = sym_psi.subs(r[a], r_n[a]).subs(t[a], t_n[a]).subs(p[a], p_n[a])
+        Psi_nlm_s[i] = sym_psi.subs(Z, Z_n)
     return Psi_nlm_s
 
-def nabla_total_Psi_nlm(Rs, n, l, m, Z):
+def nabla_total_Psi_nlm(Rs, n, l, m, Z_n):
     n_walkers = Rs.shape[0]
     assert Rs.shape == (n_walkers, n_coord, 3)
     nabla_Psi_nlm_s = np.zeros((n_walkers))
@@ -48,15 +47,17 @@ def nabla_total_Psi_nlm(Rs, n, l, m, Z):
         x = Rs[i,:,0]
         y = Rs[i,:,1]
         z = Rs[i,:,2]
-        r = np.sqrt(x**2 + y**2 + z**2)
-        t = np.arctan2(np.sqrt(x**2 + y**2), z) 
-        p = np.arctan2(y, x)
+        r_n = np.sqrt(x**2 + y**2 + z**2)
+        t_n = np.arctan2(np.sqrt(x**2 + y**2), z) 
+        p_n = np.arctan2(y, x)
         # evaluate wavefunction
-        wvfn = psi_no_v(n_coord, n, l, m, Z, r, t, p)
+        sym_psi = psi_no_v(n_coord, n, l, m, Z, r, t, p)
         nabla_wvfn = 0
         for a in range(n_coord):
-            nabla_wvfn += laPlaceSpher(wvfn, r[a], t[a], p[a])
-        nabla_Psi_nlm_s[i] = nabla_wvfn
+            nabla_wvfn += laPlaceSpher(sym_psi, r[a], t[a], p[a])
+        for a in range(n_coord):
+            nabla_wvfn = nabla_wvfn.subs(r[a], r_n[a]).subs(t[a], t_n[a]).subs(p[a], p_n[a])
+        nabla_Psi_nlm_s[i] = nabla_wvfn.subs(Z, Z_n)
     return nabla_Psi_nlm_s
 
 def potential_total_Psi_nlm(Rs, n, l, m, Z):
@@ -80,7 +81,12 @@ def potential_total_Psi_nlm(Rs, n, l, m, Z):
 
 def hammy_Psi_nlm(Rs, n, l, m, Z):
     psistar = np.conjugate(total_Psi_nlm(Rs, n, l, m, Z))
-    H_psi = nabla_total_Psi_nlm(Rs, n, l, m, Z)/2 + potential_total_Psi_nlm
+    K_psi = nabla_total_Psi_nlm(Rs, n, l, m, Z)/2 
+    V_psi = potential_total_Psi_nlm(Rs, n, l, m, Z)
+    H_psi = K_psi + V_psi
+    print(f'<K> = {psistar * K_psi}')
+    print(f'<V> = {psistar * V_psi}')
+    print(f'|psi|^2 = {psistar * np.conjugate(psistar)}')
     return psistar * H_psi
 
     
@@ -109,16 +115,19 @@ def metropolis_coordinate_ensemble(this_psi, *, n_therm, n_walkers, n_skip, eps)
         # accept/reject based on |psi(R)|^2
         p_R = np.conjugate(this_psi(R))*this_psi(R)
         p_new_R = np.conjugate(this_psi(new_R))*this_psi(new_R)
-        if np.random.random() < (p_new_R / p_R):
+        if (np.random.random() < (p_new_R / p_R) and not np.isnan(p_new_R) and p_new_R > 0 and p_new_R < 1 ):
             R = new_R #accept
             p_R = p_new_R
-            acc += 1
+            if i >= 0:
+                acc += 1
         # store walker every skip updates
         if i >= 0 and (i+1) % n_skip == 0:
             Rs[this_walker,:,:] = R
             psi2s[this_walker] = p_R
             this_walker += 1
-        print(f'Total acc frac = {acc} / {n_therm + n_walkers*n_skip}')
+            print(f'i = {i}')
+            print(f'|psi(R)|^2 = {p_R}')
+            print(f'Total acc frac = {acc / (i+1)}')
     # return coordinates R and respective |psi(R)|^2
     return Rs, psi2s
 
@@ -186,11 +195,13 @@ if __name__ == '__main__':
     print("psi0")
     print(psi0(np.array([[[1,1,1],[-1,-1,-1]]])))
 
-    n_walkers = 1000
+    n_walkers = 20
 
-    Rs, psi2s = metropolis_coordinate_ensemble(psi0, n_therm=50, n_walkers=n_walkers, n_skip=10, eps=1.0)
+    Rs, psi2s = metropolis_coordinate_ensemble(psi0, n_therm=50, n_walkers=n_walkers, n_skip=10, eps=0.5)
 
     hammy_ME = hammy_Psi_nlm(Rs, 1, 0, 0, 1/a)
+    
+    print(f'|psi|^2 = {psi2s}')
 
     E0 = hammy_ME / psi2s
 
