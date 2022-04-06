@@ -152,29 +152,31 @@ def psi_no_v(nCoord, n, l, m, Z, r, t, p):
 
 def main():
 
-    Hammy = laPlaceSpher(Chi(1, nCoord, 1, 0, 0, 1/a, r, t, p, v, 1),r[0],t[0],p[0]).subs(r[1],0) + (Potential(rr,B,nCoord)*Chi(1, nCoord, 1, 0, 0, 1/a, r, t, p, v, 1)).subs(r[1],0)
+    Hammy = -1*laPlaceSpher(Chi(1, nCoord, 1, 0, 0, 1/a, r, t, p, v, 1),r[0],t[0],p[0]).subs(r[1],0) + (Potential(rr,B,nCoord)*Chi(1, nCoord, 1, 0, 0, 1/a, r, t, p, v, 1)).subs(r[1],0)
     #Hammy = laPlaceSpher(Chi(1, nCoord, 1, 0, 0, Z, r, t, p, v, 1),r[0],t[0],p[0]).subs(r[1],0)
 
-    print(simplify(Hammy.subs(v[1],1).subs(a,-2/B)))
+    #print(simplify(Hammy.subs(v[1],1).subs(a,-2/B)))
+    print(simplify(Hammy.subs(v[1],1).subs(a,1/B)))
 
     print("\n")
 
-    print("\nn l m = 1 0 0")
+    print("\nn l m = 1 0 0 hydrogen atom")
     nn = 1
     ll = 0
     mm = 0
     wvfn = Chi(1, nCoord, nn, ll, mm, 1/a, r, t, p, v, 1)
     #wvfn = Chi(1, nCoord, nn, ll, mm, 1, r, t, p, v, 1)
     print(f'psi = {simplify(wvfn.subs(r[1],0).subs(v[1],1))}')
-    print(f'psi = {simplify(wvfn.subs(r[1],0).subs(v[1],1).subs(a,2/B).subs(B,1))}')
+    print(f'psi = {simplify(wvfn.subs(r[1],0).subs(v[1],1).subs(a,1/B).subs(B,1))}')
 
-    Hammy = -1*laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
+    Hammy = -1/2*laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
     #Hammy = laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
     #Enl = simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,-2/B))
-    Enl = simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,2/B))
+    #Enl = simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,2/B))
+    Enl = simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,1/B))
     print(f"E(n={nn}, l={ll}) = {Enl}")
 
-    print("\nn l m = 1 0 0 without using relative coordinates")
+    print("\nn l m = 1 0 0 positronium")
     V = (Potential(rr,B,nCoord)*wvfn)
     #print(f'V = {V}')
     K1 = -1/2*laPlaceSpher(wvfn,r[0],t[0],p[0])
@@ -185,45 +187,46 @@ def main():
     #print(f'H = {Hammy}')
     #print(f'presimp = {(Hammy / wvfn).subs(v[1],1).subs(a,-2/B).subs(r[0],1).subs(r[1],1).subs(t[0],1).subs(t[1],1).subs(p[0],1).subs(p[1],1).subs(B,1)}')
     #Enl = simplify((Hammy / wvfn).subs(v[1],1).subs(a,-2/B).subs(r[0],1).subs(r[1],1).subs(t[0],pi/2).subs(t[1],pi/2).subs(p[0],1).subs(p[1],-1).subs(B,1))
+    #Enl = simplify((Hammy / wvfn).subs(v[1],1).subs(a,2/B).subs(r[0],1).subs(r[1],1).subs(t[0],pi/2).subs(t[1],pi/2).subs(p[0],1).subs(p[1],-1).subs(B,1))
     Enl = simplify((Hammy / wvfn).subs(v[1],1).subs(a,2/B).subs(r[0],1).subs(r[1],1).subs(t[0],pi/2).subs(t[1],pi/2).subs(p[0],1).subs(p[1],-1).subs(B,1))
     print(f"E(n={nn}, l={ll}) = {Enl}")
 
-    print("\nn l m = 2 0 0")
+    print("\nn l m = 2 0 0 hydrogen atom")
     nn = 2
     ll = 0
     mm = 0
     wvfn = Chi(1, nCoord, nn, ll, mm, 1/a, r, t, p, v, 1)
     #Hammy = laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
     #Enl = simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,-2/B))
-    Hammy = -1*laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
-    Enl = simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,2/B))
+    Hammy = -1/2*laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
+    Enl = simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,1/B))
     print(f"E(n={nn}, l={ll}) = {Enl}")
 
-    print("\nn l m = 2 1 0")
+    print("\nn l m = 2 1 0 hydrogen atom")
     nn = 2
     ll = 1
     mm = 0
     wvfn = Chi(1, nCoord, nn, ll, mm, 1/a, r, t, p, v, 1)
-    Hammy = -1*laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
-    Enl = simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,2/B))
+    Hammy = -1/2*laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
+    Enl = simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,1/B))
     print(f"E(n={nn}, l={ll}) = {Enl}")
 
-    print("\nn l m = 2 1 1")
+    print("\nn l m = 2 1 1 hydrogen atom")
     nn = 2
     ll = 1
     mm = 1
     wvfn = Chi(1, nCoord, nn, ll, mm, 1/a, r, t, p, v, 1)
-    Hammy = -1*laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
-    Enl = trigsimp(simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,2/B)))
+    Hammy = -1/2*laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
+    Enl = trigsimp(simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,1/B)))
     print(f"E(n={nn}, l={ll}) = {Enl}")
 
-    print("\nn l m = 2 1 -1")
+    print("\nn l m = 2 1 -1 hydrogen atom")
     nn = 2
     ll = 1
     mm = -1
     wvfn = Chi(1, nCoord, nn, ll, mm, 1/a, r, t, p, v, 1)
-    Hammy = -1*laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
-    Enl = trigsimp(simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,2/B)))
+    Hammy = -1/2*laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
+    Enl = trigsimp(simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,1/B)))
     print(f"E(n={nn}, l={ll}) = {Enl}")
 
 
