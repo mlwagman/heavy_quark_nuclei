@@ -75,18 +75,28 @@ def potential_total_Psi_nlm(Rs, n, l, m, Z):
         for a in range(n_coord):
             for b in range(n_coord):
                 if b > a:
-                    V += 1/np.sqrt( (x[a]-x[b])**2 + (y[a]-y[b])**2 + (z[a]-z[b])**2 )
+                    V += -1/np.sqrt( (x[a]-x[b])**2 + (y[a]-y[b])**2 + (z[a]-z[b])**2 )
         V_Psi_nlm_s[i] = V * wvfn[i]
     return V_Psi_nlm_s
 
+def K_Psi_nlm(Rs, n, l, m, Z):
+    psistar = np.conjugate(total_Psi_nlm(Rs, n, l, m, Z))
+    K_psi = -1/2*nabla_total_Psi_nlm(Rs, n, l, m, Z)
+    return psistar * K_psi
+
+def V_Psi_nlm(Rs, n, l, m, Z):
+    psistar = np.conjugate(total_Psi_nlm(Rs, n, l, m, Z))
+    V_psi = potential_total_Psi_nlm(Rs, n, l, m, Z)
+    return psistar * V_psi
+
 def hammy_Psi_nlm(Rs, n, l, m, Z):
     psistar = np.conjugate(total_Psi_nlm(Rs, n, l, m, Z))
-    K_psi = nabla_total_Psi_nlm(Rs, n, l, m, Z)/2 
+    K_psi = -1/2*nabla_total_Psi_nlm(Rs, n, l, m, Z)
     V_psi = potential_total_Psi_nlm(Rs, n, l, m, Z)
     H_psi = K_psi + V_psi
-    print(f'<K> = {psistar * K_psi}')
-    print(f'<V> = {psistar * V_psi}')
-    print(f'|psi|^2 = {psistar * np.conjugate(psistar)}')
+    #print(f'<K> = {psistar * K_psi}')
+    #print(f'<V> = {psistar * V_psi}')
+    #print(f'|psi|^2 = {psistar * np.conjugate(psistar)}')
     return psistar * H_psi
 
     
@@ -108,7 +118,7 @@ def metropolis_coordinate_ensemble(this_psi, *, n_therm, n_walkers, n_skip, eps)
     # set center of mass position to 0
     R -= np.mean(R, axis=1, keepdims=True)
     # metropolis updates
-    for i in range(-n_therm, n_walkers*n_skip):
+    for i in tqdm.tqdm(range(-n_therm, n_walkers*n_skip)):
         # update
         dR = draw_coordinates(R.shape, eps=eps, axis=1)
         new_R = R + dR
@@ -125,7 +135,7 @@ def metropolis_coordinate_ensemble(this_psi, *, n_therm, n_walkers, n_skip, eps)
             Rs[this_walker,:,:] = R
             psi2s[this_walker] = p_R
             this_walker += 1
-            print(f'i = {i}')
+            print(f'iteration {i+1}')
             print(f'|psi(R)|^2 = {p_R}')
             print(f'Total acc frac = {acc / (i+1)}')
     # return coordinates R and respective |psi(R)|^2
@@ -183,31 +193,54 @@ if __name__ == '__main__':
 
     #print(hydrogen.simplify(Hammy.subs(hydrogen.v[1],1)))
 
-    B=1
-    a=-2/B
+    B_n=1
+    #a=-2/B
+    a_n=2/B_n
     def psi0(Rs):
-        return total_Psi_nlm(Rs, 1, 0, 0, 1/a)
+        return total_Psi_nlm(Rs, 1, 0, 0, 1/a_n)
 
     psi(n_coord, 1, 0, 0, 1, r, t, p, v)
     print("yay")
     psi_no_v(n_coord, 1, 0, 0, 1, r, t, p)
+    print(psi_no_v(n_coord, 1, 0, 0, 1, r, t, p))
 
     print("psi0")
     print(psi0(np.array([[[1,1,1],[-1,-1,-1]]])))
 
-    n_walkers = 20
+    print("\nn l m = 1 0 0 without using relative coordinates")
+    wvfn = Chi(1, nCoord, 1, 0, 0, 1/a, r, t, p, v, 1)
+    V = (Potential(rr,B,nCoord)*wvfn)
+    #print(f'V = {V}')
+    K1 = -1/2*laPlaceSpher(wvfn,r[0],t[0],p[0])
+    #print(f'K1 = {K1}')
+    K2 = -1/2*laPlaceSpher(wvfn,r[1],t[1],p[1])
+    #print(f'K2 = {K2}')
+    Hammy = K1 + K2 + V
+    #print(f'H = {Hammy}')
+    #print(f'presimp = {(Hammy / wvfn).subs(v[1],1).subs(a,-2/B).subs(r[0],1).subs(r[1],1).subs(t[0],1).subs(t[1],1).subs(p[0],1).subs(p[1],1).subs(B,1)}')
+    #Enl = simplify((Hammy / wvfn).subs(v[1],1).subs(a,-2/B).subs(r[0],1).subs(r[1],1).subs(t[0],pi/2).subs(t[1],pi/2).subs(p[0],1).subs(p[1],-1).subs(B,1))
+    Enl = simplify((Hammy / wvfn).subs(v[1],1).subs(a,2/B).subs(r[0],1).subs(r[1],1).subs(t[0],pi/2).subs(t[1],pi/2).subs(p[0],1).subs(p[1],-1).subs(B,1))
+    print(f"E(n={1}, l={0}) = {Enl}")
 
-    Rs, psi2s = metropolis_coordinate_ensemble(psi0, n_therm=50, n_walkers=n_walkers, n_skip=10, eps=0.5)
+    n_walkers = 100
 
-    hammy_ME = hammy_Psi_nlm(Rs, 1, 0, 0, 1/a)
+    Rs, psi2s = metropolis_coordinate_ensemble(psi0, n_therm=500, n_walkers=n_walkers, n_skip=10, eps=0.5)
+    #print(f'Rs = {Rs}')
+
+    hammy_ME = hammy_Psi_nlm(Rs, 1, 0, 0, 1/a_n)
+    V_ME = V_Psi_nlm(Rs, 1, 0, 0, 1/a_n)
+    K_ME = K_Psi_nlm(Rs, 1, 0, 0, 1/a_n)
     
     print(f'|psi|^2 = {psi2s}')
 
     E0 = hammy_ME / psi2s
 
-    print(np.mean(E0))
-    print(np.sqrt(np.var(E0)/n_walkers))
+    print(f'\nEvery element should be E0=-1/4, {E0} \n')
+    print(f'<psi|H|psi>/<psi|psi> = {np.mean(hammy_ME)/np.mean(psi2s)} +/- {np.abs(np.mean(hammy_ME))/np.mean(psi2s)*np.sqrt(np.var(hammy_ME)/np.mean(hammy_ME)**2+np.var(psi2s)/np.mean(psi2s)**2)/np.sqrt(n_walkers)} = -1/4?')
+    print(f'<psi|V|psi>/<psi|psi> = {np.mean(V_ME)/np.mean(psi2s)} +/- {np.abs(np.mean(V_ME))/np.mean(psi2s)*np.sqrt(np.var(V_ME)/np.mean(V_ME)+np.var(psi2s)/np.mean(psi2s)**2)/np.sqrt(n_walkers)} = -1/2?')
+    print(f'<psi|K|psi>/<psi|psi> = {np.mean(K_ME)/np.mean(psi2s)} +/- {np.abs(np.mean(K_ME))/np.mean(psi2s)*np.sqrt(np.var(K_ME)/np.mean(K_ME)+np.var(psi2s)/np.mean(psi2s)**2)/np.sqrt(n_walkers)} = +1/4?')
 
+    print("\n")
     throw()
 
     # initialize wvfn

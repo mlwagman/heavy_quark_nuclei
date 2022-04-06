@@ -164,41 +164,39 @@ def main():
     ll = 0
     mm = 0
     wvfn = Chi(1, nCoord, nn, ll, mm, 1/a, r, t, p, v, 1)
+    #wvfn = Chi(1, nCoord, nn, ll, mm, 1, r, t, p, v, 1)
+    print(f'psi = {simplify(wvfn.subs(r[1],0).subs(v[1],1))}')
+    print(f'psi = {simplify(wvfn.subs(r[1],0).subs(v[1],1).subs(a,2/B).subs(B,1))}')
 
-    print("about to")
-    psi_no_v(nCoord, nn, ll, mm, 1/a, r, t, p)
-    #Chi(0, nCoord, nn, ll, mm, 1/a, r, t, p, v, 0)
-    #Chi_no_v(1, nCoord, nn, ll, mm, 1/a, r, t, p)
-    print("break")
-
-    Hammy = laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
-    Enl = simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,-2/B))
+    Hammy = -1*laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
+    #Hammy = laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
+    #Enl = simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,-2/B))
+    Enl = simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,2/B))
     print(f"E(n={nn}, l={ll}) = {Enl}")
 
-    print(f'psi = {wvfn}')
+    print("\nn l m = 1 0 0 without using relative coordinates")
     V = (Potential(rr,B,nCoord)*wvfn)
-    print(f'V = {V}')
-    K1 = laPlaceSpher(wvfn,r[0],t[0],p[0])/2
-    print(f'K1 = {K1}')
-    print(f'?? = {laPlaceSpher(wvfn,r[1],t[1],p[1])}')
-    K2 = laPlaceSpher(wvfn,r[1],t[1],p[1])/2
-    print(f'K2 = {K2}')
+    #print(f'V = {V}')
+    K1 = -1/2*laPlaceSpher(wvfn,r[0],t[0],p[0])
+    #print(f'K1 = {K1}')
+    K2 = -1/2*laPlaceSpher(wvfn,r[1],t[1],p[1])
+    #print(f'K2 = {K2}')
     Hammy = K1 + K2 + V
-    print(f'H = {Hammy}')
-    print(f'presimp = {(Hammy / wvfn).subs(v[1],1).subs(a,-2/B).subs(r[0],1).subs(r[1],1).subs(t[0],1).subs(t[1],1).subs(p[0],1).subs(p[1],1).subs(B,1)}')
-    Enl = simplify((Hammy / wvfn).subs(v[1],1).subs(a,-2/B).subs(r[0],1).subs(r[1],1).subs(t[0],pi/2).subs(t[1],pi/2).subs(p[0],1).subs(p[1],-1).subs(B,1))
-    #Enl = simplify((Hammy / wvfn).subs(r[1],-r[0]/2).subs(r[0],r[0]/2).subs(v[1],1).subs(a,-2/B))
+    #print(f'H = {Hammy}')
+    #print(f'presimp = {(Hammy / wvfn).subs(v[1],1).subs(a,-2/B).subs(r[0],1).subs(r[1],1).subs(t[0],1).subs(t[1],1).subs(p[0],1).subs(p[1],1).subs(B,1)}')
+    #Enl = simplify((Hammy / wvfn).subs(v[1],1).subs(a,-2/B).subs(r[0],1).subs(r[1],1).subs(t[0],pi/2).subs(t[1],pi/2).subs(p[0],1).subs(p[1],-1).subs(B,1))
+    Enl = simplify((Hammy / wvfn).subs(v[1],1).subs(a,2/B).subs(r[0],1).subs(r[1],1).subs(t[0],pi/2).subs(t[1],pi/2).subs(p[0],1).subs(p[1],-1).subs(B,1))
     print(f"E(n={nn}, l={ll}) = {Enl}")
-
-    throw()
 
     print("\nn l m = 2 0 0")
     nn = 2
     ll = 0
     mm = 0
     wvfn = Chi(1, nCoord, nn, ll, mm, 1/a, r, t, p, v, 1)
-    Hammy = laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
-    Enl = simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,-2/B))
+    #Hammy = laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
+    #Enl = simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,-2/B))
+    Hammy = -1*laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
+    Enl = simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,2/B))
     print(f"E(n={nn}, l={ll}) = {Enl}")
 
     print("\nn l m = 2 1 0")
@@ -206,8 +204,8 @@ def main():
     ll = 1
     mm = 0
     wvfn = Chi(1, nCoord, nn, ll, mm, 1/a, r, t, p, v, 1)
-    Hammy = laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
-    Enl = simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,-2/B))
+    Hammy = -1*laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
+    Enl = simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,2/B))
     print(f"E(n={nn}, l={ll}) = {Enl}")
 
     print("\nn l m = 2 1 1")
@@ -215,8 +213,8 @@ def main():
     ll = 1
     mm = 1
     wvfn = Chi(1, nCoord, nn, ll, mm, 1/a, r, t, p, v, 1)
-    Hammy = laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
-    Enl = trigsimp(simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,-2/B)))
+    Hammy = -1*laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
+    Enl = trigsimp(simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,2/B)))
     print(f"E(n={nn}, l={ll}) = {Enl}")
 
     print("\nn l m = 2 1 -1")
@@ -224,8 +222,8 @@ def main():
     ll = 1
     mm = -1
     wvfn = Chi(1, nCoord, nn, ll, mm, 1/a, r, t, p, v, 1)
-    Hammy = laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
-    Enl = trigsimp(simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,-2/B)))
+    Hammy = -1*laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
+    Enl = trigsimp(simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,2/B)))
     print(f"E(n={nn}, l={ll}) = {Enl}")
 
 
