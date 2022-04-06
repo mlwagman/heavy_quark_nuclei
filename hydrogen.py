@@ -131,13 +131,13 @@ print(Potential(rr,B,nCoord))
 #  Define psi(r1,..,rn)=chi(r1)*...*chi(rn)
 def psi(nCoord, n, l, m, Z, r, t, p, v):
     psi =  1
-    for j in range(0,nCoord):
+    for j in range(0,nCoord-1):
         psi = Chi(j, nCoord, n, l, m, Z, r, t, p, v, j)*psi
     return psi
 
 def psi_no_v(nCoord, n, l, m, Z, r, t, p):
     psi =  1
-    for k in range(0,nCoord):
+    for k in range(0,nCoord-1):
         psi = Chi_no_v(k, nCoord, n, l, m, Z, r, t, p)*psi
     return psi
 

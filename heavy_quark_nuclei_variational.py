@@ -18,38 +18,39 @@ plt.rcParams['text.usetex'] = True
 plt.rcParams.update({'font.size': 14})
 
 n_coord = 2
+VB = 1
 
 def total_Psi_nlm(Rs, n, l, m, Z_n):
     n_walkers = Rs.shape[0]
     assert Rs.shape == (n_walkers, n_coord, 3)
-    Psi_nlm_s = np.zeros((n_walkers))
+    Psi_nlm_s = torch.zeros((n_walkers), dtype=torch.complex64)
     for i in range(n_walkers):
         # convert to spherical
         x = Rs[i,:,0]
         y = Rs[i,:,1]
         z = Rs[i,:,2]
-        r_n = np.sqrt(x**2 + y**2 + z**2)
-        t_n = np.arctan2(np.sqrt(x**2 + y**2), z) 
-        p_n = np.arctan2(y, x)
+        r_n = torch.sqrt(x**2 + y**2 + z**2)
+        t_n = torch.atan2(torch.sqrt(x**2 + y**2), z) 
+        p_n = torch.atan2(y, x)
         # evaluate wavefunction
         sym_psi = psi_no_v(n_coord, n, l, m, Z, r, t, p)
         for a in range(n_coord):
             sym_psi = sym_psi.subs(r[a], r_n[a]).subs(t[a], t_n[a]).subs(p[a], p_n[a])
-        Psi_nlm_s[i] = sym_psi.subs(Z, Z_n)
+        Psi_nlm_s[i] = torch.tensor(sym_psi.subs(Z, Z_n).subs(pi, np.pi), dtype=torch.complex64)
     return Psi_nlm_s
 
 def nabla_total_Psi_nlm(Rs, n, l, m, Z_n):
     n_walkers = Rs.shape[0]
     assert Rs.shape == (n_walkers, n_coord, 3)
-    nabla_Psi_nlm_s = np.zeros((n_walkers))
+    nabla_Psi_nlm_s = torch.zeros((n_walkers), dtype=torch.complex64)
     for i in range(n_walkers):
         # convert to spherical
         x = Rs[i,:,0]
         y = Rs[i,:,1]
         z = Rs[i,:,2]
-        r_n = np.sqrt(x**2 + y**2 + z**2)
-        t_n = np.arctan2(np.sqrt(x**2 + y**2), z) 
-        p_n = np.arctan2(y, x)
+        r_n = torch.sqrt(x**2 + y**2 + z**2)
+        t_n = torch.atan2(torch.sqrt(x**2 + y**2), z) 
+        p_n = torch.atan2(y, x)
         # evaluate wavefunction
         sym_psi = psi_no_v(n_coord, n, l, m, Z, r, t, p)
         nabla_wvfn = 0
@@ -57,14 +58,14 @@ def nabla_total_Psi_nlm(Rs, n, l, m, Z_n):
             nabla_wvfn += laPlaceSpher(sym_psi, r[a], t[a], p[a])
         for a in range(n_coord):
             nabla_wvfn = nabla_wvfn.subs(r[a], r_n[a]).subs(t[a], t_n[a]).subs(p[a], p_n[a])
-        nabla_Psi_nlm_s[i] = nabla_wvfn.subs(Z, Z_n)
+        nabla_Psi_nlm_s[i] = torch.tensor(nabla_wvfn.subs(Z, Z_n).subs(pi, np.pi), dtype=torch.complex64)
     return nabla_Psi_nlm_s
 
-def potential_total_Psi_nlm(Rs, n, l, m, Z):
+def potential_total_Psi_nlm(Rs, n, l, m, Z_n):
     n_walkers = Rs.shape[0]
     assert Rs.shape == (n_walkers, n_coord, 3)
-    V_Psi_nlm_s = np.zeros((n_walkers))
-    wvfn = total_Psi_nlm(Rs, n, l, m, Z)
+    V_Psi_nlm_s = torch.zeros((n_walkers), dtype=torch.complex64)
+    wvfn = total_Psi_nlm(Rs, n, l, m, Z_n)
     for i in range(n_walkers):
         # convert to spherical
         x = Rs[i,:,0]
@@ -75,57 +76,55 @@ def potential_total_Psi_nlm(Rs, n, l, m, Z):
         for a in range(n_coord):
             for b in range(n_coord):
                 if b > a:
-                    V += -1/np.sqrt( (x[a]-x[b])**2 + (y[a]-y[b])**2 + (z[a]-z[b])**2 )
+                    V += -VB/np.sqrt( (x[a]-x[b])**2 + (y[a]-y[b])**2 + (z[a]-z[b])**2 )
         V_Psi_nlm_s[i] = V * wvfn[i]
     return V_Psi_nlm_s
 
 def K_Psi_nlm(Rs, n, l, m, Z):
-    psistar = np.conjugate(total_Psi_nlm(Rs, n, l, m, Z))
     K_psi = -1/2*nabla_total_Psi_nlm(Rs, n, l, m, Z)
-    return psistar * K_psi
+    return K_psi
 
 def V_Psi_nlm(Rs, n, l, m, Z):
-    psistar = np.conjugate(total_Psi_nlm(Rs, n, l, m, Z))
     V_psi = potential_total_Psi_nlm(Rs, n, l, m, Z)
-    return psistar * V_psi
+    return V_psi
 
 def hammy_Psi_nlm(Rs, n, l, m, Z):
-    psistar = np.conjugate(total_Psi_nlm(Rs, n, l, m, Z))
-    K_psi = -1/2*nabla_total_Psi_nlm(Rs, n, l, m, Z)
-    V_psi = potential_total_Psi_nlm(Rs, n, l, m, Z)
+    K_psi = K_Psi_nlm(Rs, n, l, m, Z)
+    V_psi = V_Psi_nlm(Rs, n, l, m, Z)
     H_psi = K_psi + V_psi
-    #print(f'<K> = {psistar * K_psi}')
-    #print(f'<V> = {psistar * V_psi}')
-    #print(f'|psi|^2 = {psistar * np.conjugate(psistar)}')
-    return psistar * H_psi
+    return H_psi
 
     
 def draw_coordinates(shape, *, eps=1.0, axis=1):
-    dR = eps/np.sqrt(2) * np.random.normal(size=shape)
+    #dR = eps/np.sqrt(2) * np.random.normal(size=shape)
+    dR = eps/np.sqrt(2) * torch.normal(torch.ones(shape))
     # subtract mean to keep center of mass fixed
-    dR -= np.mean(dR, axis=axis, keepdims=True)
+    dR -= torch.mean(dR, axis=axis, keepdims=True)
     return dR
 
 def metropolis_coordinate_ensemble(this_psi, *, n_therm, n_walkers, n_skip, eps):
     # array of walkers to be generated
-    Rs = np.zeros((n_walkers, n_coord, 3))
-    psi2s = np.zeros((n_walkers))
+    Rs = torch.zeros((n_walkers, n_coord, 3))
+    psi2s = torch.zeros((n_walkers))
     this_walker = 0
     # store acceptance ratio
     acc = 0
     # initial condition to start metropolis
-    R = np.random.normal(size=(1,n_coord,3))
+    #R = np.random.normal(size=(1,n_coord,3))
+    R = torch.normal(torch.ones((1,n_coord,3)))
     # set center of mass position to 0
-    R -= np.mean(R, axis=1, keepdims=True)
+    R -= torch.mean(R, axis=1, keepdims=True)
     # metropolis updates
     for i in tqdm.tqdm(range(-n_therm, n_walkers*n_skip)):
         # update
         dR = draw_coordinates(R.shape, eps=eps, axis=1)
         new_R = R + dR
         # accept/reject based on |psi(R)|^2
-        p_R = np.conjugate(this_psi(R))*this_psi(R)
-        p_new_R = np.conjugate(this_psi(new_R))*this_psi(new_R)
-        if (np.random.random() < (p_new_R / p_R) and not np.isnan(p_new_R) and p_new_R > 0 and p_new_R < 1 ):
+        abspsi = torch.abs(this_psi(R))
+        p_R = abspsi**2 
+        abspsi_new = torch.abs(this_psi(new_R))
+        p_new_R = abspsi_new**2
+        if (torch.rand(1) < (p_new_R / p_R) and not torch.isnan(p_new_R) and p_new_R > 0 and p_new_R < 1 ):
             R = new_R #accept
             p_R = p_new_R
             if i >= 0:
@@ -136,7 +135,7 @@ def metropolis_coordinate_ensemble(this_psi, *, n_therm, n_walkers, n_skip, eps)
             psi2s[this_walker] = p_R
             this_walker += 1
             print(f'iteration {i+1}')
-            print(f'|psi(R)|^2 = {p_R}')
+            #print(f'|psi(R)|^2 = {p_R}')
             print(f'Total acc frac = {acc / (i+1)}')
     # return coordinates R and respective |psi(R)|^2
     return Rs, psi2s
@@ -151,15 +150,39 @@ class wvfn(nn.Module):
     # register c_{n,l,m} as pytorch paramters
     def __init__(self):
         super(wvfn, self).__init__()
-        self.sigma = nn.Parameter(torch.ones(1, dtype=torch.double))
+        #self.a0 = nn.Parameter(1.5*torch.ones(1, dtype=torch.double))
+        self.Z = nn.Parameter(0.5*torch.ones(1, dtype=torch.double))
+        #self.a0 = nn.Parameter(2*torch.ones(1, dtype=torch.double))
+        self.c100_re = nn.Parameter(torch.ones(1, dtype=torch.double))
+        self.c100_im = nn.Parameter(0*torch.ones(1, dtype=torch.double))
+        self.c200_re = nn.Parameter(0*torch.ones(1, dtype=torch.double))
+        self.c200_im = nn.Parameter(0*torch.ones(1, dtype=torch.double))
+    def psi(self, Rs):
+        psi = (self.c100_re+1j*self.c100_im) * total_Psi_nlm(Rs, 1, 0, 0, self.Z) + (self.c200_re+1j*self.c200_im) * total_Psi_nlm(Rs, 2, 0, 0, self.Z)
+        return psi
+    def psi2(self, Rs):
+        psi = (self.c100_re+1j*self.c100_im) * total_Psi_nlm(Rs, 1, 0, 0, self.Z) + (self.c200_re+1j*self.c200_im) * total_Psi_nlm(Rs, 2, 0, 0, self.Z)
+        psistar = (self.c100_re-1j*self.c100_im) * np.conjugate(total_Psi_nlm(Rs, 1, 0, 0, self.Z)) + (self.c200_re-1j*self.c200_im) * np.conjugate(total_Psi_nlm(Rs, 2, 0, 0, self.Z))
+        return psistar*psi
+    def hammy(self, Rs):
+        H_psi = (self.c100_re+1j*self.c100_im) * hammy_Psi_nlm(Rs, 1, 0, 0, self.Z) + (self.c200_re+1j*self.c200_im) * hammy_Psi_nlm(Rs, 2, 0, 0, self.Z)
+        psistar = (self.c100_re-1j*self.c100_im) * np.conjugate(total_Psi_nlm(Rs, 1, 0, 0, self.Z)) + (self.c200_re-1j*self.c200_im) * np.conjugate(total_Psi_nlm(Rs, 2, 0, 0, self.Z))
+        return psistar*H_psi
     def forward(self, Rs):
-        out = torch.exp(-torch.pow(Rs, 2)/self.sigma**2)
-        return out 
+        H_psi = (self.c100_re+1j*self.c100_im) * hammy_Psi_nlm(Rs, 1, 0, 0, self.Z) + (self.c200_re+1j*self.c200_im) * hammy_Psi_nlm(Rs, 2, 0, 0, self.Z)
+        psistar = (self.c100_re-1j*self.c100_im) * np.conjugate(total_Psi_nlm(Rs, 1, 0, 0, self.Z)) + (self.c200_re-1j*self.c200_im) * np.conjugate(total_Psi_nlm(Rs, 2, 0, 0, self.Z))
+        hammy = psistar*H_psi
+        psi = (self.c100_re+1j*self.c100_im) * total_Psi_nlm(Rs, 1, 0, 0, self.Z) + (self.c200_re+1j*self.c200_im) * total_Psi_nlm(Rs, 2, 0, 0, self.Z)
+        psi2 = psistar*psi
+        return torch.mean( hammy ) / torch.mean( psi2 )
+
+        #out = (self.c100_re+1j*self.c100_im) * total_Psi_nlm(Rs, 1, 0, 0, 1.0/self.a0) + (self.c200_re+1j*self.c200_im) * total_Psi_nlm(Rs, 2, 0, 0, 1.0/self.a0)
 
 def loss_function(wvfn, Rs):
     # <psi|H|psi> / <psi|psi>
-    # compute hammy
-    return torch.sum( torch.pow( wvfn(Rs) - torch.exp(-torch.pow(Rs,2)/4), 2) )
+    #loss = torch.mean( wvfn.hammy(Rs) )/torch.mean( wvfn.psi2(Rs) )
+    loss = wvfn(Rs)
+    return loss 
     
 def train_variational_wvfn(wvfn, Rs):
     optimizer.zero_grad()
@@ -167,7 +190,7 @@ def train_variational_wvfn(wvfn, Rs):
     train_time = time.time()
     for n in tqdm.tqdm(range(N_train)):
         step_time = time.time()
-        # TODO compute loss
+        Rs, psi2s = metropolis_coordinate_ensemble(wvfn.psi, n_therm=50, n_walkers=n_walkers, n_skip=10, eps=0.5)
         loss = loss_function(wvfn, Rs)
         loss.backward()
         optimizer.step()
@@ -198,50 +221,70 @@ if __name__ == '__main__':
     a_n=2/B_n
     def psi0(Rs):
         return total_Psi_nlm(Rs, 1, 0, 0, 1/a_n)
-
-    psi(n_coord, 1, 0, 0, 1, r, t, p, v)
-    print("yay")
-    psi_no_v(n_coord, 1, 0, 0, 1, r, t, p)
-    print(psi_no_v(n_coord, 1, 0, 0, 1, r, t, p))
-
-    print("psi0")
-    print(psi0(np.array([[[1,1,1],[-1,-1,-1]]])))
+        #return total_Psi_nlm(Rs, 2, 1, 1, 1/a_n)
 
     print("\nn l m = 1 0 0 without using relative coordinates")
-    wvfn = Chi(1, nCoord, 1, 0, 0, 1/a, r, t, p, v, 1)
-    V = (Potential(rr,B,nCoord)*wvfn)
+    psi0_wvfn = Chi(1, nCoord, 1, 0, 0, 1/a, r, t, p, v, 1)
+    #wvfn = Chi(1, nCoord, 2, 1, 1, 1/a, r, t, p, v, 1)
+    V = (Potential(rr,B,nCoord)*psi0_wvfn)
     #print(f'V = {V}')
-    K1 = -1/2*laPlaceSpher(wvfn,r[0],t[0],p[0])
+    K1 = -1/2*laPlaceSpher(psi0_wvfn,r[0],t[0],p[0])
     #print(f'K1 = {K1}')
-    K2 = -1/2*laPlaceSpher(wvfn,r[1],t[1],p[1])
+    K2 = -1/2*laPlaceSpher(psi0_wvfn,r[1],t[1],p[1])
     #print(f'K2 = {K2}')
     Hammy = K1 + K2 + V
     #print(f'H = {Hammy}')
     #print(f'presimp = {(Hammy / wvfn).subs(v[1],1).subs(a,-2/B).subs(r[0],1).subs(r[1],1).subs(t[0],1).subs(t[1],1).subs(p[0],1).subs(p[1],1).subs(B,1)}')
     #Enl = simplify((Hammy / wvfn).subs(v[1],1).subs(a,-2/B).subs(r[0],1).subs(r[1],1).subs(t[0],pi/2).subs(t[1],pi/2).subs(p[0],1).subs(p[1],-1).subs(B,1))
-    Enl = simplify((Hammy / wvfn).subs(v[1],1).subs(a,2/B).subs(r[0],1).subs(r[1],1).subs(t[0],pi/2).subs(t[1],pi/2).subs(p[0],1).subs(p[1],-1).subs(B,1))
+    Enl = simplify((Hammy / psi0_wvfn).subs(v[1],1).subs(a,2/B).subs(r[0],1).subs(r[1],1).subs(t[0],np.pi/2).subs(t[1],np.pi/2).subs(p[0],1.0).subs(p[1],-1.0).subs(B,1))
     print(f"E(n={1}, l={0}) = {Enl}")
 
-    n_walkers = 100
+    n_walkers = 10
 
-    Rs, psi2s = metropolis_coordinate_ensemble(psi0, n_therm=500, n_walkers=n_walkers, n_skip=10, eps=0.5)
+    Rs, psi2s = metropolis_coordinate_ensemble(psi0, n_therm=50, n_walkers=n_walkers, n_skip=10, eps=0.5)
     #print(f'Rs = {Rs}')
 
-    hammy_ME = hammy_Psi_nlm(Rs, 1, 0, 0, 1/a_n)
-    V_ME = V_Psi_nlm(Rs, 1, 0, 0, 1/a_n)
-    K_ME = K_Psi_nlm(Rs, 1, 0, 0, 1/a_n)
+    print(Rs.shape)
+    x = Rs[0,:,0]
+    y = Rs[0,:,1]
+    z = Rs[0,:,2]
+    r_n = torch.sqrt(x**2 + y**2 + z**2)
+    t_n = torch.atan2(torch.sqrt(x**2 + y**2), z) 
+    p_n = torch.atan2(y, x)
+    psistar = np.conjugate(psi0_wvfn)
+    print(f"V = ", (psistar*V).subs(v[1],1).subs(a,2/B).subs(r[0],r_n[0]).subs(r[1],r_n[1]).subs(t[0],t_n[0]).subs(t[1],t_n[1]).subs(p[0],p_n[0]).subs(p[1],p_n[1]).subs(B,1))
+    print(f"K1 = ", (psistar*K1).subs(v[1],1).subs(a,2/B).subs(r[0],r_n[0]).subs(r[1],r_n[1]).subs(t[0],t_n[0]).subs(t[1],t_n[1]).subs(p[0],p_n[0]).subs(p[1],p_n[1]).subs(B,1))
+    print(f"K2 = ", (psistar*K2).subs(v[1],1).subs(a,2/B).subs(r[0],r_n[0]).subs(r[1],r_n[1]).subs(t[0],t_n[0]).subs(t[1],t_n[1]).subs(p[0],p_n[0]).subs(p[1],p_n[1]).subs(B,1))
+    print(f"H = ", (psistar*Hammy).subs(v[1],1).subs(a,2/B).subs(r[0],r_n[0]).subs(r[1],r_n[1]).subs(t[0],t_n[0]).subs(t[1],t_n[1]).subs(p[0],p_n[0]).subs(p[1],p_n[1]).subs(B,1))
+    print(f"|psi|^2 = ", (psistar*psi0_wvfn).subs(v[1],1).subs(a,2/B).subs(r[0],r_n[0]).subs(r[1],r_n[1]).subs(t[0],t_n[0]).subs(t[1],t_n[1]).subs(p[0],p_n[0]).subs(p[1],p_n[1]).subs(B,1))
+    print(f"<psi|H|psi>/|psi|^2 = ", ((psistar*Hammy)/(psistar*psi0_wvfn)).subs(v[1],1).subs(a,2/B).subs(r[0],r_n[0]).subs(r[1],r_n[1]).subs(t[0],t_n[0]).subs(t[1],t_n[1]).subs(p[0],p_n[0]).subs(p[1],p_n[1]).subs(B,1))
+    print(f"<psi|V|psi>/|psi|^2 = ", ((psistar*V)/(psistar*psi0_wvfn)).subs(v[1],1).subs(a,2/B).subs(r[0],r_n[0]).subs(r[1],r_n[1]).subs(t[0],t_n[0]).subs(t[1],t_n[1]).subs(p[0],p_n[0]).subs(p[1],p_n[1]).subs(B,1))
+    print(f"<psi|K|psi>/|psi|^2 = ", ((psistar*(K1+K2))/(psistar*psi0_wvfn)).subs(v[1],1).subs(a,2/B).subs(r[0],r_n[0]).subs(r[1],r_n[1]).subs(t[0],t_n[0]).subs(t[1],t_n[1]).subs(p[0],p_n[0]).subs(p[1],p_n[1]).subs(B,1))
+    print("\n")
+
+    print(f"psi0 = {psi0(Rs)[0]}")
+    print(f"|psi0|^2 = {np.conjugate(psi0(Rs)[0])*psi0(Rs)[0]}")
+    hammy_ME = np.conjugate(psi0(Rs))*hammy_Psi_nlm(Rs, 1, 0, 0, 1/a_n)
+    #hammy_ME = np.conjugate(psi0(Rs)[0])*hammy_Psi_nlm(Rs, 2, 1, 1, 1/a_n)
+    print(f"|psi|^2 = ", psi2s[0])
+    print(f"<psi|H|psi>/|psi|^2 = {hammy_ME[0]/psi2s[0]}")
+    V_ME = np.conjugate(psi0(Rs))*V_Psi_nlm(Rs, 1, 0, 0, 1/a_n)
+    #V_ME = np.conjugate(psi0(Rs)[0])*V_Psi_nlm(Rs, 2, 1, 1, 1/a_n)
+    print(f"<psi|V|psi>/|psi|^2 = {V_ME[0]/psi2s[0]}")
+    K_ME = np.conjugate(psi0(Rs))*K_Psi_nlm(Rs, 1, 0, 0, 1/a_n)
+    #K_ME = np.conjugate(psi0(Rs)[0])*K_Psi_nlm(Rs, 2, 1, 1, 1/a_n)
+    print(f"<psi|K|psi>/|psi|^2 = {K_ME[0]/psi2s[0]}")
     
     print(f'|psi|^2 = {psi2s}')
 
     E0 = hammy_ME / psi2s
 
     print(f'\nEvery element should be E0=-1/4, {E0} \n')
-    print(f'<psi|H|psi>/<psi|psi> = {np.mean(hammy_ME)/np.mean(psi2s)} +/- {np.abs(np.mean(hammy_ME))/np.mean(psi2s)*np.sqrt(np.var(hammy_ME)/np.mean(hammy_ME)**2+np.var(psi2s)/np.mean(psi2s)**2)/np.sqrt(n_walkers)} = -1/4?')
-    print(f'<psi|V|psi>/<psi|psi> = {np.mean(V_ME)/np.mean(psi2s)} +/- {np.abs(np.mean(V_ME))/np.mean(psi2s)*np.sqrt(np.var(V_ME)/np.mean(V_ME)+np.var(psi2s)/np.mean(psi2s)**2)/np.sqrt(n_walkers)} = -1/2?')
-    print(f'<psi|K|psi>/<psi|psi> = {np.mean(K_ME)/np.mean(psi2s)} +/- {np.abs(np.mean(K_ME))/np.mean(psi2s)*np.sqrt(np.var(K_ME)/np.mean(K_ME)+np.var(psi2s)/np.mean(psi2s)**2)/np.sqrt(n_walkers)} = +1/4?')
+    print(f'<psi|H|psi>/<psi|psi> = {torch.mean(hammy_ME)/torch.mean(psi2s)} +/- {torch.abs(torch.mean(hammy_ME))/torch.mean(psi2s)*torch.sqrt(torch.var(hammy_ME)/torch.mean(hammy_ME)**2+torch.var(psi2s)/torch.mean(psi2s)**2)/np.sqrt(n_walkers)} = -1/4?')
+    print(f'<psi|V|psi>/<psi|psi> = {torch.mean(V_ME)/torch.mean(psi2s)} +/- {torch.abs(torch.mean(V_ME))/torch.mean(psi2s)*torch.sqrt(torch.var(V_ME)/torch.mean(V_ME)+torch.var(psi2s)/torch.mean(psi2s)**2)/np.sqrt(n_walkers)}')
+    print(f'<psi|K|psi>/<psi|psi> = {torch.mean(K_ME)/torch.mean(psi2s)} +/- {torch.abs(torch.mean(K_ME))/torch.mean(psi2s)*torch.sqrt(torch.var(K_ME)/torch.mean(K_ME)+torch.var(psi2s)/torch.mean(psi2s)**2)/np.sqrt(n_walkers)}')
 
     print("\n")
-    throw()
 
     # initialize wvfn
     wvfn = wvfn()
@@ -249,12 +292,18 @@ if __name__ == '__main__':
         if param.requires_grad:
             print(name, param.data)
 
+    print("now with full wvfn\n")
+    print(f"psi0 = {wvfn.psi(Rs)[0]}")
+    print(f"|psi0|^2 = {wvfn.psi2(Rs)[0]}")
+    hammy_ME = wvfn.hammy(Rs) / wvfn.psi2(Rs)
+    #hammy_ME = np.conjugate(psi0(Rs)[0])*hammy_Psi_nlm(Rs, 2, 1, 1, 1/a_n)
+    print(f"|psi|^2 = ", psi2s[0])
+    print(f'\nEvery element should be E0=-1/4, {hammy_ME} \n')
+    hammy_ME_m = wvfn(Rs)
+    print(f"<psi|H|psi>/|psi|^2 = {hammy_ME_m}")
+
     # set up optimizer
     optimizer = optim.Adam(wvfn.parameters(), lr=10**(-log10_learn_rate))
-
-    # initialize random coordinate sample
-    Rs = torch.reshape( 10*torch.rand(N_samples*3*N_particles), (N_samples, N_particles, 3) )
-    print(Rs.shape)
 
     # train
     wvfn = train_variational_wvfn(wvfn, Rs)
