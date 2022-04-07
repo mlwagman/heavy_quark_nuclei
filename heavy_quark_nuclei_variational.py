@@ -150,29 +150,27 @@ class wvfn(nn.Module):
     # register c_{n,l,m} as pytorch paramters
     def __init__(self):
         super(wvfn, self).__init__()
-        #self.a0 = nn.Parameter(1.5*torch.ones(1, dtype=torch.double))
-        self.Z = nn.Parameter(0.5*torch.ones(1, dtype=torch.double))
-        #self.a0 = nn.Parameter(2*torch.ones(1, dtype=torch.double))
+        self.a = nn.Parameter(2*torch.ones(1, dtype=torch.double))
         self.c100_re = nn.Parameter(torch.ones(1, dtype=torch.double))
         self.c100_im = nn.Parameter(0*torch.ones(1, dtype=torch.double))
         self.c200_re = nn.Parameter(0*torch.ones(1, dtype=torch.double))
         self.c200_im = nn.Parameter(0*torch.ones(1, dtype=torch.double))
     def psi(self, Rs):
-        psi = (self.c100_re+1j*self.c100_im) * total_Psi_nlm(Rs, 1, 0, 0, self.Z) + (self.c200_re+1j*self.c200_im) * total_Psi_nlm(Rs, 2, 0, 0, self.Z)
+        psi = (self.c100_re+1j*self.c100_im) * total_Psi_nlm(Rs, 1, 0, 0, 1/self.a) + (self.c200_re+1j*self.c200_im) * total_Psi_nlm(Rs, 2, 0, 0, 1/self.a)
         return psi
     def psi2(self, Rs):
-        psi = (self.c100_re+1j*self.c100_im) * total_Psi_nlm(Rs, 1, 0, 0, self.Z) + (self.c200_re+1j*self.c200_im) * total_Psi_nlm(Rs, 2, 0, 0, self.Z)
-        psistar = (self.c100_re-1j*self.c100_im) * np.conjugate(total_Psi_nlm(Rs, 1, 0, 0, self.Z)) + (self.c200_re-1j*self.c200_im) * np.conjugate(total_Psi_nlm(Rs, 2, 0, 0, self.Z))
+        psi = (self.c100_re+1j*self.c100_im) * total_Psi_nlm(Rs, 1, 0, 0, 1/self.a) + (self.c200_re+1j*self.c200_im) * total_Psi_nlm(Rs, 2, 0, 0, 1/self.a)
+        psistar = (self.c100_re-1j*self.c100_im) * np.conjugate(total_Psi_nlm(Rs, 1, 0, 0, 1/self.a)) + (self.c200_re-1j*self.c200_im) * np.conjugate(total_Psi_nlm(Rs, 2, 0, 0, 1/self.a))
         return psistar*psi
     def hammy(self, Rs):
-        H_psi = (self.c100_re+1j*self.c100_im) * hammy_Psi_nlm(Rs, 1, 0, 0, self.Z) + (self.c200_re+1j*self.c200_im) * hammy_Psi_nlm(Rs, 2, 0, 0, self.Z)
-        psistar = (self.c100_re-1j*self.c100_im) * np.conjugate(total_Psi_nlm(Rs, 1, 0, 0, self.Z)) + (self.c200_re-1j*self.c200_im) * np.conjugate(total_Psi_nlm(Rs, 2, 0, 0, self.Z))
+        H_psi = (self.c100_re+1j*self.c100_im) * hammy_Psi_nlm(Rs, 1, 0, 0, 1/self.a) + (self.c200_re+1j*self.c200_im) * hammy_Psi_nlm(Rs, 2, 0, 0, 1/self.a)
+        psistar = (self.c100_re-1j*self.c100_im) * np.conjugate(total_Psi_nlm(Rs, 1, 0, 0, 1/self.a)) + (self.c200_re-1j*self.c200_im) * np.conjugate(total_Psi_nlm(Rs, 2, 0, 0, 1/self.a))
         return psistar*H_psi
     def forward(self, Rs):
-        H_psi = (self.c100_re+1j*self.c100_im) * hammy_Psi_nlm(Rs, 1, 0, 0, self.Z) + (self.c200_re+1j*self.c200_im) * hammy_Psi_nlm(Rs, 2, 0, 0, self.Z)
-        psistar = (self.c100_re-1j*self.c100_im) * np.conjugate(total_Psi_nlm(Rs, 1, 0, 0, self.Z)) + (self.c200_re-1j*self.c200_im) * np.conjugate(total_Psi_nlm(Rs, 2, 0, 0, self.Z))
+        H_psi = (self.c100_re+1j*self.c100_im) * hammy_Psi_nlm(Rs, 1, 0, 0, 1/self.a) + (self.c200_re+1j*self.c200_im) * hammy_Psi_nlm(Rs, 2, 0, 0, 1/self.a)
+        psistar = (self.c100_re-1j*self.c100_im) * np.conjugate(total_Psi_nlm(Rs, 1, 0, 0, 1/self.a)) + (self.c200_re-1j*self.c200_im) * np.conjugate(total_Psi_nlm(Rs, 2, 0, 0, 1/self.a))
         hammy = psistar*H_psi
-        psi = (self.c100_re+1j*self.c100_im) * total_Psi_nlm(Rs, 1, 0, 0, self.Z) + (self.c200_re+1j*self.c200_im) * total_Psi_nlm(Rs, 2, 0, 0, self.Z)
+        psi = (self.c100_re+1j*self.c100_im) * total_Psi_nlm(Rs, 1, 0, 0, 1/self.a) + (self.c200_re+1j*self.c200_im) * total_Psi_nlm(Rs, 2, 0, 0, 1/self.a)
         psi2 = psistar*psi
         return torch.mean( hammy ) / torch.mean( psi2 )
 
