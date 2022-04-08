@@ -9,6 +9,8 @@ from sympy import simplify, summation, sqrt, Eq, Integral, oo, pprint, symbols, 
 from sympy.physics.hydrogen import R_nl, Psi_nlm
 from itertools import permutations
 
+import torch
+
 # Defining difference spherical coords
 nCoord = 2;
 rr = np.full((nCoord,nCoord), fill_value = '',dtype=object)
@@ -139,7 +141,9 @@ def psi_no_v(nCoord, n, l, m, Z, r, t, p):
     psi =  1
     for k in range(0,nCoord-1):
         psi = Chi_no_v(k, nCoord, n, l, m, Z, r, t, p)*psi
-    return lambdify([Z, r, t, p], psi, 'numpy')
+    modules = {'sin': torch.sin, 'cos': torch.cos}
+    return lambdify([Z, r, t, p], psi, modules)
+    #return lambdify([Z, r, t, p], psi, 'numpy')
 
 def nabla_psi_no_v(nCoord, n, l, m, Z, r, t, p):
     psi =  1
@@ -148,7 +152,9 @@ def nabla_psi_no_v(nCoord, n, l, m, Z, r, t, p):
     nabla_wvfn = 0
     for a in range(nCoord):
         nabla_wvfn += laPlaceSpher(psi, r[a], t[a], p[a])
-    return lambdify([Z, r, t, p], nabla_wvfn, 'numpy')
+    modules = {'sin': torch.sin, 'cos': torch.cos}
+    return lambdify([Z, r, t, p], nabla_wvfn, modules)
+    #return lambdify([Z, r, t, p], nabla_wvfn, 'numpy')
 
 
 
