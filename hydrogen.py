@@ -13,6 +13,7 @@ import torch
 
 # Defining difference spherical coords
 nCoord = 3;
+cutoff = 2;
 rr = np.full((nCoord,nCoord), fill_value = '',dtype=object)
 for i in range(nCoord):
     for j in range(nCoord):
@@ -25,6 +26,14 @@ pp = np.full((nCoord,nCoord), fill_value = '',dtype=object)
 for i in range(nCoord):
     for j in range(nCoord):
         pp[i][j] = Symbol('pp[{},{}]'.format(i, j))
+
+C = np.full((cutoff,cutoff,2*cutoff-1,nCoord,nCoord), fill_value = '',dtype=object)
+for i in range(nCoord):
+    for j in range(nCoord):
+        for k in range(cutoff):
+            for s in range(cutoff):
+                for t in range(2*cutoff-1):
+                    C[k][s][t][i][j] = Symbol('C[{},{},{},{},{}]'.format(k, s, t, i , j))
 
 # Define spherical coords
 r = symbols('r0:%d'%nCoord, positive=True);
@@ -108,9 +117,9 @@ def Chi_no_v(k, nCoord, n, l, m, Z, r, t, p, C):
      Chi =  0
      for j in range(0,nCoord):
          if k!=j and j>=k:
-             Chi = Chi + 1/(nCoord-1)*C[n-1,l,m+l,k,j]*Psi_nlm(n, l, m, rrSpher(k,j,r,t,p), ppSpher(k,j,r,t,p), ttSpher(k,j,r,t,p), Z)
+             Chi = Chi + 1/(nCoord-1)*C[n-1][l][m+l][k][j]*Psi_nlm(n, l, m, rrSpher(k,j,r,t,p), ppSpher(k,j,r,t,p), ttSpher(k,j,r,t,p), Z)
          elif k!=j and k>=j:
-             Chi = Chi + 1/(nCoord-1)*C[n-1,l,m+l,k,j]*Psi_nlm(n, l, m, rrSpher(j,k,r,t,p), ppSpher(j,k,r,t,p), ttSpher(j,k,r,t,p), Z)
+             Chi = Chi + 1/(nCoord-1)*C[n-1][l][m+l][k][j]*Psi_nlm(n, l, m, rrSpher(j,k,r,t,p), ppSpher(j,k,r,t,p), ttSpher(j,k,r,t,p), Z)
          else:
              Chi = Chi
      return Chi
@@ -142,7 +151,7 @@ def psi_no_v(nCoord, n, l, m, Z, r, t, p, C):
     for k in range(0,nCoord-1):
         psi = Chi_no_v(k, nCoord, n, l, m, Z, r, t, p, C)*psi
     modules = {'sin': torch.sin, 'cos': torch.cos}
-    return lambdify([Z, r, t, p], psi, modules)
+    return lambdify([Z, r, t, p, C], psi, modules)
     #return lambdify([Z, r, t, p], psi, 'numpy')
 
 def nabla_psi_no_v(nCoord, n, l, m, Z, r, t, p, C):
@@ -153,7 +162,7 @@ def nabla_psi_no_v(nCoord, n, l, m, Z, r, t, p, C):
     for a in range(nCoord):
         nabla_wvfn += laPlaceSpher(psi, r[a], t[a], p[a])
     modules = {'sin': torch.sin, 'cos': torch.cos}
-    return lambdify([Z, r, t, p], nabla_wvfn, modules)
+    return lambdify([Z, r, t, p, C], nabla_wvfn, modules)
     #return lambdify([Z, r, t, p], nabla_wvfn, 'numpy')
 
 
@@ -262,4 +271,6 @@ def main():
     #pprint(Eq(i, i.doit()))
 
 if __name__ == "__main__":
+    print(C[1][1][1][1][1])
+    throw()
     main()
