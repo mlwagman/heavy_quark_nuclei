@@ -169,11 +169,16 @@ class wvfn(nn.Module):
         hammy = psistar*H_psi
         psi = (self.c100_re+1j*self.c100_im) * total_Psi_nlm(Rs, 1, 0, 0, 1/a_n) + (self.c200_re+1j*self.c200_im) * total_Psi_nlm(Rs, 2, 0, 0, 1/a_n)
         psi2 = psistar*psi
-        return torch.mean( hammy ) / torch.mean( psi2 )
+        return hammy, psi2
 
 def loss_function(wvfn, Rs):
     # <psi|H|psi> / <psi|psi>
-    loss = wvfn(Rs)
+    hammy, psi2s = wvfn(Rs)
+    N_walkers = len(hammy)
+    E_trial = torch.mean(hammy)/torch.mean(psi2s)
+    noise_E_trial = torch.abs(torch.mean(hammy))/torch.mean(psi2s)*torch.sqrt(torch.var(hammy)/torch.mean(hammy)**2+torch.var(psi2s)/torch.mean(psi2s)**2)/np.sqrt(N_walkers)
+    print(f'<psi|H|psi>/<psi|psi> = {E_trial} +/- {noise_E_trial}')
+    loss = noise_E_trial
     return loss 
     
 def train_variational_wvfn(wvfn, Rs):
@@ -294,6 +299,9 @@ if __name__ == '__main__':
 
     # set up optimizer
     optimizer = optim.Adam(wvfn.parameters(), lr=10**(-log10_learn_rate))
+
+    # initial loss
+    loss_function(wvfn, Rs)
 
     # train
     wvfn = train_variational_wvfn(wvfn, Rs)
