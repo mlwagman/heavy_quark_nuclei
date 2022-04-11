@@ -12,7 +12,7 @@ from itertools import permutations
 import torch
 
 # Defining difference spherical coords
-nCoord = 3;
+nCoord = 2;
 cutoff = 2;
 rr = np.full((nCoord,nCoord), fill_value = '',dtype=object)
 for i in range(nCoord):
@@ -271,6 +271,4 @@ def main():
     #pprint(Eq(i, i.doit()))
 
 if __name__ == "__main__":
-    print(C[1][1][1][1][1])
-    throw()
     main()

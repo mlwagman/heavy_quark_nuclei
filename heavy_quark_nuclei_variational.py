@@ -17,7 +17,7 @@ from hydrogen import *
 plt.rcParams['text.usetex'] = True
 plt.rcParams.update({'font.size': 14})
 
-N_coord = 3
+N_coord = 2
 VB = 1
 cutoff = 2
 
