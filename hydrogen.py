@@ -12,7 +12,7 @@ from itertools import permutations
 import torch
 
 # Defining difference spherical coords
-nCoord = 2;
+nCoord = 3;
 rr = np.full((nCoord,nCoord), fill_value = '',dtype=object)
 for i in range(nCoord):
     for j in range(nCoord):
@@ -104,13 +104,13 @@ def Chi(k, nCoord, n, l, m, Z, r, t, p, v, col):
              Chi = Chi
      return Chi
 
-def Chi_no_v(k, nCoord, n, l, m, Z, r, t, p):
+def Chi_no_v(k, nCoord, n, l, m, Z, r, t, p, C):
      Chi =  0
      for j in range(0,nCoord):
          if k!=j and j>=k:
-             Chi = Chi + 1/(nCoord-1)*Psi_nlm(n, l, m, rrSpher(k,j,r,t,p), ppSpher(k,j,r,t,p), ttSpher(k,j,r,t,p), Z)
+             Chi = Chi + 1/(nCoord-1)*C[n-1,l,m+l,k,j]*Psi_nlm(n, l, m, rrSpher(k,j,r,t,p), ppSpher(k,j,r,t,p), ttSpher(k,j,r,t,p), Z)
          elif k!=j and k>=j:
-             Chi = Chi + 1/(nCoord-1)*Psi_nlm(n, l, m, rrSpher(j,k,r,t,p), ppSpher(j,k,r,t,p), ttSpher(j,k,r,t,p), Z)
+             Chi = Chi + 1/(nCoord-1)*C[n-1,l,m+l,k,j]*Psi_nlm(n, l, m, rrSpher(j,k,r,t,p), ppSpher(j,k,r,t,p), ttSpher(j,k,r,t,p), Z)
          else:
              Chi = Chi
      return Chi
@@ -137,18 +137,18 @@ def psi(nCoord, n, l, m, Z, r, t, p, v):
         psi = Chi(j, nCoord, n, l, m, Z, r, t, p, v, j)*psi
     return psi
 
-def psi_no_v(nCoord, n, l, m, Z, r, t, p):
+def psi_no_v(nCoord, n, l, m, Z, r, t, p, C):
     psi =  1
     for k in range(0,nCoord-1):
-        psi = Chi_no_v(k, nCoord, n, l, m, Z, r, t, p)*psi
+        psi = Chi_no_v(k, nCoord, n, l, m, Z, r, t, p, C)*psi
     modules = {'sin': torch.sin, 'cos': torch.cos}
     return lambdify([Z, r, t, p], psi, modules)
     #return lambdify([Z, r, t, p], psi, 'numpy')
 
-def nabla_psi_no_v(nCoord, n, l, m, Z, r, t, p):
+def nabla_psi_no_v(nCoord, n, l, m, Z, r, t, p, C):
     psi =  1
     for k in range(0,nCoord-1):
-        psi = Chi_no_v(k, nCoord, n, l, m, Z, r, t, p)*psi
+        psi = Chi_no_v(k, nCoord, n, l, m, Z, r, t, p, C)*psi
     nabla_wvfn = 0
     for a in range(nCoord):
         nabla_wvfn += laPlaceSpher(psi, r[a], t[a], p[a])
