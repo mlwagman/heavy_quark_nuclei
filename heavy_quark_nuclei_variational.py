@@ -186,8 +186,7 @@ def fast_loss_function(wvfn, Rs, psi2s0):
     E_trial = torch.mean(hammy/psi2s0) / torch.mean(psi2s/psi2s0)
     noise_E_trial = torch.abs( torch.mean(hammy/psi2s0) / torch.mean(psi2s/psi2s0) ) * torch.sqrt( torch.var(hammy/psi2s0)/torch.mean( hammy/psi2s0 )**2 + torch.var(psi2s/psi2s0)/torch.mean( psi2s/psi2s0 )**2 ) / np.sqrt(N_walkers)
     print(f'<psi|H|psi>/<psi|psi> = {E_trial} +/- {noise_E_trial}')
-    #loss = noise_E_trial
-    loss = E_trial + noise_E_trial
+    loss = E_trial + np.sqrt(N_walkers)*noise_E_trial
     return loss
 
 def loss_function(wvfn, Rs):
@@ -196,9 +195,8 @@ def loss_function(wvfn, Rs):
     N_walkers = len(hammy)
     E_trial = torch.mean(hammy/psi2s)
     noise_E_trial = torch.sqrt(torch.var(hammy/psi2s))/np.sqrt(N_walkers)
-    print(f'<psi|H|psi>/<psi|psi> = {E_trial} +/- {torch.sqrt(noise_E_trial)}')
-    #loss = noise_E_trial
-    loss = E_trial + noise_E_trial
+    print(f'<psi|H|psi>/<psi|psi> = {E_trial} +/- {noise_E_trial}')
+    loss = E_trial + np.sqrt(N_walkers)*noise_E_trial
     return loss
 
 def train_variational_wvfn(wvfn):
@@ -212,9 +210,10 @@ def train_variational_wvfn(wvfn):
             print("\nRefreshing walkers")
             Rs, psi2s = metropolis_coordinate_ensemble(wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=1.0)
             loss = loss_function(wvfn, Rs)
+            loss.backward()
         else:
             loss = fast_loss_function(wvfn, Rs, psi2s)
-        loss.backward(retain_graph=True)
+            loss.backward()
         optimizer.step()
         tqdm.tqdm.write(f"\nTraining step {n}")
         tqdm.tqdm.write(f"loss function curently {loss}")
@@ -266,8 +265,8 @@ def diagnostics():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--N_walkers', default=1000, type=int)
-    parser.add_argument('--N_train', default=1000, type=int)
+    parser.add_argument('--N_walkers', default=200, type=int)
+    parser.add_argument('--N_train', default=5000, type=int)
     parser.add_argument('--log10_learn_rate', default=2, type=int)
     globals().update(vars(parser.parse_args()))
 
