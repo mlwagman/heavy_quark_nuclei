@@ -9,8 +9,9 @@ import torch.optim as optim
 import time
 import h5py
 import tqdm.auto as tqdm
-import os
+import os, sys
 import argparse
+import copy
 
 from hydrogen import *
 
@@ -19,7 +20,6 @@ plt.rcParams.update({'font.size': 14})
 
 N_coord = nCoord
 VB = 1
-#cutoff = 1
 N_skip = 10
 
 psitab = []
@@ -179,16 +179,6 @@ class wvfn(nn.Module):
                     psistar += torch.conj(total_Psi_nlm(Rs, nnn, ll, mm, 1/a_n, self.C, psitab[nnn-1][ll][mm+ll]))
         return psistar*H_psi, torch.pow(torch.abs(self.psi(Rs)), 2)
 
-def fast_loss_function(wvfn, Rs, psi2s0):
-    # <psi|H|psi> / <psi|psi>
-    hammy, psi2s = wvfn(Rs)
-    N_walkers = len(hammy)
-    E_trial = torch.mean(hammy/psi2s0) / torch.mean(psi2s/psi2s0)
-    noise_E_trial = torch.abs( torch.mean(hammy/psi2s0) / torch.mean(psi2s/psi2s0) ) * torch.sqrt( torch.var(hammy/psi2s0)/torch.mean( hammy/psi2s0 )**2 + torch.var(psi2s/psi2s0)/torch.mean( psi2s/psi2s0 )**2 ) / np.sqrt(N_walkers)
-    print(f'<psi|H|psi>/<psi|psi> = {E_trial} +/- {noise_E_trial}')
-    loss = E_trial + np.sqrt(N_walkers)*noise_E_trial
-    return loss
-
 def loss_function(wvfn, Rs):
     # <psi|H|psi> / <psi|psi>
     hammy, psi2s = wvfn(Rs)
@@ -196,7 +186,19 @@ def loss_function(wvfn, Rs):
     E_trial = torch.mean(hammy/psi2s)
     noise_E_trial = torch.sqrt(torch.var(hammy/psi2s))/np.sqrt(N_walkers)
     print(f'<psi|H|psi>/<psi|psi> = {E_trial} +/- {noise_E_trial}')
-    loss = E_trial + np.sqrt(N_walkers)*noise_E_trial
+    loss = torch.real( E_trial + np.sqrt(N_walkers)*noise_E_trial )
+    return loss
+
+def fast_loss_function(wvfn, Rs, psi2s0):
+    # <psi|H|psi> / <psi|psi> 
+    # quickly by reweighting using a Monte Carlo distribution proportional to 
+    # |psi_0|^2 instead of generating one proportional to |psi|^2
+    hammy, psi2s = wvfn(Rs)
+    N_walkers = len(hammy)
+    E_trial = torch.mean(hammy/psi2s0) / torch.mean(psi2s/psi2s0)
+    noise_E_trial = torch.abs( torch.mean(hammy/psi2s0) / torch.mean(psi2s/psi2s0) ) * torch.sqrt( torch.var(hammy/psi2s0)/torch.mean( hammy/psi2s0 )**2 + torch.var(psi2s/psi2s0)/torch.mean( psi2s/psi2s0 )**2 ) / np.sqrt(N_walkers)
+    print(f'<psi|H|psi>/<psi|psi> = {E_trial} +/- {noise_E_trial}')
+    loss = torch.real( E_trial + np.sqrt(N_walkers)*noise_E_trial )
     return loss
 
 def train_variational_wvfn(wvfn):
@@ -204,25 +206,48 @@ def train_variational_wvfn(wvfn):
     optimizer.zero_grad()
     # train net
     train_time = time.time()
+    max_reduces = 2
+    best_loss = 1e10
+    best_iter = 0
+    best_wvfn_state = copy.deepcopy(wvfn.state_dict())
     for n in tqdm.tqdm(range(N_train)):
-        step_time = time.time()
+        sep_time = time.time()
         if n % N_skip == 0:
             print("\nRefreshing walkers")
             Rs, psi2s = metropolis_coordinate_ensemble(wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=1.0)
             loss = loss_function(wvfn, Rs)
             loss.backward()
+            optimizer.step()
+            scheduler.step(loss)
+            if loss < best_loss:
+                best_iter = n
+                best_loss = loss 
+                best_wvfn_state = copy.deepcopy(wvfn.state_dict())
         else:
             loss = fast_loss_function(wvfn, Rs, psi2s)
-            loss.backward()
-        optimizer.step()
+            loss.backward(retain_graph=True)
+            optimizer.step()
+            scheduler.step(loss)
+            if loss < best_loss:
+                best_iter = n
+                best_loss = loss 
+                best_wvfn_state = copy.deepcopy(wvfn.state_dict())
         tqdm.tqdm.write(f"\nTraining step {n}")
         tqdm.tqdm.write(f"loss function curently {loss}")
         for name, param in wvfn.named_parameters():
             if param.requires_grad:
                 print(name, param.data)
+        lr = optimizer.param_groups[0]['lr']
+        print(f"learn rate = {lr}")
+        print(f"bad epochs = {scheduler.num_bad_epochs}")
+        if (lr / 10**(-log10_learn_rate)) < 10**(-1*(max_reduces+.5)):
+            print(f"reduced learn rate {max_reduces} times, quitting")
+            break
     print(f"completed {N_train} steps of training in {time.time() - train_time} sec")
-    print(f"final loss function {loss}")
-    return wvfn
+    print(f"best iteration {best_iter}")
+    print(f"best loss function {best_loss} \n\n")
+    wvfn.load_state_dict(best_wvfn_state)
+    return best_loss, wvfn
 
 def diagnostics():
     print("Running positronium diagnostics")
@@ -266,25 +291,100 @@ def diagnostics():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--N_walkers', default=200, type=int)
-    parser.add_argument('--N_train', default=5000, type=int)
+    parser.add_argument('--N_train', default=500, type=int)
     parser.add_argument('--log10_learn_rate', default=2, type=int)
+    parser.add_argument('--output', default="./wvfn", type=str)
     globals().update(vars(parser.parse_args()))
 
-    diagnostics()
+    filename = output + "_Ncoord" + str(N_coord) + "_cutoff" + str(cutoff) + f"_potential{VB:.3f}.wvfn"
+    print("saving wvfn results to "+filename+"\n")
+    if os.path.exists(filename):
+        print("Error - remove existing wavefunction, torch save doesn't overwrite\n\n")
+        sys.exit()
+
+    #diagnostics()
 
     # initialize wvfn
-    wvfn = wvfn()
-    for name, param in wvfn.named_parameters():
+    trial_wvfn = wvfn()
+    for name, param in trial_wvfn.named_parameters():
         if param.requires_grad:
             print(name, param.data)
 
-    # set up optimizer
-    optimizer = optim.Adam(wvfn.parameters(), lr=10**(-log10_learn_rate))
+    # initialize optimizer
+    optimizer = optim.Adam(trial_wvfn.parameters(), lr=10**(-log10_learn_rate))
+    N_patience = 2*N_skip
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=N_patience, threshold=0.0001, threshold_mode='abs', verbose=True)
 
     # train
-    wvfn = train_variational_wvfn(wvfn)
+    best_loss, trial_wvfn = train_variational_wvfn(trial_wvfn)
 
     # print results
-    for name, param in wvfn.named_parameters():
+    print(f'Wavefunction results:')
+    for name, param in trial_wvfn.named_parameters():
         if param.requires_grad:
             print(name, param.data)
+
+    Rs, psi2s = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=1.0)
+    hammy, psi2s = trial_wvfn(Rs)
+    E_trial = torch.mean(hammy/psi2s)
+    noise_E_trial = torch.sqrt(torch.var(hammy/psi2s))/np.sqrt(N_walkers)
+    print(f'\n\n<psi|H|psi>/<psi|psi> = {E_trial} +/- {noise_E_trial}')
+
+    print(f"\n\n Round two!")
+    # initialize optimizer
+    optimizer = optim.Adam(trial_wvfn.parameters(), lr=10**(-log10_learn_rate-1))
+    N_patience = 5*N_skip
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=N_patience, threshold=0.0001, threshold_mode='abs', verbose=True)
+
+    # train
+    best_loss, trial_wvfn = train_variational_wvfn(trial_wvfn)
+
+    # print results
+    print(f'Wavefunction results:')
+    for name, param in trial_wvfn.named_parameters():
+        if param.requires_grad:
+            print(name, param.data)
+
+    Rs, psi2s = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=1.0)
+    hammy, psi2s = trial_wvfn(Rs)
+    E_trial = torch.mean(hammy/psi2s)
+    noise_E_trial = torch.sqrt(torch.var(hammy/psi2s))/np.sqrt(N_walkers)
+    print(f'\n\n<psi|H|psi>/<psi|psi> = {E_trial} +/- {noise_E_trial}')
+
+    print(f"\n\n Round three!")
+    # initialize optimizer
+    optimizer = optim.Adam(trial_wvfn.parameters(), lr=10**(-log10_learn_rate-2))
+    N_patience = 5*N_skip
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=N_patience, threshold=0.0001, threshold_mode='abs', verbose=True)
+
+    # train
+    best_loss, trial_wvfn = train_variational_wvfn(trial_wvfn)
+
+    # print results
+    print(f'Wavefunction results:')
+    for name, param in trial_wvfn.named_parameters():
+        if param.requires_grad:
+            print(name, param.data)
+
+    Rs, psi2s = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=1.0)
+    hammy, psi2s = trial_wvfn(Rs)
+    E_trial = torch.mean(hammy/psi2s)
+    noise_E_trial = torch.sqrt(torch.var(hammy/psi2s))/np.sqrt(N_walkers)
+    print(f'\n\n<psi|H|psi>/<psi|psi> = {E_trial} +/- {noise_E_trial}')
+
+    # save best wvfn
+    print(f'\n\nSaving best wavefunction to '+filename)
+    torch.save(trial_wvfn.state_dict(), filename)
+
+    new_wvfn = wvfn()
+    new_dict = torch.load(filename)
+    new_wvfn.load_state_dict(new_dict)
+    print(f'\nVerifying saved wavefunction results:')
+    for name, param in new_wvfn.named_parameters():
+        if param.requires_grad:
+            print(name, param.data)
+    Rs, psi2s = metropolis_coordinate_ensemble(new_wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=1.0)
+    hammy, psi2s = new_wvfn(Rs)
+    E_trial = torch.mean(hammy/psi2s)
+    noise_E_trial = torch.sqrt(torch.var(hammy/psi2s))/np.sqrt(N_walkers)
+    print(f'\n\n<psi|H|psi>/<psi|psi> = {E_trial} +/- {noise_E_trial} \n\n')
