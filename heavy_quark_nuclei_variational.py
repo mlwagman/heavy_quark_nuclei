@@ -21,6 +21,7 @@ plt.rcParams.update({'font.size': 14})
 N_coord = nCoord
 VB = 0.1
 N_skip = 10
+patience_factor = 3
 
 psitab = []
 for nnn in range(1,cutoff+1):
@@ -312,7 +313,7 @@ if __name__ == '__main__':
 
     # initialize optimizer
     optimizer = optim.Adam(trial_wvfn.parameters(), lr=10**(-log10_learn_rate))
-    N_patience = 5*N_skip
+    N_patience = patience_factor*N_skip
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=N_patience, threshold=0.00001, threshold_mode='abs', verbose=True)
 
     # train
@@ -333,7 +334,7 @@ if __name__ == '__main__':
     print(f"\n\n Round two!")
     # initialize optimizer
     optimizer = optim.Adam(trial_wvfn.parameters(), lr=10**(-log10_learn_rate-1))
-    N_patience = 5*N_skip
+    N_patience = patience_factor*N_skip
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=N_patience, threshold=0.00001, threshold_mode='abs', verbose=True)
 
     # train
@@ -354,7 +355,7 @@ if __name__ == '__main__':
     print(f"\n\n Round three!")
     # initialize optimizer
     optimizer = optim.Adam(trial_wvfn.parameters(), lr=10**(-log10_learn_rate-2))
-    N_patience = 5*N_skip
+    N_patience = patience_factor*N_skip
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=N_patience, threshold=0.00001, threshold_mode='abs', verbose=True)
 
     # train
