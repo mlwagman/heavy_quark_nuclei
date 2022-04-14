@@ -43,7 +43,6 @@ def total_Psi_nlm(Rs, n, l, m, Z_n, C_n, psi_fn):
         t_n = torch.atan2(torch.sqrt(x**2 + y**2), z)
         p_n = torch.atan2(y, x)
         # evaluate wavefunction
-        print(f"\nn = {n}, l = {l}, m = {m}")
         Psi_nlm_s[i] = psi_fn(C_n, Z_n, r_n, t_n, p_n)
     return Psi_nlm_s
 
@@ -178,6 +177,7 @@ class wvfn(nn.Module):
                 for mm in range(-ll,ll+1):
                     H_psi += hammy_Psi_nlm(Rs, nnn, ll, mm, 1/a_n, self.C, psitab[nnn-1][ll][mm+ll])
                     psistar += torch.conj(total_Psi_nlm(Rs, nnn, ll, mm, 1/a_n, self.C, psitab[nnn-1][ll][mm+ll]))
+        return psistar*H_psi / VB**2, torch.pow(torch.abs(psistar), 2)
 
 def loss_function(wvfn, Rs):
     # <psi|H|psi> / <psi|psi>
@@ -197,7 +197,7 @@ def fast_loss_function(wvfn, Rs, psi2s0):
     N_walkers = len(hammy)
     E_trial = torch.mean(hammy/psi2s0) / torch.mean(psi2s/psi2s0)
     noise_E_trial = torch.abs( torch.mean(hammy/psi2s0) / torch.mean(psi2s/psi2s0) ) * torch.sqrt( torch.var(hammy/psi2s0)/torch.mean( hammy/psi2s0 )**2 + torch.var(psi2s/psi2s0)/torch.mean( psi2s/psi2s0 )**2 ) / np.sqrt(N_walkers)
-    print(f'<psi|H|psi>/<psi|psi> = {E_trial} +/- {noise_E_trial}')
+    print(f'1/V^2 <psi|H|psi>/<psi|psi> = {E_trial} +/- {noise_E_trial}')
     loss = torch.real( E_trial + np.sqrt(N_walkers)*noise_E_trial )
     return loss
 
@@ -328,7 +328,7 @@ if __name__ == '__main__':
     hammy, psi2s = trial_wvfn(Rs)
     E_trial = torch.mean(hammy/psi2s)
     noise_E_trial = torch.sqrt(torch.var(hammy/psi2s))/np.sqrt(N_walkers)
-    print(f'\n\n<psi|H|psi>/<psi|psi> = {E_trial} +/- {noise_E_trial}')
+    print(f'\n\n1/V^2 <psi|H|psi>/<psi|psi> = {E_trial} +/- {noise_E_trial}')
 
     print(f"\n\n Round two!")
     # initialize optimizer
@@ -349,7 +349,7 @@ if __name__ == '__main__':
     hammy, psi2s = trial_wvfn(Rs)
     E_trial = torch.mean(hammy/psi2s)
     noise_E_trial = torch.sqrt(torch.var(hammy/psi2s))/np.sqrt(N_walkers)
-    print(f'\n\n<psi|H|psi>/<psi|psi> = {E_trial} +/- {noise_E_trial}')
+    print(f'\n\n1/V^2 <psi|H|psi>/<psi|psi> = {E_trial} +/- {noise_E_trial}')
 
     print(f"\n\n Round three!")
     # initialize optimizer
@@ -370,7 +370,7 @@ if __name__ == '__main__':
     hammy, psi2s = trial_wvfn(Rs)
     E_trial = torch.mean(hammy/psi2s)
     noise_E_trial = torch.sqrt(torch.var(hammy/psi2s))/np.sqrt(N_walkers)
-    print(f'\n\n<psi|H|psi>/<psi|psi> = {E_trial} +/- {noise_E_trial}')
+    print(f'\n\n1/V^2 <psi|H|psi>/<psi|psi> = {E_trial} +/- {noise_E_trial}')
 
     # save best wvfn
     print(f'\n\nSaving best wavefunction to '+filename)
@@ -387,4 +387,4 @@ if __name__ == '__main__':
     hammy, psi2s = new_wvfn(Rs)
     E_trial = torch.mean(hammy/psi2s)
     noise_E_trial = torch.sqrt(torch.var(hammy/psi2s))/np.sqrt(N_walkers)
-    print(f'\n\n<psi|H|psi>/<psi|psi> = {E_trial} +/- {noise_E_trial} \n\n')
+    print(f'\n\n1/V^2 <psi|H|psi>/<psi|psi> = {E_trial} +/- {noise_E_trial} \n\n')

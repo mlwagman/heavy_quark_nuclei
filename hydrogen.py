@@ -3,7 +3,7 @@
 """
 This example shows how to work with the Hydrogen radial wavefunctions.
 """
-import math as m
+import math
 import numpy as np
 from sympy import simplify, summation, sqrt, Eq, Integral, oo, pprint, symbols, Symbol, log, exp, diff, Sum, factorial, IndexedBase, Function, cos, sin, atan, acot, pi, atan2, trigsimp, lambdify, re, im
 from sympy.physics.hydrogen import R_nl, Psi_nlm
@@ -13,7 +13,7 @@ import torch
 
 # Defining difference spherical coords
 nCoord = 2;
-cutoff = 1;
+cutoff = 2;
 
 rr = np.full((nCoord,nCoord), fill_value = '',dtype=object)
 for i in range(nCoord):
@@ -34,7 +34,7 @@ for i in range(nCoord):
         for k in range(cutoff):
             for s in range(cutoff):
                 for t in range(2*cutoff-1):
-                    C[k][s][t][i][j] = Symbol('C[{},{},{},{},{}]'.format(k, s, t, i , j))
+                    C[k][s][t][i][j] = Symbol('C[{},{},{},{},{}]'.format(k, s, t, i , j), real=True)
 
 # Define spherical coords
 r = symbols('r0:%d'%nCoord, positive=True);
@@ -131,7 +131,8 @@ def psi_no_v(nCoord, n, l, m, Z, r, t, p, C):
     psi =  1
     for k in range(0,nCoord-1):
         psi = Chi_no_v(k, nCoord, n, l, m, Z, r, t, p, C)*psi
-    modules = {'sin': torch.sin, 'cos': torch.cos}
+    psi = psi.rewrite(cos)
+    modules = {'sin': math.sin, 'cos': math.cos} #, 're': torch.real, 'im': torch.imag
     return lambdify([C, Z, r, t, p], psi, modules)
 
 def nabla_psi_no_v(nCoord, n, l, m, Z, r, t, p, C):
@@ -141,7 +142,8 @@ def nabla_psi_no_v(nCoord, n, l, m, Z, r, t, p, C):
     nabla_wvfn = 0.0j
     for a in range(nCoord):
         nabla_wvfn += laPlaceSpher(psi, r[a], t[a], p[a])
-    modules = {'sin': torch.sin, 'cos': torch.cos, 're': torch.real, 'im': torch.imag}
+    nabla_wvfn = nabla_wvfn.rewrite(cos)
+    modules = {'sin': math.sin, 'cos': math.cos}
     return lambdify([C, Z, r, t, p], nabla_wvfn, modules)
 
 
