@@ -19,7 +19,7 @@ plt.rcParams['text.usetex'] = True
 plt.rcParams.update({'font.size': 14})
 
 N_coord = nCoord
-VB = 1
+VB = 0.1
 N_skip = 10
 
 psitab = []
@@ -43,6 +43,7 @@ def total_Psi_nlm(Rs, n, l, m, Z_n, C_n, psi_fn):
         t_n = torch.atan2(torch.sqrt(x**2 + y**2), z)
         p_n = torch.atan2(y, x)
         # evaluate wavefunction
+        print(f"\nn = {n}, l = {l}, m = {m}")
         Psi_nlm_s[i] = psi_fn(C_n, Z_n, r_n, t_n, p_n)
     return Psi_nlm_s
 
@@ -88,7 +89,7 @@ def K_Psi_nlm(Rs, n, l, m, Z, C, psi_fn):
 def V_Psi_nlm(Rs, n, l, m, Z, C, psi_fn):
     V_psi = potential_total_Psi_nlm(Rs, n, l, m, Z, C, psi_fn)
     return V_psi
-
+atan2
 def hammy_Psi_nlm(Rs, n, l, m, Z, C, psi_fn):
     K_psi = K_Psi_nlm(Rs, n, l, m, Z, C, psi_fn)
     V_psi = V_Psi_nlm(Rs, n, l, m, Z, C, psi_fn)
@@ -146,7 +147,7 @@ class wvfn(nn.Module):
     def __init__(self):
         super(wvfn, self).__init__()
         # register Bohr radius a and c_{n,l,m,k,j} as pytorch paramters
-        self.a = nn.Parameter(torch.ones(1, dtype=torch.double))
+        self.a = nn.Parameter(1/VB*torch.ones(1, dtype=torch.double))
         self.C = nn.Parameter(torch.ones((cutoff, cutoff, 2*cutoff-1, N_coord, N_coord), dtype=torch.complex64))
     def psi(self, Rs):
         a_n = self.a[0]
@@ -177,7 +178,6 @@ class wvfn(nn.Module):
                 for mm in range(-ll,ll+1):
                     H_psi += hammy_Psi_nlm(Rs, nnn, ll, mm, 1/a_n, self.C, psitab[nnn-1][ll][mm+ll])
                     psistar += torch.conj(total_Psi_nlm(Rs, nnn, ll, mm, 1/a_n, self.C, psitab[nnn-1][ll][mm+ll]))
-        return psistar*H_psi, torch.pow(torch.abs(self.psi(Rs)), 2)
 
 def loss_function(wvfn, Rs):
     # <psi|H|psi> / <psi|psi>
@@ -214,7 +214,7 @@ def train_variational_wvfn(wvfn):
         sep_time = time.time()
         if n % N_skip == 0:
             print("\nRefreshing walkers")
-            Rs, psi2s = metropolis_coordinate_ensemble(wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=1.0)
+            Rs, psi2s = metropolis_coordinate_ensemble(wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=wvfn.a[0].item()/2)
             loss = loss_function(wvfn, Rs)
             loss.backward()
             optimizer.step()
@@ -291,8 +291,8 @@ def diagnostics():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--N_walkers', default=200, type=int)
-    parser.add_argument('--N_train', default=500, type=int)
-    parser.add_argument('--log10_learn_rate', default=2, type=int)
+    parser.add_argument('--N_train', default=5000, type=int)
+    parser.add_argument('--log10_learn_rate', default=1, type=int)
     parser.add_argument('--output', default="./wvfn", type=str)
     globals().update(vars(parser.parse_args()))
 
@@ -312,8 +312,8 @@ if __name__ == '__main__':
 
     # initialize optimizer
     optimizer = optim.Adam(trial_wvfn.parameters(), lr=10**(-log10_learn_rate))
-    N_patience = 2*N_skip
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=N_patience, threshold=0.0001, threshold_mode='abs', verbose=True)
+    N_patience = 5*N_skip
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=N_patience, threshold=0.00001, threshold_mode='abs', verbose=True)
 
     # train
     best_loss, trial_wvfn = train_variational_wvfn(trial_wvfn)
@@ -324,7 +324,7 @@ if __name__ == '__main__':
         if param.requires_grad:
             print(name, param.data)
 
-    Rs, psi2s = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=1.0)
+    Rs, psi2s = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=trial_wvfn.a[0].item()/2)
     hammy, psi2s = trial_wvfn(Rs)
     E_trial = torch.mean(hammy/psi2s)
     noise_E_trial = torch.sqrt(torch.var(hammy/psi2s))/np.sqrt(N_walkers)
@@ -334,7 +334,7 @@ if __name__ == '__main__':
     # initialize optimizer
     optimizer = optim.Adam(trial_wvfn.parameters(), lr=10**(-log10_learn_rate-1))
     N_patience = 5*N_skip
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=N_patience, threshold=0.0001, threshold_mode='abs', verbose=True)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=N_patience, threshold=0.00001, threshold_mode='abs', verbose=True)
 
     # train
     best_loss, trial_wvfn = train_variational_wvfn(trial_wvfn)
@@ -345,7 +345,7 @@ if __name__ == '__main__':
         if param.requires_grad:
             print(name, param.data)
 
-    Rs, psi2s = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=1.0)
+    Rs, psi2s = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=trial_wvfn.a[0].item()/2)
     hammy, psi2s = trial_wvfn(Rs)
     E_trial = torch.mean(hammy/psi2s)
     noise_E_trial = torch.sqrt(torch.var(hammy/psi2s))/np.sqrt(N_walkers)
@@ -355,7 +355,7 @@ if __name__ == '__main__':
     # initialize optimizer
     optimizer = optim.Adam(trial_wvfn.parameters(), lr=10**(-log10_learn_rate-2))
     N_patience = 5*N_skip
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=N_patience, threshold=0.0001, threshold_mode='abs', verbose=True)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=N_patience, threshold=0.00001, threshold_mode='abs', verbose=True)
 
     # train
     best_loss, trial_wvfn = train_variational_wvfn(trial_wvfn)
@@ -366,7 +366,7 @@ if __name__ == '__main__':
         if param.requires_grad:
             print(name, param.data)
 
-    Rs, psi2s = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=1.0)
+    Rs, psi2s = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=trial_wvfn.a[0].item()/2)
     hammy, psi2s = trial_wvfn(Rs)
     E_trial = torch.mean(hammy/psi2s)
     noise_E_trial = torch.sqrt(torch.var(hammy/psi2s))/np.sqrt(N_walkers)
@@ -383,7 +383,7 @@ if __name__ == '__main__':
     for name, param in new_wvfn.named_parameters():
         if param.requires_grad:
             print(name, param.data)
-    Rs, psi2s = metropolis_coordinate_ensemble(new_wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=1.0)
+    Rs, psi2s = metropolis_coordinate_ensemble(new_wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=trial_wvfn.a[0].item()/2)
     hammy, psi2s = new_wvfn(Rs)
     E_trial = torch.mean(hammy/psi2s)
     noise_E_trial = torch.sqrt(torch.var(hammy/psi2s))/np.sqrt(N_walkers)
