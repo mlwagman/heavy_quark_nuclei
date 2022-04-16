@@ -20,9 +20,11 @@ plt.rcParams.update({'font.size': 14})
 
 N_coord = nCoord
 VB = 0.1
-N_skip = 10
-patience_factor = 3
+N_skip = 5
+patience_factor = 1
 
+print(f'precomputing wavefunctions')
+psi_time = time.time()
 psitab = []
 for nnn in range(1,cutoff+1):
     psitab.append([])
@@ -30,38 +32,52 @@ for nnn in range(1,cutoff+1):
         psitab[nnn-1].append([])
         for mm in range(-ll,ll+1):
             psitab[nnn-1][ll].append(psi_no_v(N_coord, nnn, ll, mm, Z, r, t, p, C))
+print(f"precomputed wavefunctions in {time.time() - psi_time} sec")
+
+print(f'precomputing wavefunction Laplacians')
+nabla_psi_time = time.time()
+nabla_psitab = []
+for nnn in range(1,cutoff+1):
+    nabla_psitab.append([])
+    for ll in range(0,nnn):
+        nabla_psitab[nnn-1].append([])
+        for mm in range(-ll,ll+1):
+            print(f'n = {nnn}, l = {ll}, m = {mm}')
+            nabla_psitab[nnn-1][ll].append(nabla_psi_no_v(N_coord, nnn, ll, mm, Z, r, t, p, C))
+print(f"precomputed wavefunction Laplacians in {time.time() - nabla_psi_time} sec")
 
 def total_Psi_nlm(Rs, n, l, m, Z_n, C_n, psi_fn):
     N_walkers = Rs.shape[0]
     assert Rs.shape == (N_walkers, N_coord, 3)
     Psi_nlm_s = torch.zeros((N_walkers), dtype=torch.complex64)
+    # convert to spherical
+    x = Rs[:,:,0]
+    y = Rs[:,:,1]
+    z = Rs[:,:,2]
+    r_n = torch.sqrt(x**2 + y**2 + z**2)
+    t_n = torch.atan2(torch.sqrt(x**2 + y**2), z)
+    p_n = torch.atan2(y, x)
+    # evaluate wavefunction
     for i in range(N_walkers):
-        # convert to spherical
-        x = Rs[i,:,0]
-        y = Rs[i,:,1]
-        z = Rs[i,:,2]
-        r_n = torch.sqrt(x**2 + y**2 + z**2)
-        t_n = torch.atan2(torch.sqrt(x**2 + y**2), z)
-        p_n = torch.atan2(y, x)
-        # evaluate wavefunction
-        Psi_nlm_s[i] = psi_fn(C_n, Z_n, r_n, t_n, p_n)
+        Psi_nlm_s[i] = psi_fn(C_n, Z_n, r_n[i], t_n[i], p_n[i])
     return Psi_nlm_s
 
-def nabla_total_Psi_nlm(Rs, n, l, m, Z_n, C_n, psi_fn):
+def nabla_total_Psi_nlm(Rs, n, l, m, Z_n, C_n, nabla_psi_fn):
+    nabla_psi_time = time.time()
     N_walkers = Rs.shape[0]
     assert Rs.shape == (N_walkers, N_coord, 3)
     nabla_Psi_nlm_s = torch.zeros((N_walkers), dtype=torch.complex64)
-    nabla_psi_fn = nabla_psi_no_v(N_coord, n, l, m, Z, r, t, p, C)
+    # convert to spherical
+    x = Rs[:,:,0]
+    y = Rs[:,:,1]
+    z = Rs[:,:,2]
+    r_n = torch.sqrt(x**2 + y**2 + z**2)
+    t_n = torch.atan2(torch.sqrt(x**2 + y**2), z)
+    p_n = torch.atan2(y, x)
+    # evaluate wavefunction
     for i in range(N_walkers):
-        # convert to spherical
-        x = Rs[i,:,0]
-        y = Rs[i,:,1]
-        z = Rs[i,:,2]
-        r_n = torch.sqrt(x**2 + y**2 + z**2)
-        t_n = torch.atan2(torch.sqrt(x**2 + y**2), z)
-        p_n = torch.atan2(y, x)
-        # evaluate wavefunction
-        nabla_Psi_nlm_s[i] = nabla_psi_fn(C_n, Z_n, r_n, t_n, p_n)
+        nabla_Psi_nlm_s[i] = nabla_psi_fn(C_n, Z_n, r_n[i], t_n[i], p_n[i])
+    print(f"calculated nabla in {time.time() - nabla_psi_time} sec")
     return nabla_Psi_nlm_s
 
 def potential_total_Psi_nlm(Rs, n, l, m, Z_n, C_n, psi_fn):
@@ -82,16 +98,16 @@ def potential_total_Psi_nlm(Rs, n, l, m, Z_n, C_n, psi_fn):
         V_Psi_nlm_s[i] = V * wvfn[i]
     return V_Psi_nlm_s
 
-def K_Psi_nlm(Rs, n, l, m, Z, C, psi_fn):
-    K_psi = -1/2*nabla_total_Psi_nlm(Rs, n, l, m, Z, C, psi_fn)
+def K_Psi_nlm(Rs, n, l, m, Z, C, nabla_psi_fn):
+    K_psi = -1/2*nabla_total_Psi_nlm(Rs, n, l, m, Z, C, nabla_psi_fn)
     return K_psi
 
 def V_Psi_nlm(Rs, n, l, m, Z, C, psi_fn):
     V_psi = potential_total_Psi_nlm(Rs, n, l, m, Z, C, psi_fn)
     return V_psi
 atan2
-def hammy_Psi_nlm(Rs, n, l, m, Z, C, psi_fn):
-    K_psi = K_Psi_nlm(Rs, n, l, m, Z, C, psi_fn)
+def hammy_Psi_nlm(Rs, n, l, m, Z, C, psi_fn, nabla_psi_fn):
+    K_psi = K_Psi_nlm(Rs, n, l, m, Z, C, nabla_psi_fn)
     V_psi = V_Psi_nlm(Rs, n, l, m, Z, C, psi_fn)
     H_psi = K_psi + V_psi
     return H_psi
@@ -147,7 +163,7 @@ class wvfn(nn.Module):
     def __init__(self):
         super(wvfn, self).__init__()
         # register Bohr radius a and c_{n,l,m,k,j} as pytorch paramters
-        self.a = nn.Parameter(1/VB*torch.ones(1, dtype=torch.double))
+        self.a = nn.Parameter(2/VB*torch.ones(1, dtype=torch.double))
         self.C = nn.Parameter(torch.ones((cutoff, cutoff, 2*cutoff-1, N_coord, N_coord), dtype=torch.complex64))
     def psi(self, Rs):
         a_n = self.a[0]
@@ -166,7 +182,7 @@ class wvfn(nn.Module):
         for nnn in range(1,cutoff+1):
             for ll in range(0,nnn):
                 for mm in range(-ll,ll+1):
-                    H_psi += hammy_Psi_nlm(Rs, nnn, ll, mm, 1/a_n, self.C, psitab[nnn-1][ll][mm+ll])
+                    H_psi += hammy_Psi_nlm(Rs, nnn, ll, mm, 1/a_n, self.C, psitab[nnn-1][ll][mm+ll], nabla_psitab[nnn-1][ll][mm+ll])
                     psistar += torch.conj(total_Psi_nlm(Rs, nnn, ll, mm, 1/a_n, self.C, psitab[nnn-1][ll][mm+ll]))
         return psistar*H_psi
     def forward(self, Rs):
@@ -176,7 +192,7 @@ class wvfn(nn.Module):
         for nnn in range(1,cutoff+1):
             for ll in range(0,nnn):
                 for mm in range(-ll,ll+1):
-                    H_psi += hammy_Psi_nlm(Rs, nnn, ll, mm, 1/a_n, self.C, psitab[nnn-1][ll][mm+ll])
+                    H_psi += hammy_Psi_nlm(Rs, nnn, ll, mm, 1/a_n, self.C, psitab[nnn-1][ll][mm+ll], nabla_psitab[nnn-1][ll][mm+ll])
                     psistar += torch.conj(total_Psi_nlm(Rs, nnn, ll, mm, 1/a_n, self.C, psitab[nnn-1][ll][mm+ll]))
         return psistar*H_psi / VB**2, torch.pow(torch.abs(psistar), 2)
 
@@ -184,10 +200,10 @@ def loss_function(wvfn, Rs):
     # <psi|H|psi> / <psi|psi>
     hammy, psi2s = wvfn(Rs)
     N_walkers = len(hammy)
-    E_trial = torch.mean(hammy/psi2s)
-    noise_E_trial = torch.sqrt(torch.var(hammy/psi2s))/np.sqrt(N_walkers)
+    E_trial = torch.mean(torch.real(hammy/psi2s))
+    noise_E_trial = torch.sqrt(torch.var(torch.real(hammy/psi2s)))/np.sqrt(N_walkers)
     print(f'<psi|H|psi>/<psi|psi> = {E_trial} +/- {noise_E_trial}')
-    loss = torch.real( E_trial + np.sqrt(N_walkers)*noise_E_trial )
+    loss = E_trial + np.sqrt(N_walkers)*noise_E_trial
     return loss
 
 def fast_loss_function(wvfn, Rs, psi2s0):
@@ -196,10 +212,10 @@ def fast_loss_function(wvfn, Rs, psi2s0):
     # |psi_0|^2 instead of generating one proportional to |psi|^2
     hammy, psi2s = wvfn(Rs)
     N_walkers = len(hammy)
-    E_trial = torch.mean(hammy/psi2s0) / torch.mean(psi2s/psi2s0)
-    noise_E_trial = torch.abs( torch.mean(hammy/psi2s0) / torch.mean(psi2s/psi2s0) ) * torch.sqrt( torch.var(hammy/psi2s0)/torch.mean( hammy/psi2s0 )**2 + torch.var(psi2s/psi2s0)/torch.mean( psi2s/psi2s0 )**2 ) / np.sqrt(N_walkers)
+    E_trial = torch.mean(torch.real(hammy/psi2s0)) / torch.mean(psi2s/psi2s0)
+    noise_E_trial = torch.abs( torch.mean(torch.real(hammy/psi2s0)) / torch.mean(psi2s/psi2s0) ) * torch.sqrt( torch.var(torch.real(hammy/psi2s0))/torch.mean( torch.real(hammy/psi2s0) )**2 + torch.var(psi2s/psi2s0)/torch.mean( psi2s/psi2s0 )**2 ) / np.sqrt(N_walkers)
     print(f'1/V^2 <psi|H|psi>/<psi|psi> = {E_trial} +/- {noise_E_trial}')
-    loss = torch.real( E_trial + np.sqrt(N_walkers)*noise_E_trial )
+    loss = E_trial + np.sqrt(N_walkers)*noise_E_trial
     return loss
 
 def train_variational_wvfn(wvfn):
@@ -217,7 +233,9 @@ def train_variational_wvfn(wvfn):
             print("\nRefreshing walkers")
             Rs, psi2s = metropolis_coordinate_ensemble(wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=wvfn.a[0].item()/2)
             loss = loss_function(wvfn, Rs)
+            print("\nCalculating gradients")
             loss.backward()
+            print("\nAdvancing optimizer")
             optimizer.step()
             scheduler.step(loss)
             if loss < best_loss:
@@ -226,7 +244,9 @@ def train_variational_wvfn(wvfn):
                 best_wvfn_state = copy.deepcopy(wvfn.state_dict())
         else:
             loss = fast_loss_function(wvfn, Rs, psi2s)
+            print("\nCalculating gradients")
             loss.backward(retain_graph=True)
+            print("\nAdvancing optimizer")
             optimizer.step()
             scheduler.step(loss)
             if loss < best_loss:
@@ -260,6 +280,7 @@ def diagnostics():
     C_n[0,0,0,:,:] = 1;
 
     psi_fn = psi_no_v(N_coord, 1, 0, 0, Z, r, t, p, C)
+    nabla_psi_fn = nabla_psi_no_v(N_coord, 1, 0, 0, Z, r, t, p, C)
 
     def psi0(Rs):
         return total_Psi_nlm(Rs, 1, 0, 0, 1/a_n, C_n, psi_fn)
@@ -270,12 +291,12 @@ def diagnostics():
 
     print(f"psi0 = {psi0(Rs)[0]}")
     print(f"|psi0|^2 = {np.conjugate(psi0(Rs)[0])*psi0(Rs)[0]}")
-    hammy_ME = np.conjugate(psi0(Rs))*hammy_Psi_nlm(Rs, 1, 0, 0, 1/a_n, C_n, psi_fn)
+    hammy_ME = np.conjugate(psi0(Rs))*hammy_Psi_nlm(Rs, 1, 0, 0, 1/a_n, C_n, psi_fn, nabla_psi_fn)
     print(f"|psi|^2 = ", psi2s0[0])
     print(f"<psi|H|psi>/|psi|^2 = {hammy_ME[0]/psi2s0[0]}")
     V_ME = np.conjugate(psi0(Rs))*V_Psi_nlm(Rs, 1, 0, 0, 1/a_n, C_n, psi_fn)
     print(f"<psi|V|psi>/|psi|^2 = {V_ME[0]/psi2s0[0]}")
-    K_ME = np.conjugate(psi0(Rs))*K_Psi_nlm(Rs, 1, 0, 0, 1/a_n, C_n, psi_fn)
+    K_ME = np.conjugate(psi0(Rs))*K_Psi_nlm(Rs, 1, 0, 0, 1/a_n, C_n, nabla_psi_fn)
     print(f"<psi|K|psi>/|psi|^2 = {K_ME[0]/psi2s0[0]}")
 
     print(f'|psi|^2 = {psi2s0}')
@@ -303,7 +324,7 @@ if __name__ == '__main__':
         print("Error - remove existing wavefunction, torch save doesn't overwrite\n\n")
         sys.exit()
 
-    #diagnostics()
+    diagnostics()
 
     # initialize wvfn
     trial_wvfn = wvfn()
