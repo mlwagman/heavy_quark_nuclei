@@ -164,7 +164,9 @@ class wvfn(nn.Module):
         super(wvfn, self).__init__()
         # register Bohr radius a and c_{n,l,m,k,j} as pytorch paramters
         self.a = nn.Parameter(2/VB*torch.ones(1, dtype=torch.double))
-        self.C = nn.Parameter(torch.ones((cutoff, cutoff, 2*cutoff-1, N_coord, N_coord), dtype=torch.complex64))
+        self.C = nn.Parameter(torch.cat((
+            torch.ones((1, cutoff, 2*cutoff-1, N_coord, N_coord), dtype=torch.complex64), 
+            torch.zeros((cutoff-1, cutoff, 2*cutoff-1, N_coord, N_coord), dtype=torch.complex64))))
     def psi(self, Rs):
         a_n = self.a[0]
         psi = 0
