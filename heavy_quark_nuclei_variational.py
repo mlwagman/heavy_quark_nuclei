@@ -274,7 +274,6 @@ def train_variational_wvfn(wvfn):
 
 def diagnostics():
     print("Running positronium diagnostics")
-    N_coord = 2
 
     C_n=torch.zeros((cutoff, cutoff, 2*cutoff-1, N_coord, N_coord));
     B_n=VB
@@ -326,7 +325,8 @@ if __name__ == '__main__':
         print("Error - remove existing wavefunction, torch save doesn't overwrite\n\n")
         sys.exit()
 
-    diagnostics()
+    if N_coord == 2:
+        diagnostics()
 
     # initialize wvfn
     trial_wvfn = wvfn()
