@@ -124,7 +124,7 @@ def nabla_psi_no_v(nCoord, r, t, p, C, A):
         nabla_wvfn += laPlaceSpher(psi, r[a], t[a], p[a])
     nabla_wvfn = nabla_wvfn.rewrite(cos)
     modules = {'sin': math.sin, 'cos': math.cos}
-    return lambdify([C, Z, r, t, p], nabla_wvfn, modules)
+    return lambdify([C, A, r, t, p], nabla_wvfn, modules)
 
 
 #  Define Psi(r1,..,rn)=1/n!*Sum(perms of psi(r1,..,rn)) (not sure how..)

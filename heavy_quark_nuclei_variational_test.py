@@ -35,7 +35,6 @@ nabla_psitab = []
 nabla_psitab.append(nabla_psi_no_v(N_coord, r, t, p, C, A))
 print(f"precomputed wavefunction Laplacians in {time.time() - nabla_psi_time} sec")
 
-Chi_no_v(nCoord, r, t, p, C, A)
 def total_Psi_nlm(Rs, A_n, C_n, psi_fn):
     N_walkers = Rs.shape[0]
     assert Rs.shape == (N_walkers, N_coord, 3)
@@ -154,19 +153,25 @@ class wvfn(nn.Module):
         super(wvfn, self).__init__()
         # register Bohr radius a and c_{n,l,m,k,j} as pytorch paramters
         self.A = nn.Parameter(2/VB*torch.ones(1, dtype=torch.double))
-        self.C = nn.Parameter(torch.ones(1, dtype=torch.double))
+        self.C = nn.Parameter(torch.ones(1, dtype=torch.complex64))
     def psi(self, Rs):
-        psi = total_Psi_nlm(Rs, self.A, self.C, psitab)
+        A_n=self.A[0]
+        C_n=self.C[0]
+        psi = total_Psi_nlm(Rs, A_n, C_n, psitab)
         return psi
     def psi2(self, Rs):
         return torch.pow(torch.abs(self.psi(Rs)), 2)
     def hammy(self, Rs):
-        H_psi = hammy_Psi_nlm(Rs, self.A, self.C, psitab, nabla_psitab)
-        psistar = torch.conj(total_Psi_nlm(Rs, self.A, self.C, psitab))
+        A_n=self.A[0]
+        C_n=self.C[0]
+        H_psi = hammy_Psi_nlm(Rs, A_n, C_n, psitab, nabla_psitab)
+        psistar = torch.conj(total_Psi_nlm(Rs, A_n, C_n, psitab))
         return psistar*H_psi
     def forward(self, Rs):
-        H_psi = hammy_Psi_nlm(Rs, self.A, self.C, psitab, nabla_psitab)
-        psistar = torch.conj(total_Psi_nlm(Rs, self.A, self.C, psitab))
+        A_n=self.A[0]
+        C_n=self.C[0]
+        H_psi = hammy_Psi_nlm(Rs, A_n, C_n, psitab, nabla_psitab)
+        psistar = torch.conj(total_Psi_nlm(Rs, A_n, C_n, psitab))
         return psistar*H_psi / VB**2, torch.pow(torch.abs(psistar), 2)
 
 def loss_function(wvfn, Rs):
@@ -261,12 +266,12 @@ def diagnostics():
 
     print(f"psi0 = {psi0(Rs)[0]}")
     print(f"|psi0|^2 = {np.conjugate(psi0(Rs)[0])*psi0(Rs)[0]}")
-    hammy_ME = np.conjugate(psi0(Rs))*hammy_Psi_nlm(Rs, 1, 0, 0, 1/a_n, C_n, psi_fn, nabla_psi_fn)
+    hammy_ME = np.conjugate(psi0(Rs))*hammy_Psi_nlm(Rs, 1/A_n, C_n, psi_fn, nabla_psi_fn)
     print(f"|psi|^2 = ", psi2s0[0])
     print(f"<psi|H|psi>/|psi|^2 = {hammy_ME[0]/psi2s0[0]}")
-    V_ME = np.conjugate(psi0(Rs))*V_Psi_nlm(Rs, 1, 0, 0, 1/a_n, C_n, psi_fn)
+    V_ME = np.conjugate(psi0(Rs))*V_Psi_nlm(Rs,1/A_n, C_n, psi_fn)
     print(f"<psi|V|psi>/|psi|^2 = {V_ME[0]/psi2s0[0]}")
-    K_ME = np.conjugate(psi0(Rs))*K_Psi_nlm(Rs, 1, 0, 0, 1/a_n, C_n, nabla_psi_fn)
+    K_ME = np.conjugate(psi0(Rs))*K_Psi_nlm(Rs, 1/A_n, C_n, nabla_psi_fn)
     print(f"<psi|K|psi>/|psi|^2 = {K_ME[0]/psi2s0[0]}")
 
     print(f'|psi|^2 = {psi2s0}')
