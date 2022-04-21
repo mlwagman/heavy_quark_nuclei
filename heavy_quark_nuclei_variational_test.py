@@ -26,27 +26,17 @@ patience_factor = 1
 print(f'precomputing wavefunctions')
 psi_time = time.time()
 psitab = []
-for nnn in range(1,cutoff+1):
-    psitab.append([])
-    for ll in range(0,nnn):
-        psitab[nnn-1].append([])
-        for mm in range(-ll,ll+1):
-            psitab[nnn-1][ll].append(psi_no_v(N_coord, nnn, ll, mm, Z, r, t, p, C))
+psitab.append(psi_no_v(N_coord, r, t, p, C, A))
 print(f"precomputed wavefunctions in {time.time() - psi_time} sec")
 
 print(f'precomputing wavefunction Laplacians')
 nabla_psi_time = time.time()
 nabla_psitab = []
-for nnn in range(1,cutoff+1):
-    nabla_psitab.append([])
-    for ll in range(0,nnn):
-        nabla_psitab[nnn-1].append([])
-        for mm in range(-ll,ll+1):
-            print(f'n = {nnn}, l = {ll}, m = {mm}')
-            nabla_psitab[nnn-1][ll].append(nabla_psi_no_v(N_coord, nnn, ll, mm, Z, r, t, p, C))
+nabla_psitab.append(nabla_psi_no_v(N_coord, r, t, p, C, A))
 print(f"precomputed wavefunction Laplacians in {time.time() - nabla_psi_time} sec")
 
-def total_Psi_nlm(Rs, n, l, m, Z_n, C_n, psi_fn):
+Chi_no_v(nCoord, r, t, p, C, A)
+def total_Psi_nlm(Rs, A_n, C_n, psi_fn):
     N_walkers = Rs.shape[0]
     assert Rs.shape == (N_walkers, N_coord, 3)
     Psi_nlm_s = torch.zeros((N_walkers), dtype=torch.complex64)
@@ -59,7 +49,7 @@ def total_Psi_nlm(Rs, n, l, m, Z_n, C_n, psi_fn):
     p_n = torch.atan2(y, x)
     # evaluate wavefunction
     for i in range(N_walkers):
-        Psi_nlm_s[i] = psi_fn(C_n, Z_n, r_n[i], t_n[i], p_n[i])
+        Psi_nlm_s[i] = psi_fn(C_n, A_n, r_n[i], t_n[i], p_n[i])
     return Psi_nlm_s
 
 def nabla_total_Psi_nlm(Rs, n, l, m, Z_n, C_n, nabla_psi_fn):
