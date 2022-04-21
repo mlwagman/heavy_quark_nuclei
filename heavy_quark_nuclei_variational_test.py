@@ -52,7 +52,7 @@ def total_Psi_nlm(Rs, A_n, C_n, psi_fn):
         Psi_nlm_s[i] = psi_fn(C_n, A_n, r_n[i], t_n[i], p_n[i])
     return Psi_nlm_s
 
-def nabla_total_Psi_nlm(Rs, n, l, m, Z_n, C_n, nabla_psi_fn):
+def nabla_total_Psi_nlm(Rs, A_n, C_n, nabla_psi_fn):
     nabla_psi_time = time.time()
     N_walkers = Rs.shape[0]
     assert Rs.shape == (N_walkers, N_coord, 3)
@@ -66,15 +66,15 @@ def nabla_total_Psi_nlm(Rs, n, l, m, Z_n, C_n, nabla_psi_fn):
     p_n = torch.atan2(y, x)
     # evaluate wavefunction
     for i in range(N_walkers):
-        nabla_Psi_nlm_s[i] = nabla_psi_fn(C_n, Z_n, r_n[i], t_n[i], p_n[i])
+        nabla_Psi_nlm_s[i] = nabla_psi_fn(C_n, A_n, r_n[i], t_n[i], p_n[i])
     print(f"calculated nabla in {time.time() - nabla_psi_time} sec")
     return nabla_Psi_nlm_s
 
-def potential_total_Psi_nlm(Rs, n, l, m, Z_n, C_n, psi_fn):
+def potential_total_Psi_nlm(Rs, A_n, C_n, psi_fn):
     N_walkers = Rs.shape[0]
     assert Rs.shape == (N_walkers, N_coord, 3)
     V_Psi_nlm_s = torch.zeros((N_walkers), dtype=torch.complex64)
-    wvfn = total_Psi_nlm(Rs, n, l, m, Z_n, C_n, psi_fn)
+    wvfn = total_Psi_nlm(Rs, A_n, C_n, psi_fn)
     for i in range(N_walkers):
         x = Rs[i,:,0]
         y = Rs[i,:,1]
@@ -88,17 +88,17 @@ def potential_total_Psi_nlm(Rs, n, l, m, Z_n, C_n, psi_fn):
         V_Psi_nlm_s[i] = V * wvfn[i]
     return V_Psi_nlm_s
 
-def K_Psi_nlm(Rs, n, l, m, Z, C, nabla_psi_fn):
+def K_Psi_nlm(Rs, A, C, nabla_psi_fn):
     K_psi = -1/2*nabla_total_Psi_nlm(Rs, n, l, m, Z, C, nabla_psi_fn)
     return K_psi
 
-def V_Psi_nlm(Rs, n, l, m, Z, C, psi_fn):
+def V_Psi_nlm(Rs, A, C, psi_fn):
     V_psi = potential_total_Psi_nlm(Rs, n, l, m, Z, C, psi_fn)
     return V_psi
 atan2
-def hammy_Psi_nlm(Rs, n, l, m, Z, C, psi_fn, nabla_psi_fn):
-    K_psi = K_Psi_nlm(Rs, n, l, m, Z, C, nabla_psi_fn)
-    V_psi = V_Psi_nlm(Rs, n, l, m, Z, C, psi_fn)
+def hammy_Psi_nlm(Rs, A, C, psi_fn, nabla_psi_fn):
+    K_psi = K_Psi_nlm(Rs, A, C, nabla_psi_fn)
+    V_psi = V_Psi_nlm(Rs, A, C, psi_fn)
     H_psi = K_psi + V_psi
     return H_psi
 
@@ -153,39 +153,20 @@ class wvfn(nn.Module):
     def __init__(self):
         super(wvfn, self).__init__()
         # register Bohr radius a and c_{n,l,m,k,j} as pytorch paramters
-        self.a = nn.Parameter(2/VB*torch.ones(1, dtype=torch.double))
-        self.C = nn.Parameter(torch.cat((
-            torch.ones((1, cutoff, 2*cutoff-1, N_coord, N_coord), dtype=torch.complex64),
-            torch.zeros((cutoff-1, cutoff, 2*cutoff-1, N_coord, N_coord), dtype=torch.complex64))))
+        self.A = nn.Parameter(2/VB*torch.ones(1, dtype=torch.double))
+        self.C = nn.Parameter(torch.ones(1, dtype=torch.double))
     def psi(self, Rs):
-        a_n = self.a[0]
-        psi = 0
-        for nnn in range(1,cutoff+1):
-            for ll in range(0,nnn):
-                for mm in range(-ll,ll+1):
-                    psi += total_Psi_nlm(Rs, nnn, ll, mm, 1/a_n, self.C, psitab[nnn-1][ll][mm+ll])
+        psi = total_Psi_nlm(Rs, self.A, self.C, psitab)
         return psi
     def psi2(self, Rs):
         return torch.pow(torch.abs(self.psi(Rs)), 2)
     def hammy(self, Rs):
-        a_n = self.a[0]
-        H_psi = 0
-        psistar = 0
-        for nnn in range(1,cutoff+1):
-            for ll in range(0,nnn):
-                for mm in range(-ll,ll+1):
-                    H_psi += hammy_Psi_nlm(Rs, nnn, ll, mm, 1/a_n, self.C, psitab[nnn-1][ll][mm+ll], nabla_psitab[nnn-1][ll][mm+ll])
-                    psistar += torch.conj(total_Psi_nlm(Rs, nnn, ll, mm, 1/a_n, self.C, psitab[nnn-1][ll][mm+ll]))
+        H_psi = hammy_Psi_nlm(Rs, self.A, self.C, psitab, nabla_psitab)
+        psistar = torch.conj(total_Psi_nlm(Rs, self.A, self.C, psitab))
         return psistar*H_psi
     def forward(self, Rs):
-        a_n = self.a[0]
-        H_psi = 0
-        psistar = 0
-        for nnn in range(1,cutoff+1):
-            for ll in range(0,nnn):
-                for mm in range(-ll,ll+1):
-                    H_psi += hammy_Psi_nlm(Rs, nnn, ll, mm, 1/a_n, self.C, psitab[nnn-1][ll][mm+ll], nabla_psitab[nnn-1][ll][mm+ll])
-                    psistar += torch.conj(total_Psi_nlm(Rs, nnn, ll, mm, 1/a_n, self.C, psitab[nnn-1][ll][mm+ll]))
+        H_psi = hammy_Psi_nlm(Rs, self.A, self.C, psitab, nabla_psitab)
+        psistar = torch.conj(total_Psi_nlm(Rs, self.A, self.C, psitab))
         return psistar*H_psi / VB**2, torch.pow(torch.abs(psistar), 2)
 
 def loss_function(wvfn, Rs):
@@ -265,16 +246,15 @@ def train_variational_wvfn(wvfn):
 def diagnostics():
     print("Running positronium diagnostics")
 
-    C_n=torch.zeros((cutoff, cutoff, 2*cutoff-1, N_coord, N_coord));
+    C_n=(1/A_n)**(3/2)
     B_n=VB
-    a_n=2/B_n
-    C_n[0,0,0,:,:] = 1;
+    A_n=2/B_n
 
-    psi_fn = psi_no_v(N_coord, 1, 0, 0, Z, r, t, p, C)
-    nabla_psi_fn = nabla_psi_no_v(N_coord, 1, 0, 0, Z, r, t, p, C)
+    psi_fn = psi_no_v(N_coord, r, t, p, C, A)
+    nabla_psi_fn = nabla_psi_no_v(N_coord, r, t, p, C, A)
 
     def psi0(Rs):
-        return total_Psi_nlm(Rs, 1, 0, 0, 1/a_n, C_n, psi_fn)
+        return total_Psi_nlm(Rs, 1/A_n, C_n, psi_fn)
 
     Rs, psi2s0 = metropolis_coordinate_ensemble(psi0, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=1.0)
 
