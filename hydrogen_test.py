@@ -80,7 +80,7 @@ def ttSpher(i,j,r,t,p):
 def ppSpher(i,j,r,t,p):
     return  atan2((r[i]*sin(t[i])*sin(p[i]) - r[j]*sin(t[j])*sin(p[j])), (cos(p[i])*r[i]*sin(t[i]) - cos(p[j])*r[j]*sin(t[j])));
 
-print(simplify(rrSpher(1,1,r,t,p))
+print(simplify(rrSpher(1,1,r,t,p)))
 
 #  Define chi(r_i) where psi(r1,..,rn)=chi(r1)*...*chi(rn)
 def Chi(k, nCoord, n, l, m, Z, r, t, p, v, col):
@@ -96,9 +96,9 @@ def Chi(k, nCoord, n, l, m, Z, r, t, p, v, col):
 
 def Chi_no_v(nCoord, r, t, p, C, A):
     if (nCoord == 2):
-        Chi = C[1]*exp(rrSpher(1,2,r,t,p)]/A[1])
+        Chi = C[1]*exp(rrSpher(0,1,r,t,p)/A[1])
     elif (nCoord == 3):
-        Chi = C[1]*(exp(rrSpher(1,2,r,t,p)/A[1]) + exp(rrSpher(1,3,r,t,p)/A[1]) + exp(rrSpher(2,3,r,t,p)/A[1])) +C[2]*(exp((rrSpher(1,2,r,t,p) + rrSpher(1,3,r,t,p))/A[2]) +exp((rrSpher(1,2,r,t,p) + rrSpher(2,3,r,t,p))/A[2]) +exp((rrSpher(1,3,r,t,p) + rrSpher(2,3,r,t,p))/A[2])) +C[3]*exp((rrSpher(1,2,r,t,p) + rrSpher(1,3,r,t,p) + rrSpher(2,3,r,t,p))/A[3])
+        Chi = C[1]*(exp(rrSpher(0,1,r,t,p)/A[1]) + exp(rrSpher(0,2,r,t,p)/A[1]) + exp(rrSpher(1,2,r,t,p)/A[1])) +C[2]*(exp((rrSpher(0,1,r,t,p) + rrSpher(0,2,r,t,p))/A[2]) +exp((rrSpher(0,1,r,t,p) + rrSpher(1,2,r,t,p))/A[2]) +exp((rrSpher(0,2,r,t,p) + rrSpher(1,2,r,t,p))/A[2])) +C[3]*exp((rrSpher(0,1,r,t,p) + rrSpher(0,2,r,t,p) + rrSpher(1,2,r,t,p))/A[3])
     else:
         Chi=1
     return Chi
