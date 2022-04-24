@@ -29,7 +29,7 @@ for i in range(nCoord):
         pp[i][j] = Symbol('pp[{},{}]'.format(i, j))
 
 C = symbols('C0:%d'%nCoord, real=True);
-A = symbols('A0:%d'%nCoord, real=True);
+A = symbols('A0:%d'%nCoord, Positive=True);
 
 # Define spherical coords
 r = symbols('r0:%d'%nCoord, positive=True);
@@ -45,7 +45,7 @@ z = symbols('z0:%d'%nCoord, real=True);
 v = symbols('v0:%d'%nCoord);
 
 #   Potential coupling and a0
-a, Z = symbols("a Z", positive=True)
+#a, Z = symbols("a Z", positive=True)
 B = symbols("B", real=True)
 
 def laPlaceSpher(f,r,t,p):
@@ -96,12 +96,12 @@ def Chi(k, nCoord, n, l, m, Z, r, t, p, v, col):
 
 def Chi_no_v(nCoord, r, t, p, C, A):
     if (nCoord == 2):
-        Chi = C[1]*exp(rrSpher(0,1,r,t,p)/A[1])
+        Chi = C[1]*exp(-rrSpher(0,1,r,t,p)/A[1])
     elif (nCoord == 3):
-        Chi = C[1]*(exp(rrSpher(0,1,r,t,p)/A[1]) + exp(rrSpher(0,2,r,t,p)/A[1])
-        + exp(rrSpher(1,2,r,t,p)/A[1])) +C[2]*(exp((rrSpher(0,1,r,t,p)
-        + rrSpher(0,2,r,t,p))/A[2]) +exp((rrSpher(0,1,r,t,p) + rrSpher(1,2,r,t,p))/A[2])
-        +exp((rrSpher(0,2,r,t,p) + rrSpher(1,2,r,t,p))/A[2])) +C[3]*exp((rrSpher(0,1,r,t,p)
+        Chi = C[1]*(exp(-rrSpher(0,1,r,t,p)/A[1]) + exp(-rrSpher(0,2,r,t,p)/A[1])
+        + exp(-rrSpher(1,2,r,t,p)/A[1])) +C[2]*(exp(-(rrSpher(0,1,r,t,p)
+        + rrSpher(0,2,r,t,p))/A[2]) +exp(-(rrSpher(0,1,r,t,p) + rrSpher(1,2,r,t,p))/A[2])
+        +exp(-(rrSpher(0,2,r,t,p) + rrSpher(1,2,r,t,p))/A[2])) +C[3]*exp(-(rrSpher(0,1,r,t,p)
         + rrSpher(0,2,r,t,p) + rrSpher(1,2,r,t,p))/A[3])
     else:
         Chi=1
