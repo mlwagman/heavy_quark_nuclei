@@ -96,13 +96,13 @@ def Chi(k, nCoord, n, l, m, Z, r, t, p, v, col):
 
 def Chi_no_v(nCoord, r, t, p, C, A):
     if (nCoord == 2):
-        Chi = C[1]*exp(-rrSpher(0,1,r,t,p)/A[1])
+        Chi = C[0]*exp(-rrSpher(0,1,r,t,p)/A[0])
     elif (nCoord == 3):
-        Chi = C[1]*(exp(-rrSpher(0,1,r,t,p)/A[1]) + exp(-rrSpher(0,2,r,t,p)/A[1])
-        + exp(-rrSpher(1,2,r,t,p)/A[1])) +C[2]*(exp(-(rrSpher(0,1,r,t,p)
-        + rrSpher(0,2,r,t,p))/A[2]) +exp(-(rrSpher(0,1,r,t,p) + rrSpher(1,2,r,t,p))/A[2])
-        +exp(-(rrSpher(0,2,r,t,p) + rrSpher(1,2,r,t,p))/A[2])) +C[3]*exp(-(rrSpher(0,1,r,t,p)
-        + rrSpher(0,2,r,t,p) + rrSpher(1,2,r,t,p))/A[3])
+        Chi = C[0]*(exp(-rrSpher(0,1,r,t,p)/A[0]) + exp(-rrSpher(0,2,r,t,p)/A[0])
+        + exp(-rrSpher(1,2,r,t,p)/A[0])) +C[1]*(exp(-(rrSpher(0,1,r,t,p)
+        + rrSpher(0,2,r,t,p))/A[1]) +exp(-(rrSpher(0,1,r,t,p) + rrSpher(1,2,r,t,p))/A[1])
+        +exp(-(rrSpher(0,2,r,t,p) + rrSpher(1,2,r,t,p))/A[1])) +C[2]*exp(-(rrSpher(0,1,r,t,p)
+        + rrSpher(0,2,r,t,p) + rrSpher(1,2,r,t,p))/A[2])
     else:
         Chi=1
     return Chi
