@@ -19,9 +19,10 @@ plt.rcParams['text.usetex'] = True
 plt.rcParams.update({'font.size': 14})
 
 N_coord = nCoord
-VB = 1
-N_skip = 5
-patience_factor = 1
+VB = .1
+N_skip = 10
+N_refresh_metropolis = 1
+patience_factor = 10
 
 print(f'precomputing wavefunctions')
 psi_time = time.time()
@@ -155,7 +156,9 @@ class wvfn(nn.Module):
         super(wvfn, self).__init__()
         # register Bohr radius a and c_{n,l,m,k,j} as pytorch paramters
         self.A = nn.Parameter(2/VB*torch.ones(N_coord, dtype=torch.double))
-        self.C = nn.Parameter(torch.ones(N_coord, dtype=torch.complex64))
+        self.C = nn.Parameter(torch.cat((
+            torch.zeros((N_coord-1), dtype=torch.complex64), 
+            torch.ones((1), dtype=torch.complex64))))
     # For N_coord>1 C and A have Length N_coord not 1
     def psi(self, Rs):
         A_n=self.A
@@ -204,15 +207,15 @@ def train_variational_wvfn(wvfn):
     optimizer.zero_grad()
     # train net
     train_time = time.time()
-    max_reduces = 2
+    max_reduces = 0
+    reduces = 0
     best_loss = 1e10
     best_iter = 0
     best_wvfn_state = copy.deepcopy(wvfn.state_dict())
     for n in tqdm.tqdm(range(N_train)):
         sep_time = time.time()
-        epsilon=1.0
-        #wvfn.A[0].item()/N_coord**2
-        if n % N_skip == 0:
+        epsilon=1.0/np.sqrt(VB)
+        if n % N_refresh_metropolis == 0:
             print("\nRefreshing walkers")
             Rs, psi2s = metropolis_coordinate_ensemble(wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=epsilon)
             loss = loss_function(wvfn, Rs)
@@ -244,7 +247,7 @@ def train_variational_wvfn(wvfn):
         lr = optimizer.param_groups[0]['lr']
         print(f"learn rate = {lr}")
         print(f"bad epochs = {scheduler.num_bad_epochs}")
-        if (lr / 10**(-log10_learn_rate)) < 10**(-1*(max_reduces+.5)):
+        if (lr / 10**(-log10_learn_rate)) < 10**(-1*(max_reduces+training_round+.5)):
             print(f"reduced learn rate {max_reduces} times, quitting")
             break
     print(f"completed {N_train} steps of training in {time.time() - train_time} sec")
@@ -300,7 +303,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--N_walkers', default=200, type=int)
     parser.add_argument('--N_train', default=5000, type=int)
-    parser.add_argument('--log10_learn_rate', default=1, type=int)
+    parser.add_argument('--log10_learn_rate', default=3, type=int)
     parser.add_argument('--output', default="./wvfn", type=str)
     globals().update(vars(parser.parse_args()))
 
@@ -321,14 +324,14 @@ if __name__ == '__main__':
 
     # initialize optimizer
     optimizer = optim.Adam(trial_wvfn.parameters(), lr=10**(-log10_learn_rate))
-    N_patience = patience_factor*N_skip
+    N_patience = patience_factor*N_refresh_metropolis
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=N_patience, threshold=0.00001, threshold_mode='abs', verbose=True)
 
     # train
+    training_round = 0
     best_loss, trial_wvfn = train_variational_wvfn(trial_wvfn)
 
-    epsilon=1.0
-    #trial_wvfn.A[0].item()/N_coord**2
+    epsilon=1.0/np.sqrt(VB)
 
     # print results
     print(f'Wavefunction results:')
@@ -344,10 +347,10 @@ if __name__ == '__main__':
     print(f"\n\n Round two!")
     # initialize optimizer
     optimizer = optim.Adam(trial_wvfn.parameters(), lr=10**(-log10_learn_rate-1))
-    N_patience = patience_factor*N_skip
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=N_patience, threshold=0.00001, threshold_mode='abs', verbose=True)
 
     # train
+    training_round += 1
     best_loss, trial_wvfn = train_variational_wvfn(trial_wvfn)
 
     # print results
@@ -365,10 +368,10 @@ if __name__ == '__main__':
     print(f"\n\n Round three!")
     # initialize optimizer
     optimizer = optim.Adam(trial_wvfn.parameters(), lr=10**(-log10_learn_rate-2))
-    N_patience = patience_factor*N_skip
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=N_patience, threshold=0.00001, threshold_mode='abs', verbose=True)
 
     # train
+    training_round += 1
     best_loss, trial_wvfn = train_variational_wvfn(trial_wvfn)
 
     # print results
