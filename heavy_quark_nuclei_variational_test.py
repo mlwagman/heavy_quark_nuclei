@@ -154,7 +154,7 @@ class wvfn(nn.Module):
     def __init__(self):
         super(wvfn, self).__init__()
         # register Bohr radius a and c_{n,l,m,k,j} as pytorch paramters
-        self.A = nn.Parameter(2/VB*torch.ones(N_coord, dtype=torch.double))
+        self.A = nn.Parameter(2/VB*torch.ones(1, dtype=torch.double))
         self.C = nn.Parameter(torch.cat((torch.ones(1, dtype=torch.complex64),
             torch.zeros(1, dtype=torch.complex64))))
     # For N_coord>1 C and A have Length N_coord not 1
@@ -255,8 +255,8 @@ def train_variational_wvfn(wvfn):
 def diagnostics():
     print("Running positronium diagnostics")
 
-    A_n=torch.ones((N_coord));
-    C_n=torch.ones((N_coord));
+    A_n=torch.ones((1));
+    C_n=torch.ones((1));
     B_n=VB
     A_n[:]=2/B_n
     C_n[:]=(1/A_n)**(3/2)
