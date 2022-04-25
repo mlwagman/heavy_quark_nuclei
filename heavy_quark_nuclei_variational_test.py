@@ -154,9 +154,8 @@ class wvfn(nn.Module):
     def __init__(self):
         super(wvfn, self).__init__()
         # register Bohr radius a and c_{n,l,m,k,j} as pytorch paramters
-        self.A = nn.Parameter(2/VB*torch.ones(1, dtype=torch.double))
-        self.C = nn.Parameter(torch.cat((torch.ones(1, dtype=torch.complex64),
-            torch.zeros(1, dtype=torch.complex64))))
+        self.A = nn.Parameter(2/VB*torch.ones(N_coord, dtype=torch.double))
+        self.C = nn.Parameter(torch.ones(N_coord, dtype=torch.complex64))
     # For N_coord>1 C and A have Length N_coord not 1
     def psi(self, Rs):
         A_n=self.A
@@ -211,9 +210,11 @@ def train_variational_wvfn(wvfn):
     best_wvfn_state = copy.deepcopy(wvfn.state_dict())
     for n in tqdm.tqdm(range(N_train)):
         sep_time = time.time()
+        epsilon=1.0
+        #wvfn.A[0].item()/N_coord**2
         if n % N_skip == 0:
             print("\nRefreshing walkers")
-            Rs, psi2s = metropolis_coordinate_ensemble(wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=wvfn.A[0].item()/2)
+            Rs, psi2s = metropolis_coordinate_ensemble(wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=epsilon)
             loss = loss_function(wvfn, Rs)
             print("\nCalculating gradients")
             loss.backward()
@@ -255,8 +256,8 @@ def train_variational_wvfn(wvfn):
 def diagnostics():
     print("Running positronium diagnostics")
 
-    A_n=torch.ones((1));
-    C_n=torch.ones((1));
+    A_n=torch.ones((2));
+    C_n=torch.ones((2));
     B_n=VB
     A_n[:]=2/B_n
     C_n[:]=(1/A_n)**(3/2)
@@ -267,7 +268,7 @@ def diagnostics():
     def psi0(Rs):
         return total_Psi_nlm(Rs, 1/A_n, C_n, psi_fn)
 
-    Rs, psi2s0 = metropolis_coordinate_ensemble(psi0, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=1.0)
+    Rs, psi2s0 = metropolis_coordinate_ensemble(psi0, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=wvfn.A[0].item()/N_coord**2)
 
     print(Rs.shape)
     print(A_n)
@@ -326,12 +327,15 @@ if __name__ == '__main__':
     # train
     best_loss, trial_wvfn = train_variational_wvfn(trial_wvfn)
 
+    epsilon=1.0
+    #trial_wvfn.A[0].item()/N_coord**2
+
     # print results
     print(f'Wavefunction results:')
     for name, param in trial_wvfn.named_parameters():
         if param.requires_grad:
             print(name, param.data)
-    Rs, psi2s = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=trial_wvfn.A[0].item()/2)
+    Rs, psi2s = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=epsilon)
     hammy, psi2s = trial_wvfn(Rs)
     E_trial = torch.mean(hammy/psi2s)
     noise_E_trial = torch.sqrt(torch.var(hammy/psi2s))/np.sqrt(N_walkers)
@@ -352,7 +356,7 @@ if __name__ == '__main__':
         if param.requires_grad:
             print(name, param.data)
 
-    Rs, psi2s = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=trial_wvfn.A[0].item()/2)
+    Rs, psi2s = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=epsilon)
     hammy, psi2s = trial_wvfn(Rs)
     E_trial = torch.mean(hammy/psi2s)
     noise_E_trial = torch.sqrt(torch.var(hammy/psi2s))/np.sqrt(N_walkers)
@@ -373,7 +377,7 @@ if __name__ == '__main__':
         if param.requires_grad:
             print(name, param.data)
 
-    Rs, psi2s = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=trial_wvfn.A[0].item()/2)
+    Rs, psi2s = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=epsilon)
     hammy, psi2s = trial_wvfn(Rs)
     E_trial = torch.mean(hammy/psi2s)
     noise_E_trial = torch.sqrt(torch.var(hammy/psi2s))/np.sqrt(N_walkers)
@@ -390,7 +394,7 @@ if __name__ == '__main__':
     for name, param in new_wvfn.named_parameters():
         if param.requires_grad:
             print(name, param.data)
-    Rs, psi2s = metropolis_coordinate_ensemble(new_wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=trial_wvfn.A[0].item()/2)
+    Rs, psi2s = metropolis_coordinate_ensemble(new_wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=epsilon)
     hammy, psi2s = new_wvfn(Rs)
     E_trial = torch.mean(hammy/psi2s)
     noise_E_trial = torch.sqrt(torch.var(hammy/psi2s))/np.sqrt(N_walkers)

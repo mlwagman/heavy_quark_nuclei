@@ -20,7 +20,7 @@ plt.rcParams.update({'font.size': 14})
 
 N_coord = nCoord
 VB = 0.1
-N_skip = 5
+N_skip = 10
 patience_factor = 1
 
 print(f'precomputing wavefunctions')
