@@ -12,8 +12,8 @@ from itertools import permutations
 import torch
 
 # Defining difference spherical coords
-nCoord = 3;
-cutoff = 2;
+nCoord = 6;
+cutoff = 1;
 
 rr = np.full((nCoord,nCoord), fill_value = '',dtype=object)
 for i in range(nCoord):
@@ -47,6 +47,7 @@ v = symbols('v0:%d'%nCoord);
 #   Potential coupling and a0
 #a, Z = symbols("a Z", positive=True)
 B = symbols("B", real=True)
+a = symbols("a", real=True)
 
 def laPlaceSpher(f,r,t,p):
     dfdr = diff(f,r)
@@ -94,20 +95,29 @@ def Chi(k, nCoord, n, l, m, Z, r, t, p, v, col):
              Chi = Chi
      return Chi
 
-def Chi_no_v(nCoord, r, t, p, C, A):
+def Chi_no_v_test(nCoord, r, t, p, C, A):
     if (nCoord == 2):
         Chi = C[0]*exp(-rrSpher(0,1,r,t,p)/A[0])
     elif (nCoord == 3):
-        Chi = C[0]*(exp(-rrSpher(0,1,r,t,p)/A[0]) + exp(-rrSpher(0,2,r,t,p)/A[0])
-        + exp(-rrSpher(1,2,r,t,p)/A[0])) +C[1]*(exp(-(rrSpher(0,1,r,t,p)
-        + rrSpher(0,2,r,t,p))/A[1]) +exp(-(rrSpher(0,1,r,t,p) + rrSpher(1,2,r,t,p))/A[1])
-        +exp(-(rrSpher(0,2,r,t,p) + rrSpher(1,2,r,t,p))/A[1])) +C[2]*exp(-(rrSpher(0,1,r,t,p)
-        + rrSpher(0,2,r,t,p) + rrSpher(1,2,r,t,p))/A[2])
+        Chi = C[0]*exp(-(rrSpher(0,1,r,t,p)+ rrSpher(0,2,r,t,p) + rrSpher(1,2,r,t,p))/A[0])
+    elif (nCoord == 4):
+        Chi = C[0]*exp(-(rrSpher(0,1,r,t,p)+ rrSpher(0,2,r,t,p) + rrSpher(0,3,r,t,p)
+        + rrSpher(1,2,r,t,p)+ rrSpher(1,3,r,t,p) + rrSpher(2,3,r,t,p))/A[0])
+        + C[1]*(exp(-(rrSpher(0,1,r,t,p))/A[1]) + exp(-(rrSpher(0,2,r,t,p))/A[1]) + exp(-(rrSpher(0,3,r,t,p))/A[1])
+        + exp(-(rrSpher(1,2,r,t,p))/A[1])  + exp(-(rrSpher(1,3,r,t,p))/A[1])  + exp(-(rrSpher(2,3,r,t,p))/A[1]))
     else:
         Chi=1
     return Chi
 
-print(Chi_no_v(nCoord, r, t, p, C, A))
+def Chi_no_v(nCoord, r, t, p, C, A):
+    Chi = 1;
+    for i in range(nCoord):
+        for j in range(nCoord):
+            if i!=j and j>=i:
+                Chi = Chi*exp(-rrSpher(i,j,r,t,p)/A[0])
+    return C[0]*Chi
+
+print(simplify(Chi_no_v(nCoord, r, t, p, C, A).subs(r[0],0)))
 
 #  Define psi(r1,..,rn)=chi(r1)*...*chi(rn)
 

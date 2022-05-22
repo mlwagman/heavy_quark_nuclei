@@ -19,7 +19,7 @@ plt.rcParams['text.usetex'] = True
 plt.rcParams.update({'font.size': 14})
 
 N_coord = nCoord
-VB = .1
+VB = .002
 N_skip = 10
 N_refresh_metropolis = 1
 patience_factor = 10
@@ -157,8 +157,10 @@ class wvfn(nn.Module):
         # register Bohr radius a and c_{n,l,m,k,j} as pytorch paramters
         self.A = nn.Parameter(2/VB*torch.ones(N_coord, dtype=torch.double))
         self.C = nn.Parameter(torch.cat((
-            torch.zeros((N_coord-1), dtype=torch.complex64), 
+            torch.ones((N_coord-1), dtype=torch.complex64),
             torch.ones((1), dtype=torch.complex64))))
+        #self.A = nn.Parameter(2/VB*torch.ones(1, dtype=torch.double))
+        #self.C = nn.Parameter(torch.ones(1, dtype=torch.complex64))
     # For N_coord>1 C and A have Length N_coord not 1
     def psi(self, Rs):
         A_n=self.A
