@@ -12,7 +12,7 @@ from itertools import permutations
 import torch
 
 # Defining difference spherical coords
-nCoord = 6;
+nCoord = 4;
 cutoff = 1;
 
 rr = np.full((nCoord,nCoord), fill_value = '',dtype=object)
