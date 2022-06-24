@@ -5,7 +5,7 @@ import analysis as al
 import getpass
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy as sp
+import scipy
 import scipy.interpolate
 import pickle
 import paper_plt
@@ -16,6 +16,8 @@ import pickle
 from afdmc_lib import NI,NS,mp_Mev,fm_Mev
 import jax
 import sys
+from heavy_quark_nuclei_variational_test import *
+
 
 paper_plt.load_latex_config()
 
@@ -46,6 +48,10 @@ av6p_potential = adl.make_pairwise_potential(AV6p)
 estimate_av6p_H = adl.make_twobody_estimate_H(AV6p)
 
 f_R, df_R, ddf_R = adl.chebyshev.load_nn_wavefunction_rsq('psi_deuteron_av4p_ale.dat', ncheb=150)
+
+def old_laplacian(R):
+    rsq = norm_3vec_sq(R)
+    return (6*df_R + 4*rsq*ddf_R)*fm_Mev**2
 
 f_R_norm, df_R_norm, ddf_R_norm = adl.normalize_wf(f_R, df_R, ddf_R)
 
@@ -127,9 +133,15 @@ res = adl.measure_gfmc_obs_deform(
     f_R_norm, df_R_norm, ddf_R_norm, verbose=False)
 Hs = res['H']
 
+
+def old_laplacian(R,f_R, df_R, ddf_R,fm_Mev):
+    rsq = norm_3vec_sq(R)
+    return (6*df_R + 4*rsq*ddf_R)*fm_Mev**2
 # get raw samples of H terms
-Ks = np.array([
-    adl.compute_K(dRs, f_R_norm(dRs), df_R_norm(dRs), ddf_R_norm(dRs), m_Mev=adl.mp_Mev)
+#Ks = np.array([
+#    adl.compute_K(dRs, f_R_norm(dRs), df_R_norm(dRs), ddf_R_norm(dRs), m_Mev=adl.mp_Mev)
+#    for dRs in map(adl.to_relative, gfmc_Rs)])
+Ks = np.array([old_laplacian(dRs,f_R_norm(dRs), df_R_norm(dRs),ddf_R_norm(dRs))/(f* m_MeV)
     for dRs in map(adl.to_relative, gfmc_Rs)])
 Vs = np.array([
     sum([

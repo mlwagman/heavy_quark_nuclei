@@ -94,6 +94,8 @@ def K_Psi_nlm(Rs, A, C, nabla_psi_fn):
     K_psi = -1/2*nabla_total_Psi_nlm(Rs, A, C, nabla_psi_fn)
     return K_psi
 
+
+
 def V_Psi_nlm(Rs, A, C, psi_fn):
     V_psi = potential_total_Psi_nlm(Rs, A, C, psi_fn)
     return V_psi
@@ -105,6 +107,8 @@ def hammy_Psi_nlm(Rs, A, C, psi_fn, nabla_psi_fn):
     return H_psi
 
 
+####################################################################################
+#######################################################################################
 def draw_coordinates(shape, *, eps=1.0, axis=1):
     dR = eps/np.sqrt(2) * torch.normal(torch.ones(shape))
     # subtract mean to keep center of mass fixed
