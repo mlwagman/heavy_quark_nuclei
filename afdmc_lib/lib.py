@@ -541,6 +541,99 @@ def gfmc_twobody_deform(
 
     return history
 
+#@partial(jax.jit, static_argnums=(8,9), static_argnames=('deform_f',))
+def kinetic_step_absolute(R_fwd, R_bwd, R, R_deform, S, u, params_i, S_T,
+                 f_R_norm, potential, *, deform_f, dtau_iMev, m_Mev):
+    """Step forward given two possible proposals and RNG to decide"""
+    # transform manifold
+    R_fwd_old = R_fwd
+    R_bwd_old = R_bwd
+    #R_fwd = phi_shift(R_fwd, lambda0_i)
+    #R_bwd = phi_shift(R_bwd, lambda0_i)
+    R_fwd = deform_f(R_fwd, *params_i)
+    R_bwd = deform_f(R_bwd, *params_i)
+    w_SI_fwd, S_fwd = compute_VS_separate(R_fwd, S, potential, dtau_iMev=dtau_iMev)
+    w_SI_bwd, S_bwd = compute_VS_separate(R_bwd, S, potential, dtau_iMev=dtau_iMev)
+    w_fwd = w_SI_fwd * f_R_norm(R_fwd) * inner(S_T, S_fwd)
+    w_bwd = w_SI_bwd * f_R_norm(R_bwd) * inner(S_T, S_bwd)
+
+    # correct kinetic energy
+    G_ratio_fwd = np.exp(
+        (-np.einsum('...ij,...ij->...', R_fwd-R_deform, R_fwd-R_deform)
+         +np.einsum('...ij,...ij->...', R_fwd_old-R, R_fwd_old-R))
+        / (2*dtau_iMev*fm_Mev**2/m_Mev))
+    G_ratio_bwd = np.exp(
+        (-np.einsum('...ij,...ij->...', R_bwd-R_deform, R_bwd-R_deform)
+         + np.einsum('...ij,...ij->...', R_bwd_old-R, R_bwd_old-R))
+        / (2*dtau_iMev*fm_Mev**2/m_Mev))
+    w_fwd = w_fwd * G_ratio_fwd
+    w_bwd = w_bwd * G_ratio_bwd
+
+    p_fwd = np.abs(w_fwd) / (np.abs(w_fwd) + np.abs(w_bwd))
+    pc_fwd = w_fwd / (w_fwd + w_bwd)
+    p_bwd = np.abs(w_bwd) / (np.abs(w_fwd) + np.abs(w_bwd))
+    pc_bwd = w_bwd / (w_fwd + w_bwd)
+    ind_fwd = u < p_fwd
+    ind_fwd_R = np.expand_dims(ind_fwd, axis=(-2,-1))
+    R = np.where(ind_fwd_R, R_fwd_old, R_bwd_old)
+    R_deform = np.where(ind_fwd_R, R_fwd, R_bwd)
+    ind_fwd_S = np.expand_dims(ind_fwd, axis=(-4,-3,-2,-1))
+    S = np.where(ind_fwd_S, S_fwd, S_bwd)
+    W = ((w_fwd + w_bwd) / 2)
+    W = np.where(ind_fwd, W * pc_fwd / p_fwd, W * pc_bwd / p_bwd)
+    return R, R_deform, S, W
+
+def gfmc_deform(
+        R0, S_T, f_R_norm, params, *, rand_draws, tau_iMev, N, potential, m_Mev,
+        deform_f, resampling_freq=None):
+    # sigma, kappa_0, kappa_m, zeta_m, lambda_mn, chi_mn = params
+    params0 = tuple(param[0] for param in params)
+    R0_deform = deform_f(R0, *params0)
+    W = f_R_norm(R0_deform) / f_R_norm(R0)
+    walkers = (R0, R0_deform, S_T, W)
+    dtau_iMev = tau_iMev/N
+    history = [walkers]
+
+    for i in tqdm.tqdm(range(N)):
+        R, R_deform, S, W = walkers
+
+        # remove previous factors (to be replaced with current factors after evolving)
+        W = W / (inner(S_T, S) * f_R_norm(R_deform))
+
+        # exp(-dtau V/2)|R,S>
+        S = compute_VS(R_deform, S, potential, dtau_iMev=dtau_iMev)
+
+        # exp(-dtau V/2) exp(-dtau K)|R,S> using fwd/bwd heatbath
+        _start = time.time()
+        R_fwd, R_bwd = step_G0_symm(onp.array(R), dtau_iMev=dtau_iMev, m_Mev=m_Mev)
+        R_fwd, R_bwd = np.array(R_fwd), np.array(R_bwd)
+        u = rand_draws[i] # np.array(onp.random.random(size=R_fwd.shape[0]))
+        step_params = tuple(param[i+1] for param in params)
+        R, R_deform, S, dW = kinetic_step_absolute(
+            R_fwd, R_bwd, R, R_deform, S, u, step_params, S_T,
+            f_R_norm, potential, deform_f=deform_f, dtau_iMev=dtau_iMev, m_Mev=m_Mev)
+
+        # incorporate factors <S_T|S_i> f(R_i) and leftover fwd/bwd factors from
+        # the kinetic step
+        W = W * dW
+
+        # save config for obs
+        history.append((R, R_deform, S, W))
+
+        if resampling_freq is not None and (i+1) % resampling_freq == 0:
+            assert len(W.shape) == 1, 'weights must be flat array'
+            p = np.abs(W) / np.sum(np.abs(W))
+            W = np.mean(np.abs(W), keepdims=True) * W / np.abs(W)
+            inds = onp.random.choice(onp.arange(W.shape[0]), size=W.shape[0], p=p)
+            R = R[inds]
+            R_deform = R_deform[inds]
+            S = S[inds]
+            W = W[inds]
+
+        walkers = (R, R_deform, S, W)
+
+    return history
+
 def history_to_onp(history):
     onp_history = []
     for R, R_deform, S, W in history:
@@ -643,7 +736,7 @@ def measure_gfmc_loss(
             (-np.einsum('...ij,...ij->...', Delta_Rs_deform_bwd, Delta_Rs_deform_bwd)
              +np.einsum('...ij,...ij->...', Delta_Rs, Delta_Rs))
             / (2*dtau_iMev*fm_Mev**2/m_Mev))
-        
+
 
         V_SI, V_SD = potential(Rs_deform_next)
         VS = batched_apply(V_SD, S)
@@ -863,7 +956,7 @@ def train_gfmc_deform(
         gfmc_Rs = np.array([Rs for Rs,_,_,_, in gfmc_deform])
         gfmc_Ws = np.abs(np.array([Ws for _,_,_,Ws, in gfmc_deform]))
         gfmc_Ss = np.abs(np.array([Ss for _,_,Ss,_, in gfmc_deform]))
-        
+
         _,_,S_T,_ = gfmc_deform[0]
 
         _gen_time = time.time()-_gen_start

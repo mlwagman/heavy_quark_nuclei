@@ -12,7 +12,7 @@ from itertools import permutations
 import torch
 
 # Defining difference spherical coords
-nCoord = 4;
+nCoord = 2;
 cutoff = 1;
 
 rr = np.full((nCoord,nCoord), fill_value = '',dtype=object)
@@ -117,7 +117,7 @@ def Chi_no_v(nCoord, r, t, p, C, A):
                 Chi = Chi*exp(-rrSpher(i,j,r,t,p)/A[0])
     return C[0]*Chi
 
-print(simplify(Chi_no_v(nCoord, r, t, p, C, A).subs(r[0],0)))
+print(simplify(Chi_no_v_test(nCoord, r, t, p, C, A)))
 
 #  Define psi(r1,..,rn)=chi(r1)*...*chi(rn)
 

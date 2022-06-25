@@ -19,7 +19,7 @@ plt.rcParams['text.usetex'] = True
 plt.rcParams.update({'font.size': 14})
 
 N_coord = nCoord
-VB = .002
+VB = 1
 N_skip = 10
 N_refresh_metropolis = 1
 patience_factor = 10
@@ -93,7 +93,6 @@ def potential_total_Psi_nlm(Rs, A_n, C_n, psi_fn):
 def K_Psi_nlm(Rs, A, C, nabla_psi_fn):
     K_psi = -1/2*nabla_total_Psi_nlm(Rs, A, C, nabla_psi_fn)
     return K_psi
-
 
 
 def V_Psi_nlm(Rs, A, C, psi_fn):
@@ -173,6 +172,10 @@ class wvfn(nn.Module):
         return psi
     def psi2(self, Rs):
         return torch.pow(torch.abs(self.psi(Rs)), 2)
+    def laplacian(self, Rs):
+        A_n=self.A
+        C_n=self.C
+        return nabla_total_Psi_nlm(Rs, A_n, C_n, nabla_psitab)
     def hammy(self, Rs):
         A_n=self.A
         C_n=self.C
