@@ -176,6 +176,12 @@ class wvfn(nn.Module):
         A_n=self.A
         C_n=self.C
         return nabla_total_Psi_nlm(Rs, A_n, C_n, nabla_psitab)
+
+    def coulPot(self, Rs):
+        A_n=self.A
+        C_n=self.C
+        return potential_total_Psi_nlm(Rs, A_n, C_n, psitab)
+        
     def hammy(self, Rs):
         A_n=self.A
         C_n=self.C
