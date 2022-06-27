@@ -136,16 +136,16 @@ dRs = to_relative(gfmc_Rs)
 Ks = np.array([
     adl.compute_K(dRs, f_R_norm(dRs), df_R_norm(dRs), ddf_R_norm(dRs), m_Mev=adl.mp_Mev)
     for dRs in map(adl.to_relative, gfmc_Rs)])
-Vs = np.array([
+#Vs = np.array([
     sum([
         AVcoeffs[name](dRs) * adl.compute_O(adl.two_body_ops[name](dRs), S, S_av4p_metropolis)
         for name in AVcoeffs
     ])
     for dRs, S in zip(map(adl.to_relative, gfmc_Rs), gfmc_Ss)])
 
-#Hs = al.bootstrap(Ks+Vs, gfmc_Ws, Nboot=200, f=adl.rw_mean)
+Hs = al.bootstrap(Ks+Vs, gfmc_Ws, Nboot=200, f=adl.rw_mean)
 
-#Hs = Ks+Vs
+Hs = Ks+Vs
 
 # NOTE: These match the directly evaluated <H> correctly!
 Hs = np.array([al.bootstrap(Ks + Vs, Ws, Nboot=100, f=adl.rw_mean)

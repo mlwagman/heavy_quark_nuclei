@@ -51,6 +51,8 @@ trial_wvfn = wvfn()
 print(trial_wvfn.A)
 f_R = lambda R: trial_wvfn.psi(torch.from_numpy(np.asarray(R))).detach().numpy()
 laplacian_f_R = lambda R: trial_wvfn.laplacian(torch.from_numpy(np.asarray(R))).detach().numpy()
+Coul_R = lambda R: trial_wvfn.coulPot(torch.from_numpy(np.asarray(R))).detach().numpy()
+
 
 quadrature_batch = 10000
 dR = 20 / quadrature_batch
@@ -139,12 +141,17 @@ Ks *= fm_Mev**2
 
 print(Ks)
 
-Vs = np.array([
-    sum([
-        AVcoeffs[name](dRs) * adl.compute_O(adl.two_body_ops[name](dRs), S, S_av4p_metropolis)
-        for name in AVcoeffs
-    ])
-    for dRs, S in zip(map(adl.to_relative, gfmc_Rs), gfmc_Ss)])
+#Vs = np.array([
+#    sum([
+#        AVcoeffs[name](dRs) * adl.compute_O(adl.two_body_ops[name](dRs), S, S_av4p_metropolis)
+#        for name in AVcoeffs
+#    ])
+#    for dRs, S in zip(map(adl.to_relative, gfmc_Rs), gfmc_Ss)])
+
+Vs = []
+for R in tqdm.tqdm(gfmc_Rs):
+    Vs.append(Coul_R(R))
+Vs = np.array(Vs)
 
 Hs = np.array([al.bootstrap(Ks + Vs, Ws, Nboot=100, f=adl.rw_mean)
         for Ks,Vs,Ws in zip(Ks, Vs, gfmc_Ws)])
