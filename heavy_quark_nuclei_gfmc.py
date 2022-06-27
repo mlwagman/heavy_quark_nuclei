@@ -126,13 +126,13 @@ Ks = np.array(Ks)
 #    ])
 #    for dRs, S in zip(map(adl.to_relative, gfmc_Rs), gfmc_Ss)])
 
-# TODO IS THIS RIGHT?
+# TODO IS THIS RIGHT? MORE ROBUST TO COPY THE POTENTIAL CREATION FUNCTION
 Vs = np.array([
     sum([
         AV_Coulomb[name](Rs) # * adl.compute_O(adl.two_body_ops[name](Rs), S, S_av4p_metropolis)
         for name in AV_Coulomb
     ])
-    for Rs, S in zip(gfmc_Rs, gfmc_Ss)])
+    for Rs in gfmc_Rs])
 
 Hs = np.array([al.bootstrap(Ks + Vs, Ws, Nboot=100, f=adl.rw_mean)
         for Ks,Vs,Ws in zip(Ks, Vs, gfmc_Ws)])
