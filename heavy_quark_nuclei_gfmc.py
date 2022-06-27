@@ -129,19 +129,6 @@ print('GFMC tau=dtau weights:', gfmc_Ws[1])
 
 # measure H
 print('Measuring <H>...')
-#res = adl.measure_gfmc_obs_deform(
-#    gfmc, estimate_av6p_H,
-#    f_R_norm, df_R_norm, ddf_R_norm, verbose=False)
-#Hs = res['H']
-
-
-def old_laplacian(R,f_R, df_R, ddf_R):
-    rsq = adl.norm_3vec_sq(R)
-    return (6*df_R + 4*rsq*ddf_R)*fm_Mev**2
-# get raw samples of H terms
-#Ks = np.array([
-#    adl.compute_K(dRs, f_R_norm(dRs), df_R_norm(dRs), ddf_R_norm(dRs), m_Mev=adl.mp_Mev)
-#    for dRs in map(adl.to_relative, gfmc_Rs)])
 
 Ks = []
 for R in tqdm.tqdm(gfmc_Rs):
