@@ -72,6 +72,24 @@ def nabla_total_Psi_nlm(Rs, A_n, C_n, nabla_psi_fn):
     print(f"calculated nabla in {time.time() - nabla_psi_time} sec")
     return nabla_Psi_nlm_s
 
+def potential_no_Psi_nlm(Rs, A_n, C_n, psi_fn):
+    N_walkers = Rs.shape[0]
+    assert Rs.shape == (N_walkers, N_coord, 3)
+    V_Psi_nlm_s = torch.zeros((N_walkers), dtype=torch.complex64)
+    wvfn = total_Psi_nlm(Rs, A_n, C_n, psi_fn)
+    for i in range(N_walkers):
+        x = Rs[i,:,0]
+        y = Rs[i,:,1]
+        z = Rs[i,:,2]
+        # evaluate potential
+        V = 0
+        for a in range(N_coord):
+            for b in range(N_coord):
+                if b > a:
+                    V += -VB/np.sqrt( (x[a]-x[b])**2 + (y[a]-y[b])**2 + (z[a]-z[b])**2 )
+        V_Psi_nlm_s[i] = V
+    return V_Psi_nlm_s
+
 def potential_total_Psi_nlm(Rs, A_n, C_n, psi_fn):
     N_walkers = Rs.shape[0]
     assert Rs.shape == (N_walkers, N_coord, 3)
@@ -180,8 +198,8 @@ class wvfn(nn.Module):
     def coulPot(self, Rs):
         A_n=self.A
         C_n=self.C
-        return potential_total_Psi_nlm(Rs, A_n, C_n, psitab)
-        
+        return potential_no_Psi_nlm(Rs, A_n, C_n, psitab)
+
     def hammy(self, Rs):
         A_n=self.A
         C_n=self.C

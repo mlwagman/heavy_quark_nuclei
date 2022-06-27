@@ -12,7 +12,7 @@ from itertools import permutations
 import torch
 
 # Defining difference spherical coords
-nCoord = 2;
+nCoord = 3;
 cutoff = 1;
 
 rr = np.full((nCoord,nCoord), fill_value = '',dtype=object)
@@ -163,6 +163,14 @@ def main():
     Hammy = -1/2*laPlaceSpher(wvfn,r[0],t[0],p[0]) + (Potential(rr,B,nCoord)*wvfn)
     Enl = simplify((Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,1/B))
     print(f"E(n={nn}, l={ll}) = {Enl}")
+
+    V_Hammy = (Potential(rr,B,nCoord)*wvfn)
+    V_Enl = simplify((V_Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,1/B))
+    print(f"V(n={nn}, l={ll}) = {V_Enl}")
+
+    K_Hammy = -1/2*laPlaceSpher(wvfn,r[0],t[0],p[0])
+    K_Enl = simplify((K_Hammy / wvfn).subs(r[1],0).subs(v[1],1).subs(a,1/B))
+    print(f"K(n={nn}, l={ll}) = {K_Enl}")
 
     print("\nn l m = 1 0 0 positronium")
     V = (Potential(rr,B,nCoord)*wvfn)
