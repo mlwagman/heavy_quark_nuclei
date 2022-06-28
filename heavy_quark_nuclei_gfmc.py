@@ -68,6 +68,7 @@ if not os.path.exists(Rs_fname) or not os.path.exists(Ss_fname):
 
     S_av4p_metropolis = np.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
     # antisymmetric spin-iso WF
+    # TODO WRONG SYNTAX
     S_av4p_metropolis[:,(0,)*NS*NI*N_coord] = 1
     np.save(Rs_fname, Rs_metropolis)
     np.save(Ss_fname, S_av4p_metropolis)
@@ -119,20 +120,24 @@ Ks = np.array(Ks)
 
 #Ks *= fm_Mev**2
 
-Vs = np.array([
-    sum([
-        AV_Coulomb[name](dRs) * adl.compute_O(adl.two_body_ops[name](dRs), S, S_av4p_metropolis)
-        for name in AV_Coulomb
-    ])
-    for dRs, S in zip(map(adl.to_relative, gfmc_Rs), gfmc_Ss)])
-
-# TODO IS THIS RIGHT? MORE ROBUST TO COPY THE POTENTIAL CREATION FUNCTION
 #Vs = np.array([
 #    sum([
-#        AV_Coulomb[name](Rs) # * adl.compute_O(adl.two_body_ops[name](Rs), S, S_av4p_metropolis)
+#        AV_Coulomb[name](dRs) * adl.compute_O(adl.two_body_ops[name](dRs), S, S_av4p_metropolis)
 #        for name in AV_Coulomb
 #    ])
-#    for Rs in gfmc_Rs])
+#    for dRs, S in zip(map(adl.to_relative, gfmc_Rs), gfmc_Ss)])
+
+# TODO IS THIS RIGHT? MORE ROBUST TO COPY THE POTENTIAL CREATION FUNCTION
+Vs = []
+for Rs in gfmc_Rs:
+    VSI,_ = Coulomb_potential(Rs)
+    # TODO WRONG SYNTAX
+    #print(VSI[:,(0,)*N_coord*NS*NI*2].shape)
+    #Vs.append(VSI[:,(0,)*N_coord*NS*NI*2])
+    print(VSI[:,0,0,0,0,0,0,0,0].shape)
+    Vs.append(VSI[:,0,0,0,0,0,0,0,0])
+Vs = np.array(Vs)
+print(Vs.shape)
 
 Hs = np.array([al.bootstrap(Ks + Vs, Ws, Nboot=100, f=adl.rw_mean)
         for Ks,Vs,Ws in zip(Ks, Vs, gfmc_Ws)])
