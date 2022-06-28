@@ -210,12 +210,6 @@ def batched_apply(M, S): # compute M|S>
     batch_size2, src_dims = S.shape[0], S.shape[1:]
     assert (batch_size == batch_size2 or
             batch_size == 1 or batch_size2 == 1), 'batch size must be broadcastable'
-    print("Matrix ")
-    print(M.shape)
-    print("\n")
-    print("Vector ")
-    print(S.shape)
-    print("\n")
     assert src_sink_dims == src_dims + src_dims, 'matrix dims must match vector dims'
     inds_M = list(range(len(M.shape)))
     inds_S = [0] + list(range(len(S.shape), 2*len(S.shape)-1))
@@ -238,8 +232,6 @@ def batched_apply_transpose(M, S): # compute <S|M
 def inner(S, Sp):
     assert Sp.shape == S.shape
     spin_iso_axes = tuple(range(1, len(S.shape)))
-    print(spin_iso_axes)
-    print("WHY ARENT YOU A NUMBEWR? ", np.sum(np.conjugate(S) * Sp, axis=spin_iso_axes).shape)
     return np.sum(np.conjugate(S) * Sp, axis=spin_iso_axes)
 
 @partial(jax.jit)
@@ -424,8 +416,7 @@ def metropolis(R, W, *, n_therm, n_step, n_skip, eps):
 @partial(jax.jit, static_argnums=(2,))
 def compute_VS_separate(R_prop, S, potential, *, dtau_iMev):
     V_SI_prop, _ = potential(R_prop)
-    # TODO GENERAL PARTICLE NUMBER
-    V_SI_prop = V_SI_prop[:,0,0,0,0,0,0,0,0,0,0,0,0]
+    V_SI_prop = V_SI_prop[:,0,0,0,0,0,0,0,0]
 
     _, V_SD = potential(R_prop)
     VS = batched_apply(V_SD, S)
@@ -440,8 +431,7 @@ def compute_VS(R_deform, S, potential, *, dtau_iMev):
     VS = batched_apply(V_SD, S)
     VVS = batched_apply(V_SD, VS)
     S = S - (dtau_iMev/2) * VS + (dtau_iMev**2/8) * VVS
-    # TODO GENERAL PARTICLE NUMBER
-    V_SI = V_SI[:,:1,:1,:1,:1,:1,:1,0,0,0,0,0,0]
+    V_SI = V_SI[:,:1,:1,:1,:1,0,0,0,0]
     S = np.exp(-dtau_iMev/2 * V_SI) * S
     return S
 
@@ -562,14 +552,8 @@ def kinetic_step_absolute(R_fwd, R_bwd, R, R_deform, S, u, params_i, S_T,
     #R_bwd = phi_shift(R_bwd, lambda0_i)
     R_fwd = deform_f(R_fwd, *params_i)
     R_bwd = deform_f(R_bwd, *params_i)
-    print("S shape = ", S.shape)
     w_SI_fwd, S_fwd = compute_VS_separate(R_fwd, S, potential, dtau_iMev=dtau_iMev)
     w_SI_bwd, S_bwd = compute_VS_separate(R_bwd, S, potential, dtau_iMev=dtau_iMev)
-    print("S_T shape = ", S_T.shape)
-    print("S_fwd shape = ", S_fwd.shape)
-    print(w_SI_fwd.shape)
-    print(f_R_norm(R_fwd).shape)
-    print(inner(S_T, S_fwd).shape)
     w_fwd = w_SI_fwd * f_R_norm(R_fwd) * inner(S_T, S_fwd)
     w_bwd = w_SI_bwd * f_R_norm(R_bwd) * inner(S_T, S_bwd)
 
@@ -590,14 +574,10 @@ def kinetic_step_absolute(R_fwd, R_bwd, R, R_deform, S, u, params_i, S_T,
     p_bwd = np.abs(w_bwd) / (np.abs(w_fwd) + np.abs(w_bwd))
     pc_bwd = w_bwd / (w_fwd + w_bwd)
     ind_fwd = u < p_fwd
-    # TODO PARTICLE NUMBER ?
     ind_fwd_R = np.expand_dims(ind_fwd, axis=(-2,-1))
-    #ind_fwd_R = np.expand_dims(ind_fwd, axis=(-3,-2,-1))
     R = np.where(ind_fwd_R, R_fwd_old, R_bwd_old)
     R_deform = np.where(ind_fwd_R, R_fwd, R_bwd)
-    # TODO PARTICLE NUMBER
-    #ind_fwd_S = np.expand_dims(ind_fwd, axis=(-4,-3,-2,-1))
-    ind_fwd_S = np.expand_dims(ind_fwd, axis=(-6,-5,-4,-3,-2,-1))
+    ind_fwd_S = np.expand_dims(ind_fwd, axis=(-4,-3,-2,-1))
     S = np.where(ind_fwd_S, S_fwd, S_bwd)
     W = ((w_fwd + w_bwd) / 2)
     W = np.where(ind_fwd, W * pc_fwd / p_fwd, W * pc_bwd / p_bwd)
@@ -618,13 +598,10 @@ def gfmc_deform(
         R, R_deform, S, W = walkers
 
         # remove previous factors (to be replaced with current factors after evolving)
-        print(R_deform.shape)
         W = W / (inner(S_T, S) * f_R_norm(R_deform))
 
-        print("S shape before = ", S.shape)
         # exp(-dtau V/2)|R,S>
         S = compute_VS(R_deform, S, potential, dtau_iMev=dtau_iMev)
-        print("S shape after = ", S.shape)
 
         # exp(-dtau V/2) exp(-dtau K)|R,S> using fwd/bwd heatbath
         _start = time.time()
