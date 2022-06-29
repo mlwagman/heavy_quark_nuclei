@@ -17,7 +17,6 @@ from afdmc_lib import NI,NS,mp_Mev,fm_Mev
 import jax
 import sys
 from heavy_quark_nuclei_variational_test import *
-from itertools import repeat
 
 
 paper_plt.load_latex_config()
@@ -33,21 +32,41 @@ globals().update(vars(parser.parse_args()))
 tau_iMev = dtau_iMev * n_step
 xs = np.linspace(0, tau_iMev, endpoint=True, num=n_step+1)
 
-# Build Coulomb Potential
-
-
 ### Load potential and WF
-AV_Coulomb = {}
-AV_Coulomb['O1'] = lambda R: -1*VB/adl.norm_3vec(R)
+DR = 0.01
+N_STEPS = 1024
+N_OPS = 6
+rs = np.linspace(0, N_STEPS*DR, num=N_STEPS, endpoint=False)
+vnn = np.fromfile('av6p_table.dat', dtype=np.float64).reshape(N_STEPS, N_OPS)
+AV6p = {}
+for i in range(N_OPS):
+    AV6p[f'O{i+1}'] = adl.chebyshev.make_interp_function_rsq(
+        rs**2, vnn[:,i], rsqi=np.linspace(0.0, 20.0**2, num=100000), ncheb=150)
 
-Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb)
+av6p_potential = adl.make_pairwise_potential(AV6p)
 
-# Build Coulomb wavefunction
+estimate_av6p_H = adl.make_twobody_estimate_H(AV6p)
 
 trial_wvfn = wvfn()
 print(trial_wvfn.A)
 f_R = lambda R: trial_wvfn.psi(torch.from_numpy(np.asarray(R))).detach().numpy()
 laplacian_f_R = lambda R: trial_wvfn.laplacian(torch.from_numpy(np.asarray(R))).detach().numpy()
+Coul_R = lambda R: trial_wvfn.coulPot(torch.from_numpy(np.asarray(R))).detach().numpy()
+
+
+quadrature_batch = 10000
+dR = 20 / quadrature_batch
+R_av4p = np.linspace([[-1e-4,0,0], [1e-4,0,0]], [[-10,0,0], [10,0,0]],
+                     num=quadrature_batch, endpoint=True)
+print(np.mean(R_av4p[:,0] + R_av4p[:,1]))
+Rs = R_av4p[:,0] - R_av4p[:,1]
+S_av4p = np.zeros(shape=(quadrature_batch,) + (NI,NS)*2)
+# antisymmetric spin-iso WF
+S_av4p[:,0,0,1,0] = 1/np.sqrt(2)
+S_av4p[:,1,0,0,0] = -1/np.sqrt(2)
+
+### check f is normalized
+Rs = np.linspace([0,0,0], [20,0,0], endpoint=False, num=10000)
 
 deuteron_trial_weight = lambda R: np.abs(f_R(R)**2)
 
@@ -67,19 +86,17 @@ if not os.path.exists(Rs_fname) or not os.path.exists(Ss_fname):
     print(Rs_metropolis)
     # Ws_metropolis = np.array([W for _,W in samples])
 
-    S_av4p_metropolis = np.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
+    S_av4p_metropolis = np.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*2).astype(np.complex128)
     # antisymmetric spin-iso WF
-    # TODO WRONG SYNTAX
-    S_av4p_metropolis[:,(0,)*NS*NI*N_coord] = 1
+    S_av4p_metropolis[:,0,0,1,0] = 1/np.sqrt(2)
+    S_av4p_metropolis[:,1,0,0,0] = -1/np.sqrt(2)
     np.save(Rs_fname, Rs_metropolis)
     np.save(Ss_fname, S_av4p_metropolis)
-
 
 print('Loading wavefunction samples...')
 Rs_metropolis = np.load(Rs_fname)
 S_av4p_metropolis = np.load(Ss_fname)
 
-print(S_av4p_metropolis.shape)
 
 ### TEST: Measure <H> at tau = 0. This looks good.
 # f = f_R_norm(Rs_metropolis)
@@ -97,10 +114,12 @@ deform_f = lambda x, params: x
 params = (np.zeros((n_step+1)),)
 
 print('Running GFMC evolution:')
+AVcoeffs = AV6p
+potential = adl.make_pairwise_potential(AVcoeffs)
 rand_draws = np.random.random(size=(n_step, Rs_metropolis.shape[0]))
 gfmc = adl.gfmc_deform(
     Rs_metropolis, S_av4p_metropolis, f_R, params,
-    rand_draws=rand_draws, tau_iMev=tau_iMev, N=n_step, potential=Coulomb_potential,
+    rand_draws=rand_draws, tau_iMev=tau_iMev, N=n_step, potential=potential,
     deform_f=deform_f, m_Mev=adl.mp_Mev,
     resampling_freq=resampling)
 gfmc_Rs = np.array([Rs for Rs,_,_,_, in gfmc])
@@ -112,49 +131,45 @@ print('GFMC tau=dtau weights:', gfmc_Ws[1])
 
 # measure H
 print('Measuring <H>...')
+#res = adl.measure_gfmc_obs_deform(
+#    gfmc, estimate_av6p_H,
+#    f_R_norm, df_R_norm, ddf_R_norm, verbose=False)
+#Hs = res['H']
+
+
+def old_laplacian(R,f_R, df_R, ddf_R):
+    rsq = adl.norm_3vec_sq(R)
+    return (6*df_R + 4*rsq*ddf_R)*fm_Mev**2
+# get raw samples of H terms
+#Ks = np.array([
+#    adl.compute_K(dRs, f_R_norm(dRs), df_R_norm(dRs), ddf_R_norm(dRs), m_Mev=adl.mp_Mev)
+#    for dRs in map(adl.to_relative, gfmc_Rs)])
 
 Ks = []
 for R in tqdm.tqdm(gfmc_Rs):
-    #Ks.append(-1/2*laplacian_f_R(R) / f_R(R) / adl.mp_Mev)
-    Ks.append(-1/2*laplacian_f_R(R) / f_R(R) / 1)
+    Ks.append(-1/2*laplacian_f_R(R) / f_R(R) / adl.mp_Mev)
 Ks = np.array(Ks)
 
-#Ks *= fm_Mev**2
+Ks *= fm_Mev**2
+
+print(Ks)
 
 #Vs = np.array([
 #    sum([
-#        AV_Coulomb[name](dRs) * adl.compute_O(adl.two_body_ops[name](dRs), S, S_av4p_metropolis)
-#        for name in AV_Coulomb
+#        AVcoeffs[name](dRs) * adl.compute_O(adl.two_body_ops[name](dRs), S, S_av4p_metropolis)
+#        for name in AVcoeffs
 #    ])
 #    for dRs, S in zip(map(adl.to_relative, gfmc_Rs), gfmc_Ss)])
 
-# TODO IS THIS RIGHT? MORE ROBUST TO COPY THE POTENTIAL CREATION FUNCTION
 Vs = []
-for Rs in gfmc_Rs:
-    VSI,_ = Coulomb_potential(Rs)
-    # TODO WRONG SYNTAX
-    print(VSI.shape)
-    VSI0=np.reshape(np.swapaxes(np.array(VSI),0,-1),2*n_walkers*2*N_coord*2*NS*2*NI*2)
-    print(VSI0.shape)
-    Vs.append(VSI0[:n_walkers])
-    #print(VSI[:,list(repeat(0,N_coord*NS*NI*2))].shape)
-    #Vs.append(VSI[:,list(repeat(0,N_coord*NS*NI*2))])
-    #print(VSI[:,0,0,0,0,0,0,0,0].shape)
-    #Vs.append(VSI[:,0,0,0,0,0,0,0,0])
+for R in tqdm.tqdm(gfmc_Rs):
+    Vs.append(Coul_R(R))
 Vs = np.array(Vs)
-print(Vs.shape)
 
 Hs = np.array([al.bootstrap(Ks + Vs, Ws, Nboot=100, f=adl.rw_mean)
         for Ks,Vs,Ws in zip(Ks, Vs, gfmc_Ws)])
 
-ave_Ks = np.array([al.bootstrap(Ks, Ws, Nboot=100, f=adl.rw_mean)
-        for Ks,Vs,Ws in zip(Ks, Vs, gfmc_Ws)])
-ave_Vs = np.array([al.bootstrap(Vs, Ws, Nboot=100, f=adl.rw_mean)
-        for Ks,Vs,Ws in zip(Ks, Vs, gfmc_Ws)])
-
-print("H=",Hs,"\n\n")
-print("K=",ave_Ks,"\n\n")
-print("V=",ave_Vs,"\n\n")
+print(Hs)
 
 # NOTE: These match the directly evaluated <H> correctly!
 # print('undeform <H> = ',
@@ -167,7 +182,7 @@ print("V=",ave_Vs,"\n\n")
 # plot H
 fig, ax = plt.subplots(1,1, figsize=(4,3))
 al.add_errorbar(np.transpose(Hs), ax=ax, xs=xs, color='xkcd:forest green', label=r'$\left< H \right>$', marker='o')
-ax.set_ylim(-1, 0)
+ax.set_ylim(-5, 24)
 ax.legend()
 
 def make_H_err_plt(xs, H_errs):
