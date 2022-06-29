@@ -134,13 +134,13 @@ for Rs in gfmc_Rs:
     VSI,_ = Coulomb_potential(Rs)
     # TODO WRONG SYNTAX
     print(VSI.shape)
-    VSI0=np.reshape(np.swapaxes(np.array(VSI),0,-1),2*n_walkers*2*N_coord*2*NS*2*NI*2)
-    print(VSI0.shape)
-    Vs.append(VSI0[:n_walkers])
+    #VSI0=np.reshape(np.swapaxes(np.array(VSI),0,-1),2*n_walkers*2*N_coord*2*NS*2*NI*2)
+    #print(VSI0.shape)
+    #Vs.append(VSI0[:n_walkers])
     #print(VSI[:,list(repeat(0,N_coord*NS*NI*2))].shape)
     #Vs.append(VSI[:,list(repeat(0,N_coord*NS*NI*2))])
-    #print(VSI[:,0,0,0,0,0,0,0,0].shape)
-    #Vs.append(VSI[:,0,0,0,0,0,0,0,0])
+    print(VSI[:,0,0,0,0,0,0,0,0,0,0,0,0].shape)
+    Vs.append(VSI[:,0,0,0,0,0,0,0,0,0,0,0,0])
 Vs = np.array(Vs)
 print(Vs.shape)
 
@@ -167,7 +167,7 @@ print("V=",ave_Vs,"\n\n")
 # plot H
 fig, ax = plt.subplots(1,1, figsize=(4,3))
 al.add_errorbar(np.transpose(Hs), ax=ax, xs=xs, color='xkcd:forest green', label=r'$\left< H \right>$', marker='o')
-ax.set_ylim(-1, 0)
+ax.set_ylim(-3, 0)
 ax.legend()
 
 def make_H_err_plt(xs, H_errs):
