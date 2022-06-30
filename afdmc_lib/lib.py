@@ -12,8 +12,10 @@ import tqdm.auto as tqdm
 
 from .util import hashabledict, jax_print, norm_3vec, norm_3vec_sq, to_relative
 
-fm_Mev = 197.326
-mp_Mev = 938
+#fm_Mev = 197.326
+#mp_Mev = 938
+fm_Mev = 1.0
+mp_Mev = 1.0
 
 ### GFMC utils
 def draw_dR(shape, *, lam, axis=1):
