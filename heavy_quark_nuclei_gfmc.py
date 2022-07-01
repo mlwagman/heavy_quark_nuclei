@@ -133,10 +133,13 @@ Vs = []
 for Rs in gfmc_Rs:
     VSI,_ = Coulomb_potential(Rs)
     # TODO WRONG SYNTAX
+    print("new step\n")
+    print(Rs)
     print(VSI.shape)
     VSI0=np.reshape(np.swapaxes(np.array(VSI),0,-1),n_walkers*2**(4+(N_coord-1)*(4)))
     print(VSI0.shape)
     Vs.append(VSI0[:n_walkers])
+    print(VSI0[:n_walkers])
     #print(VSI[:,list(repeat(0,N_coord*NS*NI*2))].shape)
     #Vs.append(VSI[:,list(repeat(0,N_coord*NS*NI*2))])
     #print(VSI[:,0,0,0,0,0,0,0,0,0,0,0,0].shape)
@@ -151,6 +154,39 @@ ave_Ks = np.array([al.bootstrap(Ks, Ws, Nboot=100, f=adl.rw_mean)
         for Ks,Vs,Ws in zip(Ks, Vs, gfmc_Ws)])
 ave_Vs = np.array([al.bootstrap(Vs, Ws, Nboot=100, f=adl.rw_mean)
         for Ks,Vs,Ws in zip(Ks, Vs, gfmc_Ws)])
+
+print("first walker")
+print("R = ",gfmc_Rs[0][0])
+x = gfmc_Rs[:,:,0]
+y = gfmc_Rs[:,:,1]
+z = gfmc_Rs[:,:,2]
+r_n = np.sqrt(x**2 + y**2 + z**2)
+t_n = np.arctan2(np.sqrt(x**2 + y**2), z)
+p_n = np.arctan2(y, x)
+print("r = ",r_n[0,0])
+print("theta = ",t_n[0,0])
+print("phi = ",p_n[0,0])
+print("psi(R) = ",f_R(gfmc_Rs[0])[0])
+print("K(R) = ",Ks[0,0])
+print("V(R) = ",Vs[0,0])
+print("V(R) = ",Vs[0,0])
+
+print("\n", Ks.shape)
+
+print("\nsecond walker")
+print("R = ",gfmc_Rs[0][1])
+x = gfmc_Rs[:,:,0]
+y = gfmc_Rs[:,:,1]
+z = gfmc_Rs[:,:,2]
+r_n = np.sqrt(x**2 + y**2 + z**2)
+t_n = np.arctan2(np.sqrt(x**2 + y**2), z)
+p_n = np.arctan2(y, x)
+print("r = ",r_n[0,1])
+print("theta = ",t_n[0,1])
+print("phi = ",p_n[0,1])
+print("psi(R) = ",f_R(gfmc_Rs[0])[1])
+print("K(R) = ",Ks[0,1])
+print("V(R) = ",Vs[0,1])
 
 print("H=",Hs,"\n\n")
 print("K=",ave_Ks,"\n\n")
@@ -167,7 +203,7 @@ print("V=",ave_Vs,"\n\n")
 # plot H
 fig, ax = plt.subplots(1,1, figsize=(4,3))
 al.add_errorbar(np.transpose(Hs), ax=ax, xs=xs, color='xkcd:forest green', label=r'$\left< H \right>$', marker='o')
-ax.set_ylim(-1.3, -1)
+ax.set_ylim(-1.1, -1.05)
 ax.legend()
 
 def make_H_err_plt(xs, H_errs):
