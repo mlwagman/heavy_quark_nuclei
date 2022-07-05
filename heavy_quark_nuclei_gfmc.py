@@ -64,13 +64,15 @@ if not os.path.exists(Rs_fname) or not os.path.exists(Ss_fname):
     Rs_metropolis = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=n_walkers, n_skip=10, eps=trial_wvfn.A[0].item()/N_coord**2)[0]
     #Rs_metropolis = np.array([R for R,_ in samples])
     print(Rs_metropolis.shape)
-    print(Rs_metropolis)
+    #print(Rs_metropolis)
     # Ws_metropolis = np.array([W for _,W in samples])
 
     S_av4p_metropolis = np.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
     # antisymmetric spin-iso WF
-    # TODO WRONG SYNTAX
-    S_av4p_metropolis[:,(0,)*NS*NI*N_coord] = 1
+    print(S_av4p_metropolis.shape)
+    spin_slice = (slice(0,None),) + (slice(0,1,1),)*2*N_coord
+    S_av4p_metropolis[spin_slice] = 1
+    #print(S_av4p_metropolis)
     np.save(Rs_fname, Rs_metropolis)
     np.save(Ss_fname, S_av4p_metropolis)
 
