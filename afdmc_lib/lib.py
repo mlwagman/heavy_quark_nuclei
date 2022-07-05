@@ -418,7 +418,7 @@ def metropolis(R, W, *, n_therm, n_step, n_skip, eps):
 @partial(jax.jit, static_argnums=(2,))
 def compute_VS_separate(R_prop, S, potential, *, dtau_iMev):
     V_SI_prop, _ = potential(R_prop)
-    V_SI_prop = V_SI_prop[:,0,0,0,0,0,0,0,0,0,0,0,0]
+    V_SI_prop = V_SI_prop[:,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 
     _, V_SD = potential(R_prop)
     VS = batched_apply(V_SD, S)
@@ -433,7 +433,7 @@ def compute_VS(R_deform, S, potential, *, dtau_iMev):
     VS = batched_apply(V_SD, S)
     VVS = batched_apply(V_SD, VS)
     S = S - (dtau_iMev/2) * VS + (dtau_iMev**2/8) * VVS
-    V_SI = V_SI[:,:1,:1,:1,:1,:1,:1,0,0,0,0,0,0]
+    V_SI = V_SI[:,:1,:1,:1,:1,:1,:1,:1,:1,0,0,0,0,0,0,0,0]
     S = np.exp(-dtau_iMev/2 * V_SI) * S
     return S
 
@@ -579,7 +579,7 @@ def kinetic_step_absolute(R_fwd, R_bwd, R, R_deform, S, u, params_i, S_T,
     ind_fwd_R = np.expand_dims(ind_fwd, axis=(-2,-1))
     R = np.where(ind_fwd_R, R_fwd_old, R_bwd_old)
     R_deform = np.where(ind_fwd_R, R_fwd, R_bwd)
-    ind_fwd_S = np.expand_dims(ind_fwd, axis=(-6,-5,-4,-3,-2,-1))
+    ind_fwd_S = np.expand_dims(ind_fwd, axis=(-8,-7,-6,-5,-4,-3,-2,-1))
     S = np.where(ind_fwd_S, S_fwd, S_bwd)
     W = ((w_fwd + w_bwd) / 2)
     W = np.where(ind_fwd, W * pc_fwd / p_fwd, W * pc_bwd / p_bwd)
@@ -703,8 +703,8 @@ def measure_gfmc_loss(
 
         # DEBUG: check pre-deform VSI
         V_SI, _ = potential(Rs_prev)
-        V_SI = V_SI[:,:1,:1,:1,:1,:1,:1,0,0,0,0,0,0]
-        jax_print(np.sort(np.abs(V_SI[:,0,0,0,0,0,0]))[-10:], label='VSI', level=3)
+        V_SI = V_SI[:,:1,:1,:1,:1,:1,:1,:1,:1,0,0,0,0,0,0,0,0]
+        jax_print(np.sort(np.abs(V_SI[:,0,0,0,0,0,0,0,0]))[-10:], label='VSI', level=3)
 
 
         # exp(-dtau V/2)|R,S>
@@ -714,9 +714,9 @@ def measure_gfmc_loss(
         S = S - (dtau_iMev/2) * VS + (dtau_iMev**2/8) * VVS
         jax_print(np.min(np.abs(inner(S, S))), label="After VSD", level=3)
         jax_print(np.min(np.abs(inner(S_T, S))), level=3)
-        V_SI = V_SI[:,:1,:1,:1,:1,:1,:1,0,0,0,0,0,0]
-        jax_print(np.sort(np.abs(V_SI[:,0,0,0,0,0,0]))[-10:], label='VSI', level=3)
-        i = np.argmax(np.abs(V_SI[:,0,0,0,0,0,0]))
+        V_SI = V_SI[:,:1,:1,:1,:1,:1,:1,:1,:1,0,0,0,0,0,0,0,0]
+        jax_print(np.sort(np.abs(V_SI[:,0,0,0,0,0,0,0,0]))[-10:], label='VSI', level=3)
+        i = np.argmax(np.abs(V_SI[:,0,0,0,0,0,0,0,0]))
         jax_print((
             norm_3vec_sq(Rs_prev[i,0]-Rs_prev[i,1]),
             norm_3vec_sq(Rs_deform_prev[i,0]-Rs_deform_prev[i,1])), label='R max', level=3)
@@ -746,9 +746,9 @@ def measure_gfmc_loss(
         S_fwd = S - (dtau_iMev/2) * VS + (dtau_iMev**2/8) * VVS
         jax_print(np.min(np.abs(inner(S_fwd, S_fwd))), label="After VSD 2", level=3)
         jax_print(np.min(np.abs(inner(S_T, S_fwd))), level=3)
-        V_SI = V_SI[:,:1,:1,:1,:1,:1,:1,0,0,0,0,0,0]
-        jax_print(np.sort(np.abs(V_SI[:,0,0,0,0,0,0]))[-10:], label='VSI 2', level=3)
-        i = np.argmax(np.abs(V_SI[:,0,0,0,0,0,0]))
+        V_SI = V_SI[:,:1,:1,:1,:1,:1,:1,:1,:1,0,0,0,0,0,0,0,0]
+        jax_print(np.sort(np.abs(V_SI[:,0,0,0,0,0,0,0,0]))[-10:], label='VSI 2', level=3)
+        i = np.argmax(np.abs(V_SI[:,0,0,0,0,0,0,0,0]))
         jax_print((
             norm_3vec_sq(Rs_next[i,0]-Rs_next[i,1]),
             norm_3vec_sq(Rs_deform_next[i,0]-Rs_deform_next[i,1])), label='R max', level=3)
@@ -762,9 +762,9 @@ def measure_gfmc_loss(
         S_bwd = S - (dtau_iMev/2) * VS + (dtau_iMev**2/8) * VVS
         jax_print(np.min(np.abs(inner(S_bwd, S_bwd))), label="After VSD 2", level=3)
         jax_print(np.min(np.abs(inner(S_T, S_bwd))), level=3)
-        V_SI = V_SI[:,:1,:1,:1,:1,:1,:1,0,0,0,0,0,0]
-        jax_print(np.sort(np.abs(V_SI[:,0,0,0,0,0,0]))[-10:], label='VSI 2', level=3)
-        i = np.argmax(np.abs(V_SI[:,0,0,0,0,0,0]))
+        V_SI = V_SI[:,:1,:1,:1,:1,:1,:1,:1,:1,0,0,0,0,0,0,0,0]
+        jax_print(np.sort(np.abs(V_SI[:,0,0,0,0,0,0,0,0]))[-10:], label='VSI 2', level=3)
+        i = np.argmax(np.abs(V_SI[:,0,0,0,0,0,0,0,0]))
         jax_print((
             norm_3vec_sq(Rs_next[i,0]-Rs_next[i,1]),
             norm_3vec_sq(Rs_deform_next[i,0]-Rs_deform_next[i,1])), label='R max', level=3)
