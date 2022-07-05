@@ -149,7 +149,6 @@ def main():
     Hammy = -1*laPlaceSpher(Chi(1, nCoord, 1, 0, 0, 1/a, r, t, p, v, 1),r[0],t[0],p[0]).subs(r[1],0) + (Potential(rr,B,nCoord)*Chi(1, nCoord, 1, 0, 0, 1/a, r, t, p, v, 1)).subs(r[1],0)
 
     print(simplify(Hammy.subs(v[1],1).subs(a,1/B)))
-
     print("\n")
 
     print("\nn l m = 1 0 0 hydrogen atom")

@@ -19,7 +19,7 @@ plt.rcParams['text.usetex'] = True
 plt.rcParams.update({'font.size': 14})
 
 N_coord = nCoord
-VB = 0.1
+VB = 1
 N_skip = 10
 patience_factor = 1
 
