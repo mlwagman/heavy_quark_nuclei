@@ -203,7 +203,7 @@ print("V=",ave_Vs,"\n\n")
 # plot H
 fig, ax = plt.subplots(1,1, figsize=(4,3))
 al.add_errorbar(np.transpose(Hs), ax=ax, xs=xs, color='xkcd:forest green', label=r'$\left< H \right>$', marker='o')
-ax.set_ylim(-1.1, -1.05)
+ax.set_ylim(-2.5, -3.5)
 ax.legend()
 
 def make_H_err_plt(xs, H_errs):
