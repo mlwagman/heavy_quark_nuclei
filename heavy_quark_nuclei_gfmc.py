@@ -29,72 +29,33 @@ parser.add_argument('--n_step', type=int, required=True)
 parser.add_argument('--resampling', type=int, default=3)
 globals().update(vars(parser.parse_args()))
 
-# Set up GFMC
+# imaginary time points for GFMC evolution
 tau_iMev = dtau_iMev * n_step
 xs = np.linspace(0, tau_iMev, endpoint=True, num=n_step+1)
 
-# Build Coulomb Potential
-
-
-### Load potential and WF
+# build Coulomb potential
 AV_Coulomb = {}
 AV_Coulomb['O1'] = lambda R: -1*VB/adl.norm_3vec(R)
-
 Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb)
 
-# Build Coulomb wavefunction
-
+# build Coulomb ground-state trial wavefunction
 trial_wvfn = wvfn()
 print(trial_wvfn.A)
 f_R = lambda R: trial_wvfn.psi(torch.from_numpy(np.asarray(R))).detach().numpy()
 laplacian_f_R = lambda R: trial_wvfn.laplacian(torch.from_numpy(np.asarray(R))).detach().numpy()
 
-deuteron_trial_weight = lambda R: np.abs(f_R(R)**2)
+# Metropolis
+Rs_metropolis = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=n_walkers, n_skip=10, eps=trial_wvfn.A[0].item()/N_coord**2)[0]
+Rs_metropolis = Rs_metropolis.detach().numpy()
+# build trial wavefunction
+S_av4p_metropolis = np.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
+print("built Metropolis wavefunction ensemble")
+# trial wavefunction spin-flavor structure is |up,u> x |up,u> x ... x |up,u>
+spin_slice = (slice(0,None),) + (0,)*2*N_coord
+S_av4p_metropolis[spin_slice] = 1
+print("spin-flavor wavefunction shape = ", S_av4p_metropolis.shape)
 
-### metropolis
-Rs_fname = f'metropolis_N{n_walkers}_Rs.npy'
-Ss_fname = f'metropolis_N{n_walkers}_Ss.npy'
-if not os.path.exists(Rs_fname) or not os.path.exists(Ss_fname):
-    print('Generating/writing wavefunction metropolis samples...')
-    #R0 = np.array([[[-0.5, 0, 0], [0.5, 0, 0]]])
-    #print(R0.shape)
-    #samples = adl.metropolis(R0, deuteron_trial_weight, n_therm=1000, n_step=n_walkers,# n_skip=10, eps=1.0)
-    #print(samples.shape)
-    #print(samples[:,0].shape)
-    Rs_metropolis = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=n_walkers, n_skip=10, eps=trial_wvfn.A[0].item()/N_coord**2)[0]
-    #Rs_metropolis = np.array([R for R,_ in samples])
-    #print(Rs_metropolis)
-    # Ws_metropolis = np.array([W for _,W in samples])
-
-    S_av4p_metropolis = np.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
-    # antisymmetric spin-iso WF
-    print(S_av4p_metropolis.shape)
-    #spin_slice = (slice(0,None),) + (slice(0,1,1),)*2*N_coord
-    spin_slice = (slice(0,None),) + (0,)*2*N_coord
-    S_av4p_metropolis[spin_slice] = 1
-    #print(S_av4p_metropolis)
-    np.save(Rs_fname, Rs_metropolis)
-    np.save(Ss_fname, S_av4p_metropolis)
-
-
-print('Loading wavefunction samples...')
-Rs_metropolis = np.load(Rs_fname)
-S_av4p_metropolis = np.load(Ss_fname)
-
-print(S_av4p_metropolis.shape)
-
-### TEST: Measure <H> at tau = 0. This looks good.
-# f = f_R_norm(Rs_metropolis)
-# df = df_R_norm(Rs_metropolis)
-# ddf = ddf_R_norm(Rs_metropolis)
-# estH = estimate_av6p_H(
-#     Rs_metropolis, S_av4p_metropolis, np.ones_like(f),
-#     S_av4p_metropolis, f, df, ddf, m_Mev=mp_Mev, Nboot=100, verbose=True)
-# print(estH)
-# import sys
-# sys.exit()
-
-# Trivial contour deformation
+# trivial contour deformation
 deform_f = lambda x, params: x
 params = (np.zeros((n_step+1)),)
 
@@ -130,25 +91,12 @@ Ks = np.array(Ks)
 #    ])
 #    for dRs, S in zip(map(adl.to_relative, gfmc_Rs), gfmc_Ss)])
 
-# TODO IS THIS RIGHT? MORE ROBUST TO COPY THE POTENTIAL CREATION FUNCTION
 Vs = []
 for Rs in gfmc_Rs:
     VSI,_ = Coulomb_potential(Rs)
     V_ind = (slice(0,None),) + (0,)*NS*NI*N_coord
     Vs.append(VSI[V_ind])
 
-    #print("new step\n")
-    #print(Rs)
-    #print(VSI.shape)
-    #VSI0=np.reshape(np.swapaxes(np.array(VSI),0,-1),n_walkers*2**(4+(N_coord-1)*(4)))
-    #print(VSI0.shape)
-    #Vs.append(VSI0[:n_walkers])
-    #print(VSI0[:n_walkers])
-
-    #print(VSI[:,list(repeat(0,N_coord*NS*NI*2))].shape)
-    #Vs.append(VSI[:,list(repeat(0,N_coord*NS*NI*2))])
-    #print(VSI[:,0,0,0,0,0,0,0,0,0,0,0,0].shape)
-    #Vs.append(VSI[:,0,0,0,0,0,0,0,0,0,0,0,0])
 Vs = np.array(Vs)
 print(Vs.shape)
 
@@ -199,14 +147,6 @@ print("H=",Hs,"\n\n")
 print("K=",ave_Ks,"\n\n")
 print("V=",ave_Vs,"\n\n")
 
-# NOTE: These match the directly evaluated <H> correctly!
-# print('undeform <H> = ',
-#       [al.bootstrap(Ks + Vs, Ws, Nboot=100, f=adl.rw_mean)
-#        for Ks,Vs,Ws in zip(Ks, Vs, gfmc_Ws)])
-# print('deform <H> = ',
-#       [al.bootstrap(Ks + Vs, Ws, Nboot=100, f=adl.rw_mean)
-#        for Ks,Vs,Ws in zip(Ks_deform, Vs_deform, gfmc_deform_Ws)])
-
 # plot H
 fig, ax = plt.subplots(1,1, figsize=(4,3))
 al.add_errorbar(np.transpose(Hs), ax=ax, xs=xs, color='xkcd:forest green', label=r'$\left< H \right>$', marker='o')
@@ -217,29 +157,5 @@ elif N_coord == 3:
 elif N_coord == 4:
     ax.set_ylim(-2.5, -3.5)
 ax.legend()
-
-def make_H_err_plt(xs, H_errs):
-    fig, ax = plt.subplots(1,2, figsize=(8,4))
-    for a in ax:
-        a.plot(xs, np.sqrt(H_errs), label=r"sqrt(bootstrap variance)", color='k')
-    ax[0].set_yscale('log')
-    fig.legend()
-
-make_H_err_plt(xs, Hs[:,1])
-
-def add_noise_plot(xs, Ks, Vs, Ws, *, ax, label):
-    print(Ks.shape, Ws.shape, xs.shape)
-    Hs = Ks + Vs
-    num_re_loss = np.mean(np.real(Ws * Hs)**2, axis=1)
-    num_im_loss = np.mean(np.imag(Ws * Hs)**2, axis=1)
-    den_re_loss = np.mean(np.real(Ws)**2, axis=1)
-    den_im_loss = np.mean(np.imag(Ws)**2, axis=1)
-    assert(num_re_loss.shape == xs.shape)
-    ax.plot(xs, 0.5*np.log(num_re_loss + num_im_loss) + 0.5*np.log(den_re_loss + den_im_loss),
-            marker='o', label=label)
-
-fig, ax = plt.subplots(1,1, figsize=(4,3))
-add_noise_plot(xs, Ks, Vs, gfmc_Ws, ax=ax, label='var(H)')
-fig.legend()
 
 plt.show()
