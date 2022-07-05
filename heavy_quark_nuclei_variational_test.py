@@ -296,7 +296,7 @@ def diagnostics():
     C_n=torch.ones((2));
     B_n=VB
     A_n[:]=2/B_n
-    C_n[:]=(1/A_n)**(3/2)
+    C_n[:]=1.0 #(1/A_n)**(3/2)
 
     psi_fn = psi_no_v(N_coord, r, t, p, C, A)
     nabla_psi_fn = nabla_psi_no_v(N_coord, r, t, p, C, A)
@@ -304,13 +304,14 @@ def diagnostics():
     def psi0(Rs):
         return total_Psi_nlm(Rs, 1/A_n, C_n, psi_fn)
 
-    Rs, psi2s0 = metropolis_coordinate_ensemble(psi0, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=wvfn.A[0].item()/N_coord**2)
+    Rs, psi2s0 = metropolis_coordinate_ensemble(psi0, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=A_n[0]/N_coord**2)
 
     print(Rs.shape)
     print(A_n)
     print(B_n)
     print(C_n)
 
+    print(f"R = {Rs[0]}")
     print(f"psi0 = {psi0(Rs)[0]}")
     print(f"|psi0|^2 = {np.conjugate(psi0(Rs)[0])*psi0(Rs)[0]}")
     hammy_ME = np.conjugate(psi0(Rs))*hammy_Psi_nlm(Rs, 1/A_n, C_n, psi_fn, nabla_psi_fn)
@@ -320,6 +321,18 @@ def diagnostics():
     print(f"<psi|V|psi>/|psi|^2 = {V_ME[0]/psi2s0[0]}")
     K_ME = np.conjugate(psi0(Rs))*K_Psi_nlm(Rs, 1/A_n, C_n, nabla_psi_fn)
     print(f"<psi|K|psi>/|psi|^2 = {K_ME[0]/psi2s0[0]}")
+
+    print(f"R = {Rs[1]}")
+    print(f"psi0 = {psi0(Rs)[1]}")
+    print(f"|psi0|^2 = {np.conjugate(psi0(Rs)[1])*psi0(Rs)[1]}")
+    hammy_ME = np.conjugate(psi0(Rs))*hammy_Psi_nlm(Rs, 1/A_n, C_n, psi_fn, nabla_psi_fn)
+    print(f"|psi|^2 = ", psi2s0[1])
+    print(f"<psi|H|psi>/|psi|^2 = {hammy_ME[1]/psi2s0[1]}")
+    V_ME = np.conjugate(psi0(Rs))*V_Psi_nlm(Rs,1/A_n, C_n, psi_fn)
+    print(f"<psi|V|psi>/|psi|^2 = {V_ME[1]/psi2s0[1]}")
+    K_ME = np.conjugate(psi0(Rs))*K_Psi_nlm(Rs, 1/A_n, C_n, nabla_psi_fn)
+    print(f"<psi|K|psi>/|psi|^2 = {K_ME[1]/psi2s0[1]}")
+
 
     print(f'|psi|^2 = {psi2s0}')
 
