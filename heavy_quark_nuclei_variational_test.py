@@ -296,7 +296,7 @@ def diagnostics():
     C_n=torch.ones((2));
     B_n=VB
     A_n[:]=2/B_n
-    C_n[:]=(1/A_n)**(3/2)
+    C_n[:]=1.0 #(1/A_n)**(3/2)
 
     psi_fn = psi_no_v(N_coord, r, t, p, C, A)
     nabla_psi_fn = nabla_psi_no_v(N_coord, r, t, p, C, A)
