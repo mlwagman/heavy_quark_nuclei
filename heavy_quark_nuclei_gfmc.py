@@ -149,13 +149,19 @@ print("V=",ave_Vs,"\n\n")
 
 # plot H
 fig, ax = plt.subplots(1,1, figsize=(4,3))
-al.add_errorbar(np.transpose(Hs), ax=ax, xs=xs, color='xkcd:forest green', label=r'$\left< H \right>$', marker='o')
+al.add_errorbar(np.transpose(Hs/(VB**2)), ax=ax, xs=xs, color='xkcd:forest green', label=r'$\left< H \right>$', marker='o')
 if N_coord == 2:
     ax.set_ylim(-.26, -.24)
 elif N_coord == 3:
     ax.set_ylim(-1.1, -1.05)
 elif N_coord == 4:
     ax.set_ylim(-2.5, -3.5)
+elif N_coord == 5:
+    ax.set_ylim(-5, -6)
+elif N_coord == 6:
+    ax.set_ylim(-9, -11)
+elif N_coord == 7:
+    ax.set_ylim(-15, -18)
 ax.legend()
 
 plt.show()
