@@ -111,11 +111,14 @@ def Chi_no_v_test(nCoord, r, t, p, C, A):
 
 def Chi_no_v(nCoord, r, t, p, C, A):
     Chi = 1;
+    Chip = 1;
     for i in range(nCoord):
         for j in range(nCoord):
             if i!=j and j>=i:
-                Chi = Chi*exp(-rrSpher(i,j,r,t,p)/A[0])*(1+exp(rrSpher(i,j,r,t,p)/A[0])*exp(-1/2*(r[i]-A[0])^2))
-    return C[0]*Chi
+                Chi = Chi*exp(-rrSpher(i,j,r,t,p)/A[0])
+    for i in range(nCoord):
+                Chip = Chip*exp(-1/2*(r[i]-A[0])^2))
+    return C[0]*(Chi+Chip)
 
 print(simplify(Chi_no_v_test(nCoord, r, t, p, C, A)))
 

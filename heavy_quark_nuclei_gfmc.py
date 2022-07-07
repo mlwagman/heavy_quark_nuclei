@@ -147,8 +147,11 @@ print("H=",Hs,"\n\n")
 print("K=",ave_Ks,"\n\n")
 print("V=",ave_Vs,"\n\n")
 
+#with h5py.File('Hammys_'+"nCoord="+str(N_coord)+"_B="+str(VB)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+'.hdf5', 'w') as f:
+#    dset = f.create_dataset("default", data=Hs)
+
 with h5py.File('Hammys_'+"nCoord="+str(N_coord)+"_B="+str(VB)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+'.hdf5', 'w') as f:
-    dset = f.create_dataset("default", data=Hs)
+    dset = f.create_dataset("default", data=Ks+Vs)
 
 
 with h5py.File('Hammys_'+"nCoord="+str(N_coord)+"_B="+str(VB)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+'.hdf5', 'r') as f:
