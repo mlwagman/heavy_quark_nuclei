@@ -175,4 +175,4 @@ elif N_coord == 7:
     ax.set_ylim(-15, -18)
 ax.legend()
 
-plt.show()
+plt.savefig('Hammys_'+"nCoord="+str(N_coord)+"_B="+str(VB)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+'.pdf')
