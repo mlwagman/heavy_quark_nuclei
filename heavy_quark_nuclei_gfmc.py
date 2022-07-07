@@ -147,6 +147,14 @@ print("H=",Hs,"\n\n")
 print("K=",ave_Ks,"\n\n")
 print("V=",ave_Vs,"\n\n")
 
+with h5py.File('Hammys_'+"nCoord="+str(N_coord)+"_B="+str(VB)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+'.hdf5', 'w') as f:
+    dset = f.create_dataset("default", data=Hs)
+
+
+with h5py.File('Hammys_'+"nCoord="+str(N_coord)+"_B="+str(VB)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+'.hdf5', 'r') as f:
+    data = f['default']
+    print(data)
+
 # plot H
 fig, ax = plt.subplots(1,1, figsize=(4,3))
 al.add_errorbar(np.transpose(Hs/(VB**2)), ax=ax, xs=xs, color='xkcd:forest green', label=r'$\left< H \right>$', marker='o')
