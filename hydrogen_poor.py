@@ -12,7 +12,7 @@ from itertools import permutations
 import torch
 
 # Defining difference spherical coords
-nCoord = 2;
+nCoord = 3;
 cutoff = 1;
 
 rr = np.full((nCoord,nCoord), fill_value = '',dtype=object)
@@ -111,7 +111,6 @@ def Chi_no_v_test(nCoord, r, t, p, C, A):
 
 def Chi_no_v(nCoord, r, t, p, C, A):
     Chi = 1;
-    Chip = 1;
     for i in range(nCoord):
         for j in range(nCoord):
             if i!=j and j>=i:
