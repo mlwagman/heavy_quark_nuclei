@@ -11,8 +11,9 @@ from itertools import permutations
 
 import torch
 
+from config import *
 # Defining difference spherical coords
-nCoord = 3;
+#nCoord = 2;
 cutoff = 1;
 
 rr = np.full((nCoord,nCoord), fill_value = '',dtype=object)

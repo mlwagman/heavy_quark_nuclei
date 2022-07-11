@@ -3,6 +3,7 @@
 """
 This example shows how to work with the Hydrogen radial wavefunctions.
 """
+import argparse
 import math
 import numpy as np
 from sympy import simplify, summation, sqrt, Eq, Integral, oo, pprint, symbols, Symbol, log, exp, diff, Sum, factorial, IndexedBase, Function, cos, sin, atan, acot, pi, atan2, trigsimp, lambdify, re, im
@@ -11,8 +12,12 @@ from itertools import permutations
 
 import torch
 
+from config import *
+
 # Defining difference spherical coords
-nCoord = 2;
+
+
+#nCoord = 2;
 cutoff = 1;
 
 rr = np.full((nCoord,nCoord), fill_value = '',dtype=object)

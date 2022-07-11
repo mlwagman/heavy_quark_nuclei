@@ -16,9 +16,11 @@ import pickle
 from afdmc_lib import NI,NS,mp_Mev,fm_Mev
 import jax
 import sys
+
+
+from config import *
 from heavy_quark_nuclei_variational_test import *
 from itertools import repeat
-
 
 paper_plt.load_latex_config()
 
@@ -27,8 +29,13 @@ parser.add_argument('--n_walkers', type=int, default=1000)
 parser.add_argument('--dtau_iMev', type=float, required=True)
 parser.add_argument('--n_step', type=int, required=True)
 parser.add_argument('--resampling', type=int, default=3)
+#parser.add_argument('--VB', type=float, default=1)
+#parser.add_argument('--N_coord', type=int, default=2)
+#parser.add_argument('--nCoord', type=int, default=2)
 globals().update(vars(parser.parse_args()))
-
+#VB=.1
+#print(VB)
+#quit()
 # imaginary time points for GFMC evolution
 tau_iMev = dtau_iMev * n_step
 xs = np.linspace(0, tau_iMev, endpoint=True, num=n_step+1)

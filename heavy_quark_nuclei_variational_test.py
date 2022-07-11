@@ -13,13 +13,15 @@ import os, sys
 import argparse
 import copy
 
+
+from config import *
 from hydrogen_test import *
 
 plt.rcParams['text.usetex'] = True
 plt.rcParams.update({'font.size': 14})
 
 N_coord = nCoord
-VB = 1
+#VB = 1
 N_skip = 10
 N_refresh_metropolis = 1
 patience_factor = 10
