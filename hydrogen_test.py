@@ -17,7 +17,7 @@ from config import *
 # Defining difference spherical coords
 
 
-#nCoord = 2;
+nCoord = 2;
 cutoff = 1;
 
 rr = np.full((nCoord,nCoord), fill_value = '',dtype=object)
