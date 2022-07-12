@@ -1,5 +1,5 @@
 import math
 import numpy as np
 
-VB = 1.18
+VB = .211
 nCoord = 3
