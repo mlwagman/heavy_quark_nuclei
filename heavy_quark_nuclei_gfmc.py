@@ -37,6 +37,7 @@ parser.add_argument('--n_step', type=int, required=True)
 parser.add_argument('--resampling', type=int, default=3)
 parser.add_argument('--VB', type=float, default=1)
 parser.add_argument('--N_coord', type=int, default=2)
+parser.add_argument('--a0', type=float, default=2)
 globals().update(vars(parser.parse_args()))
 
 #######################################################################################
@@ -318,7 +319,7 @@ class wvfn(nn.Module):
     def __init__(self):
         super(wvfn, self).__init__()
         # register Bohr radius a and c_{n,l,m,k,j} as pytorch paramters
-        self.A = nn.Parameter(2/VB*torch.ones(N_coord, dtype=torch.double))
+        self.A = nn.Parameter(a0*torch.ones(N_coord, dtype=torch.double))
         self.C = nn.Parameter(torch.cat((
             torch.ones((N_coord-1), dtype=torch.complex64),
             torch.ones((1), dtype=torch.complex64))))
@@ -480,18 +481,18 @@ print("V=",ave_Vs,"\n\n")
 #with h5py.File('Hammys_'+"N_coord="+str(N_coord)+"_B="+str(VB)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+'.hdf5', 'w') as f:
 #    dset = f.create_dataset("default", data=Hs)
 
-with h5py.File('Hammys_'+"N_coord="+str(N_coord)+"_B="+str(VB)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+'.hdf5', 'w') as f:
+with h5py.File('Hammys_'+"N_coord="+str(N_coord)+"_B="+str(VB)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+"_a0="+str(a0)+'.hdf5', 'w') as f:
     dset = f.create_dataset("Hammys", data=Ks+Vs)
 
-with h5py.File('Rs_'+"N_coord="+str(N_coord)+"_B="+str(VB)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+'.hdf5', 'w') as f:
+with h5py.File('Rs_'+"N_coord="+str(N_coord)+"_B="+str(VB)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+"_a0="+str(a0)+'.hdf5', 'w') as f:
     dset = f.create_dataset("Rs", data=gfmc_Rs)
 
 
-with h5py.File('Hammys_'+"N_coord="+str(N_coord)+"_B="+str(VB)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+'.hdf5', 'r') as f:
+with h5py.File('Hammys_'+"N_coord="+str(N_coord)+"_B="+str(VB)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+"_a0="+str(a0)+'.hdf5', 'r') as f:
     data = f['Hammys']
     print(data)
 
-with h5py.File('Rs_'+"N_coord="+str(N_coord)+"_B="+str(VB)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+'.hdf5', 'r') as f:
+with h5py.File('Rs_'+"N_coord="+str(N_coord)+"_B="+str(VB)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+"_a0="+str(a0)+'.hdf5', 'r') as f:
     data = f['Rs']
     print(data)
 
@@ -512,4 +513,4 @@ elif N_coord == 7:
     ax.set_ylim(-15, -18)
 ax.legend()
 
-plt.savefig('Hammys_'+"N_coord="+str(N_coord)+"_B="+str(VB)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+'.pdf')
+plt.savefig('Hammys_'+"N_coord="+str(N_coord)+"_B="+str(VB)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+"_a0="+str(a0)+'.pdf')
