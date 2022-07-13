@@ -1,0 +1,10 @@
+0
+1
+precomputing wavefunctions
+precomputed wavefunctions in 1.7335829734802246 sec
+precomputing wavefunction Laplacians
+precomputed wavefunction Laplacians in 77.23547101020813 sec
+Parameter containing:
+tensor([42.3594, 42.3594, 42.3594, 42.3594, 42.3594], dtype=torch.float64,
+       requires_grad=True)
+Running Metropolis

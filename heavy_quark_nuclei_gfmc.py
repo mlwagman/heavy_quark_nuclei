@@ -42,6 +42,7 @@ globals().update(vars(parser.parse_args()))
 
 #######################################################################################
 cutoff = 1;
+a0 = 2/VB;
 
 rr = np.full((N_coord,N_coord), fill_value = '',dtype=object)
 for i in range(N_coord):
