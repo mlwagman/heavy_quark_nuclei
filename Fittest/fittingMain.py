@@ -1,92 +1,110 @@
-from julia import Main
-Main.include("shrinkage.jl")
 import numpy as np
-import random
-from analysis import *
 import h5py
 
 
 f = h5py.File('hamtest.hdf5', 'r')
 dset = f['Hammys']
+data = np.real(dset)
 dataslice = dset[:,100]
 
-# n_walk sets sample size - if I set sample size = n_walk then var and covar trivial
-n_walk = dset.shape[1]
-
-n_step = dset.shape[0]
+n_step = data.shape[0]
+n_walk = data.shape[1]
 n_boot = 200
 
-#testing smaller sample sizes
-n_walk = 40
+#printmax=n_step
+printmax=15
 
-#standard means for each step
-means = []
-for i in range(n_step):
-    means.append(np.mean(np.real(dset[i,:])))
-print(np.size(means))
-print(means)
+#sample mean for each step
+sample_mean = np.zeros((n_step))
+for n in range(n_step):
+    sample_mean[n] = np.mean(data[n])
 
-#testing sample means
-sample_test = []
-for i in range(n_step):
-    y = random.sample((np.real(dset[i,:])).tolist(), n_walk)
-    avg = np.mean(y)
-    sample_test.append(avg)
+print("\n SAMPLE MEAN")
+print(np.size(sample_mean))
+print(sample_mean[:printmax])
 
-print(np.size(sample_test))
+# sample covariance
+sample_covar = np.zeros((n_step,n_step))
+for n in range(n_step):
+    for m in range(n_step):
+       sample_covar[n,m] = (np.mean(data[n]*data[m]) - np.mean(data[n])*np.mean(data[m])) * n_walk/(n_walk-1)
 
-#generating samples and taking mean for each step
-boot_means = np.zeros((n_step,n_boot))
-print(boot_means.shape)
-for i in range(n_step):
-    for j in range(n_boot):
-        y = random.sample((np.real(dset[i,:])).tolist(), n_walk)
-        avg = np.mean(y)
-        boot_means[i,j] = avg
+print("\n SAMPLE COVARIANCE")
+print(sample_covar.shape)
+print(np.array([sample_covar[n,n]/n_walk for n in range(printmax)]))
 
-print(boot_means.shape)
-print(boot_means)
+# bootstrap ensemble means
+boot_ensemble = np.zeros((n_boot, n_step))
+for b in range(n_boot):
+    inds = np.random.randint(n_walk, size=n_walk)
+    for n in range(n_step):
+        this_boot = data[n][inds]
+        boot_ensemble[b,n] = np.mean(this_boot)
 
-#computing variance
-boot_var = np.zeros(n_step)
-for i in range(n_step):
-    y = (np.mean(boot_means[i,:])-means[i])**2
-    avg = np.mean(y)
-    boot_var[i] = avg
+print("\n BOOTSTRAP MEAN")
+print(boot_ensemble.shape)
+print(np.array([np.mean(boot_ensemble[:,n]) for n in range(printmax)]))
 
+# bootstrap variance 
+boot_var = np.zeros((n_step))
+for n in range(n_step):
+    boot_var[n] = (np.mean(boot_ensemble[:,n]**2) - np.mean(boot_ensemble[:,n])**2) * n_walk/(n_walk-1)
+
+print("\n BOOTSTRAP VARIANCE")
 print(boot_var.shape)
-print(boot_var)
+print(boot_var[:printmax])
 
-#computing covariance
+# bootstrap covariance
 boot_covar = np.zeros((n_step,n_step))
-for i in range(n_step):
-    for j in range(n_step):
-        y = (np.mean(boot_means[i,:])-means[i])*(np.mean(boot_means[j,:])-means[j])
-        avg = np.mean(y)
-        boot_covar[i,j] = avg
+for n in range(n_step):
+    for m in range(n_step):
+       boot_covar[n,m] = (np.mean(boot_ensemble[:,n]*boot_ensemble[:,m]) - np.mean(boot_ensemble[:,n])*np.mean(boot_ensemble[:,m])) * n_walk/(n_walk-1)
 
+print("\n BOOTSTRAP COVARIANCE")
 print(boot_covar.shape)
-print(boot_covar)
+print("\n DIAGONAL")
+print(np.array([boot_covar[n,n] for n in range(printmax)]))
+print("\n TOP ROW")
+print(np.array([boot_covar[0,n] for n in range(printmax)]))
 
-np.savetxt("boot_covar.csv",boot_covar,delimiter=',')
+# normalized sample mean and covariance
+norm_data = np.array([ (data[n,:] - sample_mean[n])/np.sqrt(sample_covar[n,n]) for n in range(n_step) ])
+norm_covar = np.array([ [ sample_covar[n,m]/np.sqrt(sample_covar[n,n]*sample_covar[m,m]) for m in range(n_step) ] for n in range(n_step) ])
 
-#print(np.mean(sample_mean))
+# optimal shrinkage
+d2 = 0.0
+for n in range(n_step):
+    for m in range(n_step):
+        if n == m:
+            d2 += (norm_covar[n,m] - 1)**2
+        else:
+            d2 += norm_covar[n,m]**2
+d2 /= n_step
+b2 = 0.0
+for n in range(n_step):
+    for m in range(n_step):
+        for i in range(n_walk):
+            b2 += (norm_data[n,i]*norm_data[m,i] - norm_covar[n,m])**2
+b2 /= (n_step*n_walk*n_walk)
+lam = b2/d2
+if lam > 1:
+    lam = 1
+elif lam < 0:
+    lam = 0
+print("\n OPTIMAL SHRINKAGE PARAMETER")
+print(lam)
 
-#xcov = covar_from_boots(np.array(sample_mean))
+boot_covar_shrunk = np.zeros((n_step,n_step))
+for n in range(n_step):
+    for m in range(n_step):
+        if n == m:
+            boot_covar_shrunk[n,m] = boot_covar[n,n] 
+        else:
+            boot_covar_shrunk[n,m] = (1-lam)*boot_covar[n,m]
 
-#xgen = bootstrap_gen(*x,Nboot=200)
-
-#xboot = bootstrap(*x, Nboot=200, f=mean)
-#xcov = covar_from_boots(np.array(*bootstrap(xgen,Nboot=200,f=mean)))
-#print(x)
-#print(xboot)
-#print(xcov)
-#print(sample_mean)
-#print(*xgen)
-#xboot = bootstrap(*xgen, Nboot=200, f=mean)
-#print(xboot)
-#print(bootstrap(x,Nboot=200,f=mean))
-#print(xcov)
-#print(covar_from_boots(bootstrap(x,Nboot=200,f=mean)))
-#print(bin_data(x,2,silent_trunc=True))
-#print(Main.optimalShrinkage(x))
+print("\n BOOTSTRAP COVARIANCE WITH OPTIMAL SHRINKAGE")
+print(boot_covar_shrunk.shape)
+print("\n DIAGONAL")
+print(np.array([boot_covar_shrunk[n,n] for n in range(printmax)]))
+print("\n TOP ROW")
+print(np.array([boot_covar_shrunk[0,n] for n in range(printmax)]))
