@@ -1,20 +1,31 @@
 import numpy as np
 import h5py
 
-
-f = h5py.File('hamtest.hdf5', 'r')
-dset = f['Hammys']
-data = np.real(dset)
-dataslice = dset[:,100]
-
-n_step = data.shape[0]
-n_walk = data.shape[1]
+# fitting parameters
+# how many steps in to start fit
+start_fit = 1
+# how many steps to skip in between samples to keep correlations managable
+n_skip = 10 
+# how many bootstrap samples
 n_boot = 200
 
-#printmax=n_step
-printmax=15
+# how many steps to print out during fitting
+printmax = 10
 
-#sample mean for each step
+# read data
+f = h5py.File('hamtest.hdf5', 'r')
+dset = f['Hammys']
+full_data = np.real(dset[start_fit:])
+n_step = full_data.shape[0]
+n_walk_full = full_data.shape[1]
+n_walk = n_walk_full // n_skip
+
+# sparsen data
+data = np.zeros((n_step,n_walk))
+for i in range(n_walk):
+    data[:,i] += full_data[:,i*n_skip]
+
+# sample mean for each step
 sample_mean = np.zeros((n_step))
 for n in range(n_step):
     sample_mean[n] = np.mean(data[n])
@@ -71,7 +82,7 @@ print(np.array([boot_covar[0,n] for n in range(printmax)]))
 norm_data = np.array([ (data[n,:] - sample_mean[n])/np.sqrt(sample_covar[n,n]) for n in range(n_step) ])
 norm_covar = np.array([ [ sample_covar[n,m]/np.sqrt(sample_covar[n,n]*sample_covar[m,m]) for m in range(n_step) ] for n in range(n_step) ])
 
-# optimal shrinkage
+# determine optimal shrinkage parameter
 d2 = 0.0
 for n in range(n_step):
     for m in range(n_step):
@@ -94,6 +105,7 @@ elif lam < 0:
 print("\n OPTIMAL SHRINKAGE PARAMETER")
 print(lam)
 
+# apply shrinkage
 boot_covar_shrunk = np.zeros((n_step,n_step))
 for n in range(n_step):
     for m in range(n_step):
@@ -108,3 +120,25 @@ print("\n DIAGONAL")
 print(np.array([boot_covar_shrunk[n,n] for n in range(printmax)]))
 print("\n TOP ROW")
 print(np.array([boot_covar_shrunk[0,n] for n in range(printmax)]))
+
+# invert covariance matrix
+boot_covar_shrunk_inv = np.linalg.inv(boot_covar_shrunk)
+
+print("\n INVERSE BOOTSTRAP COVARIANCE WITH OPTIMAL SHRINKAGE")
+print(boot_covar_shrunk_inv.shape)
+print("\n DIAGONAL")
+print(np.array([boot_covar_shrunk_inv[n,n] for n in range(printmax)]))
+print("\n TOP ROW")
+print(np.array([boot_covar_shrunk_inv[0,n] for n in range(printmax)]))
+
+# do the fit!
+Delta = 1/np.sum(boot_covar_shrunk_inv, axis=None)
+delta_fit = np.sqrt(Delta)
+fit = Delta * np.sum(sample_mean @ boot_covar_shrunk_inv)
+chisq = (sample_mean - fit) @ boot_covar_shrunk_inv @ (sample_mean - fit)
+dof = n_step-1
+
+print("\n FIT RESULT")
+print(fit, " +/- ", delta_fit)
+print("dof = ", dof)
+print("chi^2/dof = ", chisq/dof)
