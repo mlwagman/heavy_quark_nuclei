@@ -22,9 +22,11 @@ f = h5py.File(database, 'r')
 dset = f[dataset]
 full_data = np.real(dset[start_fit:])
 n_step = full_data.shape[0]
+
 n_walk_full = full_data.shape[1]
 n_walk = n_walk_full // n_skip
-printmax = n_walk
+
+printmax = n_step // 10
 
 # sparsen data
 data = np.zeros((n_step,n_walk))
