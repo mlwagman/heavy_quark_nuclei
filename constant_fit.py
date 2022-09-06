@@ -12,10 +12,16 @@ parser.add_argument('--dataset', type=str, default="Hammys")
 # how many steps in to start fit
 parser.add_argument('--start_fit', type=int, default=1)
 # how many steps to skip in between samples to keep correlations managable
-parser.add_argument('--n_skip', type=int, default=10)
+parser.add_argument('--n_skip', type=int, default=1)
+# how many steps to average to keep correlations managable
+parser.add_argument('--n_block', type=int, default=1)
 # how many bootstrap samples
 parser.add_argument('--n_boot', type=int, default=200)
 globals().update(vars(parser.parse_args()))
+
+if n_skip > 1 and n_block > 1:
+    print("DON'T SKIP AND BLOCK")
+    throw()
 
 # read data
 f = h5py.File(database, 'r')
@@ -24,9 +30,20 @@ full_data = np.real(dset[start_fit:])
 n_step = full_data.shape[0]
 
 n_walk_full = full_data.shape[1]
-n_walk = n_walk_full // n_skip
+if n_skip > 1:
+    n_walk = n_walk_full // n_skip
+elif n_block > 1:
+    n_walk = n_walk_full // n_block
+else :
+    n_walk = n_walk_full
 
 printmax = n_step // 10
+
+# block data
+data = np.zeros((n_step,n_walk))
+for i in range(n_walk):
+    for k in range(n_block):
+        data[:,i] += full_data[:,i*n_skip+k]/n_block
 
 # sparsen data
 data = np.zeros((n_step,n_walk))
