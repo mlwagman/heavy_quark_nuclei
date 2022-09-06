@@ -36,7 +36,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--n_walkers', type=int, default=1000)
 parser.add_argument('--dtau_iMev', type=float, required=True)
 parser.add_argument('--n_step', type=int, required=True)
-parser.add_argument('--n_skip', type=int, default=500)
+parser.add_argument('--n_skip', type=int, default=200)
 parser.add_argument('--resampling', type=int, default=None)
 parser.add_argument('--alpha', type=float, default=1)
 parser.add_argument('--Nc', type=int, default=2)
@@ -328,8 +328,7 @@ def metropolis_coordinate_ensemble(this_psi, *, n_therm, N_walkers, n_skip, eps)
             Rs[this_walker,:,:] = R
             psi2s[this_walker] = p_R
             this_walker += 1
-            print(f'iteration {i+1}')
-            print(f'|psi(R)|^2 = {p_R}')
+            print(f'walker {this_walker}, iteration {i+1}')
             print(f'acc frac = {acc / (i+1)} \n')
     print(f'Total acc frac = {acc / (i+1)}')
     # return coordinates R and respective |psi(R)|^2
@@ -467,7 +466,7 @@ print('Measuring <H>...')
 Ks = []
 #for R in tqdm.tqdm(gfmc_Rs):
 for count, R in enumerate(gfmc_Rs):
-    print('Calculating lapacian for step ', count)
+    print('Calculating Laplacian for step ', count)
     #Ks.append(-1/2*laplacian_f_R(R) / f_R(R) / adl.mp_Mev)
     Ks.append(-1/2*laplacian_f_R(R) / f_R(R) / 1)
 Ks = np.array(Ks)
@@ -537,7 +536,7 @@ print("H=",Hs,"\n\n")
 print("K=",ave_Ks,"\n\n")
 print("V=",ave_Vs,"\n\n")
 
-tag = "N_coord="+str(N_coord)+"_alpha="+str(alpha)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+"_OLO="+str(OLO)+"_spoila="+str(spoila)+"_spoilf="+str(spoilf)
+tag = "OLO"+str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilf"+str(spoilf)
 
 with h5py.File(outdir+'Hammys_'+tag+'.h5', 'w') as f:
     dset = f.create_dataset("Hammys", data=Ks+Vs)

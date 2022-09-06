@@ -604,7 +604,9 @@ def gfmc_deform(
     dtau_iMev = tau_iMev/N
     history = [walkers]
 
-    for i in tqdm.tqdm(range(N)):
+    #for i in tqdm.tqdm(range(N)):
+    for i in range(N):
+        print("step ", i)
         R, R_deform, S, W = walkers
 
         # remove previous factors (to be replaced with current factors after evolving)
