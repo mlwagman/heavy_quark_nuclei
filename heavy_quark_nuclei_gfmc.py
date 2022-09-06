@@ -34,7 +34,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--n_walkers', type=int, default=1000)
 parser.add_argument('--dtau_iMev', type=float, required=True)
 parser.add_argument('--n_step', type=int, required=True)
-parser.add_argument('--n_skip', type=int, default=100)
+parser.add_argument('--n_skip', type=int, default=500)
 parser.add_argument('--resampling', type=int, default=None)
 parser.add_argument('--alpha', type=float, default=1)
 parser.add_argument('--Nc', type=int, default=2)
@@ -385,7 +385,7 @@ f_R = lambda R: trial_wvfn.psi(torch.from_numpy(np.asarray(R))).detach().numpy()
 laplacian_f_R = lambda R: trial_wvfn.laplacian(torch.from_numpy(np.asarray(R))).detach().numpy()
 
 # Metropolis
-Rs_metropolis = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=n_walkers, n_skip=n_skip, eps=trial_wvfn.A[0].item()/N_coord**2)[0]
+Rs_metropolis = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=n_walkers, n_skip=n_skip, eps=2*trial_wvfn.A[0].item()/N_coord**2)[0]
 Rs_metropolis = Rs_metropolis.detach().numpy()
 # build trial wavefunction
 S_av4p_metropolis = np.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
@@ -522,4 +522,4 @@ elif N_coord == 7:
     ax.set_ylim(-15, -18)
 ax.legend()
 
-plt.savefig(outdir+'Hammys_'+"N_coord="+str(N_coord)+"_B="+str(VB)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+"_a0="+str(a0)+'.pdf')
+plt.savefig(outdir+'Hammys_'+"N_coord="+str(N_coord)+"_alpha="+str(alpha)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+"_a0="+str(a0)+'.pdf')
