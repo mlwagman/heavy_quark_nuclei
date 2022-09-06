@@ -4,6 +4,8 @@ import argparse
 import numpy as np
 import h5py
 
+np.random.seed(0)
+
 # fitting parameters
 parser = argparse.ArgumentParser()
 # data to fit
@@ -17,6 +19,8 @@ parser.add_argument('--n_skip', type=int, default=1)
 parser.add_argument('--n_block', type=int, default=1)
 # how many bootstrap samples
 parser.add_argument('--n_boot', type=int, default=200)
+# how often to print
+parser.add_argument('--n_print', type=int, default=10)
 globals().update(vars(parser.parse_args()))
 
 if n_skip > 1 and n_block > 1:
@@ -37,7 +41,7 @@ elif n_block > 1:
 else :
     n_walk = n_walk_full
 
-printmax = n_step // 10
+printmax = n_step // n_print
 
 # block data
 data = np.zeros((n_step,n_walk))
