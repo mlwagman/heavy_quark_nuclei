@@ -297,7 +297,8 @@ def metropolis_coordinate_ensemble(this_psi, *, n_therm, N_walkers, n_skip, eps)
     R -= torch.mean(R, axis=1, keepdims=True)
     # metropolis updates
     print("Running Metropolis")
-    for i in tqdm.tqdm(range(-n_therm, N_walkers*n_skip)):
+    #for i in tqdm.tqdm(range(-n_therm, N_walkers*n_skip)):
+    for i in range(-n_therm, N_walkers*n_skip):
         # update
         dR = draw_coordinates(R.shape, eps=eps, axis=1)
         new_R = R + dR
@@ -417,7 +418,8 @@ print('GFMC tau=dtau weights:', gfmc_Ws[1])
 print('Measuring <H>...')
 
 Ks = []
-for R in tqdm.tqdm(gfmc_Rs):
+#for R in tqdm.tqdm(gfmc_Rs):
+for R in gfmc_Rs:
     #Ks.append(-1/2*laplacian_f_R(R) / f_R(R) / adl.mp_Mev)
     Ks.append(-1/2*laplacian_f_R(R) / f_R(R) / 1)
 Ks = np.array(Ks)
