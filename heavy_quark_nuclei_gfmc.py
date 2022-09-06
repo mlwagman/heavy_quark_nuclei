@@ -45,7 +45,7 @@ globals().update(vars(parser.parse_args()))
 
 cF = (Nc**2 - 1)/(2*Nc)
 VB = alpha*cF
-if Nc > 2:
+if N_coord > 2:
     VB = alpha*cF/(Nc-1)
 
 #######################################################################################
@@ -490,18 +490,18 @@ print("V=",ave_Vs,"\n\n")
 #with h5py.File('Hammys_'+"N_coord="+str(N_coord)+"_B="+str(VB)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+'.hdf5', 'w') as f:
 #    dset = f.create_dataset("default", data=Hs)
 
-with h5py.File(outdir+'Hammys_'+"N_coord="+str(N_coord)+"_B="+str(VB)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+"_a0="+str(a0)+'.hdf5', 'w') as f:
+with h5py.File(outdir+'Hammys_'+"N_coord="+str(N_coord)+"_alpha="+str(alpha)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+"_a0="+str(a0)+'.hdf5', 'w') as f:
     dset = f.create_dataset("Hammys", data=Ks+Vs)
 
-with h5py.File(outdir+'Rs_'+"N_coord="+str(N_coord)+"_B="+str(VB)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+"_a0="+str(a0)+'.hdf5', 'w') as f:
+with h5py.File(outdir+'Rs_'+"N_coord="+str(N_coord)+"_alpha="+str(alpha)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+"_a0="+str(a0)+'.hdf5', 'w') as f:
     dset = f.create_dataset("Rs", data=gfmc_Rs)
 
 
-with h5py.File(outdir+'Hammys_'+"N_coord="+str(N_coord)+"_B="+str(VB)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+"_a0="+str(a0)+'.hdf5', 'r') as f:
+with h5py.File(outdir+'Hammys_'+"N_coord="+str(N_coord)+"_alpha="+str(alpha)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+"_a0="+str(a0)+'.hdf5', 'r') as f:
     data = f['Hammys']
     print(data)
 
-with h5py.File(outdir+'Rs_'+"N_coord="+str(N_coord)+"_B="+str(VB)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+"_a0="+str(a0)+'.hdf5', 'r') as f:
+with h5py.File(outdir+'Rs_'+"N_coord="+str(N_coord)+"_alpha="+str(alpha)+"_nStep="+str(n_step)+"_dtau="+str(dtau_iMev)+"_a0="+str(a0)+'.hdf5', 'r') as f:
     data = f['Rs']
     print(data)
 
