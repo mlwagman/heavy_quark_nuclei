@@ -3,6 +3,7 @@
 import argparse
 import numpy as np
 import h5py
+import csv
 
 np.random.seed(0)
 
@@ -85,7 +86,7 @@ print("\n BOOTSTRAP MEAN")
 print(boot_ensemble.shape)
 print(np.array([np.mean(boot_ensemble[:,n]) for n in range(printmax)]))
 
-# bootstrap variance 
+# bootstrap variance
 boot_var = np.zeros((n_step))
 for n in range(n_step):
     boot_var[n] = (np.mean(boot_ensemble[:,n]**2) - np.mean(boot_ensemble[:,n])**2) * n_walk/(n_walk-1)
@@ -139,7 +140,7 @@ boot_covar_shrunk = np.zeros((n_step,n_step))
 for n in range(n_step):
     for m in range(n_step):
         if n == m:
-            boot_covar_shrunk[n,m] = boot_covar[n,n] 
+            boot_covar_shrunk[n,m] = boot_covar[n,n]
         else:
             boot_covar_shrunk[n,m] = (1-lam)*boot_covar[n,m]
 
@@ -171,3 +172,10 @@ print("\n FIT RESULT")
 print(fit, " +/- ", delta_fit)
 print("dof = ", dof)
 print("chi^2/dof = ", chisq/dof)
+
+with open(database[:-2]+'csv', 'w', newline='') as csvfile:
+    fieldnames = ['mean', 'err', 'chi2dof']
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    writer.writeheader()
+    writer.writerow({'mean': fit, 'err': delta_fit, 'chi2dof': chisq/dof})
+
