@@ -30,8 +30,9 @@ if n_skip > 1 and n_block > 1:
 # read data
 f = h5py.File(database, 'r')
 dset = f[dataset]
+print(dset.shape)
 if dataset == "Rs":
-    dset = np.sqrt(np.sum(np.power(dset,2), axis=1)/3)[:,2]
+    dset = np.mean(np.abs(dset), axis=(2,3))
 
 chi_red = 1e10
 
