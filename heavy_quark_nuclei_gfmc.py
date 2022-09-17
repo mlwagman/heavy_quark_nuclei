@@ -414,13 +414,14 @@ def V3(r1, r2):
    r1_hat_dot_r2_hat = jax.numpy.sum(r1_hat*r2_hat, axis=-1)
    R_norm = lambda x, y: adl.norm_3vec(R(x,y))
    R_hat = lambda x, y: R(x,y) / R_norm(x,y)[...,jax.numpy.newaxis]
-   r1_hat_r2_hat_dot_R_R = lambda x, y: jax.numpy.sum(r1_hat*R(x,y), axis=-1)*jax.numpy.sum(r2_hat*R(x,y), axis=-1)
+   r1_hat_r2_hat_dot_R_R = lambda x, y: jax.numpy.sum(r1_hat*R_hat(x,y), axis=-1)*jax.numpy.sum(r2_hat*R_hat(x,y), axis=-1)
    A = lambda x, y: r1_norm * jax.numpy.sqrt(x*(1-x)) + r2_norm*jax.numpy.sqrt(y*(1-y))
 
-   V3_integrand = lambda x, y: 16*jax.numpy.pi*(r1_hat_dot_r2_hat*(1/R_norm(x,y)*((1-A(x,y)**2/R_norm(x,y)**2)*jax.numpy.arctan2(R(x,y),A(x,y)) + A(x,y)/R(x,y)))  
-	+ r1_hat_r2_hat_dot_R_R(x,y)*((1+3*A(x,y)**2/R(x,y)**2)*jax.numpy.arctan2(R(x,y),A(x,y) - 3*A(x,y)/R(x,y))))
+   V3_integrand = lambda x, y: 16*jax.numpy.pi*( jax.numpy.arctan2(R_norm(x,y),A(x,y))*r1_hat_dot_r2_hat*1/R_norm(x,y)*(-1*A(x,y)**2/R_norm(x,y)**2+1) + r1_hat_dot_r2_hat*A(x,y)/R_norm(x,y)**2
+           + jax.numpy.arctan2(R_norm(x,y),A(x,y))*r1_hat_r2_hat_dot_R_R(x,y)*1/R_norm(x,y)*(3*A(x,y)**2/R_norm(x,y)**2+1) - 3*r1_hat_r2_hat_dot_R_R(x,y)*A(x,y)/R_norm(x,y)**2)  
 
-   V3_integral = scipy.integrate.dblquad(V3_integrand, 0.0, 1.0, 0.0, 1.0)
+   #V3_integral = scipy.integrate.dblquad(V3_integrand, 0.0, 1.0, 0.0, 1.0)
+   V3_integral = V3_integrand(0.5,0.5)
    return V3_integral
 
 Rprime = lambda R: adl.norm_3vec(R)*jax.numpy.exp(np.euler_gamma)*mu
