@@ -68,6 +68,12 @@ two_body_pieces = {
     # tau_i . tau_j
     'iso_dot': sum(onp.einsum('ab,cd->acbd', p, p) for p in paulis)
 }
+three_body_pieces = {
+    # 1 . 1 . 1
+    'sp_I': onp.einsum('ij,kl,mn->ikmjln', onp.identity(NS), onp.identity(NS), onp.identity(NS)),
+    # 1 . 1 . 1
+    'iso_I': onp.einsum('ab,cd,ef->acebdf', onp.identity(NI), onp.identity(NI), onp.identity(NI)),
+}
 @partial(jax.jit)
 def Sij(Rij):
     batch_size, nd = Rij.shape
@@ -85,6 +91,10 @@ def Sij(Rij):
 @partial(jax.jit)
 def two_body_outer(two_body_iso, two_body_spin):
     return np.einsum('zacbd,zikjl->zaickbjdl', two_body_iso, two_body_spin)
+
+@partial(jax.jit)
+def three_body_outer(three_body_iso, three_body_spin):
+    return np.einsum('zacebdf,zikmjln->zaickembjdlfn', three_body_iso, three_body_spin)
 
 two_body_ops = {
     'O1': lambda Rij: two_body_outer(
@@ -106,7 +116,14 @@ two_body_ops = {
         two_body_pieces['iso_dot'][np.newaxis],
         Sij(Rij))
 }
-def make_pairwise_potential(AVcoeffs):
+
+three_body_ops = {
+    'O1': lambda Rijk: three_body_outer(
+        three_body_pieces['iso_I'][np.newaxis],
+        three_body_pieces['sp_I'][np.newaxis]),
+}
+
+def make_pairwise_potential(AVcoeffs, B3coeffs={}):
     @jax.jit
     def pairwise_potential(R):
         batch_size, A = R.shape[:2]
@@ -154,10 +171,47 @@ def make_pairwise_potential(AVcoeffs):
                         V_SI_Mev = V_SI_Mev + scaled_O[broadcast_inds]
                     else:
                         V_SD_Mev = V_SD_Mev + scaled_O[broadcast_inds]
+        # three-body potentials
+        for i in range(A):
+            for j in range(i+1, A):
+                for k in range(i+1, A):
+                    Rij = R[:,i] - R[:,j]
+                    Rjk = R[:,j] - R[:,k]
+                    Rik = R[:,i] - R[:,k]
+                    for name,op in three_body_ops.items():
+                        if name not in B3coeffs: continue
+                        Oijk = op(Rij, Rjk, Rik)
+                        vijk = B3coeffs[name](Rij, Rjk, Rik)
+                        broadcast_vijk_inds = (slice(None),) + (np.newaxis,)*(len(Oijk.shape)-1)
+                        vijk = vijk[broadcast_vijk_inds]
+                        scaled_O = vijk * Oijk
+                        assert len(scaled_O.shape) == 9, \
+                            'scaled_O should have batch (1) and two-body (2) src/sink (2) spin/iso (2) = 9 dims'
+                        broadcast_src_snk_inds = (
+                            (np.newaxis,)*2*i + # skip i src iso/spin
+                            (slice(None),)*2 + # ith particle src iso/spin
+                            (np.newaxis,)*2*(j-i-1) + # skip j-i-1 src iso/spin
+                            (slice(None),)*2 + # jth particle src iso/spin
+                            (np.newaxis,)*2*(k-j-1) + # skip k-j-1 src iso/spin
+                            (slice(None),)*2 + # jth particle src iso/spin
+                            (np.newaxis,)*2*(A-k-1) # skip A-k-1 src iso/spin
+                        )
+                        assert len(broadcast_src_snk_inds) == 2*A, \
+                            'must have A particle src (or snk) inds'
+                        broadcast_inds = (
+                            (slice(None),) + # batch
+                            broadcast_src_snk_inds + # src
+                            broadcast_src_snk_inds # snk
+                        )
+                        assert len(broadcast_inds) == len(V_SI_Mev.shape)
+                        if name == 'O1':
+                            V_SI_Mev = V_SI_Mev + scaled_O[broadcast_inds]
+                        else:
+                            V_SD_Mev = V_SD_Mev + scaled_O[broadcast_inds]
         return V_SI_Mev, V_SD_Mev
     return pairwise_potential
 
-def flat_pairwise_potential(R, AVcoeffs):
+def flat_pairwise_potential(R, AVcoeffs, B3coeffs={}):
     batch_size, A = R.shape[:2]
     V_SI_Mev = np.zeros( # big-ass matrix
         (batch_size,) + # batch of walkers
@@ -203,6 +257,42 @@ def flat_pairwise_potential(R, AVcoeffs):
                     V_SI_Mev += scaled_O[broadcast_inds]
                 else:
                     V_SD_Mev += scaled_O[broadcast_inds]
+    # three-body potentials
+    for i in range(A):
+        for j in range(i+1, A):
+            for k in range(j+1, A):
+                Rij = R[:,i] - R[:,j]
+                Rjk = R[:,j] - R[:,k]
+                Rik = R[:,i] - R[:,k]
+                for name,op in three_body_ops.items():
+                    if name not in B3coeffs: continue
+                    Oijk = op(Rij, Rjk, Rik)
+                    vijk = B3coeffs[name](Rij, Rjk, Rik)
+                    broadcast_vijk_inds = (slice(None),) + (np.newaxis,)*(len(Oijk.shape)-1)
+                    scaled_O = vijk * Oijk
+                    assert len(scaled_O.shape) == 9, \
+                        'scaled_O should have batch (1) and A-body (2) src/sink (2) spin/iso (2) = 9 dims'
+                    broadcast_src_snk_inds = (
+                        (np.newaxis,)*2*i + # skip i src iso/spin
+                        (slice(None),)*2 + # ith particle src iso/spin
+                        (np.newaxis,)*2*(j-i-1) + # skip j-i-1 src iso/spin
+                        (slice(None),)*2 + # jth particle src iso/spin
+                        (np.newaxis,)*2*(k-j-1) + # skip k-j-1 src iso/spin
+                        (slice(None),)*2 + # kth particle src iso/spin
+                        (np.newaxis,)*2*(A-k-1) # skip A-k-1 src iso/spin
+                    )
+                    assert len(broadcast_src_snk_inds) == 2*A, \
+                        'must have A particle src (or snk) inds'
+                    broadcast_inds = (
+                        (slice(None),) + # batch
+                        broadcast_src_snk_inds + # src
+                        broadcast_src_snk_inds # snk
+                    )
+                    assert len(broadcast_inds) == len(V_SI_Mev.shape)
+                    if name == 'O1':
+                        V_SI_Mev += scaled_O[broadcast_inds]
+                    else:
+                        V_SD_Mev += scaled_O[broadcast_inds]
     return V_SI_Mev, V_SD_Mev
 
 
