@@ -406,19 +406,19 @@ aa32 = Nc/4*(12541/243+368/3*zeta3+64*np.pi**4/135)+CF/4*(14002/81-416*zeta3/3)
 aa33 = -(20/9)**3*1/8
 aa3 = aa30+aa31*nf+aa32*nf**2+aa33*nf**3
 def V3(r1, r2):
-   R = lambda x, y: x*r1 - y*R2
+   R = lambda x, y: x*r1 - y*r2
    r1_norm = adl.norm_3vec(r1)
-   r1_hat = r1 / r1_norm
+   r1_hat = r1 / r1_norm[...,jax.numpy.newaxis]
    r2_norm = adl.norm_3vec(r1)
-   r2_hat = r2 / r2_norm
-   r1_hat_dot_r2_hat = np.sum(r1_hat*r2_hat, axis=-1)
+   r2_hat = r2 / r2_norm[...,jax.numpy.newaxis]
+   r1_hat_dot_r2_hat = jax.numpy.sum(r1_hat*r2_hat, axis=-1)
    R_norm = lambda x, y: adl.norm_3vec(R(x,y))
-   R_hat = lambda x, y: R(x,y) / R_norm(x,y)
-   r1_hat_r2_hat_dot_R_R = lambda x, y: np.sum(r1_hat*R(x,y), axis=-1)*np.sum(r2_hat*R(x,y), axis=-1)
-   A = lambda x, y: r1_norm * np.sqrt(x*(1-x)) + r2_norm*np.sqrt(y(1-y))
+   R_hat = lambda x, y: R(x,y) / R_norm(x,y)[...,jax.numpy.newaxis]
+   r1_hat_r2_hat_dot_R_R = lambda x, y: jax.numpy.sum(r1_hat*R(x,y), axis=-1)*jax.numpy.sum(r2_hat*R(x,y), axis=-1)
+   A = lambda x, y: r1_norm * jax.numpy.sqrt(x*(1-x)) + r2_norm*jax.numpy.sqrt(y*(1-y))
 
-   V3_integrand = lambda x, y: 16*np.pi*(r1_hat_dot_r2_hat*(1/R_norm(x,y)*((1-A(x,y)**2/R_norm(x,y)**2)*np.atan2(R(x,y),A(x,y)) + A(x,y)/R(x,y)))  
-	+ r1_hat_r2_hat_dot_R_R(x,y)*((1+3*A(x,y)**2/R(x,y)**2)*np.atan2(R(x,y),A(x,y) - 3*A(x,y)/R(x,y))))
+   V3_integrand = lambda x, y: 16*jax.numpy.pi*(r1_hat_dot_r2_hat*(1/R_norm(x,y)*((1-A(x,y)**2/R_norm(x,y)**2)*jax.numpy.arctan2(R(x,y),A(x,y)) + A(x,y)/R(x,y)))  
+	+ r1_hat_r2_hat_dot_R_R(x,y)*((1+3*A(x,y)**2/R(x,y)**2)*jax.numpy.arctan2(R(x,y),A(x,y) - 3*A(x,y)/R(x,y))))
 
    V3_integral = scipy.integrate.dblquad(V3_integrand, 0.0, 1.0, 0.0, 1.0)
    return V3_integral
@@ -446,7 +446,7 @@ else:
 	print("order not supported")	
 	throw(0)
 
-Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb)
+Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb, B3_Coulomb)
 
 # build Coulomb ground-state trial wavefunction
 trial_wvfn = wvfn()
