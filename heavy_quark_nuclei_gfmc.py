@@ -23,6 +23,7 @@ import time
 import h5py
 import math
 import mpmath
+from functools import partial
 
 from sympy import simplify, summation, sqrt, Eq, Integral, oo, pprint, symbols, Symbol, log, exp, diff, Sum, factorial, IndexedBase, Function, cos, sin, atan, acot, pi, atan2, trigsimp, lambdify, re, im
 from sympy.physics.hydrogen import R_nl, Psi_nlm
@@ -30,6 +31,9 @@ from sympy.physics.hydrogen import R_nl, Psi_nlm
 from itertools import permutations
 import torch
 import torch.nn as nn
+
+np.random.seed(0)
+torch.manual_seed(0)
 
 paper_plt.load_latex_config()
 
@@ -391,7 +395,7 @@ beta0 = 11/3*Nc - 2/3*nf
 beta1 = 34/3*Nc**2 - 20/3*Nc*nf/2 - 2*CF*nf
 beta2 = 2857/54*Nc**3 + CF**2*nf-205/9*Nc*CF*nf/2-1415/27*Nc**2*nf/2+44/9*CF*(nf/2)**2+158/27*Nc*(nf/2)**2
 aa1 = 31/9*Nc-10/9*nf
-zeta3 = scipy.special.zeta(3) 
+zeta3 = scipy.special.zeta(3)
 zeta5 = scipy.special.zeta(5)
 zeta51 = 1/2 + 1/3 + 1/7 + 1/51 + 1/4284
 zeta6 = scipy.special.zeta(6)
@@ -400,11 +404,13 @@ dFF = (18-Nc**2+Nc**4)/(96*Nc**2)
 dFA = Nc*(Nc**2+6)/48
 alpha4 = float(mpmath.polylog(4,1/2))*0+(-jax.numpy.log(2))**4/(4*3*2*1)
 ss6 = zeta51+zeta6
-aa30 = dFA*( np.pi**2*( 7432/9-4736*alpha4+jax.numpy.log(2)*(14752/3-3472*zeta3)-6616*zeta3/3)  +  np.pi**4*(-156+560*jax.numpy.log(2)/3+496*jax.numpy.log(2)**2/3)+1511*np.pi**6/45)  + Nc**3*(385645/2916 + np.pi**2*( -953/54 +584/3*alpha4 +175/2*zeta3 + jax.numpy.log(2)*(-922/9+217*zeta3/3) ) +584*zeta3/3 + np.pi**4*( 1349/270-20*jax.numpy.log(2)/9-40*jax.numpy.log(2)**2/9 ) -1927/6*zeta5 -143/2*zeta3**2-4621/3024*np.pi**6+144*ss6  ) 
+aa30 = dFA*( np.pi**2*( 7432/9-4736*alpha4+jax.numpy.log(2)*(14752/3-3472*zeta3)-6616*zeta3/3)  +  np.pi**4*(-156+560*jax.numpy.log(2)/3+496*jax.numpy.log(2)**2/3)+1511*np.pi**6/45)  + Nc**3*(385645/2916 + np.pi**2*( -953/54 +584/3*alpha4 +175/2*zeta3 + jax.numpy.log(2)*(-922/9+217*zeta3/3) ) +584*zeta3/3 + np.pi**4*( 1349/270-20*jax.numpy.log(2)/9-40*jax.numpy.log(2)**2/9 ) -1927/6*zeta5 -143/2*zeta3**2-4621/3024*np.pi**6+144*ss6  )
 aa31 = dFF*( np.pi**2*(1264/9-976*zeta3/3+jax.numpy.log(2)*(64+672*zeta3)) + np.pi**4*(-184/3+32/3*jax.numpy.log(2)-32*jax.numpy.log(2)**2) +10/3*np.pi**6 ) + CF**2/2*(286/9+296/3*zeta3-160*zeta5)+Nc*CF/2*(-71281/162+264*zeta3+80*zeta5)+Nc**2/2*(-58747/486+np.pi**2*(17/27-32*alpha4+jax.numpy.log(2)*(-4/3-14*zeta3)-19/3*zeta3)-356*zeta3+np.pi**4*(-157/54-5*jax.numpy.log(2)/9+jax.numpy.log(2)**2)+1091*zeta5/6+57/2*zeta3**2+761*np.pi**6/2520-48*ss6)
 aa32 = Nc/4*(12541/243+368/3*zeta3+64*np.pi**4/135)+CF/4*(14002/81-416*zeta3/3)
 aa33 = -(20/9)**3*1/8
 aa3 = aa30+aa31*nf+aa32*nf**2+aa33*nf**3
+
+@partial(jax.jit)
 def V3(r1, r2):
    R = lambda x, y: x*r1 - y*r2
    r1_norm = adl.norm_3vec(r1)
@@ -418,23 +424,20 @@ def V3(r1, r2):
    A = lambda x, y: r1_norm * jax.numpy.sqrt(x*(1-x)) + r2_norm*jax.numpy.sqrt(y*(1-y))
 
    V3_integrand = lambda x, y: 16*jax.numpy.pi*( jax.numpy.arctan2(R_norm(x,y),A(x,y))*r1_hat_dot_r2_hat*1/R_norm(x,y)*(-1*A(x,y)**2/R_norm(x,y)**2+1) + r1_hat_dot_r2_hat*A(x,y)/R_norm(x,y)**2
-           + jax.numpy.arctan2(R_norm(x,y),A(x,y))*r1_hat_r2_hat_dot_R_R(x,y)*1/R_norm(x,y)*(3*A(x,y)**2/R_norm(x,y)**2+1) - 3*r1_hat_r2_hat_dot_R_R(x,y)*A(x,y)/R_norm(x,y)**2)  
+           + jax.numpy.arctan2(R_norm(x,y),A(x,y))*r1_hat_r2_hat_dot_R_R(x,y)*1/R_norm(x,y)*(3*A(x,y)**2/R_norm(x,y)**2+1) - 3*r1_hat_r2_hat_dot_R_R(x,y)*A(x,y)/R_norm(x,y)**2)
 
-   int_points = 10
-   x_grid = jax.numpy.linspace(0, 1, int_points)
-   y_grid = jax.numpy.linspace(0, 1, int_points)
-   V3_grid = jax.numpy.transpose(jax.numpy.array([[V3_integrand(x,y) for y in y_grid] for x in x_grid]), (2,0,1))
+   int_points = 100
+   dx = 1/int_points
+   x_grid = jax.numpy.arange(dx, stop=1, step=dx)
+   y_grid = jax.numpy.arange(0, stop=1, step=dx)
+   #V3_grid = jax.numpy.transpose(jax.numpy.array([[V3_integrand(x,y) for y in y_grid] for x in x_grid]), (2,0,1))
 
-   print(V3_grid)
+   y_vmap_f = jax.vmap(V3_integrand, (None, 0))
+   xy_vmap_f = jax.vmap(y_vmap_f, (0, None))
+   V3_grid = jax.numpy.transpose( xy_vmap_f(x_grid, y_grid), (2,0,1))
 
-   V3_integral = jax.numpy.trapz( jax.numpy.trapz(V3_grid, dx=1/int_points), dx=1/int_points)
+   V3_integral = 0*jax.numpy.trapz( jax.numpy.trapz(V3_grid, dx=1/int_points), dx=1/int_points)
 
-   print(V3_integral)
-
-   #print(V3_integral.shape)
-
-   #V3_integral = scipy.integrate.dblquad(V3_integrand, 0.0, 1.0, 0.0, 1.0)
-   #V3_integral = V3_integrand(0.5,0.5)
    return V3_integral
 
 Rprime = lambda R: adl.norm_3vec(R)*jax.numpy.exp(np.euler_gamma)*mu
@@ -449,15 +452,15 @@ elif OLO == "NNLO":
 	AV_Coulomb['O1'] = lambda R: -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*jax.numpy.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*jax.numpy.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*jax.numpy.log(Rprime(R))+aa2 ) )
 	B3_Coulomb['O1'] = lambda Rij, Rjk, Rik: -1*alpha*(alpha/(4*np.pi))**2*(V3(Rij, Rjk) + V3(Rjk, Rik) + V3(Rik, Rij))
 elif OLO == "N3LO":
-        AV_Coulomb['O1'] = lambda R: -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*jax.numpy.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*jax.numpy.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*jax.numpy.log(Rprime(R))+aa2 ) ) + (alpha/(4*np.pi))**3*( 64*np.pi**2/3*Nc**3*jax.numpy.log(adl.norm_3vec(R)) + aa3 + 64*np.pi**2/3*Nc**3*np.euler_gamma + 512*beta0**3*( jax.numpy.log(Rprime(R))**3 + np.pi**4/4*jax.numpy.log(Rprime(R))+2*zeta3 ) + (640*beta0*beta1 + 192*beta0**2*aa1)*(jax.numpy.log(Rprime(R))**2+np.pi**2/12) + (128*beta2+64*beta1*aa1+24*beta0*aa2)*jax.numpy.log(Rprime(R)) ) 
+        AV_Coulomb['O1'] = lambda R: -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*jax.numpy.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*jax.numpy.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*jax.numpy.log(Rprime(R))+aa2 ) ) + (alpha/(4*np.pi))**3*( 64*np.pi**2/3*Nc**3*jax.numpy.log(adl.norm_3vec(R)) + aa3 + 64*np.pi**2/3*Nc**3*np.euler_gamma + 512*beta0**3*( jax.numpy.log(Rprime(R))**3 + np.pi**4/4*jax.numpy.log(Rprime(R))+2*zeta3 ) + (640*beta0*beta1 + 192*beta0**2*aa1)*(jax.numpy.log(Rprime(R))**2+np.pi**2/12) + (128*beta2+64*beta1*aa1+24*beta0*aa2)*jax.numpy.log(Rprime(R)) )
 elif OLO == "mNLO":
         AV_Coulomb['O1'] = lambda R: -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*jax.numpy.log(Rprime(R))+aa1)) -1*CF*Nc*alpha**2/(N_coord-1)/(adl.norm_3vec(R)**2)
-elif OLO == "mNNLO": 
+elif OLO == "mNNLO":
 	AV_Coulomb['O1'] = lambda R: -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*jax.numpy.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*jax.numpy.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*jax.numpy.log(Rprime(R))+aa2 ) ) -1*CF*Nc*alpha**2/(N_coord-1)/(adl.norm_3vec(R)**2)
 elif OLO == "mN3LO":
         AV_Coulomb['O1'] = lambda R: -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*jax.numpy.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*jax.numpy.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*jax.numpy.log(Rprime(R))+aa2 ) ) + (alpha/(4*np.pi))**3*( 64*np.pi**2/3*Nc**3*jax.numpy.log(adl.norm_3vec(R)) + aa3 + 64*np.pi**2/3*Nc**3*np.euler_gamma + 512*beta0**3*( jax.numpy.log(Rprime(R))**3 + np.pi**4/4*jax.numpy.log(Rprime(R))+2*zeta3 ) + (640*beta0*beta1 + 192*beta0**2*aa1)*(jax.numpy.log(Rprime(R))**2+np.pi**2/12) + (128*beta2+64*beta1*aa1+24*beta0*aa2)*jax.numpy.log(Rprime(R)) ) -1*CF*Nc*alpha**2/(N_coord-1)/(adl.norm_3vec(R)**2)
 else:
-	print("order not supported")	
+	print("order not supported")
 	throw(0)
 
 Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb, B3_Coulomb)
@@ -466,6 +469,7 @@ Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb, B3_Coulomb)
 trial_wvfn = wvfn()
 print(trial_wvfn.A)
 f_R = lambda R: trial_wvfn.psi(torch.from_numpy(np.asarray(R))).detach().numpy()
+
 laplacian_f_R = lambda R: trial_wvfn.laplacian(torch.from_numpy(np.asarray(R))).detach().numpy()
 
 # Metropolis
@@ -518,9 +522,12 @@ Ks = np.array(Ks)
 #    for dRs, S in zip(map(adl.to_relative, gfmc_Rs), gfmc_Ss)])
 
 Vs = []
-for Rs in gfmc_Rs:
-    VSI,_ = Coulomb_potential(Rs)
+for count, R in enumerate(gfmc_Rs):
+    print('Calculating potential for step ', count)
+    V_time = time.time()
+    VSI,_ = Coulomb_potential(R)
     V_ind = (slice(0,None),) + (0,)*NS*NI*N_coord
+    print(f"calculated potential in {time.time() - V_time} sec")
     Vs.append(VSI[V_ind])
 
 Vs = np.array(Vs)

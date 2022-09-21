@@ -124,7 +124,7 @@ three_body_ops = {
 }
 
 def make_pairwise_potential(AVcoeffs, B3coeffs={}):
-   # TODO
+# TODO JIT potential
 #    @jax.jit
     def pairwise_potential(R):
         batch_size, A = R.shape[:2]
@@ -507,7 +507,8 @@ def metropolis(R, W, *, n_therm, n_step, n_skip, eps):
 ### separately returning the updated spin-isospin wavefunction
 ###     |S'> = (1 - (dtau/2) V_SD + (dtau^2/8) V_SD^2) |S>
 ### and the scalar factor exp(-dtau/2 V_SI).
-@partial(jax.jit, static_argnums=(2,))
+# TODO JIT potential
+#@partial(jax.jit, static_argnums=(2,))
 def compute_VS_separate(R_prop, S, potential, *, dtau_iMev):
     N_coord = R_prop.shape[1]
     V_SI_prop, _ = potential(R_prop)
@@ -521,7 +522,7 @@ def compute_VS_separate(R_prop, S, potential, *, dtau_iMev):
     return np.exp(-dtau_iMev/2 * V_SI_prop), S_prop
 
 ### Apply exp(-dtau/2 V_SI) (1 - (dtau/2) V_SD + (dtau^2/8) V_SD^2) to |S>.
-# TODO
+# TODO JIT potential
 #@partial(jax.jit, static_argnums=(2,))
 def compute_VS(R_deform, S, potential, *, dtau_iMev):
     N_coord = R_deform.shape[1]
@@ -534,7 +535,8 @@ def compute_VS(R_deform, S, potential, *, dtau_iMev):
     S = np.exp(-dtau_iMev/2 * V_SI) * S
     return S
 
-@partial(jax.jit, static_argnums=(8,9), static_argnames=('deform_f',))
+# TODO JIT potential
+#@partial(jax.jit, static_argnums=(8,9), static_argnames=('deform_f',))
 def kinetic_step(R_fwd, R_bwd, R, R_deform, S, u, params_i, S_T,
                  f_R_norm, potential, *, deform_f, dtau_iMev, m_Mev):
     """Step forward given two possible proposals and RNG to decide"""
@@ -690,6 +692,7 @@ def gfmc_deform(
         R0, S_T, f_R_norm, params, *, rand_draws, tau_iMev, N, potential, m_Mev,
         deform_f, resampling_freq=None):
     # sigma, kappa_0, kappa_m, zeta_m, lambda_mn, chi_mn = params
+    #config.update('jax_disable_jit', True)
     params0 = tuple(param[0] for param in params)
     R0_deform = deform_f(R0, *params0)
     W = f_R_norm(R0_deform) / f_R_norm(R0)
@@ -699,6 +702,7 @@ def gfmc_deform(
 
     #for i in tqdm.tqdm(range(N)):
     for i in range(N):
+        _start = time.time()
         print("step ", i)
         R, R_deform, S, W = walkers
 
@@ -709,7 +713,6 @@ def gfmc_deform(
         S = compute_VS(R_deform, S, potential, dtau_iMev=dtau_iMev)
 
         # exp(-dtau V/2) exp(-dtau K)|R,S> using fwd/bwd heatbath
-        _start = time.time()
         R_fwd, R_bwd = step_G0_symm(onp.array(R), dtau_iMev=dtau_iMev, m_Mev=m_Mev)
         R_fwd, R_bwd = np.array(R_fwd), np.array(R_bwd)
         u = rand_draws[i] # np.array(onp.random.random(size=R_fwd.shape[0]))
@@ -738,6 +741,8 @@ def gfmc_deform(
             W = W[inds]
 
         walkers = (R, R_deform, S, W)
+        _step_time = time.time()-_start
+        print(f'computed step in {_step_time:.1f}s')
 
     return history
 
