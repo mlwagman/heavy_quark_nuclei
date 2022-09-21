@@ -118,13 +118,14 @@ two_body_ops = {
 }
 
 three_body_ops = {
-    'O1': lambda Rijk: three_body_outer(
+    'O1': lambda Rij, Rjk, Rik: three_body_outer(
         three_body_pieces['iso_I'][np.newaxis],
         three_body_pieces['sp_I'][np.newaxis]),
 }
 
 def make_pairwise_potential(AVcoeffs, B3coeffs={}):
-    @jax.jit
+   # TODO
+#    @jax.jit
     def pairwise_potential(R):
         batch_size, A = R.shape[:2]
         V_SI_Mev = np.zeros( # big-ass matrix
@@ -174,7 +175,7 @@ def make_pairwise_potential(AVcoeffs, B3coeffs={}):
         # three-body potentials
         for i in range(A):
             for j in range(i+1, A):
-                for k in range(i+1, A):
+                for k in range(j+1, A):
                     Rij = R[:,i] - R[:,j]
                     Rjk = R[:,j] - R[:,k]
                     Rik = R[:,i] - R[:,k]
@@ -185,8 +186,8 @@ def make_pairwise_potential(AVcoeffs, B3coeffs={}):
                         broadcast_vijk_inds = (slice(None),) + (np.newaxis,)*(len(Oijk.shape)-1)
                         vijk = vijk[broadcast_vijk_inds]
                         scaled_O = vijk * Oijk
-                        assert len(scaled_O.shape) == 9, \
-                            'scaled_O should have batch (1) and two-body (2) src/sink (2) spin/iso (2) = 9 dims'
+                        assert len(scaled_O.shape) == 13, \
+                            'scaled_O should have batch (1) and two-body (3) src/sink (2) spin/iso (2) = 13 dims'
                         broadcast_src_snk_inds = (
                             (np.newaxis,)*2*i + # skip i src iso/spin
                             (slice(None),)*2 + # ith particle src iso/spin
@@ -270,7 +271,7 @@ def flat_pairwise_potential(R, AVcoeffs, B3coeffs={}):
                     vijk = B3coeffs[name](Rij, Rjk, Rik)
                     broadcast_vijk_inds = (slice(None),) + (np.newaxis,)*(len(Oijk.shape)-1)
                     scaled_O = vijk * Oijk
-                    assert len(scaled_O.shape) == 9, \
+                    assert len(scaled_O.shape) == 13, \
                         'scaled_O should have batch (1) and A-body (2) src/sink (2) spin/iso (2) = 9 dims'
                     broadcast_src_snk_inds = (
                         (np.newaxis,)*2*i + # skip i src iso/spin
@@ -290,6 +291,7 @@ def flat_pairwise_potential(R, AVcoeffs, B3coeffs={}):
                     )
                     assert len(broadcast_inds) == len(V_SI_Mev.shape)
                     if name == 'O1':
+                        jax_print("including 3-body ops")
                         V_SI_Mev += scaled_O[broadcast_inds]
                     else:
                         V_SD_Mev += scaled_O[broadcast_inds]
@@ -519,7 +521,8 @@ def compute_VS_separate(R_prop, S, potential, *, dtau_iMev):
     return np.exp(-dtau_iMev/2 * V_SI_prop), S_prop
 
 ### Apply exp(-dtau/2 V_SI) (1 - (dtau/2) V_SD + (dtau^2/8) V_SD^2) to |S>.
-@partial(jax.jit, static_argnums=(2,))
+# TODO
+#@partial(jax.jit, static_argnums=(2,))
 def compute_VS(R_deform, S, potential, *, dtau_iMev):
     N_coord = R_deform.shape[1]
     V_SI, V_SD = potential(R_deform)

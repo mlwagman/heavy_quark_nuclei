@@ -420,8 +420,21 @@ def V3(r1, r2):
    V3_integrand = lambda x, y: 16*jax.numpy.pi*( jax.numpy.arctan2(R_norm(x,y),A(x,y))*r1_hat_dot_r2_hat*1/R_norm(x,y)*(-1*A(x,y)**2/R_norm(x,y)**2+1) + r1_hat_dot_r2_hat*A(x,y)/R_norm(x,y)**2
            + jax.numpy.arctan2(R_norm(x,y),A(x,y))*r1_hat_r2_hat_dot_R_R(x,y)*1/R_norm(x,y)*(3*A(x,y)**2/R_norm(x,y)**2+1) - 3*r1_hat_r2_hat_dot_R_R(x,y)*A(x,y)/R_norm(x,y)**2)  
 
+   int_points = 10
+   x_grid = jax.numpy.linspace(0, 1, int_points)
+   y_grid = jax.numpy.linspace(0, 1, int_points)
+   V3_grid = jax.numpy.transpose(jax.numpy.array([[V3_integrand(x,y) for y in y_grid] for x in x_grid]), (2,0,1))
+
+   print(V3_grid)
+
+   V3_integral = jax.numpy.trapz( jax.numpy.trapz(V3_grid, dx=1/int_points), dx=1/int_points)
+
+   print(V3_integral)
+
+   #print(V3_integral.shape)
+
    #V3_integral = scipy.integrate.dblquad(V3_integrand, 0.0, 1.0, 0.0, 1.0)
-   V3_integral = V3_integrand(0.5,0.5)
+   #V3_integral = V3_integrand(0.5,0.5)
    return V3_integral
 
 Rprime = lambda R: adl.norm_3vec(R)*jax.numpy.exp(np.euler_gamma)*mu
