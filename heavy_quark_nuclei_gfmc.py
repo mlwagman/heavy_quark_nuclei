@@ -61,7 +61,7 @@ CF = (Nc**2 - 1)/(2*Nc)
 VB = alpha*CF
 if N_coord > 2:
     VB = alpha*CF/(Nc-1)
-
+SingC3 = -(Nc+1)/8
 cutoff = 1;
 a0 = spoila*2/VB;
 
@@ -450,7 +450,7 @@ elif OLO == "NLO":
 	AV_Coulomb['O1'] = lambda R: -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*jax.numpy.log(Rprime(R))+aa1))
 elif OLO == "NNLO":
 	AV_Coulomb['O1'] = lambda R: -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*jax.numpy.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*jax.numpy.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*jax.numpy.log(Rprime(R))+aa2 ) )
-	B3_Coulomb['O1'] = lambda Rij, Rjk, Rik: -1*alpha*(alpha/(4*np.pi))**2*(V3(Rij, Rjk) + V3(Rjk, Rik) + V3(Rik, Rij))
+	B3_Coulomb['O1'] = lambda Rij, Rjk, Rik: SingC3*2*alpha*(alpha/(4*np.pi))**2*(V3(Rij, Rjk) + V3(Rjk, Rik) + V3(Rik, Rij))
 elif OLO == "N3LO":
         AV_Coulomb['O1'] = lambda R: -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*jax.numpy.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*jax.numpy.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*jax.numpy.log(Rprime(R))+aa2 ) ) + (alpha/(4*np.pi))**3*( 64*np.pi**2/3*Nc**3*jax.numpy.log(adl.norm_3vec(R)) + aa3 + 64*np.pi**2/3*Nc**3*np.euler_gamma + 512*beta0**3*( jax.numpy.log(Rprime(R))**3 + np.pi**4/4*jax.numpy.log(Rprime(R))+2*zeta3 ) + (640*beta0*beta1 + 192*beta0**2*aa1)*(jax.numpy.log(Rprime(R))**2+np.pi**2/12) + (128*beta2+64*beta1*aa1+24*beta0*aa2)*jax.numpy.log(Rprime(R)) )
 elif OLO == "mNLO":
