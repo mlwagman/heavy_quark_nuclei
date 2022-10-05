@@ -139,48 +139,65 @@ while chi_red > 1.5 :
     print("\n OPTIMAL SHRINKAGE PARAMETER")
     print(lam)
     
-    # apply shrinkage
-    boot_covar_shrunk = np.zeros((n_step,n_step))
-    for n in range(n_step):
-        for m in range(n_step):
-            if n == m:
-                boot_covar_shrunk[n,m] = boot_covar[n,n]
-            else:
-                boot_covar_shrunk[n,m] = (1-lam)*boot_covar[n,m]
-    
-    print("\n BOOTSTRAP COVARIANCE WITH OPTIMAL SHRINKAGE ERR")
-    print(np.array([np.sqrt(boot_covar_shrunk[n,n]) for n in range(0, n_step, n_print)]))
-    #print("\n TOP ROW")
-    #print(np.array([boot_covar_shrunk[0,n] for n in range(0, n_step, n_print)]))
-    
-    # invert covariance matrix
-    boot_covar_shrunk_inv = np.linalg.inv(boot_covar_shrunk)
-    
-    #print("\n INVERSE BOOTSTRAP COVARIANCE WITH OPTIMAL SHRINKAGE")
-    #print(boot_covar_shrunk_inv.shape)
-    #print("\n DIAGONAL")
-    #print(np.array([boot_covar_shrunk_inv[n,n] for n in range(0, n_step, n_print)]))
-    #print("\n TOP ROW")
-    #print(np.array([boot_covar_shrunk_inv[0,n] for n in range(0, n_step, n_print)]))
-    
-    # do the fit!
-    Delta = 1/np.sum(boot_covar_shrunk_inv, axis=None)
-    delta_fit = np.sqrt(Delta)
-    fit = Delta * np.sum(sample_mean @ boot_covar_shrunk_inv)
-    chisq = (sample_mean - fit) @ boot_covar_shrunk_inv @ (sample_mean - fit)
-    dof = n_step-1
-    chi_red = chisq/dof
-    
-    print("\n FIT RESULT")
-    print("n_start = ", start_fit)
-    print(fit, " +/- ", delta_fit)
-    print("dof = ", dof)
-    print("chi^2/dof = ", chi_red)
-    
-    if start_fit+10 < n_step:
-        start_fit += 10
-    else:
+    if lam >= 0.9:
+        delta_fit = 0.0
+        fit = np.mean(sample_mean)
+        chisq = (sample_mean - fit) @ (sample_mean - fit)
+        dof = n_step-1
+        chi_red = chisq/dof
+        
+        print("\n FIT RESULT")
+        print("SINGULAR COVARIANCE MATRIX")
+        print("n_start = ", start_fit)
+        print(fit, " +/- ", delta_fit)
+        print("dof = ", dof)
+        print("chi^2/dof = ", chi_red)
+
         break
+    else:
+        # apply shrinkage
+        boot_covar_shrunk = np.zeros((n_step,n_step))
+        for n in range(n_step):
+            for m in range(n_step):
+                if n == m:
+                    boot_covar_shrunk[n,m] = boot_covar[n,n]
+                else:
+                    boot_covar_shrunk[n,m] = (1-lam)*boot_covar[n,m]
+        
+        print("\n BOOTSTRAP COVARIANCE WITH OPTIMAL SHRINKAGE ERR")
+        print(np.array([np.sqrt(boot_covar_shrunk[n,n]) for n in range(0, n_step, n_print)]))
+        #print("\n TOP ROW")
+        #print(np.array([boot_covar_shrunk[0,n] for n in range(0, n_step, n_print)]))
+        
+        # invert covariance matrix
+        boot_covar_shrunk_inv = np.linalg.inv(boot_covar_shrunk)
+        
+        #print("\n INVERSE BOOTSTRAP COVARIANCE WITH OPTIMAL SHRINKAGE")
+        #print(boot_covar_shrunk_inv.shape)
+        #print("\n DIAGONAL")
+        #print(np.array([boot_covar_shrunk_inv[n,n] for n in range(0, n_step, n_print)]))
+        #print("\n TOP ROW")
+        #print(np.array([boot_covar_shrunk_inv[0,n] for n in range(0, n_step, n_print)]))
+        
+        # do the fit!
+        Delta = 1/np.sum(boot_covar_shrunk_inv, axis=None)
+        delta_fit = np.sqrt(Delta)
+        fit = Delta * np.sum(sample_mean @ boot_covar_shrunk_inv)
+        chisq = (sample_mean - fit) @ boot_covar_shrunk_inv @ (sample_mean - fit)
+        dof = n_step-1
+        chi_red = chisq/dof
+        
+        print("\n FIT RESULT")
+        print("n_start = ", start_fit)
+        print(fit, " +/- ", delta_fit)
+        print("dof = ", dof)
+        print("chi^2/dof = ", chi_red)
+        
+        if start_fit+10 < n_step:
+            start_fit += 10
+        else:
+            print("\n QUITTING")
+            break
 
 
 with open(database[:-2]+'csv', 'w', newline='') as csvfile:
