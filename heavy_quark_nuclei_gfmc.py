@@ -547,13 +547,13 @@ for count, R in enumerate(gfmc_Rs):
 Vs = np.array(Vs)
 print(Vs.shape)
 
-Hs = np.array([al.bootstrap(Ks + Vs, Ws, Nboot=100, f=adl.rw_mean)
-        for Ks,Vs,Ws in zip(Ks, Vs, gfmc_Ws)])
+Hs = np.array([al.bootstrap(K + V, W, Nboot=100, f=adl.rw_mean)
+        for K,V,W in zip(Ks, Vs, gfmc_Ws)])
 
-ave_Ks = np.array([al.bootstrap(Ks, Ws, Nboot=100, f=adl.rw_mean)
-        for Ks,Vs,Ws in zip(Ks, Vs, gfmc_Ws)])
-ave_Vs = np.array([al.bootstrap(Vs, Ws, Nboot=100, f=adl.rw_mean)
-        for Ks,Vs,Ws in zip(Ks, Vs, gfmc_Ws)])
+ave_Ks = np.array([al.bootstrap(K, W, Nboot=100, f=adl.rw_mean)
+        for K,V,W in zip(Ks, Vs, gfmc_Ws)])
+ave_Vs = np.array([al.bootstrap(V, W, Nboot=100, f=adl.rw_mean)
+        for K,V,W in zip(Ks, Vs, gfmc_Ws)])
 
 print("first walker")
 print(gfmc_Rs.shape)
@@ -588,7 +588,7 @@ print("phi = ",p_n[0,1])
 print("psi(R) = ",f_R(gfmc_Rs[0])[1])
 print("K(R) = ",Ks[0,1])
 print("V(R) = ",Vs[0,1])
-print("H(R) = ",Ks[0,0]+Vs[0,0])
+print("H(R) = ",Ks[0,1]+Vs[0,1])
 
 print("H=",Hs,"\n\n")
 print("K=",ave_Ks,"\n\n")
@@ -598,9 +598,11 @@ tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str
 
 with h5py.File(outdir+'Hammys_'+tag+'.h5', 'w') as f:
     dset = f.create_dataset("Hammys", data=Ks+Vs)
+    dset = f.create_dataset("Ws", data=gfmc_Ws)
 
 with h5py.File(outdir+'Rs_'+tag+'.h5', 'w') as f:
     dset = f.create_dataset("Rs", data=gfmc_Rs)
+    dset = f.create_dataset("Ws", data=gfmc_Ws)
 
 
 with h5py.File(outdir+'Hammys_'+tag+'.h5', 'r') as f:
