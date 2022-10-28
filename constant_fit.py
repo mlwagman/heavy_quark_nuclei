@@ -60,15 +60,16 @@ while chi_red > 1.5 :
     Ws = np.zeros((n_step,n_walk))
     for i in range(n_walk):
         for k in range(n_block):
-            data[:,i] += full_data[:,i*n_skip+k]/n_block
-            Ws[:,i] += full_Ws[:,i*n_skip+k]/n_block
+            data[:,i] += full_data[:,i*n_block+k]/n_block
+            Ws[:,i] += full_Ws[:,i*n_block+k]/n_block
     
     # sparsen data
-    data = np.zeros((n_step,n_walk))
-    Ws = np.zeros((n_step,n_walk))
-    for i in range(n_walk):
-        data[:,i] += full_data[:,i*n_skip]
-        Ws[:,i] += full_Ws[:,i*n_skip]
+    if n_skip > 1:
+        data = np.zeros((n_step,n_walk))
+        Ws = np.zeros((n_step,n_walk))
+        for i in range(n_walk):
+            data[:,i] += full_data[:,i*n_skip]
+            Ws[:,i] += full_Ws[:,i*n_skip]
     
     # sample mean for each step
     sample_mean = np.zeros((n_step))
