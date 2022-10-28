@@ -450,13 +450,13 @@ elif OLO == "NLO":
 	AV_Coulomb['O1'] = lambda R: -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*jax.numpy.log(Rprime(R))+aa1))
 elif OLO == "NNLO":
     if N_coord > 2:
-        AV_Coulomb['O1'] = lambda R: -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*jax.numpy.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*jax.numpy.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*jax.numpy.log(Rprime(R))+ aa2 + 2*Nc/(Nc-1)*((np.pi)**4-12*(np.pi)**2) ) )
+        AV_Coulomb['O1'] = lambda R: -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*jax.numpy.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*jax.numpy.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*jax.numpy.log(Rprime(R))+ aa2 + Nc*(Nc-2)/2*((np.pi)**4-12*(np.pi)**2) ) )
     else:
         AV_Coulomb['O1'] = lambda R: -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*jax.numpy.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*jax.numpy.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*jax.numpy.log(Rprime(R))+ aa2 ) )
     B3_Coulomb['O1'] = lambda Rij, Rjk, Rik: SingC3*2*alpha*(alpha/(4*np.pi))**2*(V3(Rij, Rjk) + V3(Rjk, Rik) + V3(Rik, Rij))
 elif OLO == "N3LO":
     if N_coord > 2:
-        AV_Coulomb['O1'] = lambda R: -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*jax.numpy.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*jax.numpy.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*jax.numpy.log(Rprime(R))+ aa2 + 2*Nc/(Nc-1)*((np.pi)**4-12*(np.pi)**2) ) ) + (alpha/(4*np.pi))**3*( 64*np.pi**2/3*Nc**3*jax.numpy.log(adl.norm_3vec(R)) + aa3 + 64*np.pi**2/3*Nc**3*np.euler_gamma + 512*beta0**3*( jax.numpy.log(Rprime(R))**3 + np.pi**4/4*jax.numpy.log(Rprime(R))+2*zeta3 ) + (640*beta0*beta1 + 192*beta0**2*aa1)*(jax.numpy.log(Rprime(R))**2+np.pi**2/12) + (128*beta2+64*beta1*aa1+24*beta0*aa2)*jax.numpy.log(Rprime(R)) )
+        AV_Coulomb['O1'] = lambda R: -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*jax.numpy.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*jax.numpy.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*jax.numpy.log(Rprime(R))+ aa2 + Nc*(Nc-2)/2*((np.pi)**4-12*(np.pi)**2) ) ) + (alpha/(4*np.pi))**3*( 64*np.pi**2/3*Nc**3*jax.numpy.log(adl.norm_3vec(R)) + aa3 + 64*np.pi**2/3*Nc**3*np.euler_gamma + 512*beta0**3*( jax.numpy.log(Rprime(R))**3 + np.pi**4/4*jax.numpy.log(Rprime(R))+2*zeta3 ) + (640*beta0*beta1 + 192*beta0**2*aa1)*(jax.numpy.log(Rprime(R))**2+np.pi**2/12) + (128*beta2+64*beta1*aa1+24*beta0*aa2)*jax.numpy.log(Rprime(R)) )
     else:
         AV_Coulomb['O1'] = lambda R: -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*jax.numpy.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*jax.numpy.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*jax.numpy.log(Rprime(R))+ aa2 ) ) + (alpha/(4*np.pi))**3*( 64*np.pi**2/3*Nc**3*jax.numpy.log(adl.norm_3vec(R)) + aa3 + 64*np.pi**2/3*Nc**3*np.euler_gamma + 512*beta0**3*( jax.numpy.log(Rprime(R))**3 + np.pi**4/4*jax.numpy.log(Rprime(R))+2*zeta3 ) + (640*beta0*beta1 + 192*beta0**2*aa1)*(jax.numpy.log(Rprime(R))**2+np.pi**2/12) + (128*beta2+64*beta1*aa1+24*beta0*aa2)*jax.numpy.log(Rprime(R)) )
     B3_Coulomb['O1'] = lambda Rij, Rjk, Rik: SingC3*2*alpha*(alpha/(4*np.pi))**2*(V3(Rij, Rjk) + V3(Rjk, Rik) + V3(Rik, Rij))
@@ -464,13 +464,13 @@ elif OLO == "mNLO":
         AV_Coulomb['O1'] = lambda R: -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*jax.numpy.log(Rprime(R))+aa1)) -1*CF*Nc*alpha**2/(N_coord-1)/(adl.norm_3vec(R)**2)
 elif OLO == "mNNLO":
     if N_coord > 2:
-        AV_Coulomb['O1'] = lambda R: -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*jax.numpy.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*jax.numpy.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*jax.numpy.log(Rprime(R))+ aa2 + 2*Nc/(Nc-1)*((np.pi)**4-12*(np.pi)**2) ) ) -1*CF*Nc*alpha**2/(N_coord-1)/(adl.norm_3vec(R)**2)
+        AV_Coulomb['O1'] = lambda R: -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*jax.numpy.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*jax.numpy.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*jax.numpy.log(Rprime(R))+ aa2 + Nc*(Nc-2)/2*((np.pi)**4-12*(np.pi)**2) ) ) -1*CF*Nc*alpha**2/(N_coord-1)/(adl.norm_3vec(R)**2)
     else:
         AV_Coulomb['O1'] = lambda R: -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*jax.numpy.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*jax.numpy.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*jax.numpy.log(Rprime(R))+ aa2 ) ) -1*CF*Nc*alpha**2/(N_coord-1)/(adl.norm_3vec(R)**2)
     B3_Coulomb['O1'] = lambda Rij, Rjk, Rik: SingC3*2*alpha*(alpha/(4*np.pi))**2*(V3(Rij, Rjk) + V3(Rjk, Rik) + V3(Rik, Rij))
 elif OLO == "mN3LO":
     if N_coord > 2:
-        AV_Coulomb['O1'] = lambda R: -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*jax.numpy.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*jax.numpy.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*jax.numpy.log(Rprime(R))+ aa2 + 2*Nc/(Nc-1)*((np.pi)**4-12*(np.pi)**2) ) ) + (alpha/(4*np.pi))**3*( 64*np.pi**2/3*Nc**3*jax.numpy.log(adl.norm_3vec(R)) + aa3 + 64*np.pi**2/3*Nc**3*np.euler_gamma + 512*beta0**3*( jax.numpy.log(Rprime(R))**3 + np.pi**4/4*jax.numpy.log(Rprime(R))+2*zeta3 ) + (640*beta0*beta1 + 192*beta0**2*aa1)*(jax.numpy.log(Rprime(R))**2+np.pi**2/12) + (128*beta2+64*beta1*aa1+24*beta0*aa2)*jax.numpy.log(Rprime(R)) ) -1*CF*Nc*alpha**2/(N_coord-1)/(adl.norm_3vec(R)**2)
+        AV_Coulomb['O1'] = lambda R: -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*jax.numpy.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*jax.numpy.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*jax.numpy.log(Rprime(R))+ aa2 + Nc*(Nc-2)/2*((np.pi)**4-12*(np.pi)**2) ) ) + (alpha/(4*np.pi))**3*( 64*np.pi**2/3*Nc**3*jax.numpy.log(adl.norm_3vec(R)) + aa3 + 64*np.pi**2/3*Nc**3*np.euler_gamma + 512*beta0**3*( jax.numpy.log(Rprime(R))**3 + np.pi**4/4*jax.numpy.log(Rprime(R))+2*zeta3 ) + (640*beta0*beta1 + 192*beta0**2*aa1)*(jax.numpy.log(Rprime(R))**2+np.pi**2/12) + (128*beta2+64*beta1*aa1+24*beta0*aa2)*jax.numpy.log(Rprime(R)) ) -1*CF*Nc*alpha**2/(N_coord-1)/(adl.norm_3vec(R)**2)
     else:
         AV_Coulomb['O1'] = lambda R: -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*jax.numpy.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*jax.numpy.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*jax.numpy.log(Rprime(R))+ aa2 ) ) + (alpha/(4*np.pi))**3*( 64*np.pi**2/3*Nc**3*jax.numpy.log(adl.norm_3vec(R)) + aa3 + 64*np.pi**2/3*Nc**3*np.euler_gamma + 512*beta0**3*( jax.numpy.log(Rprime(R))**3 + np.pi**4/4*jax.numpy.log(Rprime(R))+2*zeta3 ) + (640*beta0*beta1 + 192*beta0**2*aa1)*(jax.numpy.log(Rprime(R))**2+np.pi**2/12) + (128*beta2+64*beta1*aa1+24*beta0*aa2)*jax.numpy.log(Rprime(R)) ) -1*CF*Nc*alpha**2/(N_coord-1)/(adl.norm_3vec(R)**2)
 else:
@@ -547,13 +547,13 @@ for count, R in enumerate(gfmc_Rs):
 Vs = np.array(Vs)
 print(Vs.shape)
 
-Hs = np.array([al.bootstrap(Ks + Vs, Ws, Nboot=100, f=adl.rw_mean)
-        for Ks,Vs,Ws in zip(Ks, Vs, gfmc_Ws)])
+Hs = np.array([al.bootstrap(K + V, W, Nboot=100, f=adl.rw_mean)
+        for K,V,W in zip(Ks, Vs, gfmc_Ws)])
 
-ave_Ks = np.array([al.bootstrap(Ks, Ws, Nboot=100, f=adl.rw_mean)
-        for Ks,Vs,Ws in zip(Ks, Vs, gfmc_Ws)])
-ave_Vs = np.array([al.bootstrap(Vs, Ws, Nboot=100, f=adl.rw_mean)
-        for Ks,Vs,Ws in zip(Ks, Vs, gfmc_Ws)])
+ave_Ks = np.array([al.bootstrap(K, W, Nboot=100, f=adl.rw_mean)
+        for K,V,W in zip(Ks, Vs, gfmc_Ws)])
+ave_Vs = np.array([al.bootstrap(V, W, Nboot=100, f=adl.rw_mean)
+        for K,V,W in zip(Ks, Vs, gfmc_Ws)])
 
 print("first walker")
 print(gfmc_Rs.shape)
@@ -588,7 +588,7 @@ print("phi = ",p_n[0,1])
 print("psi(R) = ",f_R(gfmc_Rs[0])[1])
 print("K(R) = ",Ks[0,1])
 print("V(R) = ",Vs[0,1])
-print("H(R) = ",Ks[0,0]+Vs[0,0])
+print("H(R) = ",Ks[0,1]+Vs[0,1])
 
 print("H=",Hs,"\n\n")
 print("K=",ave_Ks,"\n\n")
@@ -598,9 +598,11 @@ tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str
 
 with h5py.File(outdir+'Hammys_'+tag+'.h5', 'w') as f:
     dset = f.create_dataset("Hammys", data=Ks+Vs)
+    dset = f.create_dataset("Ws", data=gfmc_Ws)
 
 with h5py.File(outdir+'Rs_'+tag+'.h5', 'w') as f:
     dset = f.create_dataset("Rs", data=gfmc_Rs)
+    dset = f.create_dataset("Ws", data=gfmc_Ws)
 
 
 with h5py.File(outdir+'Hammys_'+tag+'.h5', 'r') as f:

@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--database', type=str, required=True)
 parser.add_argument('--dataset', type=str, default="Hammys")
 # how many steps in to start fit
-parser.add_argument('--start_fit', type=int, default=1)
+parser.add_argument('--start_fit', type=int, default=-1)
 # how many steps to skip in between samples to keep correlations managable
 parser.add_argument('--n_skip', type=int, default=1)
 # how many steps to average to keep correlations managable
@@ -34,10 +34,17 @@ print(dset.shape)
 if dataset == "Rs":
     dset = np.mean(np.abs(dset), axis=(2,3))
 
+# read weights
+dset_Ws = f["Ws"]
+
+if start_fit == -1:
+    start_fit = (dset.shape[0] // 10) + 1
+
 chi_red = 1e10
 
 while chi_red > 1.5 :
-    full_data = np.real(dset[start_fit:])
+    full_data = np.real(dset[start_fit:] * dset_Ws[start_fit:])
+    full_Ws = np.real(dset_Ws[start_fit:])
     n_step = full_data.shape[0]
     
     n_walk_full = full_data.shape[1]
@@ -50,33 +57,39 @@ while chi_red > 1.5 :
     
     # block data
     data = np.zeros((n_step,n_walk))
+    Ws = np.zeros((n_step,n_walk))
     for i in range(n_walk):
         for k in range(n_block):
             data[:,i] += full_data[:,i*n_skip+k]/n_block
+            Ws[:,i] += full_Ws[:,i*n_skip+k]/n_block
     
     # sparsen data
     data = np.zeros((n_step,n_walk))
+    Ws = np.zeros((n_step,n_walk))
     for i in range(n_walk):
         data[:,i] += full_data[:,i*n_skip]
+        Ws[:,i] += full_Ws[:,i*n_skip]
     
     # sample mean for each step
     sample_mean = np.zeros((n_step))
+    sample_mean_num = np.zeros((n_step))
     for n in range(n_step):
-        sample_mean[n] = np.mean(data[n])
+        sample_mean[n] = np.mean(data[n]) / np.mean(Ws[n])
+        sample_mean_num[n] = np.mean(data[n])
     
     print("\n SAMPLE MEAN")
     print(np.size(sample_mean))
     print(sample_mean[0:n_step:n_print])
     
     # sample covariance
-    sample_covar = np.zeros((n_step,n_step))
+    sample_covar_num = np.zeros((n_step,n_step))
     for n in range(n_step):
         for m in range(n_step):
-           sample_covar[n,m] = (np.mean(data[n]*data[m]) - np.mean(data[n])*np.mean(data[m])) * n_walk/(n_walk-1)
+           sample_covar_num[n,m] = (np.mean(data[n]*data[m]) - np.mean(data[n])*np.mean(data[m])) * n_walk/(n_walk-1)
     
-    print("\n SAMPLE ERR")
-    print(sample_covar.shape)
-    print(np.array([np.sqrt(sample_covar[n,n]/n_walk) for n in range(0,n_step,n_print)]))
+    #print("\n SAMPLE ERR")
+    #print(sample_covar.shape)
+    #print(np.array([np.sqrt(sample_covar[n,n]/n_walk) for n in range(0,n_step,n_print)]))
     
     # bootstrap ensemble means
     boot_ensemble = np.zeros((n_boot, n_step))
@@ -84,7 +97,8 @@ while chi_red > 1.5 :
         inds = np.random.randint(n_walk, size=n_walk)
         for n in range(n_step):
             this_boot = data[n][inds]
-            boot_ensemble[b,n] = np.mean(this_boot)
+            this_boot_Ws = Ws[n][inds]
+            boot_ensemble[b,n] = np.mean(this_boot) / np.mean(this_boot_Ws)
     
     #print("\n BOOTSTRAP MEAN")
     #print(boot_ensemble.shape)
@@ -95,9 +109,9 @@ while chi_red > 1.5 :
     for n in range(n_step):
         boot_var[n] = (np.mean(boot_ensemble[:,n]**2) - np.mean(boot_ensemble[:,n])**2) * n_walk/(n_walk-1)
     
-    #print("\n BOOTSTRAP VARIANCE")
-    #print(boot_var.shape)
-    #print(boot_var[0:n_step:n_print])
+    print("\n BOOTSTRAP ERR")
+    print(boot_var.shape)
+    print(np.sqrt(boot_var[0:n_step:n_print]))
     
     # bootstrap covariance
     boot_covar = np.zeros((n_step,n_step))
@@ -113,8 +127,8 @@ while chi_red > 1.5 :
     #print(np.array([boot_covar[0,n] for n in range(0, n_step, n_print)]))
     
     # normalized sample mean and covariance
-    norm_data = np.array([ (data[n,:] - sample_mean[n])/np.sqrt(sample_covar[n,n]) for n in range(n_step) ])
-    norm_covar = np.array([ [ sample_covar[n,m]/np.sqrt(sample_covar[n,n]*sample_covar[m,m]) for m in range(n_step) ] for n in range(n_step) ])
+    norm_data = np.array([ (data[n,:] - sample_mean_num[n])/np.sqrt(sample_covar_num[n,n]) for n in range(n_step) ])
+    norm_covar = np.array([ [ sample_covar_num[n,m]/np.sqrt(sample_covar_num[n,n]*sample_covar_num[m,m]) for m in range(n_step) ] for n in range(n_step) ])
     
     # determine optimal shrinkage parameter
     d2 = 0.0
