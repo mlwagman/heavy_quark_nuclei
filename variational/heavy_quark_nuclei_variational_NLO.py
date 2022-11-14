@@ -15,13 +15,24 @@ import copy
 
 
 from config import *
-from hydrogen_test import *
+from hydrogen_NLO import *
 
 plt.rcParams['text.usetex'] = True
 plt.rcParams.update({'font.size': 14})
 
 N_coord = nCoord
-VB = 1
+
+Nc=3
+nf=4
+alpha=0.4
+
+CF = (Nc**2 - 1)/(2*Nc)
+VB = alpha*CF
+if N_coord > 2:
+    VB = alpha*CF/(Nc-1)
+beta0 = 11/3*Nc - 2/3*nf
+aa1 = 31/9*Nc-10/9*nf
+
 N_skip = 10
 N_refresh_metropolis = 1
 patience_factor = 10
@@ -74,6 +85,7 @@ def nabla_total_Psi_nlm(Rs, A_n, C_n, nabla_psi_fn):
     print(f"calculated nabla in {time.time() - nabla_psi_time} sec")
     return nabla_Psi_nlm_s
 
+
 def potential_no_Psi_nlm(Rs, A_n, C_n, psi_fn):
     N_walkers = Rs.shape[0]
     assert Rs.shape == (N_walkers, N_coord, 3)
@@ -88,7 +100,8 @@ def potential_no_Psi_nlm(Rs, A_n, C_n, psi_fn):
         for a in range(N_coord):
             for b in range(N_coord):
                 if b > a:
-                    V += -VB/np.sqrt( (x[a]-x[b])**2 + (y[a]-y[b])**2 + (z[a]-z[b])**2 )
+                    rabs = np.sqrt( (x[a]-x[b])**2 + (y[a]-y[b])**2 + (z[a]-z[b])**2 )
+                    V += -VB/rabs*(1+ alpha/(4*np.pi)*(2*beta0*np.log(rabs)+aa1))
         V_Psi_nlm_s[i] = V
     return V_Psi_nlm_s
 
@@ -106,7 +119,8 @@ def potential_total_Psi_nlm(Rs, A_n, C_n, psi_fn):
         for a in range(N_coord):
             for b in range(N_coord):
                 if b > a:
-                    V += -VB/np.sqrt( (x[a]-x[b])**2 + (y[a]-y[b])**2 + (z[a]-z[b])**2 )
+                    rabs = np.sqrt( (x[a]-x[b])**2 + (y[a]-y[b])**2 + (z[a]-z[b])**2 )
+                    V += -VB/rabs*(1+ alpha/(4*np.pi)*(2*beta0*np.log(rabs)+aa1))
         V_Psi_nlm_s[i] = V * wvfn[i]
     return V_Psi_nlm_s
 
@@ -181,7 +195,7 @@ class wvfn(nn.Module):
         self.A = nn.Parameter(2/VB*torch.ones(N_coord, dtype=torch.double))
         self.C = nn.Parameter(torch.cat((
             torch.ones((N_coord-1), dtype=torch.complex64),
-            torch.ones((1), dtype=torch.complex64))))
+            0*torch.ones((1), dtype=torch.complex64))))
         #self.A = nn.Parameter(2/VB*torch.ones(1, dtype=torch.double))
         #self.C = nn.Parameter(torch.ones(1, dtype=torch.complex64))
     # For N_coord>1 C and A have Length N_coord not 1
