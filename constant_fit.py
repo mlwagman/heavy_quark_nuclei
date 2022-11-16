@@ -3,6 +3,9 @@ import argparse
 import numpy as np
 import h5py
 import csv
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+import paper_plt
 
 np.random.seed(0)
 
@@ -12,7 +15,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--database', type=str, required=True)
 parser.add_argument('--dataset', type=str, default="Hammys")
 # how many steps in to start fit
-parser.add_argument('--start_fit', type=int, default=-1)
+parser.add_argument('--start_fit', type=int, default=0)
 # how many steps to skip in between samples to keep correlations managable
 parser.add_argument('--n_skip', type=int, default=1)
 # how many steps to average to keep correlations managable
@@ -20,7 +23,11 @@ parser.add_argument('--n_block', type=int, default=1)
 # how many bootstrap samples
 parser.add_argument('--n_boot', type=int, default=200)
 # how often to print
-parser.add_argument('--n_print', type=int, default=10)
+parser.add_argument('--n_print', type=int, default=1)
+# dtau for plotting
+parser.add_argument('--dtau', type=float, default=0.2)
+# plot height in sigma
+parser.add_argument('--plot_scale', type=float, default=20)
 globals().update(vars(parser.parse_args()))
 
 if n_skip > 1 and n_block > 1:
@@ -37,17 +44,18 @@ if dataset == "Rs":
 # read weights
 dset_Ws = f["Ws"]
 
+n_walk_full = dset.shape[1]
+
 if start_fit == -1:
     start_fit = (dset.shape[0] // 10) + 1
 
-chi_red = 1e10
-
-while chi_red > 1.5 :
-    full_data = np.real(dset[start_fit:] * dset_Ws[start_fit:])
-    full_Ws = np.real(dset_Ws[start_fit:])
+for n_tau_skip_exp in range((dset.shape[0] // n_walk_full) + 1, round(np.log(dset.shape[0])/np.log(2))-1):
+    n_tau_skip = 2**n_tau_skip_exp
+    print("\nTRYING N_TAU_SKIP = ", n_tau_skip)
+    full_data = np.real(dset[start_fit::n_tau_skip] * dset_Ws[start_fit::n_tau_skip])
+    full_Ws = np.real(dset_Ws[start_fit::n_tau_skip])
     n_step = full_data.shape[0]
     
-    n_walk_full = full_data.shape[1]
     if n_skip > 1:
         n_walk = n_walk_full // n_skip
     elif n_block > 1:
@@ -157,7 +165,8 @@ while chi_red > 1.5 :
     if lam >= 0.9:
         delta_fit = 0.0
         fit = np.mean(sample_mean)
-        chisq = (sample_mean - fit) @ (sample_mean - fit)
+        delta_fit = np.sqrt((sample_mean - fit) @ (sample_mean - fit))/np.sqrt(n_step)
+        chisq = 0.0 
         dof = n_step-1
         chi_red = chisq/dof
         
@@ -207,12 +216,6 @@ while chi_red > 1.5 :
         print(fit, " +/- ", delta_fit)
         print("dof = ", dof)
         print("chi^2/dof = ", chi_red)
-        
-        if start_fit+10 < n_step:
-            start_fit += 10
-        else:
-            print("\n QUITTING")
-            break
 
 
 with open(database[:-2]+'csv', 'w', newline='') as csvfile:
@@ -221,3 +224,37 @@ with open(database[:-2]+'csv', 'w', newline='') as csvfile:
     writer.writeheader()
     writer.writerow({'mean': fit, 'err': delta_fit, 'chi2dof': chisq/dof})
 
+# plot H(tau)
+plot_data = np.real(dset[:] * dset_Ws[:])
+plot_Ws = np.real(dset_Ws[:])
+plot_n_step = len(plot_Ws)
+plot_tau = np.arange(plot_n_step) * dtau
+        
+plot_sample_mean = np.zeros((plot_n_step))
+for n in range(plot_n_step):
+    plot_sample_mean[n] = np.mean(plot_data[n]) / np.mean(plot_Ws[n])
+
+plot_boot_ensemble = np.zeros((n_boot, plot_n_step))
+for b in range(n_boot):
+    inds = np.random.randint(n_walk, size=n_walk)
+    for n in range(plot_n_step):
+        this_boot = plot_data[n][inds]
+        this_boot_Ws = plot_Ws[n][inds]
+        plot_boot_ensemble[b,n] = np.mean(this_boot) / np.mean(this_boot_Ws)
+
+plot_boot_var = np.zeros((plot_n_step))
+for n in range(plot_n_step):
+    plot_boot_var[n] = (np.mean(plot_boot_ensemble[:,n]**2) - np.mean(plot_boot_ensemble[:,n])**2) * n_walk/(n_walk-1)
+
+plot_errs = np.sqrt(np.abs(plot_boot_var))
+
+rect_start = start_fit * dtau
+
+fig, ax = plt.subplots(1,1, figsize=(4,3))
+ax.errorbar(plot_tau, plot_sample_mean, yerr=plot_errs, color='xkcd:forest green')
+ax.set_ylim(fit - plot_scale*delta_fit, fit + plot_scale*delta_fit)
+rect = patches.Rectangle((rect_start, fit - delta_fit), plot_tau[-1]-rect_start, 2*delta_fit, linewidth=0, facecolor='xkcd:blue', zorder=10, alpha=0.7)
+ax.add_patch(rect)
+ax.set_xlabel(r'$\tau \, m_Q$')
+ax.set_ylabel(r'$\left< H(\tau) \right> / m_Q$')
+fig.savefig(database[:-3]+'_EMP.pdf')

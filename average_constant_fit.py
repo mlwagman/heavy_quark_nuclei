@@ -17,8 +17,6 @@ parser.add_argument('--database', type=str, required=True)
 parser.add_argument('--dataset', type=str, default="Hammys")
 # how many steps to skip in between samples to keep correlations managable
 parser.add_argument('--n_skip', type=int, default=1)
-# how many steps to skip in between samples to keep correlations managable
-parser.add_argument('--n_tau_skip', type=int, default=1)
 # how many steps to average to keep correlations managable
 parser.add_argument('--n_block', type=int, default=1)
 # how many bootstrap samples
