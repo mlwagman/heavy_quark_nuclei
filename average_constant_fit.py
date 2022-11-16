@@ -3,6 +3,10 @@ import argparse
 import numpy as np
 import h5py
 import csv
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+import paper_plt
+paper_plt.load_latex_config()
 
 np.random.seed(0)
 
@@ -23,7 +27,10 @@ parser.add_argument('--n_boot', type=int, default=200)
 parser.add_argument('--n_print', type=int, default=10)
 # how many fits to do
 parser.add_argument('--n_fits', type=int, default=30)
-# how many fits to do
+# dtau for plotting
+parser.add_argument('--dtau', type=float, default=0.2)
+# plot height in sigma
+parser.add_argument('--plot_scale', type=float, default=20)
 parser.add_argument('--noshrink', action='store_true', default=False)
 globals().update(vars(parser.parse_args()))
 
@@ -272,3 +279,40 @@ with open(database[:-2]+'csv', 'w', newline='') as csvfile:
     writer.writeheader()
     writer.writerow({'mean': model_averaged_fit, 'err': model_averaged_err, 'chi2dof': model_averaged_redchisq})
 
+
+# plot H(tau)
+plot_data = np.real(dset[:] * dset_Ws[:])
+plot_Ws = np.real(dset_Ws[:])
+plot_n_step = len(plot_Ws)
+plot_tau = np.arange(plot_n_step) * dtau
+        
+plot_sample_mean = np.zeros((plot_n_step))
+for n in range(plot_n_step):
+    plot_sample_mean[n] = np.mean(plot_data[n]) / np.mean(plot_Ws[n])
+
+plot_boot_ensemble = np.zeros((n_boot, plot_n_step))
+for b in range(n_boot):
+    inds = np.random.randint(n_walk, size=n_walk)
+    for n in range(plot_n_step):
+        this_boot = plot_data[n][inds]
+        this_boot_Ws = plot_Ws[n][inds]
+        plot_boot_ensemble[b,n] = np.mean(this_boot) / np.mean(this_boot_Ws)
+
+plot_boot_var = np.zeros((plot_n_step))
+for n in range(plot_n_step):
+    plot_boot_var[n] = (np.mean(plot_boot_ensemble[:,n]**2) - np.mean(plot_boot_ensemble[:,n])**2) * n_walk/(n_walk-1)
+
+plot_errs = np.sqrt(plot_boot_var)
+
+highest_weight_fit_num = np.argmax(model_weights)
+highest_weight_start_fit = highest_weight_fit_num * fit_step
+rect_start = highest_weight_start_fit * dtau
+
+fig, ax = plt.subplots(1,1, figsize=(4,3))
+ax.errorbar(plot_tau, plot_sample_mean, yerr=plot_errs, color='xkcd:forest green')
+ax.set_ylim(model_averaged_fit - plot_scale*model_averaged_err, model_averaged_fit + plot_scale*model_averaged_err)
+rect = patches.Rectangle((rect_start, model_averaged_fit - model_averaged_err), plot_tau[-1]-rect_start, 2*model_averaged_err, linewidth=0, facecolor='xkcd:blue', zorder=10, alpha=0.7)
+ax.add_patch(rect)
+ax.set_xlabel(r'$\tau \, m_Q$')
+ax.set_ylabel(r'$\left< H(\tau) \right> / m_Q$')
+fig.savefig(database[:-2]+'pdf')
