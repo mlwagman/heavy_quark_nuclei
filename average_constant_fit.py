@@ -24,7 +24,7 @@ parser.add_argument('--n_block', type=int, default=1)
 # how many bootstrap samples
 parser.add_argument('--n_boot', type=int, default=200)
 # how often to print
-parser.add_argument('--n_print', type=int, default=10)
+parser.add_argument('--n_print', type=int, default=1)
 # how many fits to do
 parser.add_argument('--n_fits', type=int, default=30)
 # dtau for plotting
@@ -315,4 +315,4 @@ rect = patches.Rectangle((rect_start, model_averaged_fit - model_averaged_err), 
 ax.add_patch(rect)
 ax.set_xlabel(r'$\tau \, m_Q$')
 ax.set_ylabel(r'$\left< H(\tau) \right> / m_Q$')
-fig.savefig(database[:-2]+'pdf')
+fig.savefig(database[:-3]+'_EMP.pdf')
