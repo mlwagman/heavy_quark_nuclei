@@ -26,9 +26,11 @@ parser.add_argument('--n_boot', type=int, default=200)
 parser.add_argument('--n_print', type=int, default=1)
 # dtau for plotting
 parser.add_argument('--dtau', type=float, default=0.2)
-# plot height in sigma
-parser.add_argument('--plot_scale', type=float, default=20)
+# plot height
+parser.add_argument('--plot_scale', type=float, default=0.3*1e-5)
 globals().update(vars(parser.parse_args()))
+
+plt.rcParams['ytick.labelsize'] = 6
 
 if n_skip > 1 and n_block > 1:
     print("DON'T SKIP AND BLOCK")
@@ -169,6 +171,7 @@ for n_tau_skip_exp in range((dset.shape[0] // n_walk_full) + 1, round(np.log(dse
         chisq = 0.0 
         dof = n_step-1
         chi_red = chisq/dof
+        plot_scale = 1e6
         
         print("\n FIT RESULT")
         print("SINGULAR COVARIANCE MATRIX")
@@ -250,9 +253,11 @@ plot_errs = np.sqrt(np.abs(plot_boot_var))
 
 rect_start = start_fit * dtau
 
+print("plot scale = ",plot_scale)
+
 fig, ax = plt.subplots(1,1, figsize=(4,3))
 ax.errorbar(plot_tau, plot_sample_mean, yerr=plot_errs, color='xkcd:forest green')
-ax.set_ylim(fit - plot_scale*delta_fit, fit + plot_scale*delta_fit)
+ax.set_ylim(fit - plot_scale, fit + plot_scale)
 rect = patches.Rectangle((rect_start, fit - delta_fit), plot_tau[-1]-rect_start, 2*delta_fit, linewidth=0, facecolor='xkcd:blue', zorder=10, alpha=0.7)
 ax.add_patch(rect)
 ax.set_xlabel(r'$\tau \, m_Q$')
