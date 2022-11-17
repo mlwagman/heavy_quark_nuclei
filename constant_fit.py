@@ -31,6 +31,7 @@ parser.add_argument('--plot_scale', type=float, default=0.3*1e-5)
 globals().update(vars(parser.parse_args()))
 
 plt.rcParams['ytick.labelsize'] = 6
+plt.rcParams['xtick.labelsize'] = 6
 
 if n_skip > 1 and n_block > 1:
     print("DON'T SKIP AND BLOCK")
@@ -51,12 +52,19 @@ n_walk_full = dset.shape[1]
 if start_fit == -1:
     start_fit = (dset.shape[0] // 10) + 1
 
-for n_tau_skip_exp in range((dset.shape[0] // n_walk_full) + 1, round(np.log(dset.shape[0])/np.log(2))-1):
+for n_tau_skip_exp in range(round(np.log(dset.shape[0]//n_walk_full+1)/np.log(2)), round(np.log(dset.shape[0])/np.log(2))-1):
     n_tau_skip = 2**n_tau_skip_exp
     print("\nTRYING N_TAU_SKIP = ", n_tau_skip)
-    full_data = np.real(dset[start_fit::n_tau_skip] * dset_Ws[start_fit::n_tau_skip])
-    full_Ws = np.real(dset_Ws[start_fit::n_tau_skip])
-    n_step = full_data.shape[0]
+    #full_data = np.real(dset[start_fit::n_tau_skip] * dset_Ws[start_fit::n_tau_skip])
+    #full_Ws = np.real(dset_Ws[start_fit::n_tau_skip])
+
+    n_step = (dset.shape[0] - start_fit) // n_tau_skip
+    full_data = np.zeros((n_step, n_walk_full))
+    full_Ws = np.zeros((n_step, n_walk_full))
+    for tau in range(n_step):
+        for k in range(n_tau_skip):
+            full_data[tau] += np.real(dset[start_fit+tau*n_tau_skip+k] * dset_Ws[start_fit+tau*n_tau_skip+k])
+            full_Ws[tau] += np.real(dset_Ws[start_fit+tau*n_tau_skip+k])
     
     if n_skip > 1:
         n_walk = n_walk_full // n_skip
