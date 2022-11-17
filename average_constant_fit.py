@@ -64,7 +64,7 @@ last_fit = 1e6
 n_walk_full = dset.shape[1]
 
 for n_tau_skip_exp in range(round(np.log(dset.shape[0]//n_walk_full+1)/np.log(2)), round(np.log(dset.shape[0])/np.log(2))-1):
-    n_tau_skip = 2**n_tau_skip_exp
+    n_tau_skip = 2**(n_tau_skip_exp+1)
     print("\nTRYING N_TAU_SKIP = ", n_tau_skip)
     if (dset.shape[0] // n_tau_skip) < n_fits:
         n_fits = dset.shape[0] // n_tau_skip
