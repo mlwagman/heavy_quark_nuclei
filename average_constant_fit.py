@@ -25,6 +25,8 @@ parser.add_argument('--n_boot', type=int, default=200)
 parser.add_argument('--n_print', type=int, default=1)
 # how many fits to do
 parser.add_argument('--n_fits', type=int, default=30)
+# stop increase n_tau_skip after agreement within how many sigma
+parser.add_argument('--n_tau_tol', type=float, default=2.0)
 # dtau for plotting
 parser.add_argument('--dtau', type=float, default=0.2)
 # plot height in sigma
@@ -57,11 +59,12 @@ model_errs = np.zeros((n_fits))
 model_redchisq = np.zeros((n_fits))
 model_weights = np.zeros((n_fits))
 
-last_fit = 0.0
+last_fit = 1e6
 
 n_walk_full = dset.shape[1]
 
-for n_tau_skip_exp in range((dset.shape[0] // n_walk_full) + 1, round(np.log(dset.shape[0])/np.log(2))-1):
+#for n_tau_skip_exp in range((dset.shape[0] // n_walk_full) + 1, round(np.log(dset.shape[0])/np.log(2))-1):
+for n_tau_skip_exp in range(round(np.log(dset.shape[0]//n_walk_full+1)/np.log(2)), round(np.log(dset.shape[0])/np.log(2))-1):
     n_tau_skip = 2**n_tau_skip_exp
     print("\nTRYING N_TAU_SKIP = ", n_tau_skip)
     if (dset.shape[0] // n_tau_skip) < n_fits:
@@ -72,12 +75,16 @@ for n_tau_skip_exp in range((dset.shape[0] // n_walk_full) + 1, round(np.log(dse
         model_weights = np.zeros((n_fits))
     for fit_num in range(0, n_fits):
         start_fit = fit_num * fit_step
-        #start_fit = (n_fits-1-fit_num) * fit_step
-        full_data = np.real(dset[start_fit::n_tau_skip] * dset_Ws[start_fit::n_tau_skip])
-        full_Ws = np.real(dset_Ws[start_fit::n_tau_skip])
-        #full_data = np.real(dset[start_fit:] * dset_Ws[start_fit:])
-        #full_Ws = np.real(dset_Ws[start_fit:])
-        n_step = full_data.shape[0]
+        #full_data = np.real(dset[start_fit::n_tau_skip] * dset_Ws[start_fit::n_tau_skip])
+        #full_Ws = np.real(dset_Ws[start_fit::n_tau_skip])
+
+        n_step = (dset.shape[0] - start_fit) // n_tau_skip
+        full_data = np.zeros((n_step, n_walk_full))
+        full_Ws = np.zeros((n_step, n_walk_full))
+        for tau in range(n_step):
+            for k in range(n_tau_skip):
+                full_data[tau] += np.real(dset[start_fit+tau*n_tau_skip+k] * dset_Ws[start_fit+tau*n_tau_skip+k])
+                full_Ws[tau] += np.real(dset_Ws[start_fit+tau*n_tau_skip+k])
         
         if n_skip > 1:
             n_walk = n_walk_full // n_skip
@@ -189,41 +196,28 @@ for n_tau_skip_exp in range((dset.shape[0] // n_walk_full) + 1, round(np.log(dse
         print("\n OPTIMAL SHRINKAGE PARAMETER")
         print(lam)
         
-        fit = np.mean(sample_mean)
-        delta_fit = np.sqrt((sample_mean - fit) @ (sample_mean - fit))
-        chisq = (sample_mean - fit) @ (sample_mean - fit)
-        if lam < 0.9:
-            # apply shrinkage
-            boot_covar_shrunk = np.zeros((n_step,n_step))
-            for n in range(n_step):
-                for m in range(n_step):
-                    if n == m:
-                        boot_covar_shrunk[n,m] = boot_covar[n,n]
-                    else:
-                        boot_covar_shrunk[n,m] = (1-lam)*boot_covar[n,m]
+        # apply shrinkage
+        boot_covar_shrunk = np.zeros((n_step,n_step))
+        for n in range(n_step):
+            for m in range(n_step):
+                if n == m:
+                    boot_covar_shrunk[n,m] = boot_covar[n,n]
+                else:
+                    boot_covar_shrunk[n,m] = (1-lam)*boot_covar[n,m]
             
-            print("\n BOOTSTRAP COVARIANCE WITH OPTIMAL SHRINKAGE ERR")
-            print(np.array([np.sqrt(boot_covar_shrunk[n,n]) for n in range(0, n_step, n_print)]))
-            #print("\n TOP ROW")
-            #print(np.array([boot_covar_shrunk[0,n] for n in range(0, n_step, n_print)]))
+        print("\n BOOTSTRAP COVARIANCE WITH OPTIMAL SHRINKAGE ERR")
+        print(np.array([np.sqrt(boot_covar_shrunk[n,n]) for n in range(0, n_step, n_print)]))
             
-            # invert covariance matrix
-            boot_covar_shrunk_inv = np.linalg.inv(boot_covar_shrunk)
+        # invert covariance matrix
+        boot_covar_shrunk_inv = np.linalg.inv(boot_covar_shrunk)
             
-            #print("\n INVERSE BOOTSTRAP COVARIANCE WITH OPTIMAL SHRINKAGE")
-            #print(boot_covar_shrunk_inv.shape)
-            #print("\n DIAGONAL")
-            #print(np.array([boot_covar_shrunk_inv[n,n] for n in range(0, n_step, n_print)]))
-            #print("\n TOP ROW")
-            #print(np.array([boot_covar_shrunk_inv[0,n] for n in range(0, n_step, n_print)]))
-            
-            # do the fit!
-            Delta = 1/np.sum(boot_covar_shrunk_inv, axis=None)
-            delta_fit = np.sqrt(Delta)
-            fit = Delta * np.sum(sample_mean @ boot_covar_shrunk_inv)
-            chisq = (sample_mean - fit) @ boot_covar_shrunk_inv @ (sample_mean - fit)
-    
-    
+        # do the fit!
+        Delta = 1/np.sum(boot_covar_shrunk_inv, axis=None)
+        delta_fit = np.sqrt(Delta)
+        fit = Delta * np.sum(sample_mean @ boot_covar_shrunk_inv)
+        chisq = (sample_mean - fit) @ boot_covar_shrunk_inv @ (sample_mean - fit)
+
+
         dof = n_step-1
         chi_red = chisq/dof
         AIC_aug = chisq + 2 + 2*start_fit/n_tau_skip
@@ -263,7 +257,7 @@ for n_tau_skip_exp in range((dset.shape[0] // n_walk_full) + 1, round(np.log(dse
     print("model averaged sys err = ", np.sqrt(model_averaged_sys_sq))
     print("model averaged err = ", model_averaged_err)
     
-    if abs(model_averaged_fit - last_fit) < model_averaged_err:
+    if abs(model_averaged_fit - last_fit) < n_tau_tol*model_averaged_err:
         print("\nRESULT ", model_averaged_fit, " +/- ", model_averaged_err, " AGREES WITH PREVIOUS N_TAU_SKIP ", last_fit, ", DONE")
         break
     else:
