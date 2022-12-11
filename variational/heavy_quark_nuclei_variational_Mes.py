@@ -20,7 +20,7 @@ if __name__ == '__main__':
     import mpmath
 
 
-    from hydrogen_NLO import *
+    from hydrogen_Mes import *
     from config import *
 
 
@@ -148,7 +148,7 @@ if __name__ == '__main__':
                 for b in range(N_coord):
                     if b > a:
                         rabs = np.sqrt( (x[a]-x[b])**2 + (y[a]-y[b])**2 + (z[a]-z[b])**2 )
-                        mu=4
+                        mu=4*alpha
                         rprime = rabs*np.exp(np.euler_gamma)*mu
                         if OLO == "LO":
                          V += -VB/rabs*(1)
@@ -179,7 +179,7 @@ if __name__ == '__main__':
                 for b in range(N_coord):
                     if b > a:
                         rabs = np.sqrt( (x[a]-x[b])**2 + (y[a]-y[b])**2 + (z[a]-z[b])**2 )
-                        mu=4
+                        mu=4*alpha
                         rprime = rabs*np.exp(np.euler_gamma)*mu
                         if OLO == "LO":
                          V += -VB/rabs*(1)
