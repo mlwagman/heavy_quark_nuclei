@@ -130,7 +130,7 @@ def Chi_no_v_3(nCoord, r, t, p, C, A):
     for i in range(nCoord):
         for j in range(nCoord):
             if i!=j and j>=i:
-                Chi = Chi*(C[0]*exp(-rrSpher(i,j,r,t,p)/A[0])+C[1]*exp(- 2*rrSpher(i,j,r,t,p)/A[0])+C[2]*exp(- 4*rrSpher(i,j,r,t,p)/A[0]))
+                Chi = Chi*(C[0]*exp(-rrSpher(i,j,r,t,p)/A[0])+C[1]*exp(- 10*rrSpher(i,j,r,t,p)/A[0])+C[2]*exp(- 100*rrSpher(i,j,r,t,p)/A[0]))
     return C[0]*Chi
 
 print(simplify(Chi_no_v_test(nCoord, r, t, p, C, A)))
