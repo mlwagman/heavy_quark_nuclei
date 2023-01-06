@@ -17,6 +17,7 @@ if __name__ == '__main__':
     import argparse
     import copy
     import scipy
+    import scipy.special
     import mpmath
 
 
