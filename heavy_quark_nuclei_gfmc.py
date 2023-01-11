@@ -53,6 +53,7 @@ parser.add_argument('--OLO', type=str, default="LO")
 parser.add_argument('--spoila', type=int, default=1)
 parser.add_argument('--spoilf', type=str, default="hwf")
 parser.add_argument('--outdir', type=str, required=True)
+parser.add_argument('--input_Rs_database', type=str, default="")
 globals().update(vars(parser.parse_args()))
 
 #######################################################################################
@@ -193,8 +194,8 @@ def nabla_psi_no_v(N_coord, r, t, p, C, A):
     return lambdify([C, A, r, t, p], nabla_wvfn, modules)
 
 #######################################################################################
-N_skip = 10
-N_refresh_metropolis = 1
+N_skip = 200
+N_refresh_metropolis = 10
 patience_factor = 10
 
 print(f'precomputing wavefunctions')
@@ -316,8 +317,8 @@ def metropolis_coordinate_ensemble(this_psi, *, n_therm, N_walkers, n_skip, eps)
     R -= torch.mean(R, axis=1, keepdims=True)
     # metropolis updates
     print("Running Metropolis")
-    #for i in tqdm.tqdm(range(-n_therm, N_walkers*n_skip)):
-    for i in range(-n_therm, N_walkers*n_skip): # update
+    for i in tqdm.tqdm(range(-n_therm, N_walkers*n_skip)):
+    #for i in range(-n_therm, N_walkers*n_skip): # update
         dR = draw_coordinates(R.shape, eps=eps, axis=1)
         new_R = R + dR
         # accept/reject based on |psi(R)|^2
@@ -335,8 +336,8 @@ def metropolis_coordinate_ensemble(this_psi, *, n_therm, N_walkers, n_skip, eps)
             Rs[this_walker,:,:] = R
             psi2s[this_walker] = p_R
             this_walker += 1
-            print(f'walker {this_walker}, iteration {i+1}')
-            print(f'acc frac = {acc / (i+1)} \n')
+            #print(f'walker {this_walker}, iteration {i+1}')
+            #print(f'acc frac = {acc / (i+1)} \n')
     print(f'Total acc frac = {acc / (i+1)}')
     # return coordinates R and respective |psi(R)|^2
     return Rs, psi2s
@@ -487,8 +488,12 @@ f_R = lambda R: trial_wvfn.psi(torch.from_numpy(np.asarray(R))).detach().numpy()
 laplacian_f_R = lambda R: trial_wvfn.laplacian(torch.from_numpy(np.asarray(R))).detach().numpy()
 
 # Metropolis
-Rs_metropolis = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=n_walkers, n_skip=n_skip, eps=2*trial_wvfn.A[0].item()/N_coord**2)[0]
-Rs_metropolis = Rs_metropolis.detach().numpy()
+if input_Rs_database == "":
+    Rs_metropolis = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=n_walkers, n_skip=n_skip, eps=2*trial_wvfn.A[0].item()/N_coord**2)[0]
+    Rs_metropolis = Rs_metropolis.detach().numpy()
+else:
+    f = h5py.File(input_Rs_database, 'r')
+    Rs_metropolis = f["Rs"]
 # build trial wavefunction
 S_av4p_metropolis = np.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
 print("built Metropolis wavefunction ensemble")
