@@ -17,6 +17,7 @@ if __name__ == '__main__':
     import argparse
     import copy
     import scipy
+    import scipy.special
     import mpmath
 
 
@@ -74,7 +75,7 @@ if __name__ == '__main__':
 
     N_skip = 10
     N_refresh_metropolis = 1
-    patience_factor = 10
+    patience_factor = 50
 
     print(f'precomputing wavefunctions')
     psi_time = time.time()
@@ -233,14 +234,20 @@ if __name__ == '__main__':
         # metropolis updates
         print("Running Metropolis")
         for i in tqdm.tqdm(range(-n_therm, N_walkers*n_skip)):
-            # update
-            dR = draw_coordinates(R.shape, eps=eps, axis=1)
-            new_R = R + dR
-            # accept/reject based on |psi(R)|^2
             abspsi = torch.abs(this_psi(R))
             p_R = abspsi**2
-            abspsi_new = torch.abs(this_psi(new_R))
-            p_new_R = abspsi_new**2
+            # update
+            success = False
+            while not success:
+                try:
+                    dR = draw_coordinates(R.shape, eps=eps, axis=1)
+                    new_R = R + dR
+                    abspsi_new = torch.abs(this_psi(new_R))
+                    p_new_R = abspsi_new**2
+                    success = True
+                except:
+                    success = False 
+            # accept/reject based on |psi(R)|^2
             if (torch.rand(1) < (p_new_R / p_R) and not torch.isnan(p_new_R) and p_new_R > 0 and p_new_R < 1 ):
                 R = new_R #accept
                 p_R = p_new_R
@@ -264,6 +271,7 @@ if __name__ == '__main__':
             super(wvfn, self).__init__()
             # register Bohr radius a and c_{n,l,m,k,j} as pytorch paramters
             self.A = nn.Parameter(2/VB*torch.ones(nExp, dtype=torch.double))
+            #self.A = nn.Parameter(torch.ones(nExp, dtype=torch.double))
             self.C = nn.Parameter(torch.cat((
                 torch.ones((1), dtype=torch.complex64),
                 0*torch.ones((nExp-1), dtype=torch.complex64))))
@@ -336,7 +344,8 @@ if __name__ == '__main__':
         best_wvfn_state = copy.deepcopy(wvfn.state_dict())
         for n in tqdm.tqdm(range(N_train)):
             sep_time = time.time()
-            epsilon=1.0/np.sqrt(VB)
+            epsilon=1.0/np.sqrt(wvfn.A.detach().numpy()[0] / 2)
+            print("\nMetropolis step size ", epsilon)
             if n % N_refresh_metropolis == 0:
                 print("\nRefreshing walkers")
                 Rs, psi2s = metropolis_coordinate_ensemble(wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=epsilon)
