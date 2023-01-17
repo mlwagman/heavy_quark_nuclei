@@ -26,7 +26,7 @@ if __name__ == '__main__':
 
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--N_walkers', default=200, type=int)
+    parser.add_argument('--N_walkers', default=5000, type=int)
     parser.add_argument('--N_train', default=5000, type=int)
     parser.add_argument('--N_exp', default=1, type=int)
     parser.add_argument('--OLO', default="LO", type=str)
@@ -336,7 +336,8 @@ if __name__ == '__main__':
         best_wvfn_state = copy.deepcopy(wvfn.state_dict())
         for n in tqdm.tqdm(range(N_train)):
             sep_time = time.time()
-            epsilon=1.0/np.sqrt(VB)
+            epsilon=np.sqrt(wvfn.A.detach().numpy()[0] / 2)
+            print("\nMetropolis step size ", epsilon)
             if n % N_refresh_metropolis == 0:
                 print("\nRefreshing walkers")
                 Rs, psi2s = metropolis_coordinate_ensemble(wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=epsilon)

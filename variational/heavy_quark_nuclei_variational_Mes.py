@@ -26,9 +26,10 @@ if __name__ == '__main__':
 
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--N_walkers', default=200, type=int)
+    parser.add_argument('--N_walkers', default=5000, type=int)
     parser.add_argument('--N_train', default=5000, type=int)
     parser.add_argument('--N_exp', default=1, type=int)
+    parser.add_argument('--patience_factor', default=10, type=int)
     parser.add_argument('--OLO', default="LO", type=str)
     parser.add_argument('--log10_learn_rate', default=3, type=float)
     parser.add_argument('--alpha', default=0.2, type=float)
@@ -74,7 +75,6 @@ if __name__ == '__main__':
 
     N_skip = 10
     N_refresh_metropolis = 1
-    patience_factor = 10
 
     print(f'precomputing wavefunctions')
     psi_time = time.time()
@@ -336,7 +336,8 @@ if __name__ == '__main__':
         best_wvfn_state = copy.deepcopy(wvfn.state_dict())
         for n in tqdm.tqdm(range(N_train)):
             sep_time = time.time()
-            epsilon=1.0/np.sqrt(VB)
+            epsilon=np.sqrt(wvfn.A.detach().numpy()[0] / 2)
+            print("\nMetropolis step size ", epsilon)
             if n % N_refresh_metropolis == 0:
                 print("\nRefreshing walkers")
                 Rs, psi2s = metropolis_coordinate_ensemble(wvfn.psi, n_therm=500, N_walkers=N_walkers, n_skip=N_skip, eps=epsilon)
@@ -529,7 +530,7 @@ if __name__ == '__main__':
     noise_E_trial = torch.sqrt(torch.var(hammy/psi2s))/np.sqrt(N_walkers)
     print(f'\n\n1/V^2 <psi|H|psi>/<psi|psi> = {E_trial} +/- {noise_E_trial} \n\n')
 
-    filenamec = "exp" + str(N_exp) + "_Ncoord" + str(N_coord) + "_cutoff" + str(cutoff) + "_order" + str(OLO) + "_alpha" + str(alpha) + "_c_loss" + str(c_loss) + "_v_loss" + str(v_loss)
+    filenamec = "exp" + str(N_exp) + "N_walkers" + str(N_walkers) + "p_fac" + str(patience_factor)+ "_Ncoord" + str(N_coord) + "_cutoff" + str(cutoff) + "_order" + str(OLO) + "_alpha" + str(alpha) + "_c_loss" + str(c_loss) + "_v_loss" + str(v_loss)
     nms = [[E_trial], [noise_E_trial]]
     f = open(filenamec+'.csv', 'w')
     with f:
