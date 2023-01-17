@@ -3,7 +3,8 @@ import jax
 from jax.config import config
 config.update("jax_enable_x64", True)
 import jax.numpy as np
-import jax.experimental.optimizers
+#import jax.experimental.optimizers
+import jax.example_libraries.optimizers
 
 def parse_table(fname):
     rs = []
