@@ -12,10 +12,9 @@ import scipy.special
 import pickle
 import paper_plt
 import tqdm.auto as tqdm
-import afdmc_lib as adl
+#import afdmc_lib as adl
 import os
-import pickle
-from afdmc_lib import NI,NS,mp_Mev,fm_Mev
+#from afdmc_lib import NI,NS,mp_Mev,fm_Mev
 import jax
 import sys
 from itertools import repeat
@@ -88,4 +87,3 @@ if N_coord > 2:
 print("LO a = ", 2/VB_LO)
 print("NLO a = ", 2/VB_NLO)
 print("NNLO a = ", 2/VB_NNLO)
-

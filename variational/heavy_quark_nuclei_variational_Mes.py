@@ -21,6 +21,7 @@ if __name__ == '__main__':
     import mpmath
 
 
+
     from hydrogen_Mes import *
     from config import *
 
@@ -37,6 +38,9 @@ if __name__ == '__main__':
     parser.add_argument('--c_loss', default=0, type=float)
     parser.add_argument('--v_loss', default=0, type=float)
     parser.add_argument('--output', default="./wvfn", type=str)
+    parser.add_argument('--log_mu_r', type=float, default=1)
+    parser.add_argument('--Nc', default=3, type=int)
+    parser.add_argument('--nf', default=4, type=int)
     globals().update(vars(parser.parse_args()))
 
 
@@ -46,13 +50,11 @@ if __name__ == '__main__':
 
     N_coord = nCoord
 
-    Nc=3
-    nf=4
-
     CF = (Nc**2 - 1)/(2*Nc)
     VB = alpha*CF
     if N_coord > 2:
         VB = alpha*CF/(Nc-1)
+    a0 = 2/VB;
 
 
     beta0 = 11/3*Nc - 2/3*nf
@@ -73,6 +75,27 @@ if __name__ == '__main__':
     aa32 = Nc/4*(12541/243+368/3*zeta3+64*np.pi**4/135)+CF/4*(14002/81-416*zeta3/3)
     aa33 = -(20/9)**3*1/8
     aa3 = aa30+aa31*nf+aa32*nf**2+aa33*nf**3
+
+    L = log_mu_r
+    VB_LO = VB
+
+    VB_NLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*L))
+
+    VB_NNLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*L) + (alpha/(4*np.pi))**2*( beta0**2*(4*L**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*L + aa2 ) )
+    if N_coord > 2:
+       VB_NNLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*L) + (alpha/(4*np.pi))**2*( beta0**2*(4*L**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*L + aa2 + Nc*(Nc-2)/2*((np.pi)**4-12*(np.pi)**2)  ) )
+
+
+    if OLO == "LO":
+        a0=2/VB_LO
+    elif OLO == "NLO":
+        a0=2/VB_NLO
+    elif OLO == "mNLO":
+        a0=2/VB_NLO
+    elif OLO == "NNLO":
+        a0=2/VB_NNLO
+
+
 
     N_skip = 10
     N_refresh_metropolis = 1
@@ -247,7 +270,7 @@ if __name__ == '__main__':
                     p_new_R = abspsi_new**2
                     success = True
                 except:
-                    success = False 
+                    success = False
             # accept/reject based on |psi(R)|^2
             if (torch.rand(1) < (p_new_R / p_R) and not torch.isnan(p_new_R) and p_new_R > 0 and p_new_R < 1 ):
                 R = new_R #accept
@@ -271,7 +294,7 @@ if __name__ == '__main__':
         def __init__(self):
             super(wvfn, self).__init__()
             # register Bohr radius a and c_{n,l,m,k,j} as pytorch paramters
-            self.A = nn.Parameter(2/VB*torch.ones(nExp, dtype=torch.double))
+            self.A = nn.Parameter(a0*torch.ones(nExp, dtype=torch.double))
             #self.A = nn.Parameter(torch.ones(nExp, dtype=torch.double))
             self.C = nn.Parameter(torch.cat((
                 torch.ones((1), dtype=torch.complex64),
@@ -467,7 +490,7 @@ if __name__ == '__main__':
     training_round = 0
     best_loss, trial_wvfn = train_variational_wvfn(trial_wvfn)
 
-    epsilon=1.0/np.sqrt(VB)
+    epsilon=np.sqrt(wvfn.A.detach().numpy()[0] / 2)
 
     # print results
     print(f'Wavefunction results:')
@@ -539,7 +562,7 @@ if __name__ == '__main__':
     noise_E_trial = torch.sqrt(torch.var(hammy/psi2s))/np.sqrt(N_walkers)
     print(f'\n\n1/V^2 <psi|H|psi>/<psi|psi> = {E_trial} +/- {noise_E_trial} \n\n')
 
-    filenamec = "exp" + str(N_exp) + "N_walkers" + str(N_walkers) + "p_fac" + str(patience_factor)+ "_Ncoord" + str(N_coord) + "_cutoff" + str(cutoff) + "_order" + str(OLO) + "_alpha" + str(alpha) + "_c_loss" + str(c_loss) + "_v_loss" + str(v_loss)
+    filenamec = "exp" + str(N_exp) + "N_walkers" + str(N_walkers) + "p_fac" + str(patience_factor)+ "_Ncoord" + str(N_coord) + "_cutoff" + str(cutoff) + "_order" + str(OLO) + "_alpha" + str(alpha) + "_log_mu_r" + str(log_mu_r)
     nms = [[E_trial], [noise_E_trial]]
     f = open(filenamec+'.csv', 'w')
     with f:

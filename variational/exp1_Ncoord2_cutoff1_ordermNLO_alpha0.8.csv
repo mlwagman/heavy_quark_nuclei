@@ -1,2 +1,0 @@
-"tensor(-3.2190+0.j, grad_fn=<MeanBackward0>)"
-"tensor(0.6078, grad_fn=<DivBackward0>)"

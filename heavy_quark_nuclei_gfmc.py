@@ -46,7 +46,7 @@ parser.add_argument('--resampling', type=int, default=None)
 parser.add_argument('--alpha', type=float, default=1)
 parser.add_argument('--mu', type=float, default=1.0)
 parser.add_argument('--mufac', type=float, default=1.0)
-parser.add_argument('--Nc', type=int, default=2)
+parser.add_argument('--Nc', type=int, default=3)
 parser.add_argument('--N_coord', type=int, default=2)
 parser.add_argument('--nf', type=int, default=5)
 parser.add_argument('--OLO', type=str, default="LO")
@@ -54,6 +54,7 @@ parser.add_argument('--spoila', type=int, default=1)
 parser.add_argument('--spoilf', type=str, default="hwf")
 parser.add_argument('--outdir', type=str, required=True)
 parser.add_argument('--input_Rs_database', type=str, default="")
+parser.add_argument('--log_mu_r', type=float, default=1)
 globals().update(vars(parser.parse_args()))
 
 #######################################################################################
@@ -65,6 +66,7 @@ if N_coord > 2:
 SingC3 = -(Nc+1)/8
 cutoff = 1;
 a0 = spoila*2/VB;
+#a0=4.514
 
 rr = np.full((N_coord,N_coord), fill_value = '',dtype=object)
 for i in range(N_coord):
@@ -411,6 +413,25 @@ aa32 = Nc/4*(12541/243+368/3*zeta3+64*np.pi**4/135)+CF/4*(14002/81-416*zeta3/3)
 aa33 = -(20/9)**3*1/8
 aa3 = aa30+aa31*nf+aa32*nf**2+aa33*nf**3
 
+L = log_mu_r
+VB_LO = VB
+
+VB_NLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*L))
+
+VB_NNLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*L) + (alpha/(4*np.pi))**2*( beta0**2*(4*L**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*L + aa2 ) )
+if N_coord > 2:
+   VB_NNLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*L) + (alpha/(4*np.pi))**2*( beta0**2*(4*L**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*L + aa2 + Nc*(Nc-2)/2*((np.pi)**4-12*(np.pi)**2)  ) )
+
+
+if OLO == "LO":
+    a0=spoila*2/VB_LO
+elif OLO == "NLO":
+    a0=spoila*2/VB_NLO
+elif OLO == "mNLO":
+    a0=spoila*2/VB_NLO
+elif OLO == "NNLO":
+    a0=spoila*2/VB_NNLO
+
 @partial(jax.jit)
 def V3(r1, r2):
    R = lambda x, y: x*r1 - y*r2
@@ -493,7 +514,8 @@ if input_Rs_database == "":
     Rs_metropolis = Rs_metropolis.detach().numpy()
 else:
     f = h5py.File(input_Rs_database, 'r')
-    Rs_metropolis = f["Rs"]
+    Rs_metropolis = f["Rs"][-1]
+print(Rs_metropolis)
 # build trial wavefunction
 S_av4p_metropolis = np.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
 print("built Metropolis wavefunction ensemble")
@@ -599,7 +621,7 @@ print("H=",Hs,"\n\n")
 print("K=",ave_Ks,"\n\n")
 print("V=",ave_Vs,"\n\n")
 
-tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilf"+str(spoilf)
+tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilf"+str(spoilf) + "_log_mu_r"+str(log_mu_r)
 
 with h5py.File(outdir+'Hammys_'+tag+'.h5', 'w') as f:
     dset = f.create_dataset("Hammys", data=Ks+Vs)
