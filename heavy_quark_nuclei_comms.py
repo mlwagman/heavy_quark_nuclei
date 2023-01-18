@@ -480,20 +480,20 @@ else:
 Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb, B3_Coulomb)
 
 # build Coulomb potential
-AV__Comm = {}
+AV_Comm = {}
 B3_Comm = {}
 if OLO == "LO":
-	AV_Comm['O1'] = lambda R: -1*VB/(adl.norm_3vec(R)**3)
+	AV_Comm['O1'] = lambda R: VB/(2*adl.norm_3vec(R)**3)
 elif OLO == "NLO":
-	AV_Comm['O1'] = lambda R: -1*VB/(adl.norm_3vec(R)**3)*(1 + alpha/(4*np.pi)*(2*beta0*(jax.numpy.log(Rprime(R))-2)+aa1))
+	AV_Comm['O1'] = lambda R: VB/(2*adl.norm_3vec(R)**3)*(1 + alpha/(4*np.pi)*(2*beta0*(jax.numpy.log(Rprime(R))-2)+aa1))
 elif OLO == "NNLO":
     if N_coord > 2:
-        AV_Comm['O1'] = lambda R: -1*VB/(adl.norm_3vec(R)**3)*(1 + alpha/(4*np.pi)*(2*beta0*(jax.numpy.log(Rprime(R))-2)+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*(jax.numpy.log(Rprime(R))**2-4*jax.numpy.log(Rprime(R)+2)) + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*(jax.numpy.log(Rprime(R))-2)+ aa2 + Nc*(Nc-2)/2*((np.pi)**4-12*(np.pi)**2) ) )
+        AV_Comm['O1'] = lambda R: VB/(2*adl.norm_3vec(R)**3)*(1 + alpha/(4*np.pi)*(2*beta0*(jax.numpy.log(Rprime(R))-2)+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*(jax.numpy.log(Rprime(R))**2-4*jax.numpy.log(Rprime(R)+2)) + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*(jax.numpy.log(Rprime(R))-2)+ aa2 + Nc*(Nc-2)/2*((np.pi)**4-12*(np.pi)**2) ) )
     else:
-        AV_Comm['O1'] = lambda R: -1*VB/(adl.norm_3vec(R)**3)*(1 + alpha/(4*np.pi)*(2*beta0*(jax.numpy.log(Rprime(R))-2)+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*(jax.numpy.log(Rprime(R))**2-4*jax.numpy.log(Rprime(R)+2)) + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*(jax.numpy.log(Rprime(R))-2)+ aa2 ) )
-    B3_Comm['O1'] = lambda Rij, Rjk, Rik: 0
+        AV_Comm['O1'] = lambda R: VB/(2*adl.norm_3vec(R)**3)*(1 + alpha/(4*np.pi)*(2*beta0*(jax.numpy.log(Rprime(R))-2)+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*(jax.numpy.log(Rprime(R))**2-4*jax.numpy.log(Rprime(R)+2)) + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*(jax.numpy.log(Rprime(R))-2)+ aa2 ) )
+#    B3_Comm['O1'] = lambda Rij, Rjk, Rik: 0
 elif OLO == "mNLO":
-        AV_Coulomb['O1'] = lambda R: -1*VB/(adl.norm_3vec(R)**3)*(1 + alpha/(4*np.pi)*(2*beta0*(jax.numpy.log(Rprime(R))-2)+aa1)) -4*1*CF*Nc*alpha**2/(N_coord-1)/(adl.norm_3vec(R)**4)
+        AV_Comm['O1'] = lambda R: VB/(2*adl.norm_3vec(R)**3)*(1 + alpha/(4*np.pi)*(2*beta0*(jax.numpy.log(Rprime(R))-2)+aa1)) -(-1/2)*4*1*CF*Nc*alpha**2/(N_coord-1)/(adl.norm_3vec(R)**4)
 else:
 	print("order not supported")
 	throw(0)
@@ -572,7 +572,7 @@ Comms = []
 for count, R in enumerate(gfmc_Rs):
     print('Calculating potential for step ', count)
     Comm_time = time.time()
-    CommSI,_ = (-1/2)*Nabla_potential(R)
+    CommSI,_ = Nabla_potential(R)
     Comm_ind = (slice(0,None),) + (0,)*NS*NI*N_coord
     print(f"calculated potential in {time.time() - V_time} sec")
     Comms.append(CommSI[Comm_ind])
