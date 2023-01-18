@@ -1,0 +1,2 @@
+"tensor(nan+nanj, grad_fn=<MeanBackward0>)"
+"tensor(nan, grad_fn=<DivBackward0>)"

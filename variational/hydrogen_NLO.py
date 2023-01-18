@@ -19,6 +19,7 @@ from config import *
 
 nCoord = 2;
 cutoff = 1;
+nExp = 3;
 
 rr = np.full((nCoord,nCoord), fill_value = '',dtype=object)
 for i in range(nCoord):
@@ -33,8 +34,8 @@ for i in range(nCoord):
     for j in range(nCoord):
         pp[i][j] = Symbol('pp[{},{}]'.format(i, j))
 
-C = symbols('C0:%d'%nCoord, real=True);
-A = symbols('A0:%d'%nCoord, Positive=True);
+C = symbols('C0:%d'%nExp, real=True);
+A = symbols('A0:%d'%nExp, Positive=True);
 
 # Define spherical coords
 r = symbols('r0:%d'%nCoord, positive=True);
@@ -119,7 +120,17 @@ def Chi_no_v(nCoord, r, t, p, C, A):
     for i in range(nCoord):
         for j in range(nCoord):
             if i!=j and j>=i:
-                Chi = Chi*(C[0]*exp(-rrSpher(i,j,r,t,p)/A[0])+C[1]*exp(-rrSpher(i,j,r,t,p)/A[1]))
+                Chi = Chi*(C[0]*exp(-rrSpher(i,j,r,t,p)/A[0]))
+    return C[0]*Chi
+
+
+
+def Chi_no_v_3(nCoord, r, t, p, C, A):
+    Chi = 1;
+    for i in range(nCoord):
+        for j in range(nCoord):
+            if i!=j and j>=i:
+                Chi = Chi*(C[0]*exp(-rrSpher(i,j,r,t,p)/A[0])+C[1]*exp(- 2*rrSpher(i,j,r,t,p)/A[0])+C[2]*exp(- 4*rrSpher(i,j,r,t,p)/A[0]))
     return C[0]*Chi
 
 print(simplify(Chi_no_v_test(nCoord, r, t, p, C, A)))
@@ -134,6 +145,22 @@ def psi_no_v(nCoord, r, t, p, C, A):
 
 def nabla_psi_no_v(nCoord, r, t, p, C, A):
     psi = Chi_no_v(nCoord, r, t, p, C, A)
+    nabla_wvfn = 0.0j
+    for a in range(nCoord):
+        nabla_wvfn += laPlaceSpher(psi, r[a], t[a], p[a])
+    nabla_wvfn = nabla_wvfn.rewrite(cos)
+    modules = {'sin': math.sin, 'cos': math.cos}
+    return lambdify([C, A, r, t, p], nabla_wvfn, modules)
+
+
+def psi_no_v_3(nCoord, r, t, p, C, A):
+    psi = Chi_no_v_3(nCoord, r, t, p, C, A)
+    psi = psi.rewrite(cos)
+    modules = {'sin': math.sin, 'cos': math.cos} #, 're': torch.real, 'im': torch.imag
+    return lambdify([C, A, r, t, p], psi, modules)
+
+def nabla_psi_no_v_3(nCoord, r, t, p, C, A):
+    psi = Chi_no_v_3(nCoord, r, t, p, C, A)
     nabla_wvfn = 0.0j
     for a in range(nCoord):
         nabla_wvfn += laPlaceSpher(psi, r[a], t[a], p[a])

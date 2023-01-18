@@ -674,4 +674,3 @@ elif N_coord == 7:
 ax.legend()
 
 plt.savefig(outdir+'Hammy_gfmc_plot_'+tag+'.pdf')
-
