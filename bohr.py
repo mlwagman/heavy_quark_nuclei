@@ -39,12 +39,15 @@ paper_plt.load_latex_config()
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--alpha', type=float, default=1)
+parser.add_argument('--log_mu_r', type=float, default=0)
 parser.add_argument('--Nc', type=int, default=3)
 parser.add_argument('--N_coord', type=int, default=2)
 parser.add_argument('--nf', type=int, default=5)
 globals().update(vars(parser.parse_args()))
 
 #######################################################################################
+
+L = log_mu_r
 
 CF = (Nc**2 - 1)/(2*Nc)
 VB = alpha*CF
@@ -76,11 +79,11 @@ aa3 = aa30+aa31*nf+aa32*nf**2+aa33*nf**3
 
 VB_LO = VB
 
-VB_NLO = VB * (1 + alpha/(4*np.pi)*(aa1))
+VB_NLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*L))
 
-VB_NNLO = VB * (1 + alpha/(4*np.pi)*(aa1) + (alpha/(4*np.pi))**2*( beta0**2*(np.pi**2/3) + aa2 ) )
+VB_NNLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*L) + (alpha/(4*np.pi))**2*( beta0**2*(4*L**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*L + aa2 ) )
 if N_coord > 2:
-   VB_NNLO = VB * (1 + alpha/(4*np.pi)*(aa1) + (alpha/(4*np.pi))**2*( beta0**2*(np.pi**2/3) + aa2 + Nc*(Nc-2)/2*((np.pi)**4-12*(np.pi)**2) ) )
+   VB_NNLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*L) + (alpha/(4*np.pi))**2*( beta0**2*(4*L**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*L + aa2 + Nc*(Nc-2)/2*((np.pi)**4-12*(np.pi)**2)  ) )
 
 print("LO a = ", 2/VB_LO)
 print("NLO a = ", 2/VB_NLO)
