@@ -29,6 +29,7 @@ if __name__ == '__main__':
     parser.add_argument('--N_walkers', default=5000, type=int)
     parser.add_argument('--N_train', default=5000, type=int)
     parser.add_argument('--N_exp', default=1, type=int)
+    parser.add_argument('--patience_factor', default=10, type=int)
     parser.add_argument('--OLO', default="LO", type=str)
     parser.add_argument('--log10_learn_rate', default=3, type=float)
     parser.add_argument('--alpha', default=0.2, type=float)
