@@ -478,7 +478,7 @@ if __name__ == '__main__':
     training_round = 0
     best_loss, trial_wvfn = train_variational_wvfn(trial_wvfn)
 
-    epsilon=np.sqrt(wvfn.A.detach().numpy()[0] / 2)
+    epsilon=np.sqrt(a0 / 2)
 
     # print results
     print(f'Wavefunction results:')

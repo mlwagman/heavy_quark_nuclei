@@ -465,7 +465,7 @@ if __name__ == '__main__':
 
         print("\n")
 
-    filename = output + "exp" + str(N_exp) + "_Ncoord" + str(N_coord) + "_cutoff" + str(cutoff) + "_order" + str(OLO) + "_alpha" + str(alpha) + "_c_loss" + str(c_loss) + "_v_loss"  + f"_potential{VB:.3f}.wvfn"
+    filename = output + "exp" + str(N_exp) + "_Ncoord" + str(N_coord) + "_N_walkers" + str(N_walkers) + "_cutoff" + str(cutoff) + "_order" + str(OLO) + "_alpha" + str(alpha) + "_c_loss" + str(c_loss) + "_v_loss"  + f"_potential{VB:.3f}.wvfn"
     print("saving wvfn results to "+filename+"\n")
     if os.path.exists(filename):
         print("Error - remove existing wavefunction, torch save doesn't overwrite\n\n")
@@ -490,7 +490,7 @@ if __name__ == '__main__':
     training_round = 0
     best_loss, trial_wvfn = train_variational_wvfn(trial_wvfn)
 
-    epsilon=np.sqrt(wvfn.A.detach().numpy()[0] / 2)
+    epsilon=np.sqrt(a0/2)
 
     # print results
     print(f'Wavefunction results:')
