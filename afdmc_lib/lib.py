@@ -495,13 +495,13 @@ def metropolis(R, W, *, n_therm, n_step, n_skip, eps):
         new_R = R + dR
         W_R = W(R)
         new_W_R = W(new_R)
-        if onp.random.random() < (new_W_R / W_R):
+        if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R): 
             R = new_R # accept
             W_R = new_W_R
             acc += 1
         if i >= 0 and (i+1) % n_skip == 0:
             samples.append((R, W_R))
-    print(f'Total acc frac = {acc} / {n_therm + n_step*n_skip}')
+    print(f'Total acc frac = {acc} / {n_therm+n_skip*n_step} = {1.0*acc/(n_therm+n_skip*n_step)}')
     return samples
 
 ### Apply exp(-dtau/2 V_SI) (1 - (dtau/2) V_SD + (dtau^2/8) V_SD^2) to |S>,

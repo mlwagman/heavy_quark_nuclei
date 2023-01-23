@@ -428,7 +428,8 @@ def V3(r1, r2):
    V3_integrand = lambda x, y: 16*jax.numpy.pi*( jax.numpy.arctan2(R_norm(x,y),A(x,y))*r1_hat_dot_r2_hat*1/R_norm(x,y)*(-1*A(x,y)**2/R_norm(x,y)**2+1) + r1_hat_dot_r2_hat*A(x,y)/R_norm(x,y)**2
            + jax.numpy.arctan2(R_norm(x,y),A(x,y))*r1_hat_r2_hat_dot_R_R(x,y)*1/R_norm(x,y)*(3*A(x,y)**2/R_norm(x,y)**2+1) - 3*r1_hat_r2_hat_dot_R_R(x,y)*A(x,y)/R_norm(x,y)**2)
 
-   int_points = 100
+   #int_points = 100
+   int_points = 50
    dx = 1/int_points
    x_grid = jax.numpy.arange(dx, stop=1, step=dx)
    y_grid = jax.numpy.arange(0, stop=1, step=dx)
@@ -637,52 +638,52 @@ for count, R in enumerate(gfmc_Rs):
 Vs = np.array(Vs)
 print(Vs.shape)
 
-Hs = np.array([al.bootstrap(K + V, W, Nboot=100, f=adl.rw_mean)
-        for K,V,W in zip(Ks, Vs, gfmc_Ws)])
-
-ave_Ks = np.array([al.bootstrap(K, W, Nboot=100, f=adl.rw_mean)
-        for K,V,W in zip(Ks, Vs, gfmc_Ws)])
-ave_Vs = np.array([al.bootstrap(V, W, Nboot=100, f=adl.rw_mean)
-        for K,V,W in zip(Ks, Vs, gfmc_Ws)])
-
-print("first walker")
-print(gfmc_Rs.shape)
-print("R = ",gfmc_Rs[0][0])
-x = gfmc_Rs[0][:,:,0]
-y = gfmc_Rs[0][:,:,1]
-z = gfmc_Rs[0][:,:,2]
-r_n = np.sqrt(x**2 + y**2 + z**2)
-t_n = np.arctan2(np.sqrt(x**2 + y**2), z)
-p_n = np.arctan2(y, x)
-print("r = ",r_n[0,0])
-print("theta = ",t_n[0,0])
-print("phi = ",p_n[0,0])
-print("psi(R) = ",f_R(gfmc_Rs[0])[0])
-print("K(R) = ",Ks[0,0])
-print("V(R) = ",Vs[0,0])
-print("H(R) = ",Ks[0,0]+Vs[0,0])
-
-print("\n", Ks.shape)
-
-print("\nsecond walker")
-print("R = ",gfmc_Rs[0][1])
-x = gfmc_Rs[0][:,:,0]
-y = gfmc_Rs[0][:,:,1]
-z = gfmc_Rs[0][:,:,2]
-r_n = np.sqrt(x**2 + y**2 + z**2)
-t_n = np.arctan2(np.sqrt(x**2 + y**2), z)
-p_n = np.arctan2(y, x)
-print("r = ",r_n[0,1])
-print("theta = ",t_n[0,1])
-print("phi = ",p_n[0,1])
-print("psi(R) = ",f_R(gfmc_Rs[0])[1])
-print("K(R) = ",Ks[0,1])
-print("V(R) = ",Vs[0,1])
-print("H(R) = ",Ks[0,1]+Vs[0,1])
-
-print("H=",Hs,"\n\n")
-print("K=",ave_Ks,"\n\n")
-print("V=",ave_Vs,"\n\n")
+#Hs = np.array([al.bootstrap(K + V, W, Nboot=100, f=adl.rw_mean)
+#        for K,V,W in zip(Ks, Vs, gfmc_Ws)])
+#
+#ave_Ks = np.array([al.bootstrap(K, W, Nboot=100, f=adl.rw_mean)
+#        for K,V,W in zip(Ks, Vs, gfmc_Ws)])
+#ave_Vs = np.array([al.bootstrap(V, W, Nboot=100, f=adl.rw_mean)
+#        for K,V,W in zip(Ks, Vs, gfmc_Ws)])
+#
+#print("first walker")
+#print(gfmc_Rs.shape)
+#print("R = ",gfmc_Rs[0][0])
+#x = gfmc_Rs[0][:,:,0]
+#y = gfmc_Rs[0][:,:,1]
+#z = gfmc_Rs[0][:,:,2]
+#r_n = np.sqrt(x**2 + y**2 + z**2)
+#t_n = np.arctan2(np.sqrt(x**2 + y**2), z)
+#p_n = np.arctan2(y, x)
+#print("r = ",r_n[0,0])
+#print("theta = ",t_n[0,0])
+#print("phi = ",p_n[0,0])
+#print("psi(R) = ",f_R(gfmc_Rs[0])[0])
+#print("K(R) = ",Ks[0,0])
+#print("V(R) = ",Vs[0,0])
+#print("H(R) = ",Ks[0,0]+Vs[0,0])
+#
+#print("\n", Ks.shape)
+#
+#print("\nsecond walker")
+#print("R = ",gfmc_Rs[0][1])
+#x = gfmc_Rs[0][:,:,0]
+#y = gfmc_Rs[0][:,:,1]
+#z = gfmc_Rs[0][:,:,2]
+#r_n = np.sqrt(x**2 + y**2 + z**2)
+#t_n = np.arctan2(np.sqrt(x**2 + y**2), z)
+#p_n = np.arctan2(y, x)
+#print("r = ",r_n[0,1])
+#print("theta = ",t_n[0,1])
+#print("phi = ",p_n[0,1])
+#print("psi(R) = ",f_R(gfmc_Rs[0])[1])
+#print("K(R) = ",Ks[0,1])
+#print("V(R) = ",Vs[0,1])
+#print("H(R) = ",Ks[0,1]+Vs[0,1])
+#
+#print("H=",Hs,"\n\n")
+#print("K=",ave_Ks,"\n\n")
+#print("V=",ave_Vs,"\n\n")
 
 tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilf"+str(spoilf) 
 
@@ -703,21 +704,21 @@ with h5py.File(outdir+'Rs_'+tag+'.h5', 'r') as f:
     data = f['Rs']
     print(data)
 
-# plot H
-fig, ax = plt.subplots(1,1, figsize=(4,3))
-al.add_errorbar(np.transpose(Hs/(VB**2)), ax=ax, xs=xs, color='xkcd:forest green', label=r'$\left< H \right>$', marker='o')
-if N_coord == 2:
-    ax.set_ylim(-.26, -.24)
-elif N_coord == 3:
-    ax.set_ylim(-1.1, -1.05)
-elif N_coord == 4:
-    ax.set_ylim(-2.5, -3.5)
-elif N_coord == 5:
-    ax.set_ylim(-5, -6)
-elif N_coord == 6:
-    ax.set_ylim(-9, -11)
-elif N_coord == 7:
-    ax.set_ylim(-15, -18)
-ax.legend()
-
-plt.savefig(outdir+'Hammy_gfmc_plot_'+tag+'.pdf')
+## plot H
+#fig, ax = plt.subplots(1,1, figsize=(4,3))
+#al.add_errorbar(np.transpose(Hs/(VB**2)), ax=ax, xs=xs, color='xkcd:forest green', label=r'$\left< H \right>$', marker='o')
+#if N_coord == 2:
+#    ax.set_ylim(-.26, -.24)
+#elif N_coord == 3:
+#    ax.set_ylim(-1.1, -1.05)
+#elif N_coord == 4:
+#    ax.set_ylim(-2.5, -3.5)
+#elif N_coord == 5:
+#    ax.set_ylim(-5, -6)
+#elif N_coord == 6:
+#    ax.set_ylim(-9, -11)
+#elif N_coord == 7:
+#    ax.set_ylim(-15, -18)
+#ax.legend()
+#
+#plt.savefig(outdir+'Hammy_gfmc_plot_'+tag+'.pdf')

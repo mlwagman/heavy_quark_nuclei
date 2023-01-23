@@ -18,7 +18,7 @@ parser.add_argument('--dataset', type=str, default="Hammys")
 # how many steps to skip in between samples to keep correlations managable
 parser.add_argument('--n_skip', type=int, default=1)
 # how many steps to average to keep correlations managable
-parser.add_argument('--n_block', type=int, default=1)
+parser.add_argument('--n_block', type=int, default=5)
 # how many bootstrap samples
 parser.add_argument('--n_boot', type=int, default=200)
 # how often to print
@@ -28,7 +28,7 @@ parser.add_argument('--n_fits', type=int, default=30)
 # stop increase n_tau_skip after agreement within how many sigma
 parser.add_argument('--n_tau_tol', type=float, default=2.0)
 # dtau for plotting
-parser.add_argument('--dtau', type=float, default=0.2)
+parser.add_argument('--dtau', type=float, default=0.4)
 # plot height in sigma
 parser.add_argument('--plot_scale', type=float, default=20)
 parser.add_argument('--noshrink', action='store_true', default=False)
@@ -44,12 +44,21 @@ if n_skip > 1 and n_block > 1:
 # read data
 f = h5py.File(database, 'r')
 dset = f[dataset]
+
+n_step_full = dset.shape[0]
+#n_step_full = 50
+n_walk_full = dset.shape[1]
+
+dset = dset[0:n_step_full]
+
 print(dset.shape)
 if dataset == "Rs":
     dset = np.mean(np.abs(dset), axis=(2,3))
 
 # read weights
 dset_Ws = f["Ws"]
+
+dset_Ws = dset_Ws[0:n_step_full]
 
 fit_step = (dset.shape[0] // n_fits)
 
@@ -59,8 +68,6 @@ model_redchisq = np.zeros((n_fits))
 model_weights = np.zeros((n_fits))
 
 last_fit = 1e6
-
-n_walk_full = dset.shape[1]
 
 for n_tau_skip_exp in range(round(np.log(dset.shape[0]//n_walk_full+1)/np.log(2)), round(np.log(dset.shape[0])/np.log(2))-1):
     n_tau_skip = 2**(n_tau_skip_exp+1)
