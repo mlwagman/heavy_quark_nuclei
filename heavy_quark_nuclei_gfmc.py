@@ -52,6 +52,7 @@ parser.add_argument('--spoilf', type=str, default="hwf")
 parser.add_argument('--outdir', type=str, required=True)
 parser.add_argument('--input_Rs_database', type=str, default="")
 parser.add_argument('--log_mu_r', type=float, default=1)
+parser.add_argument('--cutoff', type=float, default=0.1)
 parser.add_argument('--verbose', dest='verbose', action='store_true', default=False)
 globals().update(vars(parser.parse_args()))
 
@@ -62,11 +63,8 @@ VB = alpha*CF
 if N_coord > 2:
     VB = alpha*CF/(Nc-1)
 SingC3 = -(Nc+1)/8
-cutoff = 1;
 a0 = spoila*2/VB;
 #a0=4.514
-
-a_cutoff = 1.0
 
 #VB=.1
 #print(VB)
@@ -222,6 +220,20 @@ def f_R(Rs):
                 psi = psi*np.exp(-rij_norm/a0)
     return psi
 
+def cutoff_fn(Rs):
+    psi = 1
+    for i in range(N_coord):
+       	for j in range(N_coord):
+            if i!=j and j>=i:
+                ri = Rs[...,i,:]
+                rj = Rs[...,j,:]
+                rij_norm = adl.norm_3vec(ri - rj)
+                psi = psi*np.exp(-cutoff / rij_norm)
+    return psi
+
+
+def cutoff_f_R_sq(Rs):
+    return np.abs( f_R(Rs) )**2 * cutoff_fn(Rs)
 
 @partial(jax.jit)
 def laplacian_f_R(Rs):
@@ -288,7 +300,8 @@ if input_Rs_database == "":
     R0 = onp.random.normal(size=(N_coord,3))
     # set center of mass position to 0
     R0 -= onp.mean(R0, axis=1, keepdims=True)
-    samples = adl.metropolis(R0, f_R, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
+    #samples = adl.metropolis(R0, f_R, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
+    samples = adl.metropolis(R0, cutoff_f_R_sq, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
     Rs_metropolis = np.array([R for R,_ in samples])
 else:
     f = h5py.File(input_Rs_database, 'r')
@@ -320,7 +333,7 @@ gfmc = adl.gfmc_deform(
     deform_f=deform_f, m_Mev=adl.mp_Mev,
     resampling_freq=resampling)
 gfmc_Rs = np.array([Rs for Rs,_,_,_, in gfmc])
-gfmc_Ws = np.array([Ws for _,_,_,Ws, in gfmc])
+gfmc_Ws = np.array([Ws for _,_,_,Ws, in gfmc]) / cutoff_fn(gfmc_Rs)
 gfmc_Ss = np.array([Ss for _,_,Ss,_, in gfmc])
 
 print('GFMC tau=0 weights:', gfmc_Ws[0])
