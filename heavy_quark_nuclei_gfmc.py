@@ -52,7 +52,7 @@ parser.add_argument('--spoilf', type=str, default="hwf")
 parser.add_argument('--outdir', type=str, required=True)
 parser.add_argument('--input_Rs_database', type=str, default="")
 parser.add_argument('--log_mu_r', type=float, default=1)
-parser.add_argument('--cutoff', type=float, default=0.1)
+parser.add_argument('--cutoff', type=float, default=0.0)
 parser.add_argument('--verbose', dest='verbose', action='store_true', default=False)
 globals().update(vars(parser.parse_args()))
 
