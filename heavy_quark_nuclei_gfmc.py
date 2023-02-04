@@ -368,7 +368,7 @@ for count, R in enumerate(gfmc_Rs):
     VSI,_ = Coulomb_potential(R)
     V_ind = (slice(0,None),) + (0,)*NS*NI*N_coord
     print(f"calculated potential in {time.time() - V_time} sec")
-    Vs.append(VSI[V_ind])
+    Vs.append(VSI)
 
 Vs = np.array(Vs)
 
@@ -415,12 +415,12 @@ if verbose:
 
     Hs = np.array([al.bootstrap(K + V, W, Nboot=100, f=adl.rw_mean)
             for K,V,W in zip(Ks, Vs, gfmc_Ws)])
-    
+
     ave_Ks = np.array([al.bootstrap(K, W, Nboot=100, f=adl.rw_mean)
             for K,V,W in zip(Ks, Vs, gfmc_Ws)])
     ave_Vs = np.array([al.bootstrap(V, W, Nboot=100, f=adl.rw_mean)
             for K,V,W in zip(Ks, Vs, gfmc_Ws)])
-    
+
     print("first walker")
     print(gfmc_Rs.shape)
     print("R = ",gfmc_Rs[0][0])
@@ -437,9 +437,9 @@ if verbose:
     print("K(R) = ",Ks[0,0])
     print("V(R) = ",Vs[0,0])
     print("H(R) = ",Ks[0,0]+Vs[0,0])
-    
+
     print("\n", Ks.shape)
-    
+
     print("\nsecond walker")
     print("R = ",gfmc_Rs[0][1])
     x = gfmc_Rs[0][:,:,0]
@@ -455,7 +455,7 @@ if verbose:
     print("K(R) = ",Ks[0,1])
     print("V(R) = ",Vs[0,1])
     print("H(R) = ",Ks[0,1]+Vs[0,1])
-    
+
     print("H=",Hs,"\n\n")
     print("K=",ave_Ks,"\n\n")
     print("V=",ave_Vs,"\n\n")
