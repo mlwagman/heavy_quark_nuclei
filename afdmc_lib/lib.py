@@ -50,8 +50,8 @@ def normalize_wf(f_R, df_R, ddf_R):
 
 
 ### Hamiltonian
-NS = 2
-NI = 2
+NS = 1
+NI = 1
 paulis = onp.stack([
     onp.array([[0, 1], [1, 0]]), # X
     onp.array([[0, -1j], [1j, 0]]), # Y
@@ -129,12 +129,7 @@ def make_pairwise_potential(AVcoeffs, B3coeffs={}):
 #    @jax.jit
     def pairwise_potential(R):
         batch_size, A = R.shape[:2]
-        V_SI_Mev = np.zeros( # big-ass matrix
-            (batch_size,) + # batch of walkers
-            (NI,NS)*A + # source (i1, s1, i2, s2, ...)
-            (NI,NS)*A, # sink (i1', s1', i2', s2', ...)
-            dtype=np.complex128
-        )
+        V_SI_Mev = np.zeros( (batch_size,), dtype=np.complex128)
         V_SD_Mev = np.zeros( # big-ass matrix
             (batch_size,) + # batch of walkers
             (NI,NS)*A + # source (i1, s1, i2, s2, ...)
@@ -168,8 +163,9 @@ def make_pairwise_potential(AVcoeffs, B3coeffs={}):
                         broadcast_src_snk_inds + # src
                         broadcast_src_snk_inds # snk
                     )
-                    assert len(broadcast_inds) == len(V_SI_Mev.shape)
+                    assert len(broadcast_inds) == len(V_SD_Mev.shape)
                     if name == 'O1':
+                        broadcast_inds = (slice(None),) + (0,)*(len(Oij.shape)-1)
                         V_SI_Mev = V_SI_Mev + scaled_O[broadcast_inds]
                     else:
                         V_SD_Mev = V_SD_Mev + scaled_O[broadcast_inds]
@@ -205,8 +201,9 @@ def make_pairwise_potential(AVcoeffs, B3coeffs={}):
                             broadcast_src_snk_inds + # src
                             broadcast_src_snk_inds # snk
                         )
-                        assert len(broadcast_inds) == len(V_SI_Mev.shape)
+                        assert len(broadcast_inds) == len(V_SD_Mev.shape)
                         if name == 'O1':
+                            broadcast_inds = (slice(None),) + (0,)*(len(Oijk.shape)-1)
                             V_SI_Mev = V_SI_Mev + scaled_O[broadcast_inds]
                         else:
                             V_SD_Mev = V_SD_Mev + scaled_O[broadcast_inds]
@@ -215,12 +212,7 @@ def make_pairwise_potential(AVcoeffs, B3coeffs={}):
 
 def flat_pairwise_potential(R, AVcoeffs, B3coeffs={}):
     batch_size, A = R.shape[:2]
-    V_SI_Mev = np.zeros( # big-ass matrix
-        (batch_size,) + # batch of walkers
-        (NI,NS)*A + # source (i1, s1, i2, s2, ...)
-        (NI,NS)*A, # sink (i1', s1', i2', s2', ...)
-        dtype=np.complex128
-    )
+    V_SI_Mev = np.zeros( (batch_size,), dtype=np.complex128)
     V_SD_Mev = np.zeros( # big-ass matrix
         (batch_size,) + # batch of walkers
         (NI,NS)*A + # source (i1, s1, i2, s2, ...)
@@ -254,8 +246,9 @@ def flat_pairwise_potential(R, AVcoeffs, B3coeffs={}):
                     broadcast_src_snk_inds + # src
                     broadcast_src_snk_inds # snk
                 )
-                assert len(broadcast_inds) == len(V_SI_Mev.shape)
+                assert len(broadcast_inds) == len(V_SD_Mev.shape)
                 if name == 'O1':
+                    broadcast_inds = (slice(None),) + (0,)*(len(Oij.shape)-1)
                     V_SI_Mev += scaled_O[broadcast_inds]
                 else:
                     V_SD_Mev += scaled_O[broadcast_inds]
@@ -290,16 +283,17 @@ def flat_pairwise_potential(R, AVcoeffs, B3coeffs={}):
                         broadcast_src_snk_inds + # src
                         broadcast_src_snk_inds # snk
                     )
-                    assert len(broadcast_inds) == len(V_SI_Mev.shape)
+                    assert len(broadcast_inds) == len(V_SD_Mev.shape)
                     if name == 'O1':
                         jax_print("including 3-body ops")
+                        broadcast_inds = (slice(None),) + (0,)*(len(Oijk.shape)-1)
                         V_SI_Mev += scaled_O[broadcast_inds]
                     else:
                         V_SD_Mev += scaled_O[broadcast_inds]
     return V_SI_Mev, V_SD_Mev
 
 
-@partial(jax.jit)
+#@partial(jax.jit)
 def batched_apply(M, S): # compute M|S>
     batch_size, src_sink_dims = M.shape[0], M.shape[1:]
     batch_size2, src_dims = S.shape[0], S.shape[1:]
@@ -512,11 +506,7 @@ def metropolis(R, W, *, n_therm, n_step, n_skip, eps):
 #@partial(jax.jit, static_argnums=(2,))
 def compute_VS_separate(R_prop, S, potential, *, dtau_iMev):
     N_coord = R_prop.shape[1]
-    V_SI_prop, _ = potential(R_prop)
-    V_ind = (slice(0,None),) + (0,)*NS*NI*N_coord
-    V_SI_prop = V_SI_prop[V_ind]
-
-    _, V_SD = potential(R_prop)
+    V_SI_prop, V_SD = potential(R_prop)
     VS = batched_apply(V_SD, S)
     VVS = batched_apply(V_SD, VS)
     S_prop = S - (dtau_iMev/2) * VS + (dtau_iMev**2/8) * VVS
@@ -531,9 +521,7 @@ def compute_VS(R_deform, S, potential, *, dtau_iMev):
     VS = batched_apply(V_SD, S)
     VVS = batched_apply(V_SD, VS)
     S = S - (dtau_iMev/2) * VS + (dtau_iMev**2/8) * VVS
-    V_slice = (slice(0,None),) + (slice(0,1,1),)*NI*N_coord + (0,)*NS*N_coord
-    V_SI = V_SI[V_slice]
-    S = np.exp(-dtau_iMev/2 * V_SI) * S
+    S = S * np.exp(-dtau_iMev/2 * V_SI)[(slice(None),) + (np.newaxis,)*2*N_coord]
     return S
 
 # TODO JIT potential
@@ -816,7 +804,10 @@ def measure_gfmc_loss(
         V_SI, _ = potential(Rs_prev)
         V_ind = (slice(0,None),) + (0,)*NS*NI*N_coord
         V_half_ind = (slice(0,None),) + (0,)*NI*N_coord
+        # TODO
         V_slice = (slice(0,None),) + (slice(0,1,1),)*NI*N_coord + (0,)*NS*N_coord
+        #V_slice = (slice(0,None),) + (0,)*NI*N_coord + (0,)*NS*N_coord
+        #V_slice = (slice(0,None),) + (0,)*NS*NI*N_coord
         V_SI = V_SI[V_slice]
         jax_print(np.sort(np.abs(V_SI[V_half_ind]))[-10:], label='VSI', level=3)
 
