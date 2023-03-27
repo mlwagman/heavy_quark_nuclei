@@ -61,9 +61,14 @@ globals().update(vars(parser.parse_args()))
 CF = (Nc**2 - 1)/(2*Nc)
 VB = alpha*CF
 if N_coord > 2:
+    if log_mu_r == 1:
+       log_mu_r = 0.5
     VB = alpha*CF/(Nc-1)
 SingC3 = -(Nc+1)/8
 a0 = spoila*2/VB;
+
+if log_mu_r == 1:
+   log_mu_r = 0.0
 #a0=4.514
 
 #VB=.1
@@ -163,7 +168,7 @@ elif OLO == "NNLO":
         @partial(jax.jit)
         def potential_fun(R):
             return -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 ) )
-    B3_Coulomb['O1'] = lambda Rij, Rjk, Rik: SingC3*2*alpha*(alpha/(4*np.pi))**2*(V3(Rij, Rjk) + V3(Rjk, Rik) + V3(Rik, Rij))
+    B3_Coulomb['O1'] = lambda Rij, Rjk, Rik: SingC3*alpha*(alpha/(4*np.pi))**2*(V3(Rij, Rjk) + V3(Rjk, Rik) + V3(Rik, Rij))
 elif OLO == "N3LO":
     if N_coord > 2:
         @partial(jax.jit)
@@ -173,7 +178,7 @@ elif OLO == "N3LO":
         @partial(jax.jit)
         def potential_fun(R):
             -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 ) ) + (alpha/(4*np.pi))**3*( 64*np.pi**2/3*Nc**3*np.log(adl.norm_3vec(R)) + aa3 + 64*np.pi**2/3*Nc**3*np.euler_gamma + 512*beta0**3*( np.log(Rprime(R))**3 + np.pi**4/4*np.log(Rprime(R))+2*zeta3 ) + (640*beta0*beta1 + 192*beta0**2*aa1)*(np.log(Rprime(R))**2+np.pi**2/12) + (128*beta2+64*beta1*aa1+24*beta0*aa2)*np.log(Rprime(R)) )
-    B3_Coulomb['O1'] = lambda Rij, Rjk, Rik: SingC3*2*alpha*(alpha/(4*np.pi))**2*(V3(Rij, Rjk) + V3(Rjk, Rik) + V3(Rik, Rij))
+    B3_Coulomb['O1'] = lambda Rij, Rjk, Rik: SingC3*alpha*(alpha/(4*np.pi))**2*(V3(Rij, Rjk) + V3(Rjk, Rik) + V3(Rik, Rij))
 elif OLO == "mNLO":
         @partial(jax.jit)
         def potential_fun(R):
@@ -187,7 +192,7 @@ elif OLO == "mNNLO":
         @partial(jax.jit)
         def potential_fun(R):
             return -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 ) ) -1*CF*Nc*alpha**2/(N_coord-1)/(adl.norm_3vec(R)**2)
-    B3_Coulomb['O1'] = lambda Rij, Rjk, Rik: SingC3*2*alpha*(alpha/(4*np.pi))**2*(V3(Rij, Rjk) + V3(Rjk, Rik) + V3(Rik, Rij))
+    B3_Coulomb['O1'] = lambda Rij, Rjk, Rik: SingC3*alpha*(alpha/(4*np.pi))**2*(V3(Rij, Rjk) + V3(Rjk, Rik) + V3(Rik, Rij))
 elif OLO == "mN3LO":
     if N_coord > 2:
         @partial(jax.jit)
