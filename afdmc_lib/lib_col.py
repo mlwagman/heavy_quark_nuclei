@@ -66,9 +66,23 @@ sigma8 = onp.array([[1 / np.sqrt(3), 0, 0], [0, 1 / np.sqrt(3), 0], [0, 0, -2 / 
 # Stack the matrices along the third axis (depth)
 paulis = onp.stack([sigma1, sigma2, sigma3, sigma4, sigma5, sigma6, sigma7, sigma8])
 
+#define levi-cevita tensor
+# Define the Levi-Civita symbol tensor
+lc_tensor = np.zeros((NI, NI, NI))
+lc_tensor[0, 1, 2] = lc_tensor[1, 2, 0] = lc_tensor[2, 0, 1] = 1
+lc_tensor[0, 2, 1] = lc_tensor[2, 1, 0] = lc_tensor[1, 0, 2] = -1
+
+# Contract the indices of the Levi-Civita symbol to get operator
+iso_eps = 1/4 * onp.einsum('ijk,ilm->jmlk', lc_tensor, lc_tensor)
+
+
 # NOTE(gkanwar): spin and isospin pieces are identical matrices, but are
 # semantically different objects.
 two_body_pieces = {
+    # symmetric in color
+    'iso_S' = 1/4 * (onp.einsum('ij,kl->ikjl', onp.identity(NI), onp.identity(NI)) + onp.einsum('jl,ik->ikjl', onp.identity(NI), onp.identity(NI)))
+    # antisymmetric in color
+    'iso_A': iso_eps
     # 1 . 1
     'sp_I': onp.einsum('ij,kl->ikjl', onp.identity(NS), onp.identity(NS)),
     # sigma_i . sigma_j
@@ -107,6 +121,12 @@ def three_body_outer(three_body_iso, three_body_spin):
     return np.einsum('zacebdf,zikmjln->zaickembjdlfn', three_body_iso, three_body_spin)
 
 two_body_ops = {
+    'OA': lambda Rij: two_body_outer(
+        two_body_pieces['iso_A'][np.newaxis],
+        two_body_pieces['sp_I'][np.newaxis]),
+    'OS': lambda Rij: two_body_outer(
+        two_body_pieces['iso_S'][np.newaxis],
+        two_body_pieces['sp_I'][np.newaxis]), 
     'O1': lambda Rij: two_body_outer(
         two_body_pieces['iso_I'][np.newaxis],
         two_body_pieces['sp_I'][np.newaxis]),
