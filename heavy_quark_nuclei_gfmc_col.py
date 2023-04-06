@@ -12,10 +12,10 @@ import scipy.special
 import pickle
 import paper_plt
 import tqdm.auto as tqdm
-import afdmc_lib as adl
+import afdmc_lib_col as adl
 import os
 import pickle
-from afdmc_lib import NI,NS,mp_Mev,fm_Mev
+from afdmc_lib_col import NI,NS,mp_Mev,fm_Mev
 import jax
 import jax.numpy as np
 import sys
@@ -44,7 +44,7 @@ parser.add_argument('--alpha', type=float, default=1)
 parser.add_argument('--mu', type=float, default=1.0)
 parser.add_argument('--mufac', type=float, default=1.0)
 parser.add_argument('--Nc', type=int, default=3)
-parser.add_argument('--N_coord', type=int, default=2)
+parser.add_argument('--N_coord', type=int, default=3)
 parser.add_argument('--nf', type=int, default=5)
 parser.add_argument('--OLO', type=str, default="LO")
 parser.add_argument('--spoila', type=int, default=1)
@@ -101,6 +101,7 @@ elif OLO == "NLO":
 Rprime = lambda R: adl.norm_3vec(R)*np.exp(np.euler_gamma)*mu
 # build Coulomb potential
 AV_Coulomb = {}
+B3_Coulomb = {}
 if OLO == "LO":
     @partial(jax.jit)
     def potential_fun(R):
@@ -113,9 +114,11 @@ else:
 	print("order not supported")
 	throw(0)
 
-#TODO change potential definition
-#AV_Coulomb['O1'] = potential_fun
-#Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb, B3_Coulomb)
+
+AV_Coulomb['OA'] = potential_fun
+AV_Coulomb['OB'] = potential_fun
+Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb, B3_Coulomb)
+#Coulomb_potential = AV_Coulomb
 
 
 
@@ -235,12 +238,14 @@ def levi_civita(i, j, k):
     else:
         return -1
 
+print("spin-flavor wavefunction shape = ", S_av4p_metropolis.shape)
+
 for i in range(N_coord):
     for j in range(N_coord):
         for k in range(N_coord):
             if i != j and j != k and i != k:
                 spin_slice = (slice(0, None),) + (i, j, k) + (0,) * N_coord
-                    S_av4p_metropolis[spin_slice] = levi_civita(i, j, k)
+                S_av4p_metropolis[spin_slice] = levi_civita(i, j, k)
 
 print("spin-flavor wavefunction shape = ", S_av4p_metropolis.shape)
 
@@ -321,24 +326,6 @@ with h5py.File(outdir+'Rs_'+tag+'.h5', 'r') as f:
     data = f['Rs']
     print(data)
 
-## plot H
-#fig, ax = plt.subplots(1,1, figsize=(4,3))
-#al.add_errorbar(np.transpose(Hs/(VB**2)), ax=ax, xs=xs, color='xkcd:forest green', label=r'$\left< H \right>$', marker='o')
-#if N_coord == 2:
-#    ax.set_ylim(-.26, -.24)
-#elif N_coord == 3:
-#    ax.set_ylim(-1.1, -1.05)
-#elif N_coord == 4:
-#    ax.set_ylim(-2.5, -3.5)
-#elif N_coord == 5:
-#    ax.set_ylim(-5, -6)
-#elif N_coord == 6:
-#    ax.set_ylim(-9, -11)
-#elif N_coord == 7:
-#    ax.set_ylim(-15, -18)
-#ax.legend()
-#
-#plt.savefig(outdir+'Hammy_gfmc_plot_'+tag+'.pdf')
 
 if verbose:
 
