@@ -116,9 +116,10 @@ else:
 
 
 AV_Coulomb['OA'] = potential_fun
-AV_Coulomb['OB'] = potential_fun
+AV_Coulomb['OS'] = potential_fun
+#AV_Coulomb['O1'] = potential_fun
 Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb, B3_Coulomb)
-#Coulomb_potential = AV_Coulomb
+
 
 
 
@@ -244,10 +245,13 @@ for i in range(N_coord):
  for j in range(N_coord):
   for k in range(N_coord):
    if i != j and j != k and i != k:
-    spin_slice = (slice(0, None),) + (i,0,j,0,k,0) 
+    spin_slice = (slice(0, None),) + (i,0,j,0,k,0)
+    #spin_slice = (slice(0, None), i, 0, j, 0, k, 0)	 
     S_av4p_metropolis[spin_slice] = levi_civita(i, j, k)
 
 #spin_slice = (slice(0, None),) + (i, j, k) + (0,) * N_coord
+#spin_slice = (slice(0,None),) + (0,)*2*N_coord
+S_av4p_metropolis[spin_slice] = 1
 
 print("spin-flavor wavefunction shape = ", S_av4p_metropolis.shape)
 
