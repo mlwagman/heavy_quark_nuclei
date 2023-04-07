@@ -73,8 +73,11 @@ lc_tensor[0, 1, 2] = lc_tensor[1, 2, 0] = lc_tensor[2, 0, 1] = 1
 lc_tensor[0, 2, 1] = lc_tensor[2, 1, 0] = lc_tensor[1, 0, 2] = -1
 
 # Contract the indices of the Levi-Civita symbol to get operator
-iso_eps = 1/4 * onp.einsum('ijk,ilm->jmlk', lc_tensor, lc_tensor)
-iso_del = 1/4 * (onp.einsum('ij,kl->ikjl', onp.identity(NI), onp.identity(NI))+onp.einsum('jl,ik->ikjl', onp.identity(NI), onp.identity(NI)))
+iso_del = 0.25 * (onp.einsum('ij,kl->ikjl', onp.identity(NI), onp.identity(NI)) +onp.einsum('jl,ik->ikjl', onp.identity(NI), onp.identity(NI)))
+
+# Calculate the spin projection operator
+iso_eps = 0.25 * onp.einsum('ijo,okl->ijkl', lc_tensor, lc_tensor)
+
 
 # NOTE(gkanwar): spin and isospin pieces are identical matrices, but are
 # semantically different objects.
