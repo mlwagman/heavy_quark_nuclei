@@ -73,10 +73,11 @@ lc_tensor[0, 1, 2] = lc_tensor[1, 2, 0] = lc_tensor[2, 0, 1] = 1
 lc_tensor[0, 2, 1] = lc_tensor[2, 1, 0] = lc_tensor[1, 0, 2] = -1
 
 # Contract the indices of the Levi-Civita symbol to get operator
-iso_del = 0.25 * (onp.einsum('ij,kl->ikjl', onp.identity(NI), onp.identity(NI)) +onp.einsum('jl,ik->ikjl', onp.identity(NI), onp.identity(NI)))
+iso_del = 0.25 * (onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI)) + onp.einsum('bd,ac->acbd', onp.identity(NI), onp.identity(NI)))
+#iso_del = onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI))
 
 # Calculate the spin projection operator
-iso_eps = 0.25 * onp.einsum('ijo,okl->ijkl', lc_tensor, lc_tensor)
+iso_eps = 0.25 * onp.einsum('abo,ocd->abcd', lc_tensor, lc_tensor)
 
 
 # NOTE(gkanwar): spin and isospin pieces are identical matrices, but are
@@ -154,6 +155,12 @@ three_body_ops = {
     'O1': lambda Rij, Rjk, Rik: three_body_outer(
         three_body_pieces['iso_I'][np.newaxis],
         three_body_pieces['sp_I'][np.newaxis]),
+    'OA': lambda Rij, Rjk, Rik: three_body_outer(
+        three_body_pieces['iso_I'][np.newaxis],
+        three_body_pieces['sp_I'][np.newaxis]),
+    'OS': lambda Rij, Rjk, Rik: three_body_outer(
+        three_body_pieces['iso_I'][np.newaxis],
+        three_body_pieces['sp_I'][np.newaxis]),
 }
 
 def make_pairwise_potential(AVcoeffs, B3coeffs={}):
@@ -196,7 +203,7 @@ def make_pairwise_potential(AVcoeffs, B3coeffs={}):
                         broadcast_src_snk_inds # snk
                     )
                     assert len(broadcast_inds) == len(V_SD_Mev.shape)
-                    if name == 'O1':
+                    if name == 'O1' or name == 'OS' or name == 'OA':
                         broadcast_inds = (slice(None),) + (0,)*(len(Oij.shape)-1)
                         V_SI_Mev = V_SI_Mev + scaled_O[broadcast_inds]
                     else:
@@ -234,7 +241,7 @@ def make_pairwise_potential(AVcoeffs, B3coeffs={}):
                             broadcast_src_snk_inds # snk
                         )
                         assert len(broadcast_inds) == len(V_SD_Mev.shape)
-                        if name == 'O1':
+                        if name == 'O1' or name == 'OS' or name == 'OA':
                             broadcast_inds = (slice(None),) + (0,)*(len(Oijk.shape)-1)
                             V_SI_Mev = V_SI_Mev + scaled_O[broadcast_inds]
                         else:
@@ -279,7 +286,7 @@ def flat_pairwise_potential(R, AVcoeffs, B3coeffs={}):
                     broadcast_src_snk_inds # snk
                 )
                 assert len(broadcast_inds) == len(V_SD_Mev.shape)
-                if name == 'O1':
+                if name == 'O1' or name == 'OS' or name == 'OA':
                     broadcast_inds = (slice(None),) + (0,)*(len(Oij.shape)-1)
                     V_SI_Mev += scaled_O[broadcast_inds]
                 else:
@@ -316,7 +323,7 @@ def flat_pairwise_potential(R, AVcoeffs, B3coeffs={}):
                         broadcast_src_snk_inds # snk
                     )
                     assert len(broadcast_inds) == len(V_SD_Mev.shape)
-                    if name == 'O1':
+                    if name == 'O1' or name == 'OS' or name == 'OA':
                         jax_print("including 3-body ops")
                         broadcast_inds = (slice(None),) + (0,)*(len(Oijk.shape)-1)
                         V_SI_Mev += scaled_O[broadcast_inds]
