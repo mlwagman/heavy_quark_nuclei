@@ -116,7 +116,7 @@ else:
 
 
 AV_Coulomb['OA'] = potential_fun
-AV_Coulomb['OS'] = potential_fun
+#AV_Coulomb['OS'] = potential_fun
 #AV_Coulomb['O1'] = potential_fun
 Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb, B3_Coulomb)
 
