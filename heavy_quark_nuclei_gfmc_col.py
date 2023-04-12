@@ -86,7 +86,6 @@ dFF = (18-Nc**2+Nc**4)/(96*Nc**2)
 dFA = Nc*(Nc**2+6)/48
 alpha4 = float(mpmath.polylog(4,1/2))*0+(-np.log(2))**4/(4*3*2*1)
 ss6 = zeta51+zeta6
-
 L = log_mu_r
 VB_LO = VB
 
@@ -115,9 +114,9 @@ else:
 	throw(0)
 
 
-AV_Coulomb['OA'] = potential_fun
+#AV_Coulomb['OA'] = potential_fun
 #AV_Coulomb['OS'] = potential_fun
-#AV_Coulomb['O1'] = potential_fun
+AV_Coulomb['O1'] = potential_fun
 Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb, B3_Coulomb)
 
 
@@ -246,12 +245,14 @@ for i in range(N_coord):
   for k in range(N_coord):
    if i != j and j != k and i != k:
     spin_slice = (slice(0, None),) + (i,0,j,0,k,0)
-    #spin_slice = (slice(0, None), i, 0, j, 0, k, 0)	 
+    #spin_slice = (slice(0, None), i, 0, j, 0, k, 0)
     S_av4p_metropolis[spin_slice] = levi_civita(i, j, k)
 
 #spin_slice = (slice(0, None),) + (i, j, k) + (0,) * N_coord
 #spin_slice = (slice(0,None),) + (0,)*2*N_coord
-S_av4p_metropolis[spin_slice] = 1
+#S_av4p_metropolis[spin_slice] = 1
+
+print(S_av4p_metropolis)
 
 print("spin-flavor wavefunction shape = ", S_av4p_metropolis.shape)
 
@@ -305,10 +306,36 @@ Vs = []
 for count, R in enumerate(gfmc_Rs):
     print('Calculating potential for step ', count)
     V_time = time.time()
-    VSI,_ = Coulomb_potential(R)
-    V_ind = (slice(0,None),) + (0,)*NS*NI*N_coord
+    print(count)
+    print(gfmc_Ss[count].shape)
+    print(S_av4p_metropolis.shape)
+    V_tot = np.zeros(n_walkers)
+    for i in range(N_coord):
+        for j in range(i+1, N_coord):
+            Rij = R[:,i] - R[:,j]
+            full_S = gfmc_Ss[count]
+            # TODO not right
+            broadcast_src_snk_inds = (
+                (np.newaxis,)*2*i + # skip i src iso/spin
+                (slice(None),)*2 + # ith particle src iso/spin
+                (np.newaxis,)*2*(j-i-1) + # skip j-i-1 src iso/spin
+                (slice(None),)*2 + # jth particle src iso/spin
+                (np.newaxis,)*2*(N_coord-j-1) # skip A-j-1 src iso/spin
+            )
+            Sij = full_S[broadcast_src_snk_inds]
+            Sij_0 = S_av4p_metropolis[broadcast_src_snk_inds]
+            print("i = ", i, " j = ", j)
+            Os = {
+                name: onp.array(
+                    AV_Coulomb[name](Rij) * adl.compute_O(adl.two_body_ops[name](Rij), Sij, Sij_0))
+                for name in AV_Coulomb
+            }
+            V_tot += sum(Os.values())
+    #VSI,_ = Coulomb_potential(R)
+    #V_ind = (slice(0,None),) + (0,)*NS*NI*N_coord
     print(f"calculated potential in {time.time() - V_time} sec")
-    Vs.append(VSI)
+    #Vs.append(VSI)
+    Vs.append(V_tot)
 
 Vs = np.array(Vs)
 

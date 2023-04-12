@@ -130,7 +130,7 @@ two_body_ops = {
         two_body_pieces['sp_I'][np.newaxis]),
     'OS': lambda Rij: two_body_outer(
         two_body_pieces['iso_S'][np.newaxis],
-        two_body_pieces['sp_I'][np.newaxis]), 
+        two_body_pieces['sp_I'][np.newaxis]),
     'O1': lambda Rij: two_body_outer(
         two_body_pieces['iso_I'][np.newaxis],
         two_body_pieces['sp_I'][np.newaxis]),
@@ -203,10 +203,14 @@ def make_pairwise_potential(AVcoeffs, B3coeffs={}):
                         broadcast_src_snk_inds # snk
                     )
                     assert len(broadcast_inds) == len(V_SD_Mev.shape)
-                    if name == 'O1' or name == 'OS' or name == 'OA':
+                    if name == 'O1':
+                        #print(broadcast_inds)
                         broadcast_inds = (slice(None),) + (0,)*(len(Oij.shape)-1)
+                        #print(broadcast_inds)
                         V_SI_Mev = V_SI_Mev + scaled_O[broadcast_inds]
                     else:
+                        #print("This should never fire")
+                        #exit()
                         V_SD_Mev = V_SD_Mev + scaled_O[broadcast_inds]
         # three-body potentials
         for i in range(A):
@@ -241,7 +245,7 @@ def make_pairwise_potential(AVcoeffs, B3coeffs={}):
                             broadcast_src_snk_inds # snk
                         )
                         assert len(broadcast_inds) == len(V_SD_Mev.shape)
-                        if name == 'O1' or name == 'OS' or name == 'OA':
+                        if name == 'O1':
                             broadcast_inds = (slice(None),) + (0,)*(len(Oijk.shape)-1)
                             V_SI_Mev = V_SI_Mev + scaled_O[broadcast_inds]
                         else:
@@ -286,7 +290,7 @@ def flat_pairwise_potential(R, AVcoeffs, B3coeffs={}):
                     broadcast_src_snk_inds # snk
                 )
                 assert len(broadcast_inds) == len(V_SD_Mev.shape)
-                if name == 'O1' or name == 'OS' or name == 'OA':
+                if name == 'O1':
                     broadcast_inds = (slice(None),) + (0,)*(len(Oij.shape)-1)
                     V_SI_Mev += scaled_O[broadcast_inds]
                 else:
@@ -323,7 +327,7 @@ def flat_pairwise_potential(R, AVcoeffs, B3coeffs={}):
                         broadcast_src_snk_inds # snk
                     )
                     assert len(broadcast_inds) == len(V_SD_Mev.shape)
-                    if name == 'O1' or name == 'OS' or name == 'OA':
+                    if name == 'O1':
                         jax_print("including 3-body ops")
                         broadcast_inds = (slice(None),) + (0,)*(len(Oijk.shape)-1)
                         V_SI_Mev += scaled_O[broadcast_inds]
@@ -528,7 +532,7 @@ def metropolis(R, W, *, n_therm, n_step, n_skip, eps):
         new_R = R + dR
         W_R = W(R)
         new_W_R = W(new_R)
-        if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R): 
+        if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R):
             R = new_R # accept
             W_R = new_W_R
             acc += 1
