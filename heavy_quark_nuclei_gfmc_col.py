@@ -322,9 +322,20 @@ for count, R in enumerate(gfmc_Rs):
                 (slice(None),)*2 + # jth particle src iso/spin
                 (np.newaxis,)*2*(N_coord-j-1) # skip A-j-1 src iso/spin
             )
-            Sij = full_S[broadcast_src_snk_inds]
-            Sij_0 = S_av4p_metropolis[broadcast_src_snk_inds]
+            broadcast_inds = (
+                (slice(None),) + # batch
+                broadcast_src_snk_inds # snk
+            )
+            Sij = full_S[broadcast_inds]
+            Sij_0 = S_av4p_metropolis[broadcast_inds]
             print("i = ", i, " j = ", j)
+            for name in AV_Coulomb:
+                print("O shape ", adl.two_body_ops[name](Rij).shape)
+            print("S shape", full_S.shape)
+            print("S0 shape", S_av4p_metropolis.shape)
+            print("inds ", broadcast_inds)
+            print("S slice shape", Sij.shape)
+            print("S0 slice shape", Sij_0.shape)
             Os = {
                 name: onp.array(
                     AV_Coulomb[name](Rij) * adl.compute_O(adl.two_body_ops[name](Rij), Sij, Sij_0))
