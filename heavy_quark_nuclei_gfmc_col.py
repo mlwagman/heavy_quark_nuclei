@@ -115,8 +115,8 @@ else:
 
 
 #AV_Coulomb['OA'] = potential_fun
-#AV_Coulomb['OS'] = potential_fun
-AV_Coulomb['O1'] = potential_fun
+AV_Coulomb['OS'] = potential_fun
+#AV_Coulomb['O1'] = potential_fun
 Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb, B3_Coulomb)
 
 
@@ -224,7 +224,7 @@ if input_Rs_database == "":
 else:
     f = h5py.File(input_Rs_database, 'r')
     Rs_metropolis = f["Rs"][-1]
-print(Rs_metropolis)
+#print(Rs_metropolis)
 # build trial wavefunction
 S_av4p_metropolis = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
 print("built Metropolis wavefunction ensemble")
@@ -240,19 +240,19 @@ def levi_civita(i, j, k):
 
 print("spin-flavor wavefunction shape = ", S_av4p_metropolis.shape)
 
-for i in range(N_coord):
- for j in range(N_coord):
-  for k in range(N_coord):
+for i in range(NI):
+ for j in range(NI):
+  for k in range(NI):
    if i != j and j != k and i != k:
     spin_slice = (slice(0, None),) + (i,0,j,0,k,0)
     #spin_slice = (slice(0, None), i, 0, j, 0, k, 0)
-    S_av4p_metropolis[spin_slice] = levi_civita(i, j, k)
+    S_av4p_metropolis[spin_slice] = levi_civita(i, j, k) / np.sqrt(6)
 
-#spin_slice = (slice(0, None),) + (i, j, k) + (0,) * N_coord
+#S_av4p_metropolis = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
 #spin_slice = (slice(0,None),) + (0,)*2*N_coord
 #S_av4p_metropolis[spin_slice] = 1
 
-print(S_av4p_metropolis)
+#print(S_av4p_metropolis)
 
 print("spin-flavor wavefunction shape = ", S_av4p_metropolis.shape)
 
@@ -306,46 +306,61 @@ Vs = []
 for count, R in enumerate(gfmc_Rs):
     print('Calculating potential for step ', count)
     V_time = time.time()
-    print(count)
-    print(gfmc_Ss[count].shape)
-    print(S_av4p_metropolis.shape)
-    V_tot = np.zeros(n_walkers)
-    for i in range(N_coord):
-        for j in range(i+1, N_coord):
-            Rij = R[:,i] - R[:,j]
-            full_S = gfmc_Ss[count]
-            # TODO not right
-            broadcast_src_snk_inds = (
-                (np.newaxis,)*2*i + # skip i src iso/spin
-                (slice(None),)*2 + # ith particle src iso/spin
-                (np.newaxis,)*2*(j-i-1) + # skip j-i-1 src iso/spin
-                (slice(None),)*2 + # jth particle src iso/spin
-                (np.newaxis,)*2*(N_coord-j-1) # skip A-j-1 src iso/spin
-            )
-            broadcast_inds = (
-                (slice(None),) + # batch
-                broadcast_src_snk_inds # snk
-            )
-            Sij = full_S[broadcast_inds]
-            Sij_0 = S_av4p_metropolis[broadcast_inds]
-            print("i = ", i, " j = ", j)
-            for name in AV_Coulomb:
-                print("O shape ", adl.two_body_ops[name](Rij).shape)
-            print("S shape", full_S.shape)
-            print("S0 shape", S_av4p_metropolis.shape)
-            print("inds ", broadcast_inds)
-            print("S slice shape", Sij.shape)
-            print("S0 slice shape", Sij_0.shape)
-            Os = {
-                name: onp.array(
-                    AV_Coulomb[name](Rij) * adl.compute_O(adl.two_body_ops[name](Rij), Sij, Sij_0))
-                for name in AV_Coulomb
-            }
-            V_tot += sum(Os.values())
-    #VSI,_ = Coulomb_potential(R)
-    #V_ind = (slice(0,None),) + (0,)*NS*NI*N_coord
+    S = gfmc_Ss[count]
+    V_SI, V_SD = Coulomb_potential(R)
+    V_SD_S = adl.batched_apply(V_SD, S)
+    #print("S_T shape is ", S_av4p_metropolis.shape)
+    #print("S shape is ", S.shape)
+    #print("V_SI shape is ", V_SI.shape)
+    broadcast_SI = ((slice(None),) + (np.newaxis,)*N_coord*2)
+    #print("better V_SI shape is ", V_SI[broadcast_SI].shape)
+    V_SI_S = V_SI[broadcast_SI] * S
+    #print("V_SD_S shape is ", V_SD_S.shape)
+    #print("V_SI_S shape is ", V_SI_S.shape)
+    V_tot = adl.inner(S_av4p_metropolis, V_SD_S + V_SI_S)
+#    for i in range(N_coord):
+#        for j in range(i+1, N_coord):
+#            Rij = R[:,i] - R[:,j]
+#            full_S = gfmc_Ss[count]
+#            # TODO not right
+#            Oij = op(Rij)
+#            vij = AVcoeffs[name](Rij)
+#                    broadcast_vij_inds = (slice(None),) + (np.newaxis,)*(len(Oij.shape)-1)
+#                    vij = vij[broadcast_vij_inds]
+#                    scaled_O = vij * Oij
+#                    assert len(scaled_O.shape) == 9, \
+#                        'scaled_O should have batch (1) and two-body (2) src/sink (2) spin/iso (2) = 9 dims'
+#            broadcast_src_snk_inds = (
+#                (np.newaxis,)*2*i + # skip i src iso/spin
+#                (slice(None),)*2 + # ith particle src iso/spin
+#                (np.newaxis,)*2*(j-i-1) + # skip j-i-1 src iso/spin
+#                (slice(None),)*2 + # jth particle src iso/spin
+#                (np.newaxis,)*2*(N_coord-j-1) # skip A-j-1 src iso/spin
+#            )
+#            broadcast_inds = (
+#                (slice(None),) + # batch
+#                broadcast_src_snk_inds # snk
+#            )
+#            Sij = full_S[broadcast_inds]
+#            Sij_0 = S_av4p_metropolis[broadcast_inds]
+#            print("i = ", i, " j = ", j)
+#            for name in AV_Coulomb:
+#                print("O shape ", adl.two_body_ops[name](Rij).shape)
+#            print("S shape", full_S.shape)
+#            print("S0 shape", S_av4p_metropolis.shape)
+#            print("inds ", broadcast_inds)
+#            print("S slice shape", Sij.shape)
+#            print("S0 slice shape", Sij_0.shape)
+#            Os = {
+#                name: onp.array(
+#                    AV_Coulomb[name](Rij) * adl.compute_O(adl.two_body_ops[name](Rij), Sij, Sij_0))
+#                for name in AV_Coulomb
+#            }
+#            V_tot += sum(Os.values())
+#    #VSI,_ = Coulomb_potential(R)
+#    #V_ind = (slice(0,None),) + (0,)*NS*NI*N_coord
+#    #Vs.append(VSI)
     print(f"calculated potential in {time.time() - V_time} sec")
-    #Vs.append(VSI)
     Vs.append(V_tot)
 
 Vs = np.array(Vs)

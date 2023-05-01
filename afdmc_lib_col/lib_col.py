@@ -73,11 +73,15 @@ lc_tensor[0, 1, 2] = lc_tensor[1, 2, 0] = lc_tensor[2, 0, 1] = 1
 lc_tensor[0, 2, 1] = lc_tensor[2, 1, 0] = lc_tensor[1, 0, 2] = -1
 
 # Contract the indices of the Levi-Civita symbol to get operator
-iso_del = 0.25 * (onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI)) + onp.einsum('bd,ac->acbd', onp.identity(NI), onp.identity(NI)))
+#iso_del = 1/2 * (onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI)) + onp.einsum('bd,ac->acbd', onp.identity(NI), onp.identity(NI)))
+#iso_del = 1/2 * (onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI)) + onp.einsum('ab,cd->adbc', onp.identity(NI), onp.identity(NI)))
+#iso_del = 2 * 1/2 * 1/2 * (onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI)) + onp.einsum('ab,cd->bcad', onp.identity(NI), onp.identity(NI)))
+iso_del = 2 * 1/2 * 1/2 * (onp.einsum('ab,cd->abcd', onp.identity(NI), onp.identity(NI)) + onp.einsum('ab,cd->bacd', onp.identity(NI), onp.identity(NI)))
 #iso_del = onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI))
 
 # Calculate the spin projection operator
-iso_eps = 0.25 * onp.einsum('abo,ocd->abcd', lc_tensor, lc_tensor)
+iso_eps = 2 * (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,ocd->abcd', lc_tensor, lc_tensor)
+#iso_eps = 2 * (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,ocd->acbd', lc_tensor, lc_tensor)
 
 
 # NOTE(gkanwar): spin and isospin pieces are identical matrices, but are
@@ -204,13 +208,9 @@ def make_pairwise_potential(AVcoeffs, B3coeffs={}):
                     )
                     assert len(broadcast_inds) == len(V_SD_Mev.shape)
                     if name == 'O1':
-                        #print(broadcast_inds)
                         broadcast_inds = (slice(None),) + (0,)*(len(Oij.shape)-1)
-                        #print(broadcast_inds)
                         V_SI_Mev = V_SI_Mev + scaled_O[broadcast_inds]
                     else:
-                        #print("This should never fire")
-                        #exit()
                         V_SD_Mev = V_SD_Mev + scaled_O[broadcast_inds]
         # three-body potentials
         for i in range(A):
