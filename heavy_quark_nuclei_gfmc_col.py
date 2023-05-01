@@ -12,10 +12,10 @@ import scipy.special
 import pickle
 import paper_plt
 import tqdm.auto as tqdm
-import afdmc_lib as adl
+import afdmc_lib_col as adl
 import os
 import pickle
-from afdmc_lib import NI,NS,mp_Mev,fm_Mev
+from afdmc_lib_col import NI,NS,mp_Mev,fm_Mev
 import jax
 import jax.numpy as np
 import sys
@@ -44,7 +44,7 @@ parser.add_argument('--alpha', type=float, default=1)
 parser.add_argument('--mu', type=float, default=1.0)
 parser.add_argument('--mufac', type=float, default=1.0)
 parser.add_argument('--Nc', type=int, default=3)
-parser.add_argument('--N_coord', type=int, default=2)
+parser.add_argument('--N_coord', type=int, default=3)
 parser.add_argument('--nf', type=int, default=5)
 parser.add_argument('--OLO', type=str, default="LO")
 parser.add_argument('--spoila', type=int, default=1)
@@ -61,14 +61,9 @@ globals().update(vars(parser.parse_args()))
 CF = (Nc**2 - 1)/(2*Nc)
 VB = alpha*CF
 if N_coord > 2:
-    if log_mu_r == 1:
-       log_mu_r = 0.5
     VB = alpha*CF/(Nc-1)
 SingC3 = -(Nc+1)/8
 a0 = spoila*2/VB;
-
-if log_mu_r == 1:
-   log_mu_r = 0.0
 #a0=4.514
 
 #VB=.1
@@ -91,61 +86,16 @@ dFF = (18-Nc**2+Nc**4)/(96*Nc**2)
 dFA = Nc*(Nc**2+6)/48
 alpha4 = float(mpmath.polylog(4,1/2))*0+(-np.log(2))**4/(4*3*2*1)
 ss6 = zeta51+zeta6
-aa30 = dFA*( np.pi**2*( 7432/9-4736*alpha4+np.log(2)*(14752/3-3472*zeta3)-6616*zeta3/3)  +  np.pi**4*(-156+560*np.log(2)/3+496*np.log(2)**2/3)+1511*np.pi**6/45)  + Nc**3*(385645/2916 + np.pi**2*( -953/54 +584/3*alpha4 +175/2*zeta3 + np.log(2)*(-922/9+217*zeta3/3) ) +584*zeta3/3 + np.pi**4*( 1349/270-20*np.log(2)/9-40*np.log(2)**2/9 ) -1927/6*zeta5 -143/2*zeta3**2-4621/3024*np.pi**6+144*ss6  )
-aa31 = dFF*( np.pi**2*(1264/9-976*zeta3/3+np.log(2)*(64+672*zeta3)) + np.pi**4*(-184/3+32/3*np.log(2)-32*np.log(2)**2) +10/3*np.pi**6 ) + CF**2/2*(286/9+296/3*zeta3-160*zeta5)+Nc*CF/2*(-71281/162+264*zeta3+80*zeta5)+Nc**2/2*(-58747/486+np.pi**2*(17/27-32*alpha4+np.log(2)*(-4/3-14*zeta3)-19/3*zeta3)-356*zeta3+np.pi**4*(-157/54-5*np.log(2)/9+np.log(2)**2)+1091*zeta5/6+57/2*zeta3**2+761*np.pi**6/2520-48*ss6)
-aa32 = Nc/4*(12541/243+368/3*zeta3+64*np.pi**4/135)+CF/4*(14002/81-416*zeta3/3)
-aa33 = -(20/9)**3*1/8
-aa3 = aa30+aa31*nf+aa32*nf**2+aa33*nf**3
-
 L = log_mu_r
 VB_LO = VB
 
 VB_NLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*L))
 
-VB_NNLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*L) + (alpha/(4*np.pi))**2*( beta0**2*(4*L**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*L + aa2 ) )
-if N_coord > 2:
-   VB_NNLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*L) + (alpha/(4*np.pi))**2*( beta0**2*(4*L**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*L + aa2 + Nc*(Nc-2)/2*((np.pi)**4-12*(np.pi)**2)  ) )
-
-
 if OLO == "LO":
     a0=spoila*2/VB_LO
 elif OLO == "NLO":
     a0=spoila*2/VB_NLO
-elif OLO == "mNLO":
-    a0=spoila*2/VB_NLO
-elif OLO == "NNLO":
-    a0=spoila*2/VB_NNLO
 
-@partial(jax.jit)
-def V3(r1, r2):
-   R = lambda x, y: x*r1 - y*r2
-   r1_norm = adl.norm_3vec(r1)
-   r1_hat = r1 / r1_norm[...,np.newaxis]
-   r2_norm = adl.norm_3vec(r1)
-   r2_hat = r2 / r2_norm[...,np.newaxis]
-   r1_hat_dot_r2_hat = np.sum(r1_hat*r2_hat, axis=-1)
-   R_norm = lambda x, y: adl.norm_3vec(R(x,y))
-   R_hat = lambda x, y: R(x,y) / R_norm(x,y)[...,np.newaxis]
-   r1_hat_r2_hat_dot_R_R = lambda x, y: np.sum(r1_hat*R_hat(x,y), axis=-1)*np.sum(r2_hat*R_hat(x,y), axis=-1)
-   A = lambda x, y: r1_norm * np.sqrt(x*(1-x)) + r2_norm*np.sqrt(y*(1-y))
-
-   V3_integrand = lambda x, y: 16*np.pi*( np.arctan2(R_norm(x,y),A(x,y))*r1_hat_dot_r2_hat*1/R_norm(x,y)*(-1*A(x,y)**2/R_norm(x,y)**2+1) + r1_hat_dot_r2_hat*A(x,y)/R_norm(x,y)**2
-           + np.arctan2(R_norm(x,y),A(x,y))*r1_hat_r2_hat_dot_R_R(x,y)*1/R_norm(x,y)*(3*A(x,y)**2/R_norm(x,y)**2+1) - 3*r1_hat_r2_hat_dot_R_R(x,y)*A(x,y)/R_norm(x,y)**2)
-
-   #int_points = 100
-   int_points = 50
-   dx = 1/int_points
-   x_grid = np.arange(dx, stop=1, step=dx)
-   y_grid = np.arange(0, stop=1, step=dx)
-   #V3_grid = np.transpose(np.array([[V3_integrand(x,y) for y in y_grid] for x in x_grid]), (2,0,1))
-
-   y_vmap_f = jax.vmap(V3_integrand, (None, 0))
-   xy_vmap_f = jax.vmap(y_vmap_f, (0, None))
-   V3_grid = np.transpose( xy_vmap_f(x_grid, y_grid), (2,0,1))
-
-   V3_integral = np.trapz( np.trapz(V3_grid, dx=1/int_points), dx=1/int_points)
-
-   return V3_integral
 
 Rprime = lambda R: adl.norm_3vec(R)*np.exp(np.euler_gamma)*mu
 # build Coulomb potential
@@ -159,56 +109,19 @@ elif OLO == "NLO":
     @partial(jax.jit)
     def potential_fun(R):
         return -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1))
-elif OLO == "NNLO":
-    if N_coord > 2:
-        @partial(jax.jit)
-        def potential_fun(R):
-            return -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 + Nc*(Nc-2)/2*((np.pi)**4-12*(np.pi)**2) ) )
-    else:
-        @partial(jax.jit)
-        def potential_fun(R):
-            return -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 ) )
-    B3_Coulomb['O1'] = lambda Rij, Rjk, Rik: SingC3*alpha*(alpha/(4*np.pi))**2*(V3(Rij, Rjk) + V3(Rjk, Rik) + V3(Rik, Rij))
-elif OLO == "N3LO":
-    if N_coord > 2:
-        @partial(jax.jit)
-        def potential_fun(R):
-            return -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 + Nc*(Nc-2)/2*((np.pi)**4-12*(np.pi)**2) ) ) + (alpha/(4*np.pi))**3*( 64*np.pi**2/3*Nc**3*np.log(adl.norm_3vec(R)) + aa3 + 64*np.pi**2/3*Nc**3*np.euler_gamma + 512*beta0**3*( np.log(Rprime(R))**3 + np.pi**4/4*np.log(Rprime(R))+2*zeta3 ) + (640*beta0*beta1 + 192*beta0**2*aa1)*(np.log(Rprime(R))**2+np.pi**2/12) + (128*beta2+64*beta1*aa1+24*beta0*aa2)*np.log(Rprime(R)) )
-    else:
-        @partial(jax.jit)
-        def potential_fun(R):
-            -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 ) ) + (alpha/(4*np.pi))**3*( 64*np.pi**2/3*Nc**3*np.log(adl.norm_3vec(R)) + aa3 + 64*np.pi**2/3*Nc**3*np.euler_gamma + 512*beta0**3*( np.log(Rprime(R))**3 + np.pi**4/4*np.log(Rprime(R))+2*zeta3 ) + (640*beta0*beta1 + 192*beta0**2*aa1)*(np.log(Rprime(R))**2+np.pi**2/12) + (128*beta2+64*beta1*aa1+24*beta0*aa2)*np.log(Rprime(R)) )
-    B3_Coulomb['O1'] = lambda Rij, Rjk, Rik: SingC3*alpha*(alpha/(4*np.pi))**2*(V3(Rij, Rjk) + V3(Rjk, Rik) + V3(Rik, Rij))
-elif OLO == "mNLO":
-        @partial(jax.jit)
-        def potential_fun(R):
-            return -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1)) -1*CF*Nc*alpha**2/(N_coord-1)/(adl.norm_3vec(R)**2)
-elif OLO == "mNNLO":
-    if N_coord > 2:
-        @partial(jax.jit)
-        def potential_fun(R):
-            return -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 + Nc*(Nc-2)/2*((np.pi)**4-12*(np.pi)**2) ) ) -1*CF*Nc*alpha**2/(N_coord-1)/(adl.norm_3vec(R)**2)
-    else:
-        @partial(jax.jit)
-        def potential_fun(R):
-            return -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 ) ) -1*CF*Nc*alpha**2/(N_coord-1)/(adl.norm_3vec(R)**2)
-    B3_Coulomb['O1'] = lambda Rij, Rjk, Rik: SingC3*alpha*(alpha/(4*np.pi))**2*(V3(Rij, Rjk) + V3(Rjk, Rik) + V3(Rik, Rij))
-elif OLO == "mN3LO":
-    if N_coord > 2:
-        @partial(jax.jit)
-        def potential_fun(R):
-            return -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 + Nc*(Nc-2)/2*((np.pi)**4-12*(np.pi)**2) ) ) + (alpha/(4*np.pi))**3*( 64*np.pi**2/3*Nc**3*np.log(adl.norm_3vec(R)) + aa3 + 64*np.pi**2/3*Nc**3*np.euler_gamma + 512*beta0**3*( np.log(Rprime(R))**3 + np.pi**4/4*np.log(Rprime(R))+2*zeta3 ) + (640*beta0*beta1 + 192*beta0**2*aa1)*(np.log(Rprime(R))**2+np.pi**2/12) + (128*beta2+64*beta1*aa1+24*beta0*aa2)*np.log(Rprime(R)) ) -1*CF*Nc*alpha**2/(N_coord-1)/(adl.norm_3vec(R)**2)
-    else:
-        @partial(jax.jit)
-        def potential_fun(R):
-            return -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 ) ) + (alpha/(4*np.pi))**3*( 64*np.pi**2/3*Nc**3*np.log(adl.norm_3vec(R)) + aa3 + 64*np.pi**2/3*Nc**3*np.euler_gamma + 512*beta0**3*( np.log(Rprime(R))**3 + np.pi**4/4*np.log(Rprime(R))+2*zeta3 ) + (640*beta0*beta1 + 192*beta0**2*aa1)*(np.log(Rprime(R))**2+np.pi**2/12) + (128*beta2+64*beta1*aa1+24*beta0*aa2)*np.log(Rprime(R)) ) -1*CF*Nc*alpha**2/(N_coord-1)/(adl.norm_3vec(R)**2)
 else:
 	print("order not supported")
 	throw(0)
 
-AV_Coulomb['O1'] = potential_fun
 
+#AV_Coulomb['OA'] = potential_fun
+AV_Coulomb['OS'] = potential_fun
+#AV_Coulomb['O1'] = potential_fun
 Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb, B3_Coulomb)
+
+
+
+
 
 # build Coulomb ground-state trial wavefunction
 @partial(jax.jit)
@@ -311,13 +224,36 @@ if input_Rs_database == "":
 else:
     f = h5py.File(input_Rs_database, 'r')
     Rs_metropolis = f["Rs"][-1]
-print(Rs_metropolis)
+#print(Rs_metropolis)
 # build trial wavefunction
 S_av4p_metropolis = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
 print("built Metropolis wavefunction ensemble")
 # trial wavefunction spin-flavor structure is |up,u> x |up,u> x ... x |up,u>
-spin_slice = (slice(0,None),) + (0,)*2*N_coord
-S_av4p_metropolis[spin_slice] = 1
+
+def levi_civita(i, j, k):
+    if i == j or j == k or i == k:
+        return 0
+    if (i,j,k) in [(0,1,2), (1,2,0), (2,0,1)]:
+        return 1
+    else:
+        return -1
+
+print("spin-flavor wavefunction shape = ", S_av4p_metropolis.shape)
+
+for i in range(NI):
+ for j in range(NI):
+  for k in range(NI):
+   if i != j and j != k and i != k:
+    spin_slice = (slice(0, None),) + (i,0,j,0,k,0)
+    #spin_slice = (slice(0, None), i, 0, j, 0, k, 0)
+    S_av4p_metropolis[spin_slice] = levi_civita(i, j, k) / np.sqrt(6)
+
+#S_av4p_metropolis = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
+#spin_slice = (slice(0,None),) + (0,)*2*N_coord
+#S_av4p_metropolis[spin_slice] = 1
+
+#print(S_av4p_metropolis)
+
 print("spin-flavor wavefunction shape = ", S_av4p_metropolis.shape)
 
 #print("old ", f_R_old(Rs_metropolis))
@@ -371,10 +307,59 @@ for count, R in enumerate(gfmc_Rs):
     print('Calculating potential for step ', count)
     V_time = time.time()
     S = gfmc_Ss[count]
-    V_SI,_ = Coulomb_potential(R)
+    V_SI, V_SD = Coulomb_potential(R)
+    V_SD_S = adl.batched_apply(V_SD, S)
+    #print("S_T shape is ", S_av4p_metropolis.shape)
+    #print("S shape is ", S.shape)
+    #print("V_SI shape is ", V_SI.shape)
     broadcast_SI = ((slice(None),) + (np.newaxis,)*N_coord*2)
+    #print("better V_SI shape is ", V_SI[broadcast_SI].shape)
     V_SI_S = V_SI[broadcast_SI] * S
-    V_tot = adl.inner(S_av4p_metropolis, V_SI_S)
+    #print("V_SD_S shape is ", V_SD_S.shape)
+    #print("V_SI_S shape is ", V_SI_S.shape)
+    V_tot = adl.inner(S_av4p_metropolis, V_SD_S + V_SI_S)
+#    for i in range(N_coord):
+#        for j in range(i+1, N_coord):
+#            Rij = R[:,i] - R[:,j]
+#            full_S = gfmc_Ss[count]
+#            # TODO not right
+#            Oij = op(Rij)
+#            vij = AVcoeffs[name](Rij)
+#                    broadcast_vij_inds = (slice(None),) + (np.newaxis,)*(len(Oij.shape)-1)
+#                    vij = vij[broadcast_vij_inds]
+#                    scaled_O = vij * Oij
+#                    assert len(scaled_O.shape) == 9, \
+#                        'scaled_O should have batch (1) and two-body (2) src/sink (2) spin/iso (2) = 9 dims'
+#            broadcast_src_snk_inds = (
+#                (np.newaxis,)*2*i + # skip i src iso/spin
+#                (slice(None),)*2 + # ith particle src iso/spin
+#                (np.newaxis,)*2*(j-i-1) + # skip j-i-1 src iso/spin
+#                (slice(None),)*2 + # jth particle src iso/spin
+#                (np.newaxis,)*2*(N_coord-j-1) # skip A-j-1 src iso/spin
+#            )
+#            broadcast_inds = (
+#                (slice(None),) + # batch
+#                broadcast_src_snk_inds # snk
+#            )
+#            Sij = full_S[broadcast_inds]
+#            Sij_0 = S_av4p_metropolis[broadcast_inds]
+#            print("i = ", i, " j = ", j)
+#            for name in AV_Coulomb:
+#                print("O shape ", adl.two_body_ops[name](Rij).shape)
+#            print("S shape", full_S.shape)
+#            print("S0 shape", S_av4p_metropolis.shape)
+#            print("inds ", broadcast_inds)
+#            print("S slice shape", Sij.shape)
+#            print("S0 slice shape", Sij_0.shape)
+#            Os = {
+#                name: onp.array(
+#                    AV_Coulomb[name](Rij) * adl.compute_O(adl.two_body_ops[name](Rij), Sij, Sij_0))
+#                for name in AV_Coulomb
+#            }
+#            V_tot += sum(Os.values())
+#    #VSI,_ = Coulomb_potential(R)
+#    #V_ind = (slice(0,None),) + (0,)*NS*NI*N_coord
+#    #Vs.append(VSI)
     print(f"calculated potential in {time.time() - V_time} sec")
     Vs.append(V_tot)
 
@@ -400,24 +385,6 @@ with h5py.File(outdir+'Rs_'+tag+'.h5', 'r') as f:
     data = f['Rs']
     print(data)
 
-## plot H
-#fig, ax = plt.subplots(1,1, figsize=(4,3))
-#al.add_errorbar(np.transpose(Hs/(VB**2)), ax=ax, xs=xs, color='xkcd:forest green', label=r'$\left< H \right>$', marker='o')
-#if N_coord == 2:
-#    ax.set_ylim(-.26, -.24)
-#elif N_coord == 3:
-#    ax.set_ylim(-1.1, -1.05)
-#elif N_coord == 4:
-#    ax.set_ylim(-2.5, -3.5)
-#elif N_coord == 5:
-#    ax.set_ylim(-5, -6)
-#elif N_coord == 6:
-#    ax.set_ylim(-9, -11)
-#elif N_coord == 7:
-#    ax.set_ylim(-15, -18)
-#ax.legend()
-#
-#plt.savefig(outdir+'Hammy_gfmc_plot_'+tag+'.pdf')
 
 if verbose:
 
