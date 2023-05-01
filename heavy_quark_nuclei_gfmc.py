@@ -366,12 +366,11 @@ for count, R in enumerate(gfmc_Rs):
     print('Calculating potential for step ', count)
     V_time = time.time()
     S = gfmc_Ss[count]
-    V_SI,_ = Coulomb_potential(R)
-    broadcast_SI = ((slice(None),) + (np.newaxis,)*N_coord*2)
-    V_SI_S = V_SI[broadcast_SI] * S
-    V_tot = adl.inner(S_av4p_metropolis, V_SI_S)
+    VSI,_ = Coulomb_potential(R)
+    print(VSI.shape)
+    V_ind = (slice(0,None),)
     print(f"calculated potential in {time.time() - V_time} sec")
-    Vs.append(V_tot)
+    Vs.append(VSI[V_ind])
 
 Vs = np.array(Vs)
 
