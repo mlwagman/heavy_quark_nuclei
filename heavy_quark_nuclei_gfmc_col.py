@@ -246,13 +246,23 @@ def levi_civita(i, j, k):
 
 print("spin-flavor wavefunction shape = ", S_av4p_metropolis.shape)
 
+#for i in range(NI):
+# for j in range(NI):
+#  for k in range(NI):
+#   if i != j and j != k and i != k:
+#    spin_slice = (slice(0, None),) + (i,0,j,0,k,0)
+#    S_av4p_metropolis[spin_slice] = levi_civita(i, j, k) / np.sqrt(6)
+
 for i in range(NI):
  for j in range(NI):
   for k in range(NI):
-   if i != j and j != k and i != k:
-    spin_slice = (slice(0, None),) + (i,0,j,0,k,0)
-    #spin_slice = (slice(0, None), i, 0, j, 0, k, 0)
-    S_av4p_metropolis[spin_slice] = levi_civita(i, j, k) / np.sqrt(6)
+   for l in range(NI):
+    for m in range(NI):
+     for n in range(NI):
+      if i != j and j != k and i != k and l != m and m != n and n != l:
+        spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,0,m,0,n,0)
+        S_av4p_metropolis[spin_slice] = levi_civita(i, j, k)*levi_civita(l, m, n) / np.sqrt(6)
+
 
 #S_av4p_metropolis = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
 #spin_slice = (slice(0,None),) + (0,)*2*N_coord
