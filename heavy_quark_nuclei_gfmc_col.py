@@ -119,10 +119,15 @@ else:
 	print("order not supported")
 	throw(0)
 
+# MODE 1
+#AV_Coulomb['O1'] = potential_fun
+#AV_Coulomb['OA'] = potential_fun
 
-AV_Coulomb['O1'] = potential_fun
+# MODE 2
 AV_Coulomb['OA'] = potential_fun
+
 AV_Coulomb['OS'] = symmetric_potential_fun
+
 Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb, B3_Coulomb)
 
 
@@ -261,7 +266,7 @@ for i in range(NI):
      for n in range(NI):
       if i != j and j != k and i != k and l != m and m != n and n != l:
         spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,0,m,0,n,0)
-        S_av4p_metropolis[spin_slice] = levi_civita(i, j, k)*levi_civita(l, m, n) / np.sqrt(6)
+        S_av4p_metropolis[spin_slice] = levi_civita(i, j, k)*levi_civita(l, m, n) / 6
 
 
 #S_av4p_metropolis = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
@@ -271,6 +276,9 @@ for i in range(NI):
 #print(S_av4p_metropolis)
 
 print("spin-flavor wavefunction shape = ", S_av4p_metropolis.shape)
+S_av4p_metropolis_norm = adl.inner(S_av4p_metropolis, S_av4p_metropolis)
+assert (np.abs(S_av4p_metropolis_norm - 1.0) < 1e-6).all()
+print("spin-flavor wavefunction normalization = ", S_av4p_metropolis_norm)
 
 #print("old ", f_R_old(Rs_metropolis))
 #print("new ", f_R(Rs_metropolis))

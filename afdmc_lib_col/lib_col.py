@@ -89,11 +89,17 @@ iso_del = 1/2 * 1/2 * (onp.einsum('ab,cd->acdb', onp.identity(NI), onp.identity(
 # works (ish)
 #iso_eps = 2 * (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor)
 # works if O1 included also
-#iso_eps = 2 * (NI - 1)/4 /onp.math.factorial(NI-1) * ( onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor) - 2*onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI)) ) 
+#iso_eps = 2 * (NI - 1)/4 /onp.math.factorial(NI-1) * ( onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor) - 2*onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI)) )
 # works if O1 included also
-#iso_eps = 2 * (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor) - onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI)) 
+#iso_eps = 2 * (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor) - onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI))
+
+
+# MODE 1
+#iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor) - 1/2 * onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI))
+
+# MODE 2
 # works if O1 included also, I != J
-iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor) - 1/2 * onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI)) 
+iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor)
 
 
 # NOTE(gkanwar): spin and isospin pieces are identical matrices, but are
