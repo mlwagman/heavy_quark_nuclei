@@ -107,18 +107,22 @@ if OLO == "LO":
     @partial(jax.jit)
     def potential_fun(R):
 	    return -1*VB/adl.norm_3vec(R)
+    def symmetric_potential_fun(R):
+	    return (Nc - 1)/(Nc + 1)*VB/adl.norm_3vec(R)
 elif OLO == "NLO":
     @partial(jax.jit)
     def potential_fun(R):
         return -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1))
+    def symmetric_potential_fun(R):
+        return (Nc - 1)/(Nc + 1)*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1))
 else:
 	print("order not supported")
 	throw(0)
 
 
+AV_Coulomb['O1'] = potential_fun
 AV_Coulomb['OA'] = potential_fun
-#AV_Coulomb['OS'] = potential_fun
-#AV_Coulomb['O1'] = potential_fun
+AV_Coulomb['OS'] = symmetric_potential_fun
 Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb, B3_Coulomb)
 
 
