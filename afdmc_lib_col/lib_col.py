@@ -73,32 +73,9 @@ lc_tensor[0, 1, 2] = lc_tensor[1, 2, 0] = lc_tensor[2, 0, 1] = 1
 lc_tensor[0, 2, 1] = lc_tensor[2, 1, 0] = lc_tensor[1, 0, 2] = -1
 
 # Contract the indices of the Levi-Civita symbol to get operator
-#iso_del = 1/2 * (onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI)) + onp.einsum('bd,ac->acbd', onp.identity(NI), onp.identity(NI)))
-#iso_del = 1/2 * (onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI)) + onp.einsum('ab,cd->adbc', onp.identity(NI), onp.identity(NI)))
-#iso_del = 2 * 1/2 * 1/2 * (onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI)) + onp.einsum('ab,cd->bcad', onp.identity(NI), onp.identity(NI)))
-#iso_del = 2 * 1/2 * 1/2 * (onp.einsum('ab,cd->abcd', onp.identity(NI), onp.identity(NI)) + onp.einsum('ab,cd->bacd', onp.identity(NI), onp.identity(NI)))
-#iso_del = 2 * 1/2 * 1/2 * (onp.einsum('ab,cd->adbc', onp.identity(NI), onp.identity(NI)) + onp.einsum('ab,cd->bdac', onp.identity(NI), onp.identity(NI)))
-# works!
-#iso_del = 2 * 1/2 * 1/2 * (onp.einsum('ab,cd->acdb', onp.identity(NI), onp.identity(NI)) + onp.einsum('ab,cd->cadb', onp.identity(NI), onp.identity(NI)))
-# works! I != J
 iso_del = 1/2 * 1/2 * (onp.einsum('ab,cd->acdb', onp.identity(NI), onp.identity(NI)) + onp.einsum('ab,cd->cadb', onp.identity(NI), onp.identity(NI)))
 
 # Calculate the spin projection operator
-#iso_eps = 2 * (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,ocd->abcd', lc_tensor, lc_tensor)
-#iso_eps = 2 * (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,ocd->acbd', lc_tensor, lc_tensor)
-# works (ish)
-#iso_eps = 2 * (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor)
-# works if O1 included also
-#iso_eps = 2 * (NI - 1)/4 /onp.math.factorial(NI-1) * ( onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor) - 2*onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI)) )
-# works if O1 included also
-#iso_eps = 2 * (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor) - onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI))
-
-
-# MODE 1
-#iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor) - 1/2 * onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI))
-
-# MODE 2
-# works if O1 included also, I != J
 iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor)
 
 
@@ -237,10 +214,11 @@ def make_pairwise_potential(AVcoeffs, B3coeffs={}):
                         broadcast_inds = (slice(None),) + (0,)*(len(Oij.shape)-1)
                         V_SI_Mev = V_SI_Mev + scaled_O[broadcast_inds]
                     else:
+                        #MODE 1
                         #V_SD_Mev += scaled_O[broadcast_inds]
                         first_off = 2*indlist.index(ii)
                         second_off = 2*(indlist.index(jj) - 1)
-                        scaled_O_perm = np.transpose(scaled_O, axes=(0,1,2,3,4,5+first_off,6+first_off,7+second_off,8+second_off))
+                        scaled_O_perm = np.transpose(scaled_O, axes=(0,1+first_off,2+first_off,3+second_off,4+second_off,5+first_off,6+first_off,7+second_off,8+second_off))
                         V_SD_Mev += scaled_O_perm[broadcast_inds]
         # three-body potentials
         for i in range(A):
@@ -295,7 +273,7 @@ def make_pairwise_potential(AVcoeffs, B3coeffs={}):
                             first_off = 2*indlist.index(ii)
                             second_off = 2*(indlist.index(jj) - 1)
                             third_off = 2*(indlist.index(kk) - 2)
-                            scaled_O_perm = np.transpose(scaled_O, axes=(0,1,2,3,4,5,6,7+first_off,8+first_off,9+second_off,10+second_off,11+third_off,12+third_off))
+                            scaled_O_perm = np.transpose(scaled_O, axes=(0,1+first_off,2+first_off,3+second_off,4+second_off,5+third_off,6+third_off,7+first_off,8+first_off,9+second_off,10+second_off,11+third_off,12+third_off))
                             V_SD_Mev += scaled_O_perm[broadcast_inds]
         return V_SI_Mev, V_SD_Mev
     return pairwise_potential
@@ -509,8 +487,7 @@ def metropolis(R, W, *, n_therm, n_step, n_skip, eps):
 ### separately returning the updated spin-isospin wavefunction
 ###     |S'> = (1 - (dtau/2) V_SD + (dtau^2/8) V_SD^2) |S>
 ### and the scalar factor exp(-dtau/2 V_SI).
-# TODO JIT potential
-#@partial(jax.jit, static_argnums=(2,))
+@partial(jax.jit, static_argnums=(2,))
 def compute_VS_separate(R_prop, S, potential, *, dtau_iMev):
     N_coord = R_prop.shape[1]
     V_SI_prop, V_SD = potential(R_prop)
@@ -520,8 +497,7 @@ def compute_VS_separate(R_prop, S, potential, *, dtau_iMev):
     return np.exp(-dtau_iMev/2 * V_SI_prop), S_prop
 
 ### Apply exp(-dtau/2 V_SI) (1 - (dtau/2) V_SD + (dtau^2/8) V_SD^2) to |S>.
-# TODO JIT potential
-#@partial(jax.jit, static_argnums=(2,))
+@partial(jax.jit, static_argnums=(2,))
 def compute_VS(R_deform, S, potential, *, dtau_iMev):
     N_coord = R_deform.shape[1]
     V_SI, V_SD = potential(R_deform)
@@ -531,8 +507,7 @@ def compute_VS(R_deform, S, potential, *, dtau_iMev):
     S = S * np.exp(-dtau_iMev/2 * V_SI)[(slice(None),) + (np.newaxis,)*2*N_coord]
     return S
 
-# TODO JIT potential
-#@partial(jax.jit, static_argnums=(8,9), static_argnames=('deform_f',))
+@partial(jax.jit, static_argnums=(8,9), static_argnames=('deform_f',))
 def kinetic_step(R_fwd, R_bwd, R, R_deform, S, u, params_i, _T,
                  f_R_norm, potential, *, deform_f, dtau_iMev, m_Mev):
     """Step forward given two possible proposals and RNG to decide"""
