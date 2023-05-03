@@ -123,12 +123,12 @@ def trivial_fun(R):
     return 0*adl.norm_3vec(R)+1
 
 # MODE 1
-AV_Coulomb['O1'] = potential_fun
+#AV_Coulomb['O1'] = potential_fun
 #AV_Coulomb['O1'] = symmetric_potential_fun
 
 # MODE 2
-#AV_Coulomb['OA'] = potential_fun
-#AV_Coulomb['OS'] = symmetric_potential_fun
+AV_Coulomb['OA'] = potential_fun
+AV_Coulomb['OS'] = symmetric_potential_fun
 
 #AV_Coulomb['OA'] = trivial_fun
 #AV_Coulomb['OS'] = trivial_fun
@@ -282,7 +282,7 @@ if N_coord == 6:
           S_av4p_metropolis[spin_slice] = levi_civita(i, j, k)*levi_civita(l, m, n) / 6
           #spin_slice = (slice(0, None),) + (i,0,j,0,k,0,0,0,0,0,0,0)
           #S_av4p_metropolis[spin_slice] = levi_civita(i, j, k) / np.sqrt(6)
-          
+
 
 
 
