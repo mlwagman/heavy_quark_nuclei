@@ -50,7 +50,7 @@ def normalize_wf(f_R, df_R, ddf_R):
 
 
 ### Hamiltonian
-NS = 1
+NS = 2
 NI = 3
 
 # Define the Gell-Mann matrices
@@ -76,6 +76,7 @@ lc_tensor[0, 2, 1] = lc_tensor[2, 1, 0] = lc_tensor[1, 0, 2] = -1
 iso_del = 1/2 * 1/2 * (onp.einsum('ab,cd->acdb', onp.identity(NI), onp.identity(NI)) + onp.einsum('ab,cd->cadb', onp.identity(NI), onp.identity(NI)))
 
 # Calculate the spin projection operator
+#iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor) - 1/2*onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI))
 iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor)
 
 
@@ -168,7 +169,12 @@ def make_pairwise_potential(AVcoeffs, B3coeffs={}):
     @jax.jit
     def pairwise_potential(R):
         batch_size, A = R.shape[:2]
-        V_SI_Mev = np.zeros( (batch_size,), dtype=np.complex128)
+        V_SI_Mev = np.zeros( # big-ass matrix
+            (batch_size,) + # batch of walkers
+            (NI,NS)*A + # source (i1, s1, i2, s2, ...)
+            (NI,NS)*A, # sink (i1', s1', i2', s2', ...)
+            dtype=np.complex128
+        )
         V_SD_Mev = np.zeros( # big-ass matrix
             (batch_size,) + # batch of walkers
             (NI,NS)*A + # source (i1, s1, i2, s2, ...)
@@ -210,15 +216,14 @@ def make_pairwise_potential(AVcoeffs, B3coeffs={}):
                     scaled_O = vij * Oij
                     assert len(scaled_O.shape) == 9, \
                         'scaled_O should have batch (1) and two-body (2) src/sink (2) spin/iso (2) = 9 dims'
+                    first_off = 2*indlist.index(ii)
+                    second_off = 2*(indlist.index(jj) - 1)
+                    scaled_O_perm = np.transpose(scaled_O, axes=(0,1+first_off,2+first_off,3+second_off,4+second_off,5+first_off,6+first_off,7+second_off,8+second_off))
                     if name == 'O1':
-                        broadcast_inds = (slice(None),) + (0,)*(len(Oij.shape)-1)
-                        V_SI_Mev = V_SI_Mev + scaled_O[broadcast_inds]
+                        #broadcast_inds = (slice(None),) + (0,)*(len(Oij.shape)-1)
+                        #V_SI_Mev = V_SI_Mev + scaled_O[broadcast_inds]
+                        V_SI_Mev += scaled_O_perm[broadcast_inds]
                     else:
-                        #MODE 1
-                        #V_SD_Mev += scaled_O[broadcast_inds]
-                        first_off = 2*indlist.index(ii)
-                        second_off = 2*(indlist.index(jj) - 1)
-                        scaled_O_perm = np.transpose(scaled_O, axes=(0,1+first_off,2+first_off,3+second_off,4+second_off,5+first_off,6+first_off,7+second_off,8+second_off))
                         V_SD_Mev += scaled_O_perm[broadcast_inds]
         # three-body potentials
         for i in range(A):
@@ -501,10 +506,15 @@ def compute_VS_separate(R_prop, S, potential, *, dtau_iMev):
 def compute_VS(R_deform, S, potential, *, dtau_iMev):
     N_coord = R_deform.shape[1]
     V_SI, V_SD = potential(R_deform)
+    print("V_SD shape ", V_SD.shape)
+    print("V_SI shape ", V_SI.shape)
+    V_SD = V_SD + V_SI
     VS = batched_apply(V_SD, S)
     VVS = batched_apply(V_SD, VS)
     S = S - (dtau_iMev/2) * VS + (dtau_iMev**2/8) * VVS
-    S = S * np.exp(-dtau_iMev/2 * V_SI)[(slice(None),) + (np.newaxis,)*2*N_coord]
+    V_SI_exp = np.zeros_like(V_SI)
+    #V_SI_exp_S = batched_apply(V_SI_exp, S)
+    #return V_SI_exp_S
     return S
 
 @partial(jax.jit, static_argnums=(8,9), static_argnames=('deform_f',))
@@ -518,10 +528,10 @@ def kinetic_step(R_fwd, R_bwd, R, R_deform, S, u, params_i, _T,
     #R_bwd = phi_shift(R_bwd, lambda0_i)
     R_fwd = deform_f(R_fwd, *params_i)
     R_bwd = deform_f(R_bwd, *params_i)
-    w_SI_fwd, S_fwd = compute_VS_separate(R_fwd, S, potential, dtau_iMev=dtau_iMev)
-    w_SI_bwd, S_bwd = compute_VS_separate(R_bwd, S, potential, dtau_iMev=dtau_iMev)
-    w_fwd = w_SI_fwd * f_R_norm(to_relative(R_fwd)) * inner(S_T, S_fwd)
-    w_bwd = w_SI_bwd * f_R_norm(to_relative(R_bwd)) * inner(S_T, S_bwd)
+    S_fwd = compute_VS(R_fwd, S, potential, dtau_iMev=dtau_iMev)
+    S_bwd = compute_VS(R_bwd, S, potential, dtau_iMev=dtau_iMev)
+    w_fwd = f_R_norm(to_relative(R_fwd)) * inner(S_T, S_fwd)
+    w_bwd = f_R_norm(to_relative(R_bwd)) * inner(S_T, S_bwd)
 
     # correct kinetic energy
     G_ratio_fwd = np.exp(
@@ -626,10 +636,10 @@ def kinetic_step_absolute(R_fwd, R_bwd, R, R_deform, S, u, params_i, S_T,
     #R_bwd = phi_shift(R_bwd, lambda0_i)
     R_fwd = deform_f(R_fwd, *params_i)
     R_bwd = deform_f(R_bwd, *params_i)
-    w_SI_fwd, S_fwd = compute_VS_separate(R_fwd, S, potential, dtau_iMev=dtau_iMev)
-    w_SI_bwd, S_bwd = compute_VS_separate(R_bwd, S, potential, dtau_iMev=dtau_iMev)
-    w_fwd = w_SI_fwd * f_R_norm(R_fwd) * inner(S_T, S_fwd)
-    w_bwd = w_SI_bwd * f_R_norm(R_bwd) * inner(S_T, S_bwd)
+    S_fwd = compute_VS(R_fwd, S, potential, dtau_iMev=dtau_iMev)
+    S_bwd = compute_VS(R_bwd, S, potential, dtau_iMev=dtau_iMev)
+    w_fwd = f_R_norm(R_fwd) * inner(S_T, S_fwd)
+    w_bwd = f_R_norm(R_bwd) * inner(S_T, S_bwd)
 
     # correct kinetic energy
     G_ratio_fwd = np.exp(

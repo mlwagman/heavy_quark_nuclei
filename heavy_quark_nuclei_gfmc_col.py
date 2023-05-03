@@ -123,14 +123,14 @@ def trivial_fun(R):
     return 0*adl.norm_3vec(R)+1
 
 # MODE 1
-#AV_Coulomb['O1'] = potential_fun
+AV_Coulomb['O1'] = potential_fun
+#AV_Coulomb['O1'] = symmetric_potential_fun
 
 # MODE 2
 #AV_Coulomb['OA'] = potential_fun
-
 #AV_Coulomb['OS'] = symmetric_potential_fun
 
-AV_Coulomb['OA'] = trivial_fun
+#AV_Coulomb['OA'] = trivial_fun
 #AV_Coulomb['OS'] = trivial_fun
 #AV_Coulomb['O1'] = trivial_fun
 
@@ -265,6 +265,11 @@ if N_coord == 3:
       spin_slice = (slice(0, None),) + (i,0,j,0,k,0)
       S_av4p_metropolis[spin_slice] = levi_civita(i, j, k) / np.sqrt(6)
 
+# symmetric
+#S_av4p_metropolis = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
+#spin_slice = (slice(0,None),) + (0,)*2*N_coord
+#S_av4p_metropolis[spin_slice] = 1
+
 if N_coord == 6:
   for i in range(NI):
    for j in range(NI):
@@ -280,9 +285,6 @@ if N_coord == 6:
           
 
 
-#S_av4p_metropolis = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
-#spin_slice = (slice(0,None),) + (0,)*2*N_coord
-#S_av4p_metropolis[spin_slice] = 1
 
 #print(S_av4p_metropolis)
 
@@ -343,7 +345,7 @@ for count, R in enumerate(gfmc_Rs):
     #print("V_SI shape is ", V_SI.shape)
     #print("V_SI_S shape is ", V_SI_S.shape)
     broadcast_SI = ((slice(None),) + (np.newaxis,)*N_coord*2)
-    V_SI_S = V_SI[broadcast_SI] * S
+    V_SI_S = adl.batched_apply(V_SI, S)
     print("V_SD shape is ", V_SD.shape)
     print("V_SD L2 norm is ", np.sqrt(np.mean(V_SD**2)))
     print("V_SD Linfinity norm is ", np.max(V_SD))
@@ -362,9 +364,12 @@ Vs = np.array(Vs)
 print(Vs.shape)
 
 if verbose:
-    ave_Vs = np.array([al.bootstrap(V, W, Nboot=100, f=adl.rw_mean)
-            for V,W in zip(Vs, gfmc_Ws)])
-    print("V=",ave_Vs,"\n\n")
+    #ave_Vs = np.array([al.bootstrap(V, W, Nboot=100, f=adl.rw_mean)
+    #        for V,W in zip(Vs, gfmc_Ws)])
+    ave_Vs = np.array([al.bootstrap(Vs[0], gfmc_Ws[0], Nboot=100, f=adl.rw_mean)])
+    print("V[tau=0] = ",ave_Vs,"\n\n")
+    ave_Vs = np.array([al.bootstrap(Vs[-1], gfmc_Ws[-1], Nboot=100, f=adl.rw_mean)])
+    print("V[last tau] = ",ave_Vs,"\n\n")
 
 exit()
 
