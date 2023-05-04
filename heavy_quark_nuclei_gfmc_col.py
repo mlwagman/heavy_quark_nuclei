@@ -127,10 +127,10 @@ def trivial_fun(R):
 #AV_Coulomb['O1'] = symmetric_potential_fun
 
 # MODE 2
-AV_Coulomb['OA'] = potential_fun
-AV_Coulomb['OS'] = symmetric_potential_fun
+#AV_Coulomb['OA'] = potential_fun
+#AV_Coulomb['OS'] = symmetric_potential_fun
 
-#AV_Coulomb['OA'] = trivial_fun
+AV_Coulomb['OA'] = trivial_fun
 #AV_Coulomb['OS'] = trivial_fun
 #AV_Coulomb['O1'] = trivial_fun
 
@@ -320,6 +320,16 @@ print('GFMC tau=dtau weights:', gfmc_Ws[1])
 # measure H
 print('Measuring <H>...')
 
+Ks = []
+#for R in tqdm.tqdm(gfmc_Rs):
+for count, R in enumerate(gfmc_Rs):
+    print('Calculating Laplacian for step ', count)
+    K_time = time.time()
+    #Ks.append(-1/2*laplacian_f_R(R) / f_R(R) / adl.mp_Mev)
+    Ks.append(-1/2*laplacian_f_R(R) / f_R(R) / 1)
+    print(f"calculated kinetic in {time.time() - K_time} sec")
+Ks = np.array(Ks)
+
 Vs = []
 for count, R in enumerate(gfmc_Rs):
     print('Calculating potential for step ', count)
@@ -363,25 +373,13 @@ Vs = np.array(Vs)
 
 print(Vs.shape)
 
-if verbose:
+#if verbose:
     #ave_Vs = np.array([al.bootstrap(V, W, Nboot=100, f=adl.rw_mean)
     #        for V,W in zip(Vs, gfmc_Ws)])
-    ave_Vs = np.array([al.bootstrap(Vs[0], gfmc_Ws[0], Nboot=100, f=adl.rw_mean)])
-    print("V[tau=0] = ",ave_Vs,"\n\n")
-    ave_Vs = np.array([al.bootstrap(Vs[-1], gfmc_Ws[-1], Nboot=100, f=adl.rw_mean)])
-    print("V[last tau] = ",ave_Vs,"\n\n")
-
-exit()
-
-Ks = []
-#for R in tqdm.tqdm(gfmc_Rs):
-for count, R in enumerate(gfmc_Rs):
-    print('Calculating Laplacian for step ', count)
-    K_time = time.time()
-    #Ks.append(-1/2*laplacian_f_R(R) / f_R(R) / adl.mp_Mev)
-    Ks.append(-1/2*laplacian_f_R(R) / f_R(R) / 1)
-    print(f"calculated kinetic in {time.time() - K_time} sec")
-Ks = np.array(Ks)
+#    ave_Vs = np.array([al.bootstrap(Vs[0], gfmc_Ws[0], Nboot=100, f=adl.rw_mean)])
+#    print("V[tau=0] = ",ave_Vs,"\n\n")
+#    ave_Vs = np.array([al.bootstrap(Vs[-1], gfmc_Ws[-1], Nboot=100, f=adl.rw_mean)])
+#    print("V[last tau] = ",ave_Vs,"\n\n")
 
 #Ks *= fm_Mev**2
 

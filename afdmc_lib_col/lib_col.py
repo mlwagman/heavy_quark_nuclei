@@ -88,6 +88,7 @@ two_body_pieces = {
     # antisymmetric in color
     'iso_A': iso_eps,
     # 1 . 1
+    #'sp_I': onp.einsum('ij,kl->ikjl', onp.identity(NS), onp.identity(NS)),
     'sp_I': onp.einsum('ij,kl->ikjl', onp.identity(NS), onp.identity(NS)),
     # sigma_i . sigma_j
     'sp_dot': sum(onp.einsum('ij,kl->ikjl', p, p) for p in paulis),
@@ -502,16 +503,29 @@ def compute_VS_separate(R_prop, S, potential, *, dtau_iMev):
     return np.exp(-dtau_iMev/2 * V_SI_prop), S_prop
 
 ### Apply exp(-dtau/2 V_SI) (1 - (dtau/2) V_SD + (dtau^2/8) V_SD^2) to |S>.
-@partial(jax.jit, static_argnums=(2,))
+#@partial(jax.jit, static_argnums=(2,))
 def compute_VS(R_deform, S, potential, *, dtau_iMev):
     N_coord = R_deform.shape[1]
+    old_S = S
     V_SI, V_SD = potential(R_deform)
     print("V_SD shape ", V_SD.shape)
     print("V_SI shape ", V_SI.shape)
     V_SD = V_SD + V_SI
     VS = batched_apply(V_SD, S)
+    print("norm old_S ", inner(old_S,old_S))
+    print("norm VS ", inner(VS,VS))
+    print("old_S.VS/norms  ", inner(VS,old_S) / np.sqrt( inner(VS,VS)*inner(old_S,old_S) ))
+    ang = np.arccos(inner(VS, old_S) / np.sqrt( inner(VS,VS)*inner(old_S,old_S) ))
+    print("angle between old and new spin-color vec is ", ang)
+    assert (np.abs(ang) < 1e-6).all()
     VVS = batched_apply(V_SD, VS)
     S = S - (dtau_iMev/2) * VS + (dtau_iMev**2/8) * VVS
+    print("norm old_S ", inner(old_S,old_S))
+    print("norm S_f ", inner(S,S))
+    print("old_S.S_f  ", inner(S,old_S))
+    ang = np.arccos(inner(S, old_S) / np.sqrt( inner(S,S)*inner(old_S,old_S) ))
+    print("angle between old and new spin-color vec is ", ang)
+    assert (np.abs(ang) < 1e-6).all()
     V_SI_exp = np.zeros_like(V_SI)
     #V_SI_exp_S = batched_apply(V_SI_exp, S)
     #return V_SI_exp_S
@@ -522,6 +536,7 @@ def kinetic_step(R_fwd, R_bwd, R, R_deform, S, u, params_i, _T,
                  f_R_norm, potential, *, deform_f, dtau_iMev, m_Mev):
     """Step forward given two possible proposals and RNG to decide"""
     # transform manifold
+    old_S = S
     R_fwd_old = R_fwd
     R_bwd_old = R_bwd
     #R_fwd = phi_shift(R_fwd, lambda0_i)
@@ -550,13 +565,21 @@ def kinetic_step(R_fwd, R_bwd, R, R_deform, S, u, params_i, _T,
     p_bwd = np.abs(w_bwd) / (np.abs(w_fwd) + np.abs(w_bwd))
     pc_bwd = w_bwd / (w_fwd + w_bwd)
     ind_fwd = u < p_fwd
+    # TODO I DONT UNDERSTAND THIS LINE
     ind_fwd_R = np.expand_dims(ind_fwd, axis=(-3,-2,-1))
     R = np.where(ind_fwd_R, R_fwd_old, R_bwd_old)
     R_deform = np.where(ind_fwd_R, R_fwd, R_bwd)
     N_coord = R_deform.shape[1]
+    # TODO I REALLY DONT UNDERSTAND THIS LINE
     small_axis_tup = tuple([i for i in range(-N_coord-1,0)])
     ind_fwd_S = np.expand_dims(ind_fwd, axis=small_axis_tup)
     S = np.where(ind_fwd_S, S_fwd, S_bwd)
+    # TODO check if new and old S parallel!!
+    ang = inner(S, old_S) / np.sqrt( inner(S,S)*inner(S_T,S_T) )
+    print("angle between old and new spin-color vec is ", ang)
+    jax_print(np.mean(ang), label="angle between old and new spin-color vec is ", level=0)
+    #assert (np.abs(ang) < 1e-6).all()
+    #exit()
     W = ((w_fwd + w_bwd) / 2)
     W = np.where(ind_fwd, W * pc_fwd / p_fwd, W * pc_bwd / p_bwd)
     return R, R_deform, S, W
@@ -630,6 +653,7 @@ def kinetic_step_absolute(R_fwd, R_bwd, R, R_deform, S, u, params_i, S_T,
                  f_R_norm, potential, *, deform_f, dtau_iMev, m_Mev):
     """Step forward given two possible proposals and RNG to decide"""
     # transform manifold
+    old_S = S
     R_fwd_old = R_fwd
     R_bwd_old = R_bwd
     #R_fwd = phi_shift(R_fwd, lambda0_i)
@@ -638,6 +662,13 @@ def kinetic_step_absolute(R_fwd, R_bwd, R, R_deform, S, u, params_i, S_T,
     R_bwd = deform_f(R_bwd, *params_i)
     S_fwd = compute_VS(R_fwd, S, potential, dtau_iMev=dtau_iMev)
     S_bwd = compute_VS(R_bwd, S, potential, dtau_iMev=dtau_iMev)
+    print("norm old_S ", inner(old_S,old_S))
+    print("norm S_f ", inner(S_fwd,S_fwd))
+    print("old_S.S_f  ", inner(S_fwd,old_S))
+    ang_fwd = np.arccos(inner(S_fwd, old_S) / np.sqrt( inner(S_fwd,S_fwd)*inner(old_S,old_S) ))
+    print("fwd angle between old and new spin-color vec is ", ang_fwd)
+    ang_bwd = np.arccos(inner(S_bwd, old_S) / np.sqrt( inner(S_bwd,S_bwd)*inner(old_S,old_S) ))
+    print("bwd angle between old and new spin-color vec is ", ang_bwd)
     w_fwd = f_R_norm(R_fwd) * inner(S_T, S_fwd)
     w_bwd = f_R_norm(R_bwd) * inner(S_T, S_bwd)
 
@@ -658,13 +689,19 @@ def kinetic_step_absolute(R_fwd, R_bwd, R, R_deform, S, u, params_i, S_T,
     p_bwd = np.abs(w_bwd) / (np.abs(w_fwd) + np.abs(w_bwd))
     pc_bwd = w_bwd / (w_fwd + w_bwd)
     ind_fwd = u < p_fwd
+    # TODO I DONT UNDERSTAND THIS LINE
     ind_fwd_R = np.expand_dims(ind_fwd, axis=(-2,-1))
     R = np.where(ind_fwd_R, R_fwd_old, R_bwd_old)
     R_deform = np.where(ind_fwd_R, R_fwd, R_bwd)
     N_coord = R_deform.shape[1]
+    # TODO I REALLY DONT UNDERSTAND THIS LINE
     axis_tup = tuple([i for i in range(-2*N_coord,0)])
     ind_fwd_S = np.expand_dims(ind_fwd, axis=axis_tup)
     S = np.where(ind_fwd_S, S_fwd, S_bwd)
+    # TODO check if new and old S parallel!!
+    ang = np.arccos(inner(S, old_S) / np.sqrt( inner(S,S)*inner(old_S,old_S) ))
+    print("angle between old and new spin-color vec is ", ang)
+    assert (np.abs(ang) < 1e-6).all()
     W = ((w_fwd + w_bwd) / 2)
     W = np.where(ind_fwd, W * pc_fwd / p_fwd, W * pc_bwd / p_bwd)
     return R, R_deform, S, W
