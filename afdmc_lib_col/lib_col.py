@@ -284,6 +284,53 @@ def make_pairwise_potential(AVcoeffs, B3coeffs={}):
         return V_SI_Mev, V_SD_Mev
     return pairwise_potential
 
+def make_explicit_pairwise_potential(AVcoeffs, B3coeffs={}):
+    @jax.jit
+    def pairwise_potential(R):
+        batch_size, A = R.shape[:2]
+        V_SI_Mev = np.zeros( # big-ass matrix
+            (batch_size,) + # batch of walkers
+            (NI,NS)*A + # source (i1, s1, i2, s2, ...)
+            (NI,NS)*A, # sink (i1', s1', i2', s2', ...)
+            dtype=np.complex128
+        )
+        V_SD_Mev = np.zeros( # big-ass matrix
+            (batch_size,) + # batch of walkers
+            (NI,NS)*A + # source (i1, s1, i2, s2, ...)
+            (NI,NS)*A, # sink (i1', s1', i2', s2', ...)
+            dtype=np.complex128
+        )
+        # two-body potentials
+        for i in range(A):
+            for j in range(A):
+                if i==j:
+                    continue
+                indlist = [i, j]
+                indlist_sort = [i, j]
+                indlist_sort.sort()
+                ii = indlist_sort[0]
+                jj = indlist_sort[1]
+                Rij = R[:,i] - R[:,j]
+                for name,op in two_body_ops.items():
+                    if name not in AVcoeffs: continue
+                    Oij = op(Rij)
+                    vij_part = AVcoeffs[name](Rij)
+                    # TODO construct vij from vij_part by taking tensor products with a bunch of identity matrices
+                    scaled_O = vij * Oij
+                    assert len(scaled_O.shape) == 9, \
+                        'scaled_O should have batch (1) and two-body (2) src/sink (2) spin/iso (2) = 9 dims'
+                    first_off = 2*indlist.index(ii)
+                    second_off = 2*(indlist.index(jj) - 1)
+                    scaled_O_perm = np.transpose(scaled_O, axes=(0,1+first_off,2+first_off,3+second_off,4+second_off,5+first_off,6+first_off,7+second_off,8+second_off))
+                    if name == 'O1':
+                        #broadcast_inds = (slice(None),) + (0,)*(len(Oij.shape)-1)
+                        #V_SI_Mev = V_SI_Mev + scaled_O[broadcast_inds]
+                        V_SI_Mev += scaled_O_perm[broadcast_inds]
+                    else:
+                        V_SD_Mev += scaled_O_perm[broadcast_inds]
+        return V_SI_Mev, V_SD_Mev
+    return pairwise_potential
+
 #@partial(jax.jit)
 def batched_apply(M, S): # compute M|S>
     batch_size, src_sink_dims = M.shape[0], M.shape[1:]
