@@ -316,6 +316,26 @@ def make_explicit_pairwise_potential(AVcoeffs, B3coeffs={}):
                     Oij = op(Rij)
                     vij_part = AVcoeffs[name](Rij)
                     # TODO construct vij from vij_part by taking tensor products with a bunch of identity matrices
+                    # Construct vij from vij_part by taking tensor products with a bunch of identity matrices
+                    vij_part_expanded_I = np.expand_dims(np.expand_dims(np.expand_dims(vij_part, axis=-1), axis=-1), axis=-1)
+                    vij = np.zeros_like(Oij)
+                    for i in range(NI):
+                        for j in range(NI):
+                            for k in range(NI):
+                                for l in range(NI):
+                                    for m in range(NI):
+                                        for n in range(NI):
+                                            if i == l or j == m or k == n :
+                                                vij = vij.at[..., i, j, k, l, m, n].set(vij_part_expanded_I)
+                    vij_part_expanded_S = np.expand_dims(np.expand_dims(np.expand_dims(vij_part_expanded_I, axis=-1), axis=-1), axis=-1)
+                    for i in range(NS):
+                        for j in range(NS):
+                            for k in range(NS):
+                                for l in range(NS):
+                                    for m in range(NS):
+                                        for n in range(NS):
+                                            if i == l or j == m or k == n :
+                                                vij = vij.at[..., i, j, k, l, m, n].set(vij_part_expanded_S)
                     scaled_O = vij * Oij
                     assert len(scaled_O.shape) == 9, \
                         'scaled_O should have batch (1) and two-body (2) src/sink (2) spin/iso (2) = 9 dims'
@@ -859,7 +879,7 @@ def measure_gfmc_loss(
         params, gfmc_Rs, gfmc_Ws, S_T, AVcoeffs, f_R_norm, df_R_norm, ddf_R_norm, loss_ts,
         *, eval_local_loss, deform_f, alpha, beta, tau_iMev, N, m_Mev):
 
-    potential = make_pairwise_potential(AVcoeffs)
+    potential = make_explicit_pairwise_potential(AVcoeffs)
     #estimate_H = make_twobody_sample_mean_H(AVcoeffs)
     dtau_iMev = tau_iMev/N
 
@@ -1075,7 +1095,7 @@ def train_gfmc_deform(
             thisii = ii
         return np.power(factor,reduces)*step_size
 
-    potential = make_pairwise_potential(AVcoeffs)
+    potential = make_explicit_pairwise_potential(AVcoeffs)
 
     l = 10**(10)
 
