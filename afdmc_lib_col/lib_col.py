@@ -284,8 +284,9 @@ def make_pairwise_potential(AVcoeffs, B3coeffs={}):
         return V_SI_Mev, V_SD_Mev
     return pairwise_potential
 
-def make_explicit_pairwise_potential(AVcoeffs, B3coeffs={}):
-    @jax.jit
+#def make_explicit_pairwise_potential(AVcoeffs, B3coeffs={}):
+def make_pairwise_potential(AVcoeffs, B3coeffs={}):
+    #@jax.jit
     def pairwise_potential(R):
         batch_size, A = R.shape[:2]
         V_SI_Mev = np.zeros( # big-ass matrix
@@ -301,53 +302,85 @@ def make_explicit_pairwise_potential(AVcoeffs, B3coeffs={}):
             dtype=np.complex128
         )
         # two-body potentials
-        for i in range(A):
-            for j in range(A):
+        #for i in range(A):
+        #    for j in range(A):
+        for i in range(1):
+            for j in range(2):
                 if i==j:
                     continue
-                indlist = [i, j]
-                indlist_sort = [i, j]
-                indlist_sort.sort()
-                ii = indlist_sort[0]
-                jj = indlist_sort[1]
                 Rij = R[:,i] - R[:,j]
                 for name,op in two_body_ops.items():
                     if name not in AVcoeffs: continue
                     Oij = op(Rij)
-                    vij_part = AVcoeffs[name](Rij)
-                    # TODO construct vij from vij_part by taking tensor products with a bunch of identity matrices
-                    # Construct vij from vij_part by taking tensor products with a bunch of identity matrices
-                    vij_part_expanded_I = np.expand_dims(np.expand_dims(np.expand_dims(vij_part, axis=-1), axis=-1), axis=-1)
-                    vij = np.zeros_like(Oij)
-                    for i in range(NI):
-                        for j in range(NI):
-                            for k in range(NI):
-                                for l in range(NI):
-                                    for m in range(NI):
-                                        for n in range(NI):
-                                            if i == l or j == m or k == n :
-                                                vij = vij.at[..., i, j, k, l, m, n].set(vij_part_expanded_I)
-                    vij_part_expanded_S = np.expand_dims(np.expand_dims(np.expand_dims(vij_part_expanded_I, axis=-1), axis=-1), axis=-1)
-                    for i in range(NS):
-                        for j in range(NS):
-                            for k in range(NS):
-                                for l in range(NS):
-                                    for m in range(NS):
-                                        for n in range(NS):
-                                            if i == l or j == m or k == n :
-                                                vij = vij.at[..., i, j, k, l, m, n].set(vij_part_expanded_S)
+                    vij = AVcoeffs[name](Rij)
+                    broadcast_vij_inds = (slice(None),) + (np.newaxis,)*(len(Oij.shape)-1)
+                    vij = vij[broadcast_vij_inds]
                     scaled_O = vij * Oij
-                    assert len(scaled_O.shape) == 9, \
-                        'scaled_O should have batch (1) and two-body (2) src/sink (2) spin/iso (2) = 9 dims'
-                    first_off = 2*indlist.index(ii)
-                    second_off = 2*(indlist.index(jj) - 1)
-                    scaled_O_perm = np.transpose(scaled_O, axes=(0,1+first_off,2+first_off,3+second_off,4+second_off,5+first_off,6+first_off,7+second_off,8+second_off))
+                    for alpha in range(A-2):
+                        scaled_O = np.einsum('...,mn,op->...monp', scaled_O, onp.identity(NI), onp.identity(NS))
+                    # TODO turn scaled_O_{iji'j'kk'} into scaled O_{ijki'j'k'}
+                    scaled_O = np.transpose(scaled_O, axes=starting_perm)
+                    assert V_SI_Mev.shape==scaled_O.shape
+                    print(scaled_O.shape)
+                    print("i = ",i," j = ", j)
+                    perm = [ l for l in range(A) ]
+                    perm[0] = i
+                    perm[i] = 0
+                    perm_copy = perm.copy()
+                    j_slot = perm.index(j)
+                    perm[1] = perm_copy[j_slot]
+                    perm[j_slot] = perm_copy[1]
+                    print(perm)
+                    perm = [ l for l in range(2*A) ]
+                    perm[0] = 2*i
+                    perm[1] = 2*i+1
+                    perm[2*i] = 0
+                    perm[2*i+1] = 1
+                    perm_copy = perm.copy()
+                    j_slot = perm.index(2*j)
+                    perm[2] = perm_copy[j_slot]
+                    perm[3] = perm_copy[j_slot+1]
+                    perm[j_slot] = perm_copy[2]
+                    perm[j_slot+1] = perm_copy[3]
+                    src_perm = [ perm[l] + 1 for l in range(len(perm)) ]
+                    snk_perm = [ src_perm[l] + 2*A for l in range(len(perm)) ]
+                    full_perm = [0] + src_perm + snk_perm
+                    print(perm)
+#                    perm = [ l for l in range(4*A) ]
+#                    perm[0] = 4*i
+#                    perm[1] = 4*i+1
+#                    perm[2] = 4*i+2
+#                    perm[3] = 4*i+3
+#                    perm[4*i] = 0
+#                    perm[4*i+1] = 1
+#                    perm[4*i+2] = 2
+#                    perm[4*i+3] = 3
+#                    perm_copy = perm.copy()
+#                    j_slot = perm.index(4*j)
+#                    perm[4] = perm_copy[j_slot]
+#                    perm[5] = perm_copy[j_slot+1]
+#                    perm[6] = perm_copy[j_slot+2]
+#                    perm[7] = perm_copy[j_slot+3]
+#                    perm[j_slot] = perm_copy[4]
+#                    perm[j_slot+1] = perm_copy[5]
+#                    perm[j_slot+2] = perm_copy[6]
+#                    perm[j_slot+3] = perm_copy[7]
+#                    full_perm = [0] + [ perm[l] + 1 for l in range(len(perm)) ]
+                    print(perm)
+                    scaled_O_perm = np.transpose(scaled_O, axes=full_perm)
                     if name == 'O1':
-                        #broadcast_inds = (slice(None),) + (0,)*(len(Oij.shape)-1)
-                        #V_SI_Mev = V_SI_Mev + scaled_O[broadcast_inds]
-                        V_SI_Mev += scaled_O_perm[broadcast_inds]
+                        broadcast_inds = (slice(None),) + (0,)*(len(Oij.shape)-1)
+                        V_SI_Mev = V_SI_Mev + scaled_O[broadcast_inds]
+                    #    V_SI_Mev += scaled_O_perm[broadcast_inds]
                     else:
-                        V_SD_Mev += scaled_O_perm[broadcast_inds]
+                        print("adding to V_SD")
+                        V_SD_Mev += scaled_O_perm
+                        print("O ", Oij[0,0,0,1,0,0,0,1,0])
+                        print("scaled O ", scaled_O[0,0,0,1,0,0,0,1,0,2,0,2,0])
+                        print("scaled O perm ", scaled_O_perm[0,0,0,1,0,0,0,1,0,2,0,2,0])
+                        print("V_SD ", V_SD_Mev[0,0,0,1,0,0,0,1,0,2,0,2,0])
+                        print(Oij.shape)
+                        print(scaled_O.shape)
         return V_SI_Mev, V_SD_Mev
     return pairwise_potential
 
@@ -579,6 +612,8 @@ def compute_VS(R_deform, S, potential, *, dtau_iMev):
     print("V_SI shape ", V_SI.shape)
     V_SD = V_SD + V_SI
     VS = batched_apply(V_SD, S)
+    print("V_SD ", V_SD[0,0,0,1,0,2,0,0,0,1,0,2,0])
+    #print("V_S ", VS[0])
     print("norm old_S ", inner(old_S,old_S))
     print("norm VS ", inner(VS,VS))
     print("old_S.VS/norms  ", inner(VS,old_S) / np.sqrt( inner(VS,VS)*inner(old_S,old_S) ))
