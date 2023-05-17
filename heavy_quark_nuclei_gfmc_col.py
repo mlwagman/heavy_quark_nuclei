@@ -127,10 +127,10 @@ def trivial_fun(R):
 #AV_Coulomb['O1'] = symmetric_potential_fun
 
 # MODE 2
-#AV_Coulomb['OA'] = potential_fun
-#AV_Coulomb['OS'] = symmetric_potential_fun
+AV_Coulomb['OA'] = potential_fun
+AV_Coulomb['OS'] = symmetric_potential_fun
 
-AV_Coulomb['OA'] = trivial_fun
+#AV_Coulomb['OA'] = trivial_fun
 #AV_Coulomb['OS'] = trivial_fun
 #AV_Coulomb['O1'] = trivial_fun
 
@@ -278,7 +278,10 @@ if N_coord == 6:
       for m in range(NI):
        for n in range(NI):
         if i != j and j != k and i != k and l != m and m != n and n != l:
+          # up up up up up up
           spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,0,m,0,n,0)
+          # up up up down down down
+          #spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,1,m,1,n,1)
           S_av4p_metropolis[spin_slice] = levi_civita(i, j, k)*levi_civita(l, m, n) / 6
           #spin_slice = (slice(0, None),) + (i,0,j,0,k,0,0,0,0,0,0,0)
           #S_av4p_metropolis[spin_slice] = levi_civita(i, j, k) / np.sqrt(6)
@@ -358,14 +361,14 @@ for count, R in enumerate(gfmc_Rs):
     V_SI_S = adl.batched_apply(V_SI, S)
     print("V_SD shape is ", V_SD.shape)
     print("V_SD L2 norm is ", np.sqrt(np.mean(V_SD**2)))
-    print("V_SD Linfinity norm is ", np.max(V_SD))
+    print("V_SD Linfinity norm is ", np.max(np.abs(V_SD)))
     print("V_SD_S shape is ", V_SD_S.shape)
     print("V_SD_S L2 norm is ", np.sqrt(np.mean(V_SD_S**2)))
-    print("V_SD_S Linfinity norm is ", np.max(V_SD_S))
+    print("V_SD_S Linfinity norm is ", np.max(np.abs(V_SD_S)))
     V_tot = adl.inner(S_av4p_metropolis, V_SD_S + V_SI_S) / adl.inner(S_av4p_metropolis, S)
     print("V_tot shape is ", V_tot.shape)
     print("V_tot L2 norm is ", np.sqrt(np.mean(V_tot**2)))
-    print("V_tot Linfinity norm is ", np.max(V_tot))
+    print("V_tot Linfinity norm is ", np.max(np.abs(V_tot)))
     print(f"calculated potential in {time.time() - V_time} sec")
     Vs.append(V_tot)
 
