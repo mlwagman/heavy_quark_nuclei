@@ -284,6 +284,19 @@ def make_pairwise_potential(AVcoeffs, B3coeffs={}):
         return V_SI_Mev, V_SD_Mev
     return pairwise_potential
 
+# generate sequence for permutation of iji'j'k'... to ijk i'j'k'
+def generate_sequence(AA):
+    sequence = [0, 1]
+    evens = [i for i in range(4, AA+1, 2)]
+    sequence.extend(evens)
+    sequence.append(2)
+    odds = [i for i in range(1, AA+1, 2)]
+    sequence.extend(odds)
+    return sequence
+
+# Test the function
+#print(generate_sequence(10))
+
 #def make_explicit_pairwise_potential(AVcoeffs, B3coeffs={}):
 def make_pairwise_potential(AVcoeffs, B3coeffs={}):
     #@jax.jit
@@ -320,56 +333,9 @@ def make_pairwise_potential(AVcoeffs, B3coeffs={}):
                         scaled_O = np.einsum('...,mn,op->...monp', scaled_O, onp.identity(NI), onp.identity(NS))
                     assert V_SI_Mev.shape==scaled_O.shape
                     # TODO turn scaled_O_{iji'j'kk'} into scaled O_{ijki'j'k'}
-                    perm = [ l for l in range(A) ]
-                    perm[0] = i
-                    perm[i] = 0
-                    perm_copy = perm.copy()
-                    j_slot = perm.index(j)
-                    perm[1] = perm_copy[j_slot]
-                    perm[j_slot] = perm_copy[1]
-                    print(perm)
-                    perm = [ l for l in range(2*A) ]
-                    perm[0] = 2*i
-                    perm[1] = 2*i+1
-                    perm[2*i] = 0
-                    perm[2*i+1] = 1
-                    perm_copy = perm.copy()
-                    j_slot = perm.index(2*j)
-                    perm[2] = perm_copy[j_slot]
-                    perm[3] = perm_copy[j_slot+1]
-                    perm[j_slot] = perm_copy[2]
-                    perm[j_slot+1] = perm_copy[3]
-                    src_perm = [ perm[l] + 1 for l in range(len(perm)) ]
-                    snk_perm = [ src_perm[l] + 2*A for l in range(len(perm)) ]
-                    starting_perm = [0] + src_perm + snk_perm
-                    print("source perm = ",src_perm)
-                    print("sink perm = ",snk_perm)
-                    print("starting perm = ",starting_perm)
-
-                    perm = [ l for l in range(4*A) ]
-                    perm[0] = 4*i
-                    perm[1] = 4*i+1
-                    perm[2] = 4*i+2
-                    perm[4*i] = 0
-                    perm[4*i+1] = 1
-                    perm[4*i+2] = 2
-                    perm[4*i+3] = 3
-                    perm_copy = perm.copy()
-                    j_slot = perm.index(4*j)
-                    perm[4] = perm_copy[j_slot]
-                    perm[5] = perm_copy[j_slot+1]
-                    perm[6] = perm_copy[j_slot+2]
-                    perm[7] = perm_copy[j_slot+3]
-                    perm[j_slot] = perm_copy[4]
-                    perm[j_slot+1] = perm_copy[5]
-                    perm[j_slot+2] = perm_copy[6]
-                    perm[j_slot+3] = perm_copy[7]
-                    starting_perm = [0] + [ perm[l] + 1 for l in range(len(perm)) ]
+                    starting_perm = generate_sequence(4*A)
+                    print('starting_perm',starting_perm)
                     scaled_O = np.transpose(scaled_O, axes=starting_perm)
-                    print("starting perm =",scaled_O.shape)
-                    print("scaled_O shape =",scaled_O.shape)
-                    print("i = ",i," j = ", j)
-                    #scaled_O = np.transpose(scaled_O, axes=starting_perm)
                     print("scaled_O shape =",scaled_O.shape)
                     print("i = ",i," j = ", j)
                     perm = [ l for l in range(A) ]
