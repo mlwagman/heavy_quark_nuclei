@@ -304,8 +304,8 @@ def make_pairwise_potential(AVcoeffs, B3coeffs={}):
         # two-body potentials
         #for i in range(A):
         #    for j in range(A):
-        for i in range(1):
-            for j in range(2):
+        for i in range(A):
+            for j in range(A):
                 if i==j:
                     continue
                 Rij = R[:,i] - R[:,j]
@@ -318,10 +318,59 @@ def make_pairwise_potential(AVcoeffs, B3coeffs={}):
                     scaled_O = vij * Oij
                     for alpha in range(A-2):
                         scaled_O = np.einsum('...,mn,op->...monp', scaled_O, onp.identity(NI), onp.identity(NS))
-                    # TODO turn scaled_O_{iji'j'kk'} into scaled O_{ijki'j'k'}
-                    scaled_O = np.transpose(scaled_O, axes=starting_perm)
                     assert V_SI_Mev.shape==scaled_O.shape
-                    print(scaled_O.shape)
+                    # TODO turn scaled_O_{iji'j'kk'} into scaled O_{ijki'j'k'}
+                    perm = [ l for l in range(A) ]
+                    perm[0] = i
+                    perm[i] = 0
+                    perm_copy = perm.copy()
+                    j_slot = perm.index(j)
+                    perm[1] = perm_copy[j_slot]
+                    perm[j_slot] = perm_copy[1]
+                    print(perm)
+                    perm = [ l for l in range(2*A) ]
+                    perm[0] = 2*i
+                    perm[1] = 2*i+1
+                    perm[2*i] = 0
+                    perm[2*i+1] = 1
+                    perm_copy = perm.copy()
+                    j_slot = perm.index(2*j)
+                    perm[2] = perm_copy[j_slot]
+                    perm[3] = perm_copy[j_slot+1]
+                    perm[j_slot] = perm_copy[2]
+                    perm[j_slot+1] = perm_copy[3]
+                    src_perm = [ perm[l] + 1 for l in range(len(perm)) ]
+                    snk_perm = [ src_perm[l] + 2*A for l in range(len(perm)) ]
+                    starting_perm = [0] + src_perm + snk_perm
+                    print("source perm = ",src_perm)
+                    print("sink perm = ",snk_perm)
+                    print("starting perm = ",starting_perm)
+
+                    perm = [ l for l in range(4*A) ]
+                    perm[0] = 4*i
+                    perm[1] = 4*i+1
+                    perm[2] = 4*i+2
+                    perm[4*i] = 0
+                    perm[4*i+1] = 1
+                    perm[4*i+2] = 2
+                    perm[4*i+3] = 3
+                    perm_copy = perm.copy()
+                    j_slot = perm.index(4*j)
+                    perm[4] = perm_copy[j_slot]
+                    perm[5] = perm_copy[j_slot+1]
+                    perm[6] = perm_copy[j_slot+2]
+                    perm[7] = perm_copy[j_slot+3]
+                    perm[j_slot] = perm_copy[4]
+                    perm[j_slot+1] = perm_copy[5]
+                    perm[j_slot+2] = perm_copy[6]
+                    perm[j_slot+3] = perm_copy[7]
+                    starting_perm = [0] + [ perm[l] + 1 for l in range(len(perm)) ]
+                    scaled_O = np.transpose(scaled_O, axes=starting_perm)
+                    print("starting perm =",scaled_O.shape)
+                    print("scaled_O shape =",scaled_O.shape)
+                    print("i = ",i," j = ", j)
+                    #scaled_O = np.transpose(scaled_O, axes=starting_perm)
+                    print("scaled_O shape =",scaled_O.shape)
                     print("i = ",i," j = ", j)
                     perm = [ l for l in range(A) ]
                     perm[0] = i
@@ -346,27 +395,7 @@ def make_pairwise_potential(AVcoeffs, B3coeffs={}):
                     snk_perm = [ src_perm[l] + 2*A for l in range(len(perm)) ]
                     full_perm = [0] + src_perm + snk_perm
                     print(perm)
-#                    perm = [ l for l in range(4*A) ]
-#                    perm[0] = 4*i
-#                    perm[1] = 4*i+1
-#                    perm[2] = 4*i+2
-#                    perm[3] = 4*i+3
-#                    perm[4*i] = 0
-#                    perm[4*i+1] = 1
-#                    perm[4*i+2] = 2
-#                    perm[4*i+3] = 3
-#                    perm_copy = perm.copy()
-#                    j_slot = perm.index(4*j)
-#                    perm[4] = perm_copy[j_slot]
-#                    perm[5] = perm_copy[j_slot+1]
-#                    perm[6] = perm_copy[j_slot+2]
-#                    perm[7] = perm_copy[j_slot+3]
-#                    perm[j_slot] = perm_copy[4]
-#                    perm[j_slot+1] = perm_copy[5]
-#                    perm[j_slot+2] = perm_copy[6]
-#                    perm[j_slot+3] = perm_copy[7]
-#                    full_perm = [0] + [ perm[l] + 1 for l in range(len(perm)) ]
-                    print(perm)
+                    print("full perm = ",full_perm)
                     scaled_O_perm = np.transpose(scaled_O, axes=full_perm)
                     if name == 'O1':
                         broadcast_inds = (slice(None),) + (0,)*(len(Oij.shape)-1)
@@ -381,6 +410,7 @@ def make_pairwise_potential(AVcoeffs, B3coeffs={}):
                         print("V_SD ", V_SD_Mev[0,0,0,1,0,0,0,1,0,2,0,2,0])
                         print(Oij.shape)
                         print(scaled_O.shape)
+            #exit(1)
         return V_SI_Mev, V_SD_Mev
     return pairwise_potential
 
