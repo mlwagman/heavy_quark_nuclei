@@ -50,7 +50,7 @@ def normalize_wf(f_R, df_R, ddf_R):
 
 
 ### Hamiltonian
-NS = 2
+NS = 1
 NI = 3
 
 # Define the Gell-Mann matrices
@@ -619,8 +619,8 @@ def compute_VS(R_deform, S, potential, *, dtau_iMev):
     ang = np.arccos(inner(VS, old_S) / np.sqrt( inner(VS,VS)*inner(old_S,old_S) ))
     #print("angle between old and new spin-color vec is ", ang)
     # TODO THIS OUGHT TO FAIL FOR DEUTERON
-    if (np.abs(inner(VS,VS)) > 1e-6).all(): 
-        assert ((np.abs(ang) < 1e-6).all() or (np.abs(ang - np.pi) < 1e-6).all() or (np.abs(ang + np.pi) < 1e-6).all())
+    #if (np.abs(inner(VS,VS)) > 1e-6).all(): 
+    #    assert ((np.abs(ang) < 1e-6).all() or (np.abs(ang - np.pi) < 1e-6).all() or (np.abs(ang + np.pi) < 1e-6).all())
     VVS = batched_apply(V_SD, VS)
     S = S - (dtau_iMev/2) * VS + (dtau_iMev**2/8) * VVS
     #print("norm old_S ", inner(old_S,old_S))

@@ -53,6 +53,8 @@ parser.add_argument('--outdir', type=str, required=True)
 parser.add_argument('--input_Rs_database', type=str, default="")
 parser.add_argument('--log_mu_r', type=float, default=1)
 parser.add_argument('--cutoff', type=float, default=0.0)
+parser.add_argument('--wavefunction', type=str, default="compact")
+parser.add_argument('--potential', type=str, default="full")
 parser.add_argument('--verbose', dest='verbose', action='store_true', default=False)
 globals().update(vars(parser.parse_args()))
 
@@ -128,7 +130,8 @@ def trivial_fun(R):
 
 # MODE 2
 AV_Coulomb['OA'] = potential_fun
-AV_Coulomb['OS'] = symmetric_potential_fun
+if potential != "antisymmetric":
+    AV_Coulomb['OS'] = symmetric_potential_fun
 
 #AV_Coulomb['OA'] = trivial_fun
 #AV_Coulomb['OS'] = trivial_fun
@@ -149,6 +152,15 @@ def f_R(Rs):
     for i in range(N_coord):
        	for j in range(N_coord):
             if i!=j and j>=i:
+                if wavefunction == "two_baryon_product":
+                    baryon_0 = 1
+                    if i < 3:
+                        baryon_0 = 0
+                    baryon_1 = 1
+                    if j < 3:
+                        baryon_1 = 0
+                    if baryon_0 != baryon_1:
+                        continue
                 ri = Rs[...,i,:]
                 rj = Rs[...,j,:]
                 rij_norm = adl.norm_3vec(ri - rj)
@@ -180,11 +192,29 @@ def laplacian_f_R(Rs):
     for k in range(N_coord):
         for l in range(N_coord):
             if k!=l and l>=k:
+                if wavefunction == "two_baryon_product":
+                    baryon_0 = 1
+                    if k < 3:
+                        baryon_0 = 0
+                    baryon_1 = 1
+                    if l < 3:
+                        baryon_1 = 0
+                    if baryon_0 != baryon_1:
+                        continue
                 # wvfn includes r_ij
                 nabla_psi = 1
                 for i in range(N_coord):
                     for j in range(N_coord):
                         if i!=j and j>=i:
+                            if wavefunction == "two_baryon_product":
+                                baryon_0 = 1
+                                if i < 3:
+                                    baryon_0 = 0
+                                baryon_1 = 1
+                                if j < 3:
+                                    baryon_1 = 0
+                                if baryon_0 != baryon_1:
+                                    continue
                             ri = Rs[...,i,:]
                             rj = Rs[...,j,:]
                             rij_norm = adl.norm_3vec(ri - rj)
@@ -202,10 +232,28 @@ def laplacian_f_R(Rs):
         for k in range(N_coord):
             for l in range(N_coord):
                 if k!=l and l>=k and (a==k or a==l):
+                    if wavefunction == "two_baryon_product":
+                        baryon_0 = 1
+                        if k < 3:
+                            baryon_0 = 0
+                        baryon_1 = 1
+                        if l < 3:
+                            baryon_1 = 0
+                        if baryon_0 != baryon_1:
+                            continue
                     # second gradient involves r_mn
                     for m in range(N_coord):
                         for n in range(N_coord):
                             if m!=n and n>=m and (m!=k or n!=l) and (a==m or a==n):
+                                if wavefunction == "two_baryon_product":
+                                    baryon_0 = 1
+                                    if m < 3:
+                                        baryon_0 = 0
+                                    baryon_1 = 1
+                                    if n < 3:
+                                        baryon_1 = 0
+                                    if baryon_0 != baryon_1:
+                                        continue
                                 # sum over the 3-d components of gradient
                                 for x in range(3):
                                     # wvfn involves r_ij
@@ -213,6 +261,15 @@ def laplacian_f_R(Rs):
                                     for i in range(N_coord):
                                         for j in range(N_coord):
                                             if i!=j and j>=i:
+                                                if wavefunction == "two_baryon_product":
+                                                    baryon_0 = 1
+                                                    if i < 3:
+                                                        baryon_0 = 0
+                                                    baryon_1 = 1
+                                                    if j < 3:
+                                                        baryon_1 = 0
+                                                    if baryon_0 != baryon_1:
+                                                        continue
                                                 ri = Rs[...,i,:]
                                                 rj = Rs[...,j,:]
                                                 rij_norm = adl.norm_3vec(ri - rj)
@@ -339,20 +396,20 @@ for count, R in enumerate(gfmc_Rs):
     V_time = time.time()
     S = gfmc_Ss[count]
     V_SI, V_SD = Coulomb_potential(R)
-    if N_coord == 6:
-      print("V_SD has ", V_SD[0,0,0,1,0,2,0,0,0,1,0,2,0,0,0,1,0,2,0,0,0,1,0,2,0])
-      print("V_SD has ", V_SD[0,0,0,1,0,2,0,0,0,1,0,2,0,0,0,1,0,2,0,0,0,2,0,1,0])
-      print("V_SD has ", V_SD[0,0,0,1,0,2,0,0,0,2,0,1,0,0,0,1,0,2,0,0,0,2,0,1,0])
+    #if N_coord == 6:
+    #  print("V_SD has ", V_SD[0,0,0,1,0,2,0,0,0,1,0,2,0,0,0,1,0,2,0,0,0,1,0,2,0])
+    #  print("V_SD has ", V_SD[0,0,0,1,0,2,0,0,0,1,0,2,0,0,0,1,0,2,0,0,0,2,0,1,0])
+    #  print("V_SD has ", V_SD[0,0,0,1,0,2,0,0,0,2,0,1,0,0,0,1,0,2,0,0,0,2,0,1,0])
     V_SD_S = adl.batched_apply(V_SD, S)
-    if N_coord == 6:
-      print("S(0,1,2,0,1,2) = ", S[0,0,0,1,0,2,0,0,0,1,0,2,0])
-      print("V_SD_S(0,1,2,0,1,2) = ", V_SD_S[0,0,0,1,0,2,0,0,0,1,0,2,0])
-      print("S(0,2,1,0,1,2) = ", S[0,0,0,2,0,1,0,0,0,1,0,2,0])
-      print("V_SD_S(0,2,1,0,1,2) = ", V_SD_S[0,0,0,2,0,1,0,0,0,1,0,2,0])
-      print("S(0,1,2,0,2,1) = ", S[0,0,0,1,0,2,0,0,0,2,0,1,0])
-      print("V_SD_S(0,1,2,0,2,1) = ", V_SD_S[0,0,0,1,0,2,0,0,0,2,0,1,0])
-      print("S(0,1,2,0,:,:) = ", S[0,0,0,1,0,2,0,0,0,:,0,:,0])
-      print("V_SD_S(0,1,2,0,:,:) = ", V_SD_S[0,0,0,1,0,2,0,0,0,:,0,:,0])
+    #if N_coord == 6:
+    #  print("S(0,1,2,0,1,2) = ", S[0,0,0,1,0,2,0,0,0,1,0,2,0])
+    #  print("V_SD_S(0,1,2,0,1,2) = ", V_SD_S[0,0,0,1,0,2,0,0,0,1,0,2,0])
+    #  print("S(0,2,1,0,1,2) = ", S[0,0,0,2,0,1,0,0,0,1,0,2,0])
+    #  print("V_SD_S(0,2,1,0,1,2) = ", V_SD_S[0,0,0,2,0,1,0,0,0,1,0,2,0])
+    #  print("S(0,1,2,0,2,1) = ", S[0,0,0,1,0,2,0,0,0,2,0,1,0])
+      #print("V_SD_S(0,1,2,0,2,1) = ", V_SD_S[0,0,0,1,0,2,0,0,0,2,0,1,0])
+      #print("S(0,1,2,0,:,:) = ", S[0,0,0,1,0,2,0,0,0,:,0,:,0])
+      #print("V_SD_S(0,1,2,0,:,:) = ", V_SD_S[0,0,0,1,0,2,0,0,0,:,0,:,0])
     #print("S_T shape is ", S_av4p_metropolis.shape)
     #print("S shape is ", S.shape)
     #print("V_SI shape is ", V_SI.shape)
@@ -366,9 +423,9 @@ for count, R in enumerate(gfmc_Rs):
     print("V_SD_S L2 norm is ", np.sqrt(np.mean(V_SD_S**2)))
     print("V_SD_S Linfinity norm is ", np.max(np.abs(V_SD_S)))
     V_tot = adl.inner(S_av4p_metropolis, V_SD_S + V_SI_S) / adl.inner(S_av4p_metropolis, S)
-    print("V_tot shape is ", V_tot.shape)
-    print("V_tot L2 norm is ", np.sqrt(np.mean(V_tot**2)))
-    print("V_tot Linfinity norm is ", np.max(np.abs(V_tot)))
+    #print("V_tot shape is ", V_tot.shape)
+    #print("V_tot L2 norm is ", np.sqrt(np.mean(V_tot**2)))
+    #print("V_tot Linfinity norm is ", np.max(np.abs(V_tot)))
     print(f"calculated potential in {time.time() - V_time} sec")
     Vs.append(V_tot)
 
