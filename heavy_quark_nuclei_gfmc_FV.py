@@ -126,6 +126,7 @@ nn = np.delete(pp, Lcut*(2*Lcut+1)*(2*Lcut+1)+Lcut*(2*Lcut+1)+Lcut, axis=0)
 print(nn.shape)
 print(pp.shape)
 
+@partial(jax.jit)
 def FV_Coulomb(R, L, nn):
     sums = np.zeros(n_walkers)
     sums += -1
@@ -146,8 +147,10 @@ if OLO == "LO":
     @partial(jax.jit)
     def potential_fun_sum(R):
             return -1*VB*FV_Coulomb(R, L, nn)
+    @partial(jax.jit)
     def symmetric_potential_fun(R):
             return (Nc - 1)/(Nc + 1)*VB/adl.norm_3vec(R)
+    @partial(jax.jit)
     def symmetric_potential_fun_sum(R):
             return (Nc - 1)/(Nc + 1)*VB*FV_Coulomb(R, L, nn)
 elif OLO == "NLO":
@@ -336,7 +339,8 @@ if input_Rs_database == "":
     R0 = onp.random.normal(size=(N_coord,3))
     # set center of mass position to 0
     R0 -= onp.mean(R0, axis=1, keepdims=True)
-    samples = adl.metropolis(R0, f_R, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
+    #samples = adl.metropolis(R0, f_R, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
+    samples = adl.metropolis(R0, cutoff_f_R_sq, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
     Rs_metropolis = np.array([R for R,_ in samples])
 else:
     f = h5py.File(input_Rs_database, 'r')
