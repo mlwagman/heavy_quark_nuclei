@@ -111,12 +111,6 @@ B3_Coulomb = {}
 # Generate the nn array representing 3D shifts in a cubic grid
 pp = np.array([np.array([i, j, k]) for i in range(-Lcut, Lcut+1) for j in range(-Lcut, Lcut+1) for k in range(-Lcut, Lcut+1)])
 
-#pp_1d = np.arange(-Lcut, Lcut+1)
-
-#print(pp_1d)
-#
-#pp = np.ravel(np.einsum("i,j,k->ijk", pp_1d, pp_1d, pp_1d))
-
 print(pp.shape)
 
 print("zero mode is ", pp[Lcut*(2*Lcut+1)*(2*Lcut+1)+Lcut*(2*Lcut+1)+Lcut])
@@ -126,18 +120,49 @@ nn = np.delete(pp, Lcut*(2*Lcut+1)*(2*Lcut+1)+Lcut*(2*Lcut+1)+Lcut, axis=0)
 print(nn.shape)
 print(pp.shape)
 
+#from jax.config import config
+#config.update('jax_disable_jit', True)
+
 @partial(jax.jit)
 def FV_Coulomb(R, L, nn):
+    sums = np.zeros(n_walkers)
+    sums += -1
+    Rdotn = np.einsum('bi,ki->bk', R, nn)
+    n_mag_sq = np.sum( nn*nn, axis=1 )
+    sums += np.sum( np.exp((2*np.pi*1j/L)*Rdotn)*np.exp(-n_mag_sq)/n_mag_sq, axis=1 )
+    Rdotp = np.einsum('bi,ki->bk', R, pp)
+    RdotR = np.sum( R*R, axis=1 )
+    pdotp = np.sum( pp*pp, axis=1 )
+    pmRL = np.sqrt( Rdotp*(-2.0/L) + pdotp[(np.newaxis,slice(None))] + (1.0/L)**2*RdotR[(slice(None),np.newaxis)] )
+    sums += np.sum( np.pi/pmRL*(1-jax.scipy.special.erf(np.pi*pmRL)), axis=1 )
+    #assert( (np.abs(sums/(np.pi*L) - FV_Coulomb_slow(R,L,nn)) < 1e-6).all() )
+    #print(sums/(np.pi*L))
+    #print(FV_Coulomb_slow(R,L,nn))
+    return sums/(np.pi*L)
+
+def FV_Coulomb_slow(R, L, nn):
     sums = np.zeros(n_walkers)
     sums += -1
     for i in range(len(nn)):
         n=nn[i]
         n_mag = adl.norm_3vec(n)
         sums += np.exp(-n_mag**2)/n_mag**2*np.exp(2*np.pi*1j*np.sum(n*R,axis=1)/L)
+        #print(n)
+        #print(R)
+        #print(n*R)
+        #print(np.sum(n*R,axis=1))
+        #sums += 1/n_mag**2*np.exp(2*np.pi*1j*np.sum(n*R,axis=1)/L)
+        #print("n = ", n)
+        #print(sums)
     for i in range(len(pp)):
         n=pp[i]
         n_mag = adl.norm_3vec(n)
         sums += np.pi/adl.norm_3vec(n - R/L)*(1-jax.scipy.special.erf(np.pi*adl.norm_3vec(n - R/L)))
+        #print("n = ", n)
+        #print(sums)
+    #print(sums/(np.pi*L))
+    #print(1/adl.norm_3vec(R))
+    #exit(1)
     return sums/(np.pi*L)
 
 if OLO == "LO":
@@ -340,7 +365,8 @@ if input_Rs_database == "":
     # set center of mass position to 0
     R0 -= onp.mean(R0, axis=1, keepdims=True)
     #samples = adl.metropolis(R0, f_R, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
-    samples = adl.metropolis(R0, cutoff_f_R_sq, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
+    #TODO
+    samples = adl.metropolis(R0, cutoff_f_R_sq, n_therm=50, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
     Rs_metropolis = np.array([R for R,_ in samples])
 else:
     f = h5py.File(input_Rs_database, 'r')
