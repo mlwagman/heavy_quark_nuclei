@@ -56,6 +56,7 @@ parser.add_argument('--log_mu_r', type=float, default=1)
 parser.add_argument('--cutoff', type=float, default=0.0)
 parser.add_argument('--L', type=float, default=0.0)
 parser.add_argument('--Lcut', type=int, default=1)
+parser.add_argument('--Sfudge', type=float, default=1)
 parser.add_argument('--wavefunction', type=str, default="compact")
 parser.add_argument('--potential', type=str, default="full")
 parser.add_argument('--verbose', dest='verbose', action='store_true', default=False)
@@ -124,6 +125,18 @@ print(pp.shape)
 #config.update('jax_disable_jit', True)
 
 @partial(jax.jit)
+def FV_Coulomb_with_zero_mode(R, L, nn):
+    Rdotp = np.einsum('bi,ki->bk', R, pp)
+    RdotR = np.sum( R*R, axis=1 )
+    pdotp = np.sum( pp*pp, axis=1 )
+    pmRL = np.sqrt( Rdotp*(-2.0*L) + pdotp[(np.newaxis,slice(None))]*L*L + RdotR[(slice(None),np.newaxis)] )
+    sums = np.sum( 1.0/pmRL, axis=1 )
+    #assert( (np.abs(sums/(np.pi*L) - FV_Coulomb_slow(R,L,nn)) < 1e-6).all() )
+    #print(sums/(np.pi*L))
+    #print(FV_Coulomb_slow(R,L,nn))
+    return sums
+
+@partial(jax.jit)
 def FV_Coulomb(R, L, nn):
     sums = np.zeros(n_walkers)
     sums += -1
@@ -174,10 +187,10 @@ if OLO == "LO":
             return -1*VB*FV_Coulomb(R, L, nn)
     @partial(jax.jit)
     def symmetric_potential_fun(R):
-            return (Nc - 1)/(Nc + 1)*VB/adl.norm_3vec(R)
+            return Sfudge*(Nc - 1)/(Nc + 1)*VB/adl.norm_3vec(R)
     @partial(jax.jit)
     def symmetric_potential_fun_sum(R):
-            return (Nc - 1)/(Nc + 1)*VB*FV_Coulomb(R, L, nn)
+            return Sfudge*(Nc - 1)/(Nc + 1)*VB*FV_Coulomb(R, L, nn)
 elif OLO == "NLO":
     @partial(jax.jit)
     def potential_fun(R):
@@ -239,20 +252,16 @@ def f_R(Rs):
                 psi = psi*np.exp(-rij_norm/a0)
     return psi
 
-def cutoff_fn(Rs):
-    psi = 1
-    for i in range(N_coord):
-       	for j in range(N_coord):
-            if i!=j and j>=i:
-                ri = Rs[...,i,:]
-                rj = Rs[...,j,:]
-                rij_norm = adl.norm_3vec(ri - rj)
-                psi = psi*np.exp(-cutoff / rij_norm)
-    return psi
+def f_R_sq(Rs):
+    return np.abs( f_R(Rs) )**2
 
+# TODO switch metroplis to use this for asymmetric correlator
+def f_R_braket(Rs):
+    return np.abs( f_R(Rs) * f_R_bra(Rs) )
 
-def cutoff_f_R_sq(Rs):
-    return np.abs( f_R(Rs) )**2 * cutoff_fn(Rs)
+# TODO multiply this into Ws
+def f_R_braket_phase(Rs):
+    return f_R(Rs) * f_R_bra(Rs) / np.abs( f_R(Rs) * f_R_bra(Rs) )
 
 @partial(jax.jit)
 def laplacian_f_R(Rs):
@@ -364,9 +373,7 @@ if input_Rs_database == "":
     R0 = onp.random.normal(size=(N_coord,3))
     # set center of mass position to 0
     R0 -= onp.mean(R0, axis=1, keepdims=True)
-    #samples = adl.metropolis(R0, f_R, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
-    #TODO
-    samples = adl.metropolis(R0, cutoff_f_R_sq, n_therm=50, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
+    samples = adl.metropolis(R0, f_R_sq, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
     Rs_metropolis = np.array([R for R,_ in samples])
 else:
     f = h5py.File(input_Rs_database, 'r')
