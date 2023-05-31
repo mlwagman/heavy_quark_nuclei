@@ -58,11 +58,19 @@ parser.add_argument('--L', type=float, default=0.0)
 parser.add_argument('--Lcut', type=int, default=1)
 parser.add_argument('--Sfudge', type=float, default=1)
 parser.add_argument('--wavefunction', type=str, default="compact")
+parser.add_argument('--volume', type=str, default="infinite")
 parser.add_argument('--potential', type=str, default="full")
 parser.add_argument('--verbose', dest='verbose', action='store_true', default=False)
 globals().update(vars(parser.parse_args()))
 
 #######################################################################################
+
+if wavefunction == "asymmetric":
+    bra_wavefunction = "two_baryon_product"
+    ket_wavefunction = "compact"
+else:
+    bra_wavefunction = wavefunction
+    ket_wavefunction = wavefunction
 
 assert Nc == NI
 
@@ -183,11 +191,11 @@ if OLO == "LO":
     def potential_fun(R):
             return -1*VB/adl.norm_3vec(R)
     @partial(jax.jit)
-    def potential_fun_sum(R):
-            return -1*VB*FV_Coulomb(R, L, nn)
-    @partial(jax.jit)
     def symmetric_potential_fun(R):
             return Sfudge*(Nc - 1)/(Nc + 1)*VB/adl.norm_3vec(R)
+    @partial(jax.jit)
+    def potential_fun_sum(R):
+            return -1*VB*FV_Coulomb(R, L, nn)
     @partial(jax.jit)
     def symmetric_potential_fun_sum(R):
             return Sfudge*(Nc - 1)/(Nc + 1)*VB*FV_Coulomb(R, L, nn)
@@ -214,9 +222,14 @@ def trivial_fun(R):
 #AV_Coulomb['O1'] = symmetric_potential_fun
 
 # MODE 2
-AV_Coulomb['OA'] = potential_fun_sum
-if potential != "antisymmetric":
-    AV_Coulomb['OS'] = symmetric_potential_fun_sum
+if volume == "finite":
+    AV_Coulomb['OA'] = potential_fun_sum
+    if potential != "antisymmetric":
+        AV_Coulomb['OS'] = symmetric_potential_fun_sum
+else:
+    AV_Coulomb['OA'] = potential_fun
+    if potential != "antisymmetric":
+        AV_Coulomb['OS'] = symmetric_potential_fun
 
 #AV_Coulomb['OA'] = trivial_fun
 #AV_Coulomb['OS'] = trivial_fun
@@ -230,7 +243,7 @@ Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb, B3_Coulomb)
 
 # build Coulomb ground-state trial wavefunction
 @partial(jax.jit)
-def f_R(Rs):
+def f_R_slow(Rs, wavefunction=wavefunction):
     #N_walkers = Rs.shape[0]
     #assert Rs.shape == (N_walkers, N_coord, 3)
     psi = 1
@@ -252,19 +265,52 @@ def f_R(Rs):
                 psi = psi*np.exp(-rij_norm/a0)
     return psi
 
+pairs = np.array([np.array([i, j]) for i in range(0,N_coord) for j in range(0, i)])
+print("pairs = ", pairs)
+
+product_pairs = []
+for i in range(N_coord):
+    for j in range(N_coord):
+        if i!=j and j>=i:
+            baryon_0 = 1
+            if i < 3:
+                baryon_0 = 0
+            baryon_1 = 1
+            if j < 3:
+                baryon_1 = 0
+            if baryon_0 != baryon_1:
+                continue
+            product_pairs.append(np.array([i,j]))
+product_pairs = np.array(product_pairs)
+print("product pairs = ", product_pairs)
+
+@partial(jax.jit, static_argnums=(1,))
+def f_R(Rs, wavefunction=bra_wavefunction):
+
+    def r_norm(pair):
+        [i,j] = pair
+        rdiff = Rs[...,i,:] - Rs[...,j,:]
+        rij_norm = np.sqrt( np.sum(rdiff*rdiff, axis=-1) )
+        return rij_norm
+
+    if wavefunction == "two_baryon_product":
+        r_sum = np.sum( jax.lax.map(r_norm, product_pairs), axis=0 )
+    else:
+        r_sum = np.sum( jax.lax.map(r_norm, pairs), axis=0 )
+    return np.exp(-r_sum/a0)
+
 def f_R_sq(Rs):
     return np.abs( f_R(Rs) )**2
 
-# TODO switch metroplis to use this for asymmetric correlator
 def f_R_braket(Rs):
-    return np.abs( f_R(Rs) * f_R_bra(Rs) )
+    return np.abs( f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction) )
 
-# TODO multiply this into Ws
 def f_R_braket_phase(Rs):
-    return f_R(Rs) * f_R_bra(Rs) / np.abs( f_R(Rs) * f_R_bra(Rs) )
+    prod = f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction)
+    return prod / np.abs( prod )
 
 @partial(jax.jit)
-def laplacian_f_R(Rs):
+def laplacian_f_R(Rs, wavefunction=ket_wavefunction):
     #N_walkers = Rs.shape[0]
     #assert Rs.shape == (N_walkers, N_coord, 3)
     nabla_psi_tot = 0
@@ -373,7 +419,8 @@ if input_Rs_database == "":
     R0 = onp.random.normal(size=(N_coord,3))
     # set center of mass position to 0
     R0 -= onp.mean(R0, axis=1, keepdims=True)
-    samples = adl.metropolis(R0, f_R_sq, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
+    #samples = adl.metropolis(R0, f_R_sq, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
+    samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
     Rs_metropolis = np.array([R for R,_ in samples])
 else:
     f = h5py.File(input_Rs_database, 'r')
@@ -451,8 +498,11 @@ gfmc = adl.gfmc_deform(
     deform_f=deform_f, m_Mev=adl.mp_Mev,
     resampling_freq=resampling)
 gfmc_Rs = np.array([Rs for Rs,_,_,_, in gfmc])
-gfmc_Ws = np.array([Ws for _,_,_,Ws, in gfmc]) / cutoff_fn(gfmc_Rs)
+gfmc_Ws = np.array([Ws for _,_,_,Ws, in gfmc]) 
 gfmc_Ss = np.array([Ss for _,_,Ss,_, in gfmc])
+
+phase_Ws = f_R_braket_phase(gfmc_Rs)
+gfmc_Ws *= phase_Ws
 
 print('GFMC tau=0 weights:', gfmc_Ws[0])
 print('GFMC tau=dtau weights:', gfmc_Ws[1])
@@ -466,7 +516,7 @@ for count, R in enumerate(gfmc_Rs):
     print('Calculating Laplacian for step ', count)
     K_time = time.time()
     #Ks.append(-1/2*laplacian_f_R(R) / f_R(R) / adl.mp_Mev)
-    Ks.append(-1/2*laplacian_f_R(R) / f_R(R) / 1)
+    Ks.append(-1/2*laplacian_f_R(R) / f_R(R, wavefunction=ket_wavefunction) / 1)
     print(f"calculated kinetic in {time.time() - K_time} sec")
 Ks = np.array(Ks)
 
