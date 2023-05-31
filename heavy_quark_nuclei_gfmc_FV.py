@@ -66,7 +66,7 @@ globals().update(vars(parser.parse_args()))
 #######################################################################################
 
 if wavefunction == "asymmetric":
-    bra_wavefunction = "two_baryon_product"
+    bra_wavefunction = "product"
     ket_wavefunction = "compact"
 else:
     bra_wavefunction = wavefunction
@@ -250,12 +250,12 @@ def f_R_slow(Rs, wavefunction=wavefunction):
     for i in range(N_coord):
        	for j in range(N_coord):
             if i!=j and j>=i:
-                if wavefunction == "two_baryon_product":
+                if wavefunction == "product":
                     baryon_0 = 1
-                    if i < 3:
+                    if i < N_coord/2:
                         baryon_0 = 0
                     baryon_1 = 1
-                    if j < 3:
+                    if j < N_coord/2:
                         baryon_1 = 0
                     if baryon_0 != baryon_1:
                         continue
@@ -273,10 +273,10 @@ for i in range(N_coord):
     for j in range(N_coord):
         if i!=j and j>=i:
             baryon_0 = 1
-            if i < 3:
+            if i < N_coord/2:
                 baryon_0 = 0
             baryon_1 = 1
-            if j < 3:
+            if j < N_coord/2:
                 baryon_1 = 0
             if baryon_0 != baryon_1:
                 continue
@@ -293,7 +293,7 @@ def f_R(Rs, wavefunction=bra_wavefunction):
         rij_norm = np.sqrt( np.sum(rdiff*rdiff, axis=-1) )
         return rij_norm
 
-    if wavefunction == "two_baryon_product":
+    if wavefunction == "product":
         r_sum = np.sum( jax.lax.map(r_norm, product_pairs), axis=0 )
     else:
         r_sum = np.sum( jax.lax.map(r_norm, pairs), axis=0 )
@@ -319,12 +319,12 @@ def laplacian_f_R(Rs, wavefunction=ket_wavefunction):
     for k in range(N_coord):
         for l in range(N_coord):
             if k!=l and l>=k:
-                if wavefunction == "two_baryon_product":
+                if wavefunction == "product":
                     baryon_0 = 1
-                    if k < 3:
+                    if k < N_coord/2:
                         baryon_0 = 0
                     baryon_1 = 1
-                    if l < 3:
+                    if l < N_coord/2:
                         baryon_1 = 0
                     if baryon_0 != baryon_1:
                         continue
@@ -333,12 +333,12 @@ def laplacian_f_R(Rs, wavefunction=ket_wavefunction):
                 for i in range(N_coord):
                     for j in range(N_coord):
                         if i!=j and j>=i:
-                            if wavefunction == "two_baryon_product":
+                            if wavefunction == "product":
                                 baryon_0 = 1
-                                if i < 3:
+                                if i < N_coord/2:
                                     baryon_0 = 0
                                 baryon_1 = 1
-                                if j < 3:
+                                if j < N_coord/2:
                                     baryon_1 = 0
                                 if baryon_0 != baryon_1:
                                     continue
@@ -359,12 +359,12 @@ def laplacian_f_R(Rs, wavefunction=ket_wavefunction):
         for k in range(N_coord):
             for l in range(N_coord):
                 if k!=l and l>=k and (a==k or a==l):
-                    if wavefunction == "two_baryon_product":
+                    if wavefunction == "product":
                         baryon_0 = 1
-                        if k < 3:
+                        if k < N_coord/2:
                             baryon_0 = 0
                         baryon_1 = 1
-                        if l < 3:
+                        if l < N_coord/2:
                             baryon_1 = 0
                         if baryon_0 != baryon_1:
                             continue
@@ -372,12 +372,12 @@ def laplacian_f_R(Rs, wavefunction=ket_wavefunction):
                     for m in range(N_coord):
                         for n in range(N_coord):
                             if m!=n and n>=m and (m!=k or n!=l) and (a==m or a==n):
-                                if wavefunction == "two_baryon_product":
+                                if wavefunction == "product":
                                     baryon_0 = 1
-                                    if m < 3:
+                                    if m < N_coord/2:
                                         baryon_0 = 0
                                     baryon_1 = 1
-                                    if n < 3:
+                                    if n < N_coord/2:
                                         baryon_1 = 0
                                     if baryon_0 != baryon_1:
                                         continue
@@ -388,12 +388,12 @@ def laplacian_f_R(Rs, wavefunction=ket_wavefunction):
                                     for i in range(N_coord):
                                         for j in range(N_coord):
                                             if i!=j and j>=i:
-                                                if wavefunction == "two_baryon_product":
+                                                if wavefunction == "product":
                                                     baryon_0 = 1
-                                                    if i < 3:
+                                                    if i < N_coord/2:
                                                         baryon_0 = 0
                                                     baryon_1 = 1
-                                                    if j < 3:
+                                                    if j < N_coord/2:
                                                         baryon_1 = 0
                                                     if baryon_0 != baryon_1:
                                                         continue
@@ -498,7 +498,7 @@ gfmc = adl.gfmc_deform(
     deform_f=deform_f, m_Mev=adl.mp_Mev,
     resampling_freq=resampling)
 gfmc_Rs = np.array([Rs for Rs,_,_,_, in gfmc])
-gfmc_Ws = np.array([Ws for _,_,_,Ws, in gfmc]) 
+gfmc_Ws = np.array([Ws for _,_,_,Ws, in gfmc])
 gfmc_Ss = np.array([Ss for _,_,Ss,_, in gfmc])
 
 phase_Ws = f_R_braket_phase(gfmc_Rs)
