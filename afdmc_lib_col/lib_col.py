@@ -79,6 +79,9 @@ iso_del = 1/2 * 1/2 * (onp.einsum('ab,cd->acdb', onp.identity(NI), onp.identity(
 #iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor) - 1/2*onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI))
 iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor)
 
+# TODO qqbar potentials
+iso_singlet = ?????
+iso_octet = ?????
 
 # NOTE(gkanwar): spin and isospin pieces are identical matrices, but are
 # semantically different objects.
@@ -97,6 +100,21 @@ two_body_pieces = {
     # tau_i . tau_j
     'iso_dot': sum(onp.einsum('ab,cd->acbd', p, p) for p in paulis)
 }
+
+qq_two_body_pieces = {
+    # symmetric in color
+    'iso_S': iso_del,
+    # antisymmetric in color
+    'iso_A': iso_eps,
+}
+
+qqbar_two_body_pieces = {
+    # symmetric in color
+    'iso_1': iso_singlet,
+    # antisymmetric in color
+    'iso_8': iso_octet,
+}
+
 three_body_pieces = {
     # 1 . 1 . 1
     'sp_I': onp.einsum('ij,kl,mn->ikmjln', onp.identity(NS), onp.identity(NS), onp.identity(NS)),
@@ -166,125 +184,6 @@ three_body_ops = {
         three_body_pieces['sp_I'][np.newaxis]),
 }
 
-#def make_pairwise_potential(AVcoeffs, B3coeffs={}):
-#    @jax.jit
-#    def pairwise_potential(R):
-#        batch_size, A = R.shape[:2]
-#        V_SI_Mev = np.zeros( # big-ass matrix
-#            (batch_size,) + # batch of walkers
-#            (NI,NS)*A + # source (i1, s1, i2, s2, ...)
-#            (NI,NS)*A, # sink (i1', s1', i2', s2', ...)
-#            dtype=np.complex128
-#        )
-#        V_SD_Mev = np.zeros( # big-ass matrix
-#            (batch_size,) + # batch of walkers
-#            (NI,NS)*A + # source (i1, s1, i2, s2, ...)
-#            (NI,NS)*A, # sink (i1', s1', i2', s2', ...)
-#            dtype=np.complex128
-#        )
-#        # two-body potentials
-#        for i in range(A):
-#            for j in range(A):
-#                if i==j:
-#                    continue
-#                indlist = [i, j]
-#                indlist_sort = [i, j]
-#                indlist_sort.sort()
-#                ii = indlist_sort[0]
-#                jj = indlist_sort[1]
-#                broadcast_src_snk_inds = (
-#                    (np.newaxis,)*2*ii + # skip i src iso/spin
-#                    (slice(None),)*2 + # ith particle src iso/spin
-#                    (np.newaxis,)*2*(jj-ii-1) + # skip j-i-1 src iso/spin
-#                    (slice(None),)*2 + # jth particle src iso/spin
-#                    (np.newaxis,)*2*(A-jj-1) # skip A-j-1 src iso/spin
-#                )
-#                assert len(broadcast_src_snk_inds) == 2*A, \
-#                    'must have A particle src (or snk) inds'
-#                broadcast_inds = (
-#                    (slice(None),) + # batch
-#                    broadcast_src_snk_inds + # src
-#                    broadcast_src_snk_inds # snk
-#                )
-#                assert len(broadcast_inds) == len(V_SD_Mev.shape)
-#                Rij = R[:,i] - R[:,j]
-#                for name,op in two_body_ops.items():
-#                    if name not in AVcoeffs: continue
-#                    Oij = op(Rij)
-#                    vij = AVcoeffs[name](Rij)
-#                    broadcast_vij_inds = (slice(None),) + (np.newaxis,)*(len(Oij.shape)-1)
-#                    vij = vij[broadcast_vij_inds]
-#                    scaled_O = vij * Oij
-#                    assert len(scaled_O.shape) == 9, \
-#                        'scaled_O should have batch (1) and two-body (2) src/sink (2) spin/iso (2) = 9 dims'
-#                    first_off = 2*indlist.index(ii)
-#                    second_off = 2*(indlist.index(jj) - 1)
-#                    scaled_O_perm = np.transpose(scaled_O, axes=(0,1+first_off,2+first_off,3+second_off,4+second_off,5+first_off,6+first_off,7+second_off,8+second_off))
-#                    if name == 'O1':
-#                        #broadcast_inds = (slice(None),) + (0,)*(len(Oij.shape)-1)
-#                        #V_SI_Mev = V_SI_Mev + scaled_O[broadcast_inds]
-#                        V_SI_Mev += scaled_O_perm[broadcast_inds]
-#                    else:
-#                        V_SD_Mev += scaled_O_perm[broadcast_inds]
-#        # three-body potentials
-#        for i in range(A):
-#            for j in range(A):
-#                if i==j:
-#                    continue
-#                for k in range(A):
-#                    if i==k:
-#                        continue
-#                    if j==k:
-#                        continue
-#                    indlist = [i, j, k]
-#                    indlist_sort = [i, j, k]
-#                    indlist_sort.sort()
-#                    ii = indlist_sort[0]
-#                    jj = indlist_sort[1]
-#                    kk = indlist_sort[2]
-#                    broadcast_src_snk_inds = (
-#                        (np.newaxis,)*2*ii + # skip i src iso/spin
-#                        (slice(None),)*2 + # ith particle src iso/spin
-#                        (np.newaxis,)*2*(jj-ii-1) + # skip j-i-1 src iso/spin
-#                        (slice(None),)*2 + # jth particle src iso/spin
-#                        (np.newaxis,)*2*(kk-jj-1) + # skip k-j-1 src iso/spin
-#                        (slice(None),)*2 + # kth particle src iso/spin
-#                        (np.newaxis,)*2*(A-kk-1) # skip A-k-1 src iso/spin
-#                    )
-#                    assert len(broadcast_src_snk_inds) == 2*A, \
-#                        'must have A particle src (or snk) inds'
-#                    broadcast_inds = (
-#                        (slice(None),) + # batch
-#                        broadcast_src_snk_inds + # src
-#                        broadcast_src_snk_inds # snk
-#                    )
-#                    Rij = R[:,i] - R[:,j]
-#                    Rjk = R[:,j] - R[:,k]
-#                    Rik = R[:,i] - R[:,k]
-#                    for name,op in three_body_ops.items():
-#                        if name not in B3coeffs: continue
-#                        Oijk = op(Rij, Rjk, Rik)
-#                        vijk = B3coeffs[name](Rij, Rjk, Rik)
-#                        broadcast_vijk_inds = (slice(None),) + (np.newaxis,)*(len(Oijk.shape)-1)
-#                        vijk = vijk[broadcast_vijk_inds]
-#                        scaled_O = vijk * Oijk
-#                        assert len(scaled_O.shape) == 13, \
-#                            'scaled_O should have batch (1) and A-body (3) src/sink (2) spin/iso (2) = 13 dims'
-#                        assert len(broadcast_inds) == len(V_SD_Mev.shape)
-#                        if name == 'O1':
-#                            broadcast_inds = (slice(None),) + (0,)*(len(Oijk.shape)-1)
-#                            V_SI_Mev = V_SI_Mev + scaled_O[broadcast_inds]
-#                        else:
-#                            #V_SD_Mev += scaled_O[broadcast_inds]
-#                            first_off = 2*indlist.index(ii)
-#                            second_off = 2*(indlist.index(jj) - 1)
-#                            third_off = 2*(indlist.index(kk) - 2)
-#                            scaled_O_perm = np.transpose(scaled_O, axes=(0,1+first_off,2+first_off,3+second_off,4+second_off,5+third_off,6+third_off,7+first_off,8+first_off,9+second_off,10+second_off,11+third_off,12+third_off))
-#                            V_SD_Mev += scaled_O_perm[broadcast_inds]
-#        return V_SI_Mev, V_SD_Mev
-#    return pairwise_potential
-
-
 def generate_sequence(AA):
     sequence = [0, 1]
     evens = [i for i in range(4, AA, 2)]
@@ -328,6 +227,9 @@ def make_pairwise_potential(AVcoeffs, B3coeffs={}):
                 if i==j:
                     continue
                 Rij = R[:,i] - R[:,j]
+                # TODO qq vs qqbar
+                #for name,op in qq_two_body_ops.items():
+                #for name,op in qqbar_two_body_ops.items():
                 for name,op in two_body_ops.items():
                     if name not in AVcoeffs: continue
                     Oij = op(Rij)
@@ -619,7 +521,7 @@ def compute_VS(R_deform, S, potential, *, dtau_iMev):
     ang = np.arccos(inner(VS, old_S) / np.sqrt( inner(VS,VS)*inner(old_S,old_S) ))
     #print("angle between old and new spin-color vec is ", ang)
     # TODO THIS OUGHT TO FAIL FOR DEUTERON
-    #if (np.abs(inner(VS,VS)) > 1e-6).all(): 
+    #if (np.abs(inner(VS,VS)) > 1e-6).all():
     #    assert ((np.abs(ang) < 1e-6).all() or (np.abs(ang - np.pi) < 1e-6).all() or (np.abs(ang + np.pi) < 1e-6).all())
     VVS = batched_apply(V_SD, VS)
     S = S - (dtau_iMev/2) * VS + (dtau_iMev**2/8) * VVS
