@@ -258,12 +258,14 @@ if volume == "finite":
     if potential != "antisymmetric":
         AV_Coulomb['OS'] = symmetric_potential_fun_sum
 else:
-    AV_Coulomb['OA'] = potential_fun
+#    AV_Coulomb['OA'] = potential_fun
+    AV_Coulomb['OSing'] = singlet_potential_fun
     if potential != "antisymmetric":
-        AV_Coulomb['OS'] = symmetric_potential_fun
+         AV_Coulomb['OO'] = octet_potential_fun
+#        AV_Coulomb['OS'] = symmetric_potential_fun
 
-#AV_Coulomb['OA'] = trivial_fun
-#AV_Coulomb['OS'] = trivial_fun
+#AV_Coulomb['OSing'] = trivial_fun
+#AV_Coulomb['OO'] = trivial_fun
 #AV_Coulomb['O1'] = trivial_fun
 
 Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb, B3_Coulomb, masses)
@@ -493,14 +495,12 @@ if N_coord == 4:
    for j in range(NI):
     for k in range(NI):
      for l in range(NI):
-        if i != j and j != k and i != k and l != m and m != n and n != l:
+        if i == j and k == l:
           # up up up up up up
           spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,0)
           # up up up down down down
           #spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,1,m,1,n,1)
-          S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)
-          #spin_slice = (slice(0, None),) + (i,0,j,0,k,0,0,0,0,0,0,0)
-          #S_av4p_metropolis[spin_slice] = levi_civita(i, j, k) / np.sqrt(6)
+          S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)/3
 
 if N_coord == 6:
   for i in range(NI):
@@ -525,6 +525,7 @@ if N_coord == 6:
 
 print("spin-flavor wavefunction shape = ", S_av4p_metropolis.shape)
 S_av4p_metropolis_norm = adl.inner(S_av4p_metropolis, S_av4p_metropolis)
+print(np.abs(S_av4p_metropolis_norm - 1.0))
 assert (np.abs(S_av4p_metropolis_norm - 1.0) < 1e-6).all()
 print("spin-flavor wavefunction normalization = ", S_av4p_metropolis_norm)
 
