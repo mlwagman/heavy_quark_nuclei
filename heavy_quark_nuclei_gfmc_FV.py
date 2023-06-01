@@ -56,7 +56,7 @@ parser.add_argument('--log_mu_r', type=float, default=1)
 parser.add_argument('--cutoff', type=float, default=0.0)
 parser.add_argument('--L', type=float, default=0.0)
 parser.add_argument('--Lcut', type=int, default=5)
-parser.add_argument('--Sfudge', type=float, default=1)
+parser.add_argument('--spoilS', type=float, default=1)
 parser.add_argument('--wavefunction', type=str, default="compact")
 parser.add_argument('--potential', type=str, default="full")
 parser.add_argument('--verbose', dest='verbose', action='store_true', default=False)
@@ -201,13 +201,13 @@ if OLO == "LO":
             return -1*VB/adl.norm_3vec(R)
     @partial(jax.jit)
     def symmetric_potential_fun(R):
-            return Sfudge*(Nc - 1)/(Nc + 1)*VB/adl.norm_3vec(R)
+            return spoilS*(Nc - 1)/(Nc + 1)*VB/adl.norm_3vec(R)
     @partial(jax.jit)
     def potential_fun_sum(R):
             return -1*VB*FV_Coulomb(R, L, nn)
     @partial(jax.jit)
     def symmetric_potential_fun_sum(R):
-            return Sfudge*(Nc - 1)/(Nc + 1)*VB*FV_Coulomb(R, L, nn)
+            return spoilS*(Nc - 1)/(Nc + 1)*VB*FV_Coulomb(R, L, nn)
 elif OLO == "NLO":
     @partial(jax.jit)
     def potential_fun(R):
@@ -429,7 +429,7 @@ if input_Rs_database == "":
     # set center of mass position to 0
     R0 -= onp.mean(R0, axis=1, keepdims=True)
     #samples = adl.metropolis(R0, f_R_sq, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
-    samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
+    samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*2*a0/N_coord**2)
     Rs_metropolis = np.array([R for R,_ in samples])
 else:
     f = h5py.File(input_Rs_database, 'r')
@@ -589,7 +589,11 @@ print(Vs.shape)
 #    ])
 #    for dRs, S in zip(map(adl.to_relative, gfmc_Rs), gfmc_Ss)])
 
-tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilf"+str(spoilf) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)
+if volume == "finite":
+    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilf"+str(spoilf) + "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)
+else:
+    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilf"+str(spoilf)+ "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)
+
 
 with h5py.File(outdir+'Hammys_'+tag+'.h5', 'w') as f:
     dset = f.create_dataset("Hammys", data=Ks+Vs)
