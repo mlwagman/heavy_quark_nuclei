@@ -203,11 +203,23 @@ if OLO == "LO":
     def symmetric_potential_fun(R):
             return spoilS*(Nc - 1)/(Nc + 1)*VB/adl.norm_3vec(R)
     @partial(jax.jit)
+    def singlet_potential_fun(R):
+            return (Nc - 1)*VB*VB/adl.norm_3vec(R)
+    @partial(jax.jit)
+    def octet_potential_fun(R):
+            return Sfudge*(Nc - 1)/CF/(2*Nc)*VB/adl.norm_3vec(R)
+    @partial(jax.jit)
     def potential_fun_sum(R):
             return -1*VB*FV_Coulomb(R, L, nn)
     @partial(jax.jit)
     def symmetric_potential_fun_sum(R):
             return spoilS*(Nc - 1)/(Nc + 1)*VB*FV_Coulomb(R, L, nn)
+    @partial(jax.jit)
+    def singlet_potential_fun_sum(R):
+            return (Nc - 1)*VB*FV_Coulomb(R, L, nn)
+    @partial(jax.jit)
+    def octet_potential_fun_sum(R):
+            return -spoilS*(Nc - 1)/CF/(2*Nc)*VB*FV_Coulomb(R, L, nn)
 elif OLO == "NLO":
     @partial(jax.jit)
     def potential_fun(R):
@@ -216,8 +228,18 @@ elif OLO == "NLO":
     def potential_fun_sum(R):
             return calculate_sum(potential_fun, R, L, nn)
     def symmetric_potential_fun(R):
-        return (Nc - 1)/(Nc + 1)*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1))
+        return (Nc - 1)/(Nc + 1)*VB*Sfudge/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1))
     def symmetric_potential_fun_sum(R):
+            return calculate_sum(symmetric_potential_fun, R, L, nn)
+    @partial(jax.jit)
+    def singlet_potential_fun(R):
+        return -1*(Nc - 1)*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1))
+    @partial(jax.jit)
+    def singlet_potential_fun_sum(R):
+            return calculate_sum(potential_fun, R, L, nn)
+    def octet_potential_fun(R):
+        return Sfudge*(Nc - 1)/CF/(2*Nc)*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1))
+    def octet_potential_fun_sum(R):
             return calculate_sum(symmetric_potential_fun, R, L, nn)
 else:
         print("order not supported")
@@ -448,6 +470,9 @@ def levi_civita(i, j, k):
     else:
         return -1
 
+def kronecker_delta(i, j):
+    return 1 if i == j else 0
+
 print("spin-flavor wavefunction shape = ", S_av4p_metropolis.shape)
 
 if N_coord == 3:
@@ -462,6 +487,20 @@ if N_coord == 3:
 #S_av4p_metropolis = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
 #spin_slice = (slice(0,None),) + (0,)*2*N_coord
 #S_av4p_metropolis[spin_slice] = 1
+
+if N_coord == 4:
+  for i in range(NI):
+   for j in range(NI):
+    for k in range(NI):
+     for l in range(NI):
+        if i != j and j != k and i != k and l != m and m != n and n != l:
+          # up up up up up up
+          spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,0)
+          # up up up down down down
+          #spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,1,m,1,n,1)
+          S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)
+          #spin_slice = (slice(0, None),) + (i,0,j,0,k,0,0,0,0,0,0,0)
+          #S_av4p_metropolis[spin_slice] = levi_civita(i, j, k) / np.sqrt(6)
 
 if N_coord == 6:
   for i in range(NI):

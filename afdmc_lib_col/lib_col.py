@@ -64,7 +64,7 @@ sigma7 = onp.array([[0, 0, 0], [0, 0, -1j], [0, 1j, 0]])
 sigma8 = onp.array([[1 / np.sqrt(3), 0, 0], [0, 1 / np.sqrt(3), 0], [0, 0, -2 / np.sqrt(3)]])
 
 # Stack the matrices along the third axis (depth)
-paulis = onp.stack([sigma1, sigma2, sigma3, sigma4, sigma5, sigma6, sigma7, sigma8])
+gells = onp.stack([sigma1, sigma2, sigma3, sigma4, sigma5, sigma6, sigma7, sigma8])
 
 #define levi-cevita tensor
 # Define the Levi-Civita symbol tensor
@@ -79,6 +79,14 @@ iso_del = 1/2 * 1/2 * (onp.einsum('ab,cd->acdb', onp.identity(NI), onp.identity(
 #iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor) - 1/2*onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI))
 iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor)
 
+# Calculate the spin projection operator
+#iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor) - 1/2*onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI))
+iso_sing = 1/NI * (onp.einsum('ab,cd->acdb', onp.identity(NI), onp.identity(NI))
+
+# Calculate the spin projection operator
+#iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor) - 1/2*onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI))
+iso_oct = 1/2*onp.sum([onp.einsum('ab,cd->acdb', matrix, matrix) for matrix in gells])
+
 # TODO qqbar potentials
 #iso_singlet = ?????
 #iso_octet = ?????
@@ -90,6 +98,10 @@ two_body_pieces = {
     'iso_S': iso_del,
     # antisymmetric in color
     'iso_A': iso_eps,
+    # symmetric in color
+    'iso_sing': iso_sing,
+    # antisymmetric in color
+    'iso_oct': iso_oct,
     # 1 . 1
     #'sp_I': onp.einsum('ij,kl->ikjl', onp.identity(NS), onp.identity(NS)),
     'sp_I': onp.einsum('ij,kl->ikjl', onp.identity(NS), onp.identity(NS)),
@@ -139,16 +151,16 @@ qq_two_body_ops = {
 }
 
 qqbar_two_body_ops = {
-    'OA': lambda Rij: two_body_outer(
-        two_body_pieces['iso_A'][np.newaxis],
+    'OSing': lambda Rij: two_body_outer(
+        two_body_pieces['iso_sing'][np.newaxis],
         two_body_pieces['sp_I'][np.newaxis]),
-    'OS': lambda Rij: two_body_outer(
-        two_body_pieces['iso_S'][np.newaxis],
+    'OO': lambda Rij: two_body_outer(
+        two_body_pieces['iso_oct'][np.newaxis],
         two_body_pieces['sp_I'][np.newaxis]),
 }
 
 def get_qq_two_body_ops(x):
-    return x 
+    return x
 def get_qqbar_two_body_ops(x):
     return x
 
