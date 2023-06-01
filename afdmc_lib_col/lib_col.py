@@ -64,6 +64,11 @@ sigma7 = onp.array([[0, 0, 0], [0, 0, -1j], [0, 1j, 0]])
 sigma8 = onp.array([[1 / np.sqrt(3), 0, 0], [0, 1 / np.sqrt(3), 0], [0, 0, -2 / np.sqrt(3)]])
 
 # Stack the matrices along the third axis (depth)
+paulis = onp.stack([
+    onp.array([[0, 1], [1, 0]]), # X
+    onp.array([[0, -1j], [1j, 0]]), # Y
+    onp.array([[1, 0], [0, -1]]) # Z
+])
 gells = onp.stack([sigma1, sigma2, sigma3, sigma4, sigma5, sigma6, sigma7, sigma8])
 
 #define levi-cevita tensor
@@ -81,7 +86,7 @@ iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_
 
 # Calculate the spin projection operator
 #iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor) - 1/2*onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI))
-iso_sing = 1/NI * (onp.einsum('ab,cd->acdb', onp.identity(NI), onp.identity(NI))
+iso_sing = 1/NI * onp.einsum('ab,cd->acdb', onp.identity(NI), onp.identity(NI))
 
 # Calculate the spin projection operator
 #iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor) - 1/2*onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI))
