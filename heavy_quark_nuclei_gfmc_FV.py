@@ -55,15 +55,24 @@ parser.add_argument('--input_Rs_database', type=str, default="")
 parser.add_argument('--log_mu_r', type=float, default=1)
 parser.add_argument('--cutoff', type=float, default=0.0)
 parser.add_argument('--L', type=float, default=0.0)
-parser.add_argument('--Lcut', type=int, default=1)
+parser.add_argument('--Lcut', type=int, default=5)
 parser.add_argument('--Sfudge', type=float, default=1)
 parser.add_argument('--wavefunction', type=str, default="compact")
-parser.add_argument('--volume', type=str, default="infinite")
 parser.add_argument('--potential', type=str, default="full")
 parser.add_argument('--verbose', dest='verbose', action='store_true', default=False)
 globals().update(vars(parser.parse_args()))
 
 #######################################################################################
+
+volume = "infinite"
+if L > 1e-2:
+    volume = "finite"
+
+masses = onp.ones(N_coord)
+if N_coord == 2:
+    masses = [1,-1]
+if N_coord == 4:
+    masses = [1,-1,1,-1]
 
 if wavefunction == "asymmetric":
     bra_wavefunction = "product"
@@ -235,7 +244,7 @@ else:
 #AV_Coulomb['OS'] = trivial_fun
 #AV_Coulomb['O1'] = trivial_fun
 
-Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb, B3_Coulomb)
+Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb, B3_Coulomb, masses)
 
 
 
@@ -310,7 +319,7 @@ def f_R_braket_phase(Rs):
     return prod / np.abs( prod )
 
 @partial(jax.jit)
-def laplacian_f_R(Rs, wavefunction=ket_wavefunction):
+def laplacian_f_R(Rs, wavefunction=bra_wavefunction):
     #N_walkers = Rs.shape[0]
     #assert Rs.shape == (N_walkers, N_coord, 3)
     nabla_psi_tot = 0
@@ -516,7 +525,7 @@ for count, R in enumerate(gfmc_Rs):
     print('Calculating Laplacian for step ', count)
     K_time = time.time()
     #Ks.append(-1/2*laplacian_f_R(R) / f_R(R) / adl.mp_Mev)
-    Ks.append(-1/2*laplacian_f_R(R) / f_R(R, wavefunction=ket_wavefunction) / 1)
+    Ks.append(-1/2*laplacian_f_R(R) / f_R(R, wavefunction=bra_wavefunction) / 1)
     print(f"calculated kinetic in {time.time() - K_time} sec")
 Ks = np.array(Ks)
 

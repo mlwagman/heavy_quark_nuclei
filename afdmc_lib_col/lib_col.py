@@ -80,8 +80,8 @@ iso_del = 1/2 * 1/2 * (onp.einsum('ab,cd->acdb', onp.identity(NI), onp.identity(
 iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor)
 
 # TODO qqbar potentials
-iso_singlet = ?????
-iso_octet = ?????
+#iso_singlet = ?????
+#iso_octet = ?????
 
 # NOTE(gkanwar): spin and isospin pieces are identical matrices, but are
 # semantically different objects.
@@ -99,20 +99,6 @@ two_body_pieces = {
     'iso_I': onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI)),
     # tau_i . tau_j
     'iso_dot': sum(onp.einsum('ab,cd->acbd', p, p) for p in paulis)
-}
-
-qq_two_body_pieces = {
-    # symmetric in color
-    'iso_S': iso_del,
-    # antisymmetric in color
-    'iso_A': iso_eps,
-}
-
-qqbar_two_body_pieces = {
-    # symmetric in color
-    'iso_1': iso_singlet,
-    # antisymmetric in color
-    'iso_8': iso_octet,
 }
 
 three_body_pieces = {
@@ -143,33 +129,28 @@ def two_body_outer(two_body_iso, two_body_spin):
 def three_body_outer(three_body_iso, three_body_spin):
     return np.einsum('zacebdf,zikmjln->zaickembjdlfn', three_body_iso, three_body_spin)
 
-two_body_ops = {
+qq_two_body_ops = {
     'OA': lambda Rij: two_body_outer(
         two_body_pieces['iso_A'][np.newaxis],
         two_body_pieces['sp_I'][np.newaxis]),
     'OS': lambda Rij: two_body_outer(
         two_body_pieces['iso_S'][np.newaxis],
         two_body_pieces['sp_I'][np.newaxis]),
-    'O1': lambda Rij: two_body_outer(
-        #two_body_pieces['iso_I'][np.newaxis],
-        1/2*two_body_pieces['iso_I'][np.newaxis],
-        two_body_pieces['sp_I'][np.newaxis]),
-    'O2': lambda Rij: two_body_outer(
-        two_body_pieces['iso_dot'][np.newaxis],
-        two_body_pieces['sp_I'][np.newaxis]),
-    'O3': lambda Rij: two_body_outer(
-        two_body_pieces['iso_I'][np.newaxis],
-        two_body_pieces['sp_dot'][np.newaxis]),
-    'O4': lambda Rij: two_body_outer(
-        two_body_pieces['iso_dot'][np.newaxis],
-        two_body_pieces['sp_dot'][np.newaxis]),
-    'O5': lambda Rij: two_body_outer(
-        two_body_pieces['iso_I'][np.newaxis],
-        Sij(Rij)),
-    'O6': lambda Rij: two_body_outer(
-        two_body_pieces['iso_dot'][np.newaxis],
-        Sij(Rij))
 }
+
+qqbar_two_body_ops = {
+    'OA': lambda Rij: two_body_outer(
+        two_body_pieces['iso_A'][np.newaxis],
+        two_body_pieces['sp_I'][np.newaxis]),
+    'OS': lambda Rij: two_body_outer(
+        two_body_pieces['iso_S'][np.newaxis],
+        two_body_pieces['sp_I'][np.newaxis]),
+}
+
+def get_qq_two_body_ops(x):
+    return x 
+def get_qqbar_two_body_ops(x):
+    return x
 
 three_body_ops = {
     'O1': lambda Rij, Rjk, Rik: three_body_outer(
@@ -204,8 +185,7 @@ def extend_sequence(seq):
 def generate_full_sequence(AA):
     return extend_sequence( generate_sequence(AA) )
 
-#def make_explicit_pairwise_potential(AVcoeffs, B3coeffs={}):
-def make_pairwise_potential(AVcoeffs, B3coeffs={}):
+def make_pairwise_potential(AVcoeffs, B3coeffs, masses):
     @jax.jit
     def pairwise_potential(R):
         batch_size, A = R.shape[:2]
@@ -227,10 +207,10 @@ def make_pairwise_potential(AVcoeffs, B3coeffs={}):
                 if i==j:
                     continue
                 Rij = R[:,i] - R[:,j]
-                # TODO qq vs qqbar
-                #for name,op in qq_two_body_ops.items():
-                #for name,op in qqbar_two_body_ops.items():
-                for name,op in two_body_ops.items():
+                this_two_body_ops = qqbar_two_body_ops #jax.lax.cond(masses[i]*masses[j]>0, get_qq_two_body_ops, get_qqbar_two_body_ops, qq_two_body_ops)
+                if masses[i]*masses[j]>0:
+                    this_two_body_ops = qq_two_body_ops
+                for name,op in this_two_body_ops.items():
                     if name not in AVcoeffs: continue
                     Oij = op(Rij)
                     vij = AVcoeffs[name](Rij)
@@ -677,6 +657,7 @@ def kinetic_step_absolute(R_fwd, R_bwd, R, R_deform, S, u, params_i, S_T,
     w_bwd = f_R_norm(R_bwd) * inner(S_T, S_bwd)
 
     # correct kinetic energy
+    # TODO distinct masses
     G_ratio_fwd = np.exp(
         (-np.einsum('...ij,...ij->...', R_fwd-R_deform, R_fwd-R_deform)
          +np.einsum('...ij,...ij->...', R_fwd_old-R, R_fwd_old-R))
