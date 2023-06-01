@@ -87,10 +87,6 @@ iso_sing = 1/NI * (onp.einsum('ab,cd->acdb', onp.identity(NI), onp.identity(NI))
 #iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor) - 1/2*onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI))
 iso_oct = 1/2*onp.sum([onp.einsum('ab,cd->acdb', matrix, matrix) for matrix in gells])
 
-# TODO qqbar potentials
-#iso_singlet = ?????
-#iso_octet = ?????
-
 # NOTE(gkanwar): spin and isospin pieces are identical matrices, but are
 # semantically different objects.
 two_body_pieces = {
@@ -232,7 +228,6 @@ def make_pairwise_potential(AVcoeffs, B3coeffs, masses):
                     for alpha in range(A-2):
                         scaled_O = np.einsum('...,mn,op->...monp', scaled_O, onp.identity(NI), onp.identity(NS))
                     assert V_SI_Mev.shape==scaled_O.shape
-                    # TODO turn scaled_O_{iji'j'kk'} into scaled O_{ijki'j'k'}
                     starting_perm = generate_full_sequence(2*A)
                     #print('starting_perm',starting_perm)
                     scaled_O = np.transpose(scaled_O, axes=starting_perm)
