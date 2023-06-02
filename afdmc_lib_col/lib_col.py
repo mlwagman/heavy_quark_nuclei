@@ -86,11 +86,11 @@ iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_
 
 # Calculate the spin projection operator
 #iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor) - 1/2*onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI))
-iso_sing = 1/NI * onp.einsum('ab,cd->acdb', onp.identity(NI), onp.identity(NI))
+iso_sing = 1/NI * onp.einsum('ab,cd->abcd', onp.identity(NI), onp.identity(NI))
 
 # Calculate the spin projection operator
 #iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor) - 1/2*onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI))
-iso_oct = 1/2*onp.sum(onp.einsum('ab,cd->acdb', matrix, matrix) for matrix in gells)
+iso_oct = 2*onp.sum(onp.einsum('ab,cd->abcd', matrix, matrix) for matrix in gells)
 
 # NOTE(gkanwar): spin and isospin pieces are identical matrices, but are
 # semantically different objects.
@@ -223,6 +223,8 @@ def make_pairwise_potential(AVcoeffs, B3coeffs, masses):
                 this_two_body_ops = qqbar_two_body_ops #jax.lax.cond(masses[i]*masses[j]>0, get_qq_two_body_ops, get_qqbar_two_body_ops, qq_two_body_ops)
                 if masses[i]*masses[j]>0:
                     this_two_body_ops = qq_two_body_ops
+                elif masses[i] > masses[j]:
+                    continue
                 for name,op in this_two_body_ops.items():
                     if name not in AVcoeffs: continue
                     Oij = op(Rij)

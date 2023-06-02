@@ -74,6 +74,8 @@ if N_coord == 2:
 if N_coord == 4:
     masses = [1,-1,1,-1]
 
+print("masses = ", masses)
+
 if wavefunction == "asymmetric":
     bra_wavefunction = "product"
     ket_wavefunction = "compact"
@@ -84,11 +86,9 @@ else:
 assert Nc == NI
 
 CF = (Nc**2 - 1)/(2*Nc)
-VB = alpha*CF
-if N_coord > 2:
-    VB = alpha*CF/(Nc-1)
+VB = alpha*CF/(Nc-1)
 SingC3 = -(Nc+1)/8
-a0 = spoila*2/VB;
+
 #a0=4.514
 
 #VB=.1
@@ -120,6 +120,10 @@ if OLO == "LO":
 elif OLO == "NLO":
     a0=spoila*2/VB_NLO
 
+if N_coord == 2:
+    a0 /= Nc-1
+
+print("a0 = ", a0)
 
 Rprime = lambda R: adl.norm_3vec(R)*np.exp(np.euler_gamma)*mu
 # build Coulomb potential
@@ -204,7 +208,7 @@ if OLO == "LO":
             return spoilS*(Nc - 1)/(Nc + 1)*VB/adl.norm_3vec(R)
     @partial(jax.jit)
     def singlet_potential_fun(R):
-            return (Nc - 1)*VB*VB/adl.norm_3vec(R)
+            return -1*(Nc - 1)*VB/adl.norm_3vec(R)
     @partial(jax.jit)
     def octet_potential_fun(R):
             return spoilS*(Nc - 1)/CF/(2*Nc)*VB/adl.norm_3vec(R)
@@ -216,10 +220,10 @@ if OLO == "LO":
             return spoilS*(Nc - 1)/(Nc + 1)*VB*FV_Coulomb(R, L, nn)
     @partial(jax.jit)
     def singlet_potential_fun_sum(R):
-            return (Nc - 1)*VB*FV_Coulomb(R, L, nn)
+            return -1*(Nc - 1)*VB*FV_Coulomb(R, L, nn)
     @partial(jax.jit)
     def octet_potential_fun_sum(R):
-            return -spoilS*(Nc - 1)/CF/(2*Nc)*VB*FV_Coulomb(R, L, nn)
+            return spoilS*(Nc - 1)/CF/(2*Nc)*VB*FV_Coulomb(R, L, nn)
 elif OLO == "NLO":
     @partial(jax.jit)
     def potential_fun(R):
@@ -254,24 +258,21 @@ def trivial_fun(R):
 
 # MODE 2
 
+print("volume = ", volume)
+
 if volume == "finite":
-  if N_coord != 4 or N_coord != 2:
     AV_Coulomb['OA'] = potential_fun_sum
-    if potential != "antisymmetric":
-     AV_Coulomb['OS'] = symmetric_potential_fun_sum
-  else:
+    AV_Coulomb['OS'] = symmetric_potential_fun_sum
     AV_Coulomb['OSing'] = singlet_potential_fun_sum
-    if potential != "antisymmetric":
-     AV_Coulomb['OO'] = octet_potential_fun_sum
+    AV_Coulomb['OO'] = octet_potential_fun_sum
 else:
-  if N_coord != 4 or N_coord != 2:
     AV_Coulomb['OA'] = potential_fun
-    if potential != "antisymmetric":
-     AV_Coulomb['OS'] = symmetric_potential_fun
-  else:
+    AV_Coulomb['OS'] = symmetric_potential_fun
     AV_Coulomb['OSing'] = singlet_potential_fun
-    if potential != "antisymmetric":
-     AV_Coulomb['OO'] = octet_potential_fun
+    AV_Coulomb['OO'] = octet_potential_fun
+
+
+print("AV_Coulomb = ", AV_Coulomb)
 
 #AV_Coulomb['OSing'] = trivial_fun
 #AV_Coulomb['OO'] = trivial_fun
