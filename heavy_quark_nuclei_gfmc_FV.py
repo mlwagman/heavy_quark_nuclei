@@ -255,7 +255,7 @@ def trivial_fun(R):
 # MODE 2
 
 if volume == "finite":
-  if N_coord != 4:
+  if N_coord != 4 or N_coord != 2:
     AV_Coulomb['OA'] = potential_fun_sum
     if potential != "antisymmetric":
      AV_Coulomb['OS'] = symmetric_potential_fun_sum
@@ -264,7 +264,7 @@ if volume == "finite":
     if potential != "antisymmetric":
      AV_Coulomb['OO'] = octet_potential_fun_sum
 else:
-  if N_coord != 4:
+  if N_coord != 4 or N_coord != 2:
     AV_Coulomb['OA'] = potential_fun
     if potential != "antisymmetric":
      AV_Coulomb['OS'] = symmetric_potential_fun
@@ -498,6 +498,16 @@ if N_coord == 3:
 #S_av4p_metropolis = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
 #spin_slice = (slice(0,None),) + (0,)*2*N_coord
 #S_av4p_metropolis[spin_slice] = 1
+
+if N_coord == 2:
+  for i in range(NI):
+   for j in range(NI):
+        if i == j:
+          # up up up up up up
+          spin_slice = (slice(0, None),) + (i,0,j,0)
+          # up up up down down down
+          #spin_slice = (slice(0, None),) + (i,0,j,0)
+          S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)/np.sqrt(3)
 
 if N_coord == 4:
   for i in range(NI):
