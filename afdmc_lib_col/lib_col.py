@@ -90,7 +90,7 @@ iso_sing = 1/NI * onp.einsum('ab,cd->acdb', onp.identity(NI), onp.identity(NI))
 
 # Calculate the spin projection operator
 #iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor) - 1/2*onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI))
-iso_oct = 1/2*onp.sum([onp.einsum('ab,cd->acdb', matrix, matrix) for matrix in gells])
+iso_oct = 1/2*onp.sum(onp.einsum('ab,cd->acdb', matrix, matrix) for matrix in gells)
 
 # NOTE(gkanwar): spin and isospin pieces are identical matrices, but are
 # semantically different objects.
