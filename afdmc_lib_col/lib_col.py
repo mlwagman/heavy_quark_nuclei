@@ -54,14 +54,14 @@ NS = 1
 NI = 3
 
 # Define the Gell-Mann matrices
-sigma1 = onp.array([[0, 1, 0], [1, 0, 0], [0, 0, 0]])
-sigma2 = onp.array([[0, -1j, 0], [1j, 0, 0], [0, 0, 0]])
-sigma3 = onp.array([[1, 0, 0], [0, -1, 0], [0, 0, 0]])
-sigma4 = onp.array([[0, 0, 1], [0, 0, 0], [1, 0, 0]])
-sigma5 = onp.array([[0, 0, -1j], [0, 0, 0], [1j, 0, 0]])
-sigma6 = onp.array([[0, 0, 0], [0, 0, 1], [0, 1, 0]])
-sigma7 = onp.array([[0, 0, 0], [0, 0, -1j], [0, 1j, 0]])
-sigma8 = onp.array([[1 / np.sqrt(3), 0, 0], [0, 1 / np.sqrt(3), 0], [0, 0, -2 / np.sqrt(3)]])
+sigma1 = 1/2*onp.array([[0, 1, 0], [1, 0, 0], [0, 0, 0]])
+sigma2 = 1/2*onp.array([[0, -1j, 0], [1j, 0, 0], [0, 0, 0]])
+sigma3 = 1/2*onp.array([[1, 0, 0], [0, -1, 0], [0, 0, 0]])
+sigma4 = 1/2*onp.array([[0, 0, 1], [0, 0, 0], [1, 0, 0]])
+sigma5 = 1/2*onp.array([[0, 0, -1j], [0, 0, 0], [1j, 0, 0]])
+sigma6 = 1/2*onp.array([[0, 0, 0], [0, 0, 1], [0, 1, 0]])
+sigma7 = 1/2*onp.array([[0, 0, 0], [0, 0, -1j], [0, 1j, 0]])
+sigma8 = 1/2*onp.array([[1 / np.sqrt(3), 0, 0], [0, 1 / np.sqrt(3), 0], [0, 0, -2 / np.sqrt(3)]])
 
 # Stack the matrices along the third axis (depth)
 paulis = onp.stack([
@@ -70,6 +70,9 @@ paulis = onp.stack([
     onp.array([[1, 0], [0, -1]]) # Z
 ])
 gells = onp.stack([sigma1, sigma2, sigma3, sigma4, sigma5, sigma6, sigma7, sigma8])
+
+for a in range(8):
+    assert( np.einsum('ij,ji', gells[a], gells[a]) - 1.0/2 < 1e-6 )
 
 #define levi-cevita tensor
 # Define the Levi-Civita symbol tensor
@@ -90,7 +93,10 @@ iso_sing = 1/NI * onp.einsum('ab,cd->abcd', onp.identity(NI), onp.identity(NI))
 
 # Calculate the spin projection operator
 #iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor) - 1/2*onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI))
-iso_oct = 2*onp.sum(onp.einsum('ab,cd->abcd', matrix, matrix) for matrix in gells)
+
+iso_oct = np.zeros((NI,NI,NI,NI))
+for a in range(8):
+    iso_oct += 2*onp.einsum('ab,cd->abcd', gells[a], gells[a])
 
 # NOTE(gkanwar): spin and isospin pieces are identical matrices, but are
 # semantically different objects.
