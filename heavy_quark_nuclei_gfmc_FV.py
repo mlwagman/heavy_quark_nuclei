@@ -120,7 +120,7 @@ if OLO == "LO":
 elif OLO == "NLO":
     a0=spoila*2/VB_NLO
 
-if N_coord == 2:
+if N_coord == 2 or N_coord == 4:
     a0 /= Nc-1
 
 print("a0 = ", a0)
