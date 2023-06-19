@@ -212,6 +212,7 @@ if OLO == "LO":
     @partial(jax.jit)
     def octet_potential_fun(R):
             return spoilS*(Nc - 1)/CF/(2*Nc)*VB/adl.norm_3vec(R)
+            #return -1*(CF-Nc/2)*(Nc - 1)/CF*VB/adl.norm_3vec(R)
     @partial(jax.jit)
     def potential_fun_sum(R):
             return -1*VB*FV_Coulomb(R, L, nn)
@@ -266,6 +267,10 @@ if volume == "finite":
     AV_Coulomb['OSing'] = singlet_potential_fun_sum
     AV_Coulomb['OO'] = octet_potential_fun_sum
 else:
+    #AV_Coulomb['OA'] = trivial_fun
+    #AV_Coulomb['OS'] = trivial_fun
+    #AV_Coulomb['OSing'] = trivial_fun
+    #AV_Coulomb['OO'] = trivial_fun
     AV_Coulomb['OA'] = potential_fun
     AV_Coulomb['OS'] = symmetric_potential_fun
     AV_Coulomb['OSing'] = singlet_potential_fun
@@ -504,11 +509,24 @@ if N_coord == 2:
   for i in range(NI):
    for j in range(NI):
         if i == j:
-          # up up up up up up
           spin_slice = (slice(0, None),) + (i,0,j,0)
-          # up up up down down down
-          #spin_slice = (slice(0, None),) + (i,0,j,0)
           S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)/np.sqrt(3)
+
+# adjoint
+#S_av4p_metropolis = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
+#spin_slice = (slice(0,None),) + (0,0,1,0)
+#S_av4p_metropolis[spin_slice] = 1/np.sqrt(2)
+#spin_slice = (slice(0,None),) + (1,0,0,0)
+#S_av4p_metropolis[spin_slice] = 1/np.sqrt(2)
+
+# adjoint again
+#S_av4p_metropolis = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
+#spin_slice = (slice(0,None),) + (0,0,0,0)
+#S_av4p_metropolis[spin_slice] = 1/np.sqrt(6)
+#spin_slice = (slice(0,None),) + (1,0,1,0)
+#S_av4p_metropolis[spin_slice] = 1/np.sqrt(6)
+#spin_slice = (slice(0,None),) + (2,0,2,0)
+#S_av4p_metropolis[spin_slice] = -2/np.sqrt(6)
 
 if N_coord == 4:
   for i in range(NI):

@@ -74,26 +74,26 @@ gells = onp.stack([sigma1, sigma2, sigma3, sigma4, sigma5, sigma6, sigma7, sigma
 for a in range(8):
     assert( np.einsum('ij,ji', gells[a], gells[a]) - 1.0/2 < 1e-6 )
 
+for a in range(8):
+    for b in range(a):
+        assert( np.einsum('ij,ji', gells[a], gells[b]) < 1e-6 )
+
 #define levi-cevita tensor
 # Define the Levi-Civita symbol tensor
 lc_tensor = onp.zeros((NI, NI, NI))
 lc_tensor[0, 1, 2] = lc_tensor[1, 2, 0] = lc_tensor[2, 0, 1] = 1
 lc_tensor[0, 2, 1] = lc_tensor[2, 1, 0] = lc_tensor[1, 0, 2] = -1
 
-# Contract the indices of the Levi-Civita symbol to get operator
+# QQ color symmetric potential operator
 iso_del = 1/2 * 1/2 * (onp.einsum('ab,cd->acdb', onp.identity(NI), onp.identity(NI)) + onp.einsum('ab,cd->cadb', onp.identity(NI), onp.identity(NI)))
 
-# Calculate the spin projection operator
-#iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor) - 1/2*onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI))
+# QQ color antisymmetric potential operator
 iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor)
 
-# Calculate the spin projection operator
-#iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor) - 1/2*onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI))
+# QQbar color singlet potential operator
 iso_sing = 1/NI * onp.einsum('ab,cd->abcd', onp.identity(NI), onp.identity(NI))
 
-# Calculate the spin projection operator
-#iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor) - 1/2*onp.einsum('ab,cd->acbd', onp.identity(NI), onp.identity(NI))
-
+# QQbar color octet potential operator
 iso_oct = np.zeros((NI,NI,NI,NI))
 for a in range(8):
     iso_oct += 2*onp.einsum('ab,cd->abcd', gells[a], gells[a])
@@ -110,7 +110,6 @@ two_body_pieces = {
     # antisymmetric in color
     'iso_oct': iso_oct,
     # 1 . 1
-    #'sp_I': onp.einsum('ij,kl->ikjl', onp.identity(NS), onp.identity(NS)),
     'sp_I': onp.einsum('ij,kl->ikjl', onp.identity(NS), onp.identity(NS)),
     # sigma_i . sigma_j
     'sp_dot': sum(onp.einsum('ij,kl->ikjl', p, p) for p in paulis),
@@ -184,6 +183,8 @@ three_body_ops = {
         three_body_pieces['sp_I'][np.newaxis]),
 }
 
+
+
 def generate_sequence(AA):
     sequence = [0, 1]
     evens = [i for i in range(4, AA, 2)]
@@ -229,10 +230,12 @@ def make_pairwise_potential(AVcoeffs, B3coeffs, masses):
                 this_two_body_ops = qqbar_two_body_ops #jax.lax.cond(masses[i]*masses[j]>0, get_qq_two_body_ops, get_qqbar_two_body_ops, qq_two_body_ops)
                 if masses[i]*masses[j]>0:
                     this_two_body_ops = qq_two_body_ops
-                elif masses[i] > masses[j]:
+                elif masses[i] < masses[j]:
                     continue
+                print("i = ", i, ", j = ", j)
                 for name,op in this_two_body_ops.items():
                     if name not in AVcoeffs: continue
+                    print('including op', name)
                     Oij = op(Rij)
                     vij = AVcoeffs[name](Rij)
                     broadcast_vij_inds = (slice(None),) + (np.newaxis,)*(len(Oij.shape)-1)
@@ -241,8 +244,10 @@ def make_pairwise_potential(AVcoeffs, B3coeffs, masses):
                     for alpha in range(A-2):
                         scaled_O = np.einsum('...,mn,op->...monp', scaled_O, onp.identity(NI), onp.identity(NS))
                     assert V_SI_Mev.shape==scaled_O.shape
+                    basic_perm = generate_sequence(2*A)
+                    print('basic_perm',basic_perm)
                     starting_perm = generate_full_sequence(2*A)
-                    #print('starting_perm',starting_perm)
+                    print('starting_perm',starting_perm)
                     scaled_O = np.transpose(scaled_O, axes=starting_perm)
                     #print("scaled_O shape =",scaled_O.shape)
                     #print("i = ",i," j = ", j)
@@ -265,6 +270,7 @@ def make_pairwise_potential(AVcoeffs, B3coeffs, masses):
                     perm[3] = perm_copy[j_slot+1]
                     perm[j_slot] = perm_copy[2]
                     perm[j_slot+1] = perm_copy[3]
+                    #src_perm = [ perm[l] + 1 for l in range(len(perm)) ]
                     src_perm = [ perm[l] + 1 for l in range(len(perm)) ]
                     snk_perm = [ src_perm[l] + 2*A for l in range(len(perm)) ]
                     full_perm = [0] + src_perm + snk_perm
