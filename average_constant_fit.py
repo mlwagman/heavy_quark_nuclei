@@ -46,10 +46,10 @@ f = h5py.File(database, 'r')
 dset = f[dataset]
 
 n_step_full = dset.shape[0]
-#n_step_full = 50
 n_walk_full = dset.shape[1]
 
 dset = dset[0:n_step_full]
+#dset = dset[n_step_full:]
 
 print(dset.shape)
 if dataset == "Rs":
@@ -60,8 +60,6 @@ dset_Ws = f["Ws"]
 
 dset_Ws = dset_Ws[0:n_step_full]
 
-fit_step = (dset.shape[0] // n_fits)
-
 model_fits = np.zeros((n_fits))
 model_errs = np.zeros((n_fits))
 model_redchisq = np.zeros((n_fits))
@@ -69,11 +67,14 @@ model_weights = np.zeros((n_fits))
 
 last_fit = 1e6
 
+min_dof = 3
+
 for n_tau_skip_exp in range(round(np.log(dset.shape[0]//n_walk_full+1)/np.log(2)), round(np.log(dset.shape[0])/np.log(2))-1):
-    n_tau_skip = 2**(n_tau_skip_exp+1)
+    n_tau_skip = 2*2**(n_tau_skip_exp+1)
+    fit_step = ((dset.shape[0]-min_dof*n_tau_skip) // n_fits)
     print("\nTRYING N_TAU_SKIP = ", n_tau_skip)
-    if (dset.shape[0] // n_tau_skip) < n_fits:
-        n_fits = dset.shape[0] // n_tau_skip
+    if ((dset.shape[0]-min_dof*n_tau_skip) // n_tau_skip) < n_fits:
+        n_fits = (dset.shape[0]-min_dof*n_tau_skip) // n_tau_skip
         model_fits = np.zeros((n_fits))
         model_errs = np.zeros((n_fits))
         model_redchisq = np.zeros((n_fits))
@@ -198,6 +199,7 @@ for n_tau_skip_exp in range(round(np.log(dset.shape[0]//n_walk_full+1)/np.log(2)
         else:
             lam = 0.0
 
+        lam *= 2
         print("\n OPTIMAL SHRINKAGE PARAMETER")
         print(lam)
 
@@ -289,7 +291,7 @@ for n in range(plot_n_step):
 
 plot_boot_ensemble = np.zeros((n_boot, plot_n_step))
 for b in range(n_boot):
-    inds = np.random.randint(n_walk, size=n_walk)
+    inds = np.random.randint(n_walk, size=n_walk_full)
     for n in range(plot_n_step):
         this_boot = plot_data[n][inds]
         this_boot_Ws = plot_Ws[n][inds]
@@ -297,7 +299,7 @@ for b in range(n_boot):
 
 plot_boot_var = np.zeros((plot_n_step))
 for n in range(plot_n_step):
-    plot_boot_var[n] = (np.mean(plot_boot_ensemble[:,n]**2) - np.mean(plot_boot_ensemble[:,n])**2) * n_walk/(n_walk-1)
+    plot_boot_var[n] = (np.mean(plot_boot_ensemble[:,n]**2) - np.mean(plot_boot_ensemble[:,n])**2) * n_walk_full/(n_walk_full-1)
 
 plot_errs = np.sqrt(plot_boot_var)
 
@@ -313,3 +315,22 @@ ax.add_patch(rect)
 ax.set_xlabel(r'$\tau \, m_Q$')
 ax.set_ylabel(r'$\left< H(\tau) \right> / m_Q$')
 fig.savefig(database[:-3]+'_EMP.pdf')
+
+
+tau_ac = 0
+sub_dset = np.real(dset[tau_ac] - np.mean(dset[tau_ac]))
+auto_corr = []
+c0 = np.mean(sub_dset * sub_dset)
+auto_corr.append(c0)
+for i in range(1,n_walk_full//4):
+     auto_corr.append(np.mean(sub_dset[i:] * sub_dset[:-i]))
+littlec = np.asarray(auto_corr) / c0
+def tauint(t):
+     return 1 + 2 * np.sum(littlec[1:t]) 
+y = [tauint(i) for i in range(1, n_walk_full//16)]
+fig, ax = plt.subplots(1,1, figsize=(4,3))
+ax.plot(range(1, n_walk_full//16), y, 'x')
+ax.set_xlabel(r'$N_{\\rm{walkers}}$')
+ax.set_ylabel(r'$\tau_{\\rm{int}}$')
+plt.savefig(database[:-3]+'_autocorrelation.pdf')
+print("integrated autocorrelation time = ", tauint(n_walk_full//16))
