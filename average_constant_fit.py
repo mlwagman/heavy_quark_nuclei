@@ -70,7 +70,7 @@ last_fit = 1e6
 min_dof = 3
 
 for n_tau_skip_exp in range(round(np.log(dset.shape[0]//n_walk_full+1)/np.log(2)), round(np.log(dset.shape[0])/np.log(2))-1):
-    n_tau_skip = 20*2**(n_tau_skip_exp+1)
+    n_tau_skip = 2**(n_tau_skip_exp+1)
     fit_step = ((dset.shape[0]-min_dof*n_tau_skip) // n_fits)
     print("\nTRYING N_TAU_SKIP = ", n_tau_skip)
     if ((dset.shape[0]-min_dof*n_tau_skip) // n_tau_skip) < n_fits:
