@@ -283,7 +283,10 @@ print("AV_Coulomb = ", AV_Coulomb)
 #AV_Coulomb['OO'] = trivial_fun
 #AV_Coulomb['O1'] = trivial_fun
 
-Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb, B3_Coulomb, masses)
+if potential == "product":
+    Coulomb_potential = adl.make_pairwise_product_potential(AV_Coulomb, B3_Coulomb, masses)
+else:
+    Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb, B3_Coulomb, masses)
 
 
 
@@ -468,7 +471,8 @@ if input_Rs_database == "":
     # set center of mass position to 0
     R0 -= onp.mean(R0, axis=1, keepdims=True)
     #samples = adl.metropolis(R0, f_R_sq, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
-    samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*2*a0/N_coord**2)
+    #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*2*a0/N_coord**2)
+    samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
     Rs_metropolis = np.array([R for R,_ in samples])
 else:
     f = h5py.File(input_Rs_database, 'r')
@@ -563,7 +567,6 @@ if N_coord == 6:
 
 print("spin-flavor wavefunction shape = ", S_av4p_metropolis.shape)
 S_av4p_metropolis_norm = adl.inner(S_av4p_metropolis, S_av4p_metropolis)
-print(np.abs(S_av4p_metropolis_norm - 1.0))
 assert (np.abs(S_av4p_metropolis_norm - 1.0) < 1e-6).all()
 print("spin-flavor wavefunction normalization = ", S_av4p_metropolis_norm)
 

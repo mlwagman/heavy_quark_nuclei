@@ -78,7 +78,7 @@ auto_corr.append(c0)
 for i in range(1,n_walk_full//4):
      auto_corr.append(np.mean(sub_dset[i:] * sub_dset[:-i]))
 littlec = np.asarray(auto_corr) / c0
-last_point = n_walk_full//8
+last_point = n_walk_full//4
 def tauint(t):
      return 1 + 2 * np.sum(littlec[1:t]) 
 y = [tauint(i) for i in range(1, last_point)]
