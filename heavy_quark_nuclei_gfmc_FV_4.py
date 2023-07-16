@@ -13,10 +13,10 @@ import jax.scipy.special
 import pickle
 import paper_plt
 import tqdm.auto as tqdm
-import afdmc_lib_col as adl
+import afdmc_lib_col_4 as adl
 import os
 import pickle
-from afdmc_lib_col import NI,NS,mp_Mev,fm_Mev
+from afdmc_lib_col_4 import NI,NS,mp_Mev,fm_Mev
 import jax
 import jax.numpy as np
 import sys
@@ -48,7 +48,7 @@ parser.add_argument('--Nc', type=int, default=3)
 parser.add_argument('--N_coord', type=int, default=3)
 parser.add_argument('--nf', type=int, default=5)
 parser.add_argument('--OLO', type=str, default="LO")
-parser.add_argument('--spoila', type=float, default=1)
+parser.add_argument('--spoila', type=int, default=1)
 parser.add_argument('--spoilf', type=str, default="hwf")
 parser.add_argument('--outdir', type=str, required=True)
 parser.add_argument('--input_Rs_database', type=str, default="")
@@ -59,7 +59,6 @@ parser.add_argument('--Lcut', type=int, default=5)
 parser.add_argument('--spoilS', type=float, default=1)
 parser.add_argument('--wavefunction', type=str, default="compact")
 parser.add_argument('--potential', type=str, default="full")
-parser.add_argument('--spoilaket', type=float, default=1)
 parser.add_argument('--verbose', dest='verbose', action='store_true', default=False)
 globals().update(vars(parser.parse_args()))
 
@@ -121,16 +120,10 @@ if OLO == "LO":
 elif OLO == "NLO":
     a0=spoila*2/VB_NLO
 
-if N_coord == 2 or N_coord == 4:
-    a0 /= Nc-1
-
-    
-ket_a0 = a0
-if wavefunction == "asymmetric":
-    ket_a0 = a0*spoilaket
+#if N_coord == 2 or N_coord == 4:
+#    a0 /= Nc-1
 
 print("a0 = ", a0)
-print("ket_a0 = ", ket_a0)
 
 Rprime = lambda R: adl.norm_3vec(R)*np.exp(np.euler_gamma)*mu
 # build Coulomb potential
@@ -219,7 +212,6 @@ if OLO == "LO":
     @partial(jax.jit)
     def octet_potential_fun(R):
             return spoilS*(Nc - 1)/CF/(2*Nc)*VB/adl.norm_3vec(R)
-            #return -1*(CF-Nc/2)*(Nc - 1)/CF*VB/adl.norm_3vec(R)
     @partial(jax.jit)
     def potential_fun_sum(R):
             return -1*VB*FV_Coulomb(R, L, nn)
@@ -269,15 +261,13 @@ def trivial_fun(R):
 print("volume = ", volume)
 
 if volume == "finite":
+#    AV_Coulomb['OSing'] = trivial_fun
     AV_Coulomb['OA'] = potential_fun_sum
     AV_Coulomb['OS'] = symmetric_potential_fun_sum
     AV_Coulomb['OSing'] = singlet_potential_fun_sum
     AV_Coulomb['OO'] = octet_potential_fun_sum
 else:
-    #AV_Coulomb['OA'] = trivial_fun
-    #AV_Coulomb['OS'] = trivial_fun
-    #AV_Coulomb['OSing'] = trivial_fun
-    #AV_Coulomb['OO'] = trivial_fun
+#    AV_Coulomb['OA'] = trivial_fun
     AV_Coulomb['OA'] = potential_fun
     AV_Coulomb['OS'] = symmetric_potential_fun
     AV_Coulomb['OSing'] = singlet_potential_fun
@@ -288,12 +278,10 @@ print("AV_Coulomb = ", AV_Coulomb)
 
 #AV_Coulomb['OSing'] = trivial_fun
 #AV_Coulomb['OO'] = trivial_fun
-#AV_Coulomb['O1'] = trivial_fun
+#AV_Coulomb['OS'] = trivial_fun
+#AV_Coulomb['OA'] = trivial_fun
 
-if potential == "product":
-    Coulomb_potential = adl.make_pairwise_product_potential(AV_Coulomb, B3_Coulomb, masses)
-else:
-    Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb, B3_Coulomb, masses)
+Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb, B3_Coulomb, masses)
 
 
 
@@ -343,7 +331,7 @@ product_pairs = np.array(product_pairs)
 print("product pairs = ", product_pairs)
 
 @partial(jax.jit, static_argnums=(1,))
-def f_R(Rs, wavefunction=bra_wavefunction, a0=a0):
+def f_R(Rs, wavefunction=bra_wavefunction):
 
     def r_norm(pair):
         [i,j] = pair
@@ -361,10 +349,10 @@ def f_R_sq(Rs):
     return np.abs( f_R(Rs) )**2
 
 def f_R_braket(Rs):
-    return np.abs( f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0) )
+    return np.abs( f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction) )
 
 def f_R_braket_phase(Rs):
-    prod = f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0)
+    prod = f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction)
     return prod / np.abs( prod )
 
 @partial(jax.jit)
@@ -478,8 +466,7 @@ if input_Rs_database == "":
     # set center of mass position to 0
     R0 -= onp.mean(R0, axis=1, keepdims=True)
     #samples = adl.metropolis(R0, f_R_sq, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
-    #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*2*a0/N_coord**2)
-    samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
+    samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*2*a0/N_coord**2)
     Rs_metropolis = np.array([R for R,_ in samples])
 else:
     f = h5py.File(input_Rs_database, 'r')
@@ -490,14 +477,16 @@ S_av4p_metropolis = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord)
 print("built Metropolis wavefunction ensemble")
 # trial wavefunction spin-flavor structure is |up,u> x |up,u> x ... x |up,u>
 
-def levi_civita(i, j, k):
-    if i == j or j == k or i == k:
-        return 0
-    if (i,j,k) in [(0,1,2), (1,2,0), (2,0,1)]:
-        return 1
-    else:
-        return -1
 
+def levi_civita(i, j, k, l):
+    indices = [i, j, k, l]
+    if len(set(indices)) != 4:  # if any two indices are the same
+        return 0
+    else:
+        # Calculate the permutation's parity
+        perm = list(permutations([0, 1, 2, 3]))
+        return (-1)**perm.index(tuple(indices))
+       
 def kronecker_delta(i, j):
     return 1 if i == j else 0
 
@@ -520,36 +509,23 @@ if N_coord == 2:
   for i in range(NI):
    for j in range(NI):
         if i == j:
+          # up up up up up up
           spin_slice = (slice(0, None),) + (i,0,j,0)
+          # up up up down down down
+          #spin_slice = (slice(0, None),) + (i,0,j,0)
           S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)/np.sqrt(3)
-
-# adjoint
-#S_av4p_metropolis = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
-#spin_slice = (slice(0,None),) + (0,0,1,0)
-#S_av4p_metropolis[spin_slice] = 1/np.sqrt(2)
-#spin_slice = (slice(0,None),) + (1,0,0,0)
-#S_av4p_metropolis[spin_slice] = 1/np.sqrt(2)
-
-# adjoint again
-#S_av4p_metropolis = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
-#spin_slice = (slice(0,None),) + (0,0,0,0)
-#S_av4p_metropolis[spin_slice] = 1/np.sqrt(6)
-#spin_slice = (slice(0,None),) + (1,0,1,0)
-#S_av4p_metropolis[spin_slice] = 1/np.sqrt(6)
-#spin_slice = (slice(0,None),) + (2,0,2,0)
-#S_av4p_metropolis[spin_slice] = -2/np.sqrt(6)
 
 if N_coord == 4:
   for i in range(NI):
    for j in range(NI):
     for k in range(NI):
      for l in range(NI):
-        if i == j and k == l:
+        if i != j and j != k and i != k and i != l and j != l and k != l:
           # up up up up up up
           spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,0)
           # up up up down down down
           #spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,1,m,1,n,1)
-          S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)/3
+          S_av4p_metropolis[spin_slice] = levi_civita(i, j, k,l) / np.sqrt(24)
 
 if N_coord == 6:
   for i in range(NI):
@@ -574,6 +550,7 @@ if N_coord == 6:
 
 print("spin-flavor wavefunction shape = ", S_av4p_metropolis.shape)
 S_av4p_metropolis_norm = adl.inner(S_av4p_metropolis, S_av4p_metropolis)
+print(np.abs(S_av4p_metropolis_norm - 1.0))
 assert (np.abs(S_av4p_metropolis_norm - 1.0) < 1e-6).all()
 print("spin-flavor wavefunction normalization = ", S_av4p_metropolis_norm)
 
@@ -678,9 +655,9 @@ print(Vs.shape)
 #    for dRs, S in zip(map(adl.to_relative, gfmc_Rs), gfmc_Ss)])
 
 if volume == "finite":
-    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilf"+str(spoilf) + "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)
+    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilf"+str(spoilf) + "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)
 else:
-    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilf"+str(spoilf)+ "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)
+    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilf"+str(spoilf)+ "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)
 
 
 with h5py.File(outdir+'Hammys_'+tag+'.h5', 'w') as f:
