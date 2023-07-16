@@ -59,6 +59,7 @@ parser.add_argument('--Lcut', type=int, default=5)
 parser.add_argument('--spoilS', type=float, default=1)
 parser.add_argument('--wavefunction', type=str, default="compact")
 parser.add_argument('--potential', type=str, default="full")
+parser.add_argument('--spoilaket', type=float, default=1)
 parser.add_argument('--verbose', dest='verbose', action='store_true', default=False)
 globals().update(vars(parser.parse_args()))
 
@@ -123,7 +124,13 @@ elif OLO == "NLO":
 if N_coord == 2 or N_coord == 4:
     a0 /= Nc-1
 
+    
+ket_a0 = a0
+if wavefunction == "asymmetric":
+    ket_a0 = a0*spoilaket
+
 print("a0 = ", a0)
+print("ket_a0 = ", ket_a0)
 
 Rprime = lambda R: adl.norm_3vec(R)*np.exp(np.euler_gamma)*mu
 # build Coulomb potential
@@ -336,7 +343,7 @@ product_pairs = np.array(product_pairs)
 print("product pairs = ", product_pairs)
 
 @partial(jax.jit, static_argnums=(1,))
-def f_R(Rs, wavefunction=bra_wavefunction):
+def f_R(Rs, wavefunction=bra_wavefunction, a0=a0):
 
     def r_norm(pair):
         [i,j] = pair
@@ -354,10 +361,10 @@ def f_R_sq(Rs):
     return np.abs( f_R(Rs) )**2
 
 def f_R_braket(Rs):
-    return np.abs( f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction) )
+    return np.abs( f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0) )
 
 def f_R_braket_phase(Rs):
-    prod = f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction)
+    prod = f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0)
     return prod / np.abs( prod )
 
 @partial(jax.jit)
