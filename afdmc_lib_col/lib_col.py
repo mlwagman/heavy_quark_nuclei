@@ -571,10 +571,100 @@ def make_wf_weight(f_R):
         return onp.real(f_R(dR))**2
     return weight
 
+def parallel_tempered_metropolis(fac_list, R_list, W, *, n_therm, n_step, n_skip, eps):
+    samples = []
+    streams = len(R_list)
+    target = (streams-1)//2
+    print(f"Starting parallel tempered Metropolis with {streams} streams")
+    acc_list = [ 0 for s in range(0,streams) ]
+    swap_acc_list = [ 0 for s in range(0,streams) ]
+    #for i in range(-n_therm, n_step*n_skip):
+    (N_coord, N_d) = R_list[0].shape
+    for i in tqdm.tqdm(range(-n_therm, n_step*n_skip)):
+        # cluster update
+        for s in range(streams):
+            R_flat = onp.reshape(R_list[s], (N_coord*N_d))
+            onp.random.shuffle(R_flat)
+            R_list[s] = onp.reshape(R_flat, (N_coord,N_d))
+        W_R_list = [ W(R_list[s], fac_list[s]) for s in range(0,streams) ]
+        # in-stream update
+        for s in range(streams):
+            dR = draw_dR(R_list[s].shape, lam=eps, axis=0)
+            new_R = R_list[s] + dR
+            new_W_R = W(new_R, fac_list[s])
+            W_R = W_R_list[s]
+            if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R):
+                R_list[s] = new_R # accept
+                W_R_list[s] = new_W_R # accept
+                acc_list[s] += 1
+        # swap (0,1), (2,3), ...
+        for s in range(0, streams-1, 2):
+            W_R_a = W_R_list[s]
+            W_R_b = W_R_list[s+1]
+            W_R = W_R_a * W_R_b
+            new_R_a = R_list[s+1]
+            new_R_b = R_list[s]
+            new_W_R_a = W(new_R_a, fac_list[s])
+            new_W_R_b = W(new_R_b, fac_list[s+1])
+            new_W_R = new_W_R_a * new_W_R_b
+            if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R):
+                R_list[s] = new_R_a # accept
+                R_list[s+1] = new_R_b # accept
+                W_R_list[s] = new_W_R_a # accept
+                W_R_list[s+1] = new_W_R_b # accept
+                swap_acc_list[s] += 1
+                swap_acc_list[s+1] += 1
+        # cluster update
+        for s in range(streams):
+            R_flat = onp.reshape(R_list[s], (N_coord*N_d))
+            onp.random.shuffle(R_flat)
+            R_list[s] = onp.reshape(R_flat, (N_coord,N_d))
+        W_R_list = [ W(R_list[s], fac_list[s]) for s in range(0,streams) ]
+        # in-stream update
+        for s in range(streams):
+            dR = draw_dR(R_list[s].shape, lam=eps, axis=0)
+            new_R = R_list[s] + dR
+            new_W_R = W(new_R, fac_list[s])
+            W_R = W_R_list[s]
+            if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R):
+                R_list[s] = new_R # accept
+                W_R_list[s] = new_W_R # accept
+                acc_list[s] += 1
+        # swap (1,2), (3,4), ...
+        for s in range(1, streams-1, 2):
+            W_R_a = W_R_list[s]
+            W_R_b = W_R_list[s+1]
+            W_R = W_R_a * W_R_b
+            new_R_a = R_list[s+1]
+            new_R_b = R_list[s]
+            new_W_R_a = W(new_R_a, fac_list[s])
+            new_W_R_b = W(new_R_b, fac_list[s+1])
+            new_W_R = new_W_R_a * new_W_R_b
+            if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R):
+                R_list[s] = new_R_a # accept
+                R_list[s+1] = new_R_b # accept
+                W_R_list[s] = new_W_R_a # accept
+                W_R_list[s+1] = new_W_R_b # accept
+                swap_acc_list[s] += 1
+                swap_acc_list[s+1] += 1
+        # save
+        if i >= 0 and (i+1) % n_skip == 0:
+            samples.append((R_list[target], W_R_list[target]))
+    acc = acc_list[target]
+    n_tot = (n_therm+n_skip*n_step)*2
+    print(f'In-stream acc frac = {acc} / {n_tot} = {1.0*acc/(n_tot)}')
+    acc = swap_acc_list[target]
+    print(f'Swap acc frac = {acc} / {n_tot} = {1.0*acc/(n_tot)}')
+    return samples
+
 def metropolis(R, W, *, n_therm, n_step, n_skip, eps):
     samples = []
     acc = 0
+    (N_coord, N_d) = R.shape
     for i in tqdm.tqdm(range(-n_therm, n_step*n_skip)):
+        R_flat = onp.reshape(R, (N_coord*N_d))
+        onp.random.shuffle(R_flat)
+        R = onp.reshape(R_flat, (N_coord,N_d))
         dR = draw_dR(R.shape, lam=eps, axis=0)
         new_R = R + dR
         W_R = W(R)
