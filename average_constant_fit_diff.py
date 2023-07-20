@@ -73,7 +73,8 @@ last_fit = 1e6
 min_dof = 3
 
 for n_tau_skip_exp in range(round(np.log(dshape[0]//n_walk_full+1)/np.log(2)), round(np.log(dshape[0])/np.log(2))-1):
-    n_tau_skip = 2*2**(n_tau_skip_exp+1)
+    #n_tau_skip = 2*2**(n_tau_skip_exp+1)
+    n_tau_skip = 2**(n_tau_skip_exp+1)
     fit_step = ((dshape[0]-min_dof*n_tau_skip) // n_fits)
     print("\nTRYING N_TAU_SKIP = ", n_tau_skip)
     if ((dshape[0]-min_dof*n_tau_skip) // n_tau_skip) < n_fits:
@@ -216,7 +217,6 @@ for n_tau_skip_exp in range(round(np.log(dshape[0]//n_walk_full+1)/np.log(2)), r
         else:
             lam = 0.0
 
-        lam *= 2
         print("\n OPTIMAL SHRINKAGE PARAMETER")
         print(lam)
 
@@ -312,7 +312,7 @@ for n in range(plot_n_step):
 
 plot_boot_ensemble = np.zeros((n_boot, plot_n_step))
 for b in range(n_boot):
-    inds = np.random.randint(n_walk, size=n_walk_full)
+    inds = np.random.randint(n_walk_full, size=n_walk_full)
     for n in range(plot_n_step):
         this_boot1 = plot_data1[n][inds]
         this_boot_Ws1 = plot_Ws1[n][inds]

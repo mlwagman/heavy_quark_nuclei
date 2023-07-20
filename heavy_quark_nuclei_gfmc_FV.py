@@ -39,7 +39,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--n_walkers', type=int, default=1000)
 parser.add_argument('--dtau_iMev', type=float, required=True)
 parser.add_argument('--n_step', type=int, required=True)
-parser.add_argument('--n_skip', type=int, default=200)
+parser.add_argument('--n_skip', type=int, default=100)
 parser.add_argument('--resampling', type=int, default=None)
 parser.add_argument('--alpha', type=float, default=1)
 parser.add_argument('--mu', type=float, default=1.0)
@@ -59,6 +59,7 @@ parser.add_argument('--Lcut', type=int, default=5)
 parser.add_argument('--spoilS', type=float, default=1)
 parser.add_argument('--wavefunction', type=str, default="compact")
 parser.add_argument('--potential', type=str, default="full")
+parser.add_argument('--spoilaket', type=float, default=1)
 parser.add_argument('--verbose', dest='verbose', action='store_true', default=False)
 globals().update(vars(parser.parse_args()))
 
@@ -123,7 +124,13 @@ elif OLO == "NLO":
 if N_coord == 2 or N_coord == 4:
     a0 /= Nc-1
 
+    
+ket_a0 = a0
+if wavefunction == "asymmetric":
+    ket_a0 = a0*spoilaket
+
 print("a0 = ", a0)
+print("ket_a0 = ", ket_a0)
 
 Rprime = lambda R: adl.norm_3vec(R)*np.exp(np.euler_gamma)*mu
 # build Coulomb potential
@@ -336,7 +343,7 @@ product_pairs = np.array(product_pairs)
 print("product pairs = ", product_pairs)
 
 @partial(jax.jit, static_argnums=(1,))
-def f_R(Rs, wavefunction=bra_wavefunction):
+def f_R(Rs, wavefunction=bra_wavefunction, a0=a0):
 
     def r_norm(pair):
         [i,j] = pair
@@ -354,10 +361,13 @@ def f_R_sq(Rs):
     return np.abs( f_R(Rs) )**2
 
 def f_R_braket(Rs):
-    return np.abs( f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction) )
+    return np.abs( f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0) )
+
+def f_R_braket_tempered(Rs, fac):
+    return np.abs( f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction, a0=fac*ket_a0) )
 
 def f_R_braket_phase(Rs):
-    prod = f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction)
+    prod = f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0)
     return prod / np.abs( prod )
 
 @partial(jax.jit)
@@ -467,12 +477,20 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction):
 
 # Metropolis
 if input_Rs_database == "":
-    R0 = onp.random.normal(size=(N_coord,3))
+    met_time = time.time()
+    #R0 = onp.random.normal(size=(N_coord,3))
     # set center of mass position to 0
-    R0 -= onp.mean(R0, axis=1, keepdims=True)
-    #samples = adl.metropolis(R0, f_R_sq, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
-    #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*2*a0/N_coord**2)
-    samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
+    #R0 -= onp.mean(R0, axis=1, keepdims=True)
+    #print("R0 = ", R0)
+    #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
+    fac_list = [1/2, 1.0, 2]
+    streams = len(fac_list)
+    R0_list = [ onp.random.normal(size=(N_coord,3)) for s in range(0,streams) ]
+    for s in range(streams):
+        R0_list[s] -= onp.mean(R0_list[s], axis=1, keepdims=True)
+    print("R0 = ", R0_list[0])
+    samples = adl.parallel_tempered_metropolis(fac_list, R0_list, f_R_braket_tempered, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
+    print(f"metropolis in {time.time() - met_time} sec")
     Rs_metropolis = np.array([R for R,_ in samples])
 else:
     f = h5py.File(input_Rs_database, 'r')
