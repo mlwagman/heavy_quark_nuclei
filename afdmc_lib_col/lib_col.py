@@ -51,7 +51,7 @@ def normalize_wf(f_R, df_R, ddf_R):
 
 ### Hamiltonian
 NS = 1
-NI = 3
+NI = 1
 
 # Define the Gell-Mann matrices
 sigma1 = 1/2*onp.array([[0, 1, 0], [1, 0, 0], [0, 0, 0]])
@@ -81,8 +81,9 @@ for a in range(8):
 #define levi-cevita tensor
 # Define the Levi-Civita symbol tensor
 lc_tensor = onp.zeros((NI, NI, NI))
-lc_tensor[0, 1, 2] = lc_tensor[1, 2, 0] = lc_tensor[2, 0, 1] = 1
-lc_tensor[0, 2, 1] = lc_tensor[2, 1, 0] = lc_tensor[1, 0, 2] = -1
+#lc_tensor[0, 1, 2] = lc_tensor[1, 2, 0] = lc_tensor[2, 0, 1] = 1
+#lc_tensor[0, 2, 1] = lc_tensor[2, 1, 0] = lc_tensor[1, 0, 2] = -1
+lc_tensor[0,0,0] = 1
 
 # QQ color symmetric potential operator
 iso_del = 1/2 * 1/2 * (onp.einsum('ab,cd->acdb', onp.identity(NI), onp.identity(NI)) + onp.einsum('ab,cd->cadb', onp.identity(NI), onp.identity(NI)))
@@ -387,6 +388,8 @@ def make_pairwise_product_potential(AVcoeffs, B3coeffs, masses):
 def batched_apply(M, S): # compute M|S>
     batch_size, src_sink_dims = M.shape[0], M.shape[1:]
     batch_size2, src_dims = S.shape[0], S.shape[1:]
+    print(src_sink_dims)
+    print(src_dims)
     assert (batch_size == batch_size2 or
             batch_size == 1 or batch_size2 == 1), 'batch size must be broadcastable'
     assert src_sink_dims == src_dims + src_dims, 'matrix dims must match vector dims'
@@ -881,12 +884,10 @@ def kinetic_step_absolute(R_fwd, R_bwd, R, R_deform, S, u, params_i, S_T,
     p_bwd = np.abs(w_bwd) / (np.abs(w_fwd) + np.abs(w_bwd))
     pc_bwd = w_bwd / (w_fwd + w_bwd)
     ind_fwd = u < p_fwd
-    # TODO I DONT UNDERSTAND THIS LINE
     ind_fwd_R = np.expand_dims(ind_fwd, axis=(-2,-1))
     R = np.where(ind_fwd_R, R_fwd_old, R_bwd_old)
     R_deform = np.where(ind_fwd_R, R_fwd, R_bwd)
     N_coord = R_deform.shape[1]
-    # TODO I REALLY DONT UNDERSTAND THIS LINE
     axis_tup = tuple([i for i in range(-2*N_coord,0)])
     ind_fwd_S = np.expand_dims(ind_fwd, axis=axis_tup)
     S = np.where(ind_fwd_S, S_fwd, S_bwd)

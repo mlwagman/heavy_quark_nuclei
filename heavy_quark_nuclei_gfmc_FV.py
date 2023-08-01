@@ -84,7 +84,7 @@ else:
     bra_wavefunction = wavefunction
     ket_wavefunction = wavefunction
 
-assert Nc == NI
+#assert Nc == NI
 
 CF = (Nc**2 - 1)/(2*Nc)
 VB = alpha*CF/(Nc-1)
@@ -278,10 +278,11 @@ else:
     #AV_Coulomb['OS'] = trivial_fun
     #AV_Coulomb['OSing'] = trivial_fun
     #AV_Coulomb['OO'] = trivial_fun
-    AV_Coulomb['OA'] = potential_fun
-    AV_Coulomb['OS'] = symmetric_potential_fun
-    AV_Coulomb['OSing'] = singlet_potential_fun
-    AV_Coulomb['OO'] = octet_potential_fun
+    #AV_Coulomb['OA'] = potential_fun
+    #AV_Coulomb['OS'] = symmetric_potential_fun
+    #AV_Coulomb['OSing'] = singlet_potential_fun
+    #AV_Coulomb['OO'] = octet_potential_fun
+    AV_Coulomb['O1'] = octet_potential_fun
 
 
 print("AV_Coulomb = ", AV_Coulomb)
@@ -532,7 +533,12 @@ if N_coord == 2:
    for j in range(NI):
         if i == j:
           spin_slice = (slice(0, None),) + (i,0,j,0)
-          S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)/np.sqrt(3)
+          #S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)/np.sqrt(3)
+          S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)/np.sqrt(NI)
+
+
+spin_slice = (slice(0,None),) + (0,0,0,0)
+S_av4p_metropolis[spin_slice] = 1
 
 # adjoint
 #S_av4p_metropolis = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
