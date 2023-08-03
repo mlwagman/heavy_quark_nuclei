@@ -51,7 +51,7 @@ def normalize_wf(f_R, df_R, ddf_R):
 
 ### Hamiltonian
 NS = 1
-NI = 1
+NI = 3
 
 # Define the Gell-Mann matrices
 sigma1 = 1/2*onp.array([[0, 1, 0], [1, 0, 0], [0, 0, 0]])
