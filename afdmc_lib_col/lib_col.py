@@ -36,6 +36,16 @@ def step_G0_symm(R, *, dtau_iMev, m_Mev):
     dR = draw_dR(R.shape, lam=lam_fm)
     return R+dR, R-dR
 
+def direct_sample_quarkonium(n_meas, f_R, *, a0):
+    shape = (n_meas)
+    u = onp.random.uniform(size=shape)
+    theta = onp.pi*onp.random.uniform(size=shape)
+    phi = 2*onp.pi*onp.random.uniform(size=shape)
+    r = -a0*onp.log(u)
+    Rrel = onp.array([r*onp.sin(theta)*onp.cos(phi), r*onp.sin(theta)*onp.sin(phi), r*onp.cos(theta)])
+    R = onp.array([Rrel/2, -Rrel/2])
+    samples = [(onp.array(R[:,:,n]), f_R(R[:,:,n])) for n in range(n_meas)]
+    return samples
 
 def normalize_wf(f_R, df_R, ddf_R):
     Rs = onp.linspace([0,0,0], [20,0,0], endpoint=False, num=10000)
