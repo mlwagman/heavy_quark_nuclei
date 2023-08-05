@@ -673,15 +673,24 @@ def parallel_tempered_metropolis(fac_list, R_list, W, *, n_therm, n_step, n_skip
 def metropolis(R, W, *, n_therm, n_step, n_skip, eps):
     samples = []
     acc = 0
-    (N_coord, N_d) = R.shape
+    #(N_coord, N_d) = R.shape
+    print('R0=',R)
     for i in tqdm.tqdm(range(-n_therm, n_step*n_skip)):
-        R_flat = onp.reshape(R, (N_coord*N_d))
-        onp.random.shuffle(R_flat)
-        R = onp.reshape(R_flat, (N_coord,N_d))
+        #R_flat = onp.reshape(R, (N_coord*N_d))
+        #onp.random.seed(42)
+        #onp.random.shuffle(R_flat)
+        #R = onp.reshape(R_flat, (N_coord,N_d))
+        #print('old_R=',R)
+        #onp.random.seed(42)
         dR = draw_dR(R.shape, lam=eps, axis=0)
+        #print('dR=',dR)
         new_R = R + dR
+        #print('new_R=',new_R)
         W_R = W(R)
+        #print('W_R=',W_R)
         new_W_R = W(new_R)
+        #print('new_W_R=',new_W_R)
+        #Exit
         if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R):
             R = new_R # accept
             W_R = new_W_R
