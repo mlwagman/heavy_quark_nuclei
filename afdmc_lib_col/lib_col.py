@@ -91,8 +91,8 @@ for a in range(8):
 #define levi-cevita tensor
 # Define the Levi-Civita symbol tensor
 lc_tensor = onp.zeros((NI, NI, NI))
-#lc_tensor[0, 1, 2] = lc_tensor[1, 2, 0] = lc_tensor[2, 0, 1] = 1
-#lc_tensor[0, 2, 1] = lc_tensor[2, 1, 0] = lc_tensor[1, 0, 2] = -1
+lc_tensor[0, 1, 2] = lc_tensor[1, 2, 0] = lc_tensor[2, 0, 1] = 1
+lc_tensor[0, 2, 1] = lc_tensor[2, 1, 0] = lc_tensor[1, 0, 2] = -1
 lc_tensor[0,0,0] = 1
 
 # QQ color symmetric potential operator
@@ -593,13 +593,22 @@ def parallel_tempered_metropolis(fac_list, R_list, W, *, n_therm, n_step, n_skip
     swap_acc_list = [ 0 for s in range(0,streams) ]
     #for i in range(-n_therm, n_step*n_skip):
     (N_coord, N_d) = R_list[0].shape
+    W_R_list = [ 0 for s in range(0,streams) ]
+    for s in range(streams):
+        W_R_list[s] = W(R_list[s], fac_list[s])
     for i in tqdm.tqdm(range(-n_therm, n_step*n_skip)):
         # cluster update
         for s in range(streams):
             R_flat = onp.reshape(R_list[s], (N_coord*N_d))
-            onp.random.shuffle(R_flat)
-            R_list[s] = onp.reshape(R_flat, (N_coord,N_d))
-        W_R_list = [ W(R_list[s], fac_list[s]) for s in range(0,streams) ]
+            #onp.random.shuffle(R_flat)
+            new_R = onp.reshape(R_flat, (N_coord,N_d))
+            new_R -= onp.mean(new_R, axis=0, keepdims=True)
+            new_W_R = W(new_R, fac_list[s])
+            W_R = W(R_list[s], fac_list[s])
+            if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R):
+                R_list[s] = new_R # accept
+                W_R_list[s] = new_W_R # accept
+                #acc_list[s] += 1
         # in-stream update
         for s in range(streams):
             dR = draw_dR(R_list[s].shape, lam=eps, axis=0)
@@ -630,8 +639,10 @@ def parallel_tempered_metropolis(fac_list, R_list, W, *, n_therm, n_step, n_skip
         # cluster update
         for s in range(streams):
             R_flat = onp.reshape(R_list[s], (N_coord*N_d))
-            onp.random.shuffle(R_flat)
-            R_list[s] = onp.reshape(R_flat, (N_coord,N_d))
+            #onp.random.shuffle(R_flat)
+            R_new = onp.reshape(R_flat, (N_coord,N_d))
+            R_new -= onp.mean(R_new, axis=0, keepdims=True)
+            R_list[s] = R_new
         W_R_list = [ W(R_list[s], fac_list[s]) for s in range(0,streams) ]
         # in-stream update
         for s in range(streams):
