@@ -36,6 +36,16 @@ def step_G0_symm(R, *, dtau_iMev, m_Mev):
     dR = draw_dR(R.shape, lam=lam_fm)
     return R+dR, R-dR
 
+def direct_sample_quarkonium(n_meas, f_R, *, a0):
+    shape = (n_meas)
+    u = onp.random.uniform(size=shape)
+    theta = onp.pi*onp.random.uniform(size=shape)
+    phi = 2*onp.pi*onp.random.uniform(size=shape)
+    r = -a0*onp.log(u)
+    Rrel = onp.array([r*onp.sin(theta)*onp.cos(phi), r*onp.sin(theta)*onp.sin(phi), r*onp.cos(theta)])
+    R = onp.array([Rrel/2, -Rrel/2])
+    samples = [(onp.array(R[:,:,n]), f_R(R[:,:,n])) for n in range(n_meas)]
+    return samples
 
 def normalize_wf(f_R, df_R, ddf_R):
     Rs = onp.linspace([0,0,0], [20,0,0], endpoint=False, num=10000)
@@ -83,6 +93,7 @@ for a in range(8):
 lc_tensor = onp.zeros((NI, NI, NI))
 lc_tensor[0, 1, 2] = lc_tensor[1, 2, 0] = lc_tensor[2, 0, 1] = 1
 lc_tensor[0, 2, 1] = lc_tensor[2, 1, 0] = lc_tensor[1, 0, 2] = -1
+lc_tensor[0,0,0] = 1
 
 # QQ color symmetric potential operator
 iso_del = 1/2 * 1/2 * (onp.einsum('ab,cd->acdb', onp.identity(NI), onp.identity(NI)) + onp.einsum('ab,cd->cadb', onp.identity(NI), onp.identity(NI)))
@@ -387,6 +398,8 @@ def make_pairwise_product_potential(AVcoeffs, B3coeffs, masses):
 def batched_apply(M, S): # compute M|S>
     batch_size, src_sink_dims = M.shape[0], M.shape[1:]
     batch_size2, src_dims = S.shape[0], S.shape[1:]
+    print(src_sink_dims)
+    print(src_dims)
     assert (batch_size == batch_size2 or
             batch_size == 1 or batch_size2 == 1), 'batch size must be broadcastable'
     assert src_sink_dims == src_dims + src_dims, 'matrix dims must match vector dims'
@@ -580,13 +593,22 @@ def parallel_tempered_metropolis(fac_list, R_list, W, *, n_therm, n_step, n_skip
     swap_acc_list = [ 0 for s in range(0,streams) ]
     #for i in range(-n_therm, n_step*n_skip):
     (N_coord, N_d) = R_list[0].shape
+    W_R_list = [ 0 for s in range(0,streams) ]
+    for s in range(streams):
+        W_R_list[s] = W(R_list[s], fac_list[s])
     for i in tqdm.tqdm(range(-n_therm, n_step*n_skip)):
         # cluster update
         for s in range(streams):
             R_flat = onp.reshape(R_list[s], (N_coord*N_d))
-            onp.random.shuffle(R_flat)
-            R_list[s] = onp.reshape(R_flat, (N_coord,N_d))
-        W_R_list = [ W(R_list[s], fac_list[s]) for s in range(0,streams) ]
+            #onp.random.shuffle(R_flat)
+            new_R = onp.reshape(R_flat, (N_coord,N_d))
+            new_R -= onp.mean(new_R, axis=0, keepdims=True)
+            new_W_R = W(new_R, fac_list[s])
+            W_R = W(R_list[s], fac_list[s])
+            if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R):
+                R_list[s] = new_R # accept
+                W_R_list[s] = new_W_R # accept
+                #acc_list[s] += 1
         # in-stream update
         for s in range(streams):
             dR = draw_dR(R_list[s].shape, lam=eps, axis=0)
@@ -617,8 +639,10 @@ def parallel_tempered_metropolis(fac_list, R_list, W, *, n_therm, n_step, n_skip
         # cluster update
         for s in range(streams):
             R_flat = onp.reshape(R_list[s], (N_coord*N_d))
-            onp.random.shuffle(R_flat)
-            R_list[s] = onp.reshape(R_flat, (N_coord,N_d))
+            #onp.random.shuffle(R_flat)
+            R_new = onp.reshape(R_flat, (N_coord,N_d))
+            R_new -= onp.mean(R_new, axis=0, keepdims=True)
+            R_list[s] = R_new
         W_R_list = [ W(R_list[s], fac_list[s]) for s in range(0,streams) ]
         # in-stream update
         for s in range(streams):
@@ -660,15 +684,24 @@ def parallel_tempered_metropolis(fac_list, R_list, W, *, n_therm, n_step, n_skip
 def metropolis(R, W, *, n_therm, n_step, n_skip, eps):
     samples = []
     acc = 0
-    (N_coord, N_d) = R.shape
+    #(N_coord, N_d) = R.shape
+    print('R0=',R)
     for i in tqdm.tqdm(range(-n_therm, n_step*n_skip)):
-        R_flat = onp.reshape(R, (N_coord*N_d))
-        onp.random.shuffle(R_flat)
-        R = onp.reshape(R_flat, (N_coord,N_d))
+        #R_flat = onp.reshape(R, (N_coord*N_d))
+        #onp.random.seed(42)
+        #onp.random.shuffle(R_flat)
+        #R = onp.reshape(R_flat, (N_coord,N_d))
+        #print('old_R=',R)
+        #onp.random.seed(42)
         dR = draw_dR(R.shape, lam=eps, axis=0)
+        #print('dR=',dR)
         new_R = R + dR
+        #print('new_R=',new_R)
         W_R = W(R)
+        #print('W_R=',W_R)
         new_W_R = W(new_R)
+        #print('new_W_R=',new_W_R)
+        #Exit
         if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R):
             R = new_R # accept
             W_R = new_W_R
@@ -881,12 +914,10 @@ def kinetic_step_absolute(R_fwd, R_bwd, R, R_deform, S, u, params_i, S_T,
     p_bwd = np.abs(w_bwd) / (np.abs(w_fwd) + np.abs(w_bwd))
     pc_bwd = w_bwd / (w_fwd + w_bwd)
     ind_fwd = u < p_fwd
-    # TODO I DONT UNDERSTAND THIS LINE
     ind_fwd_R = np.expand_dims(ind_fwd, axis=(-2,-1))
     R = np.where(ind_fwd_R, R_fwd_old, R_bwd_old)
     R_deform = np.where(ind_fwd_R, R_fwd, R_bwd)
     N_coord = R_deform.shape[1]
-    # TODO I REALLY DONT UNDERSTAND THIS LINE
     axis_tup = tuple([i for i in range(-2*N_coord,0)])
     ind_fwd_S = np.expand_dims(ind_fwd, axis=axis_tup)
     S = np.where(ind_fwd_S, S_fwd, S_bwd)

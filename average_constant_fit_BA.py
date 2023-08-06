@@ -13,8 +13,7 @@ np.random.seed(0)
 # fitting parameters
 parser = argparse.ArgumentParser()
 # data to fit
-parser.add_argument('--database1', type=str, required=True)
-parser.add_argument('--database2', type=str, required=True)
+parser.add_argument('--database', type=str, required=True)
 parser.add_argument('--dataset', type=str, default="Hammys")
 # how many steps to skip in between samples to keep correlations managable
 parser.add_argument('--n_skip', type=int, default=1)
@@ -27,7 +26,7 @@ parser.add_argument('--n_print', type=int, default=1)
 # how many fits to do
 parser.add_argument('--n_fits', type=int, default=30)
 # stop increase n_tau_skip after agreement within how many sigma
-parser.add_argument('--n_tau_tol', type=float, default=2.0)
+parser.add_argument('--n_tau_tol', type=float, default=10.0)
 # dtau for plotting
 parser.add_argument('--dtau', type=float, default=0.4)
 # plot height in sigma
@@ -43,67 +42,66 @@ if n_skip > 1 and n_block > 1:
     throw()
 
 # read data
-f1 = h5py.File(database1, 'r')
-f2 = h5py.File(database2, 'r')
-dset1 = f1[dataset]
-dset2 = f2[dataset]
+f = h5py.File(database, 'r')
+dset = f[dataset]
 
-dshape = dset1.shape
-assert(dshape == dset2.shape)
+n_step_full = dset.shape[0]
+n_walk_full = dset.shape[1]
 
-n_step_full = dshape[0]
-n_walk_full = dshape[1]
+n_step_full = n_step_full
 
-print(dshape)
+print(dset.shape)
 if dataset == "Rs":
-    dset1 = np.mean(np.abs(dset1), axis=(2,3))
-    dset2 = np.mean(np.abs(dset2), axis=(2,3))
+    dset = np.mean(np.abs(dset), axis=(2,3))
 
 # read weights
-dset1_Ws = f1["Ws"]
-dset2_Ws = f2["Ws"]
+dset_Ws = f["Ws"]
+
+dset_Ws = dset_Ws[0:n_step_full]
+dset = dset[0:n_step_full]
+mean_weights = np.sum(dset_Ws, axis=1)
+print(mean_weights)
+mean_weights_squared = np.sum(dset_Ws ** 2, axis=1)
+effective_sample_size = np.real(mean_weights ** 2 / mean_weights_squared)
+
+
+print("Effective Sample Size:", effective_sample_size)
 
 model_fits = np.zeros((n_fits))
 model_errs = np.zeros((n_fits))
 model_redchisq = np.zeros((n_fits))
 model_weights = np.zeros((n_fits))
 
-outprefix = database1[:-3]+'_corrdiff'
-
 last_fit = 1e6
 
 min_dof = 3
 
+
 tau_ac = 0
-sub_dset1 = np.real(dset1[tau_ac] - np.mean(dset1[tau_ac]))
-sub_dset2 = np.real(dset2[tau_ac] - np.mean(dset2[tau_ac]))
+sub_dset = np.real(dset[tau_ac] - np.mean(dset[tau_ac]))
 auto_corr = []
-c0 = np.mean((sub_dset1-sub_dset2) * (sub_dset1-sub_dset2))
+c0 = np.mean(sub_dset * sub_dset)
 auto_corr.append(c0)
-print(c0)
 for i in range(1,n_walk_full//4):
-     auto_corr.append(np.mean((sub_dset1[i:]-sub_dset2[i:]) * (sub_dset1[:-i]-sub_dset2[:-i])))
+     auto_corr.append(np.mean(sub_dset[i:] * sub_dset[:-i]))
 littlec = np.asarray(auto_corr) / c0
 last_point = n_walk_full//8
-def tauint(t, littlec):
+def tauint(t):
      return 1 + 2 * np.sum(littlec[1:t])
-y = [tauint(i, littlec) for i in range(1, last_point)]
+y = [tauint(i) for i in range(1, last_point)]
 fig, ax = plt.subplots(1,1, figsize=(4,3))
 ax.plot(range(1, last_point), y, 'x')
 ax.set_xlabel(r'$N_{walkers}$')
 ax.set_ylabel(r'$\tau_{int}$')
-plt.savefig(outprefix+'_autocorrelation.pdf')
-tauint0 = tauint(last_point, littlec)
-print("integrated autocorrelation time = ", tauint0)
+plt.savefig(database[:-3]+'_autocorrelation.pdf')
+print("integrated autocorrelation time = ", tauint(last_point))
 
-for n_tau_skip_exp in range(round(np.log(dshape[0]//n_walk_full+1)/np.log(2)), round(np.log(dshape[0])/np.log(2))-1):
-    n_tau_skip = 2**(n_tau_skip_exp+1)
-    if dshape[0] < 32:
-        n_tau_skip = 2
-    fit_step = ((dshape[0]-min_dof*n_tau_skip) // n_fits)
+for n_tau_skip_exp in range(round(np.log(dset.shape[0]//n_walk_full+1)/np.log(2)), round(np.log(dset.shape[0])/np.log(2))-1):
+    n_tau_skip = 2*2**(n_tau_skip_exp+1)
+    fit_step = ((dset.shape[0]-min_dof*n_tau_skip) // n_fits)
     print("\nTRYING N_TAU_SKIP = ", n_tau_skip)
-    if ((dshape[0]-min_dof*n_tau_skip) // n_tau_skip) < n_fits:
-        n_fits = (dshape[0]-min_dof*n_tau_skip) // n_tau_skip
+    if ((dset.shape[0]-min_dof*n_tau_skip) // n_tau_skip) < n_fits:
+        n_fits = (dset.shape[0]-min_dof*n_tau_skip) // n_tau_skip
         model_fits = np.zeros((n_fits))
         model_errs = np.zeros((n_fits))
         model_redchisq = np.zeros((n_fits))
@@ -112,18 +110,14 @@ for n_tau_skip_exp in range(round(np.log(dshape[0]//n_walk_full+1)/np.log(2)), r
         start_fit = fit_num * fit_step
         #full_data = np.real(dset[start_fit::n_tau_skip] * dset_Ws[start_fit::n_tau_skip])
         #full_Ws = np.real(dset_Ws[start_fit::n_tau_skip])
-
-        n_step = (dshape[0] - start_fit) // n_tau_skip
-        full_data1 = np.zeros((n_step, n_walk_full))
-        full_Ws1 = np.zeros((n_step, n_walk_full))
-        full_data2 = np.zeros((n_step, n_walk_full))
-        full_Ws2 = np.zeros((n_step, n_walk_full))
+        n_step = (dset.shape[0] - start_fit) // n_tau_skip
+        full_data = np.zeros((n_step, n_walk_full))
+        full_Ws = np.zeros((n_step, n_walk_full))
         for tau in range(n_step):
             for k in range(n_tau_skip):
-                full_data1[tau] += np.real(dset1[start_fit+tau*n_tau_skip+k] * dset1_Ws[start_fit+tau*n_tau_skip+k])
-                full_Ws1[tau] += np.real(dset1_Ws[start_fit+tau*n_tau_skip+k])
-                full_data2[tau] += np.real(dset2[start_fit+tau*n_tau_skip+k] * dset2_Ws[start_fit+tau*n_tau_skip+k])
-                full_Ws2[tau] += np.real(dset2_Ws[start_fit+tau*n_tau_skip+k])
+                full_data[tau] += np.real(dset[start_fit+tau*n_tau_skip+k] * dset_Ws[start_fit+tau*n_tau_skip+k])
+                full_Ws[tau] += np.real(dset_Ws[start_fit+tau*n_tau_skip+k])
+        print(dset_Ws[start_fit+tau*n_tau_skip+k])
 
         if n_skip > 1:
             n_walk = n_walk_full // n_skip
@@ -133,35 +127,27 @@ for n_tau_skip_exp in range(round(np.log(dshape[0]//n_walk_full+1)/np.log(2)), r
             n_walk = n_walk_full
 
         # block data
-        data1 = np.zeros((n_step,n_walk))
-        Ws1 = np.zeros((n_step,n_walk))
-        data2 = np.zeros((n_step,n_walk))
-        Ws2 = np.zeros((n_step,n_walk))
+        data = np.zeros((n_step,n_walk))
+        Ws = np.zeros((n_step,n_walk))
         for i in range(n_walk):
             for k in range(n_block):
-                data1[:,i] += full_data1[:,i*n_block+k]/n_block
-                Ws1[:,i] += full_Ws1[:,i*n_block+k]/n_block
-                data2[:,i] += full_data2[:,i*n_block+k]/n_block
-                Ws2[:,i] += full_Ws2[:,i*n_block+k]/n_block
+                data[:,i] += full_data[:,i*n_block+k]/n_block
+                Ws[:,i] += full_Ws[:,i*n_block+k]/n_block
 
         # sparsen data
         if n_skip > 1:
-            data1 = np.zeros((n_step,n_walk))
-            Ws1 = np.zeros((n_step,n_walk))
-            data2 = np.zeros((n_step,n_walk))
-            Ws2 = np.zeros((n_step,n_walk))
+            data = np.zeros((n_step,n_walk))
+            Ws = np.zeros((n_step,n_walk))
             for i in range(n_walk):
-                data1[:,i] += full_data1[:,i*n_skip]
-                Ws1[:,i] += full_Ws1[:,i*n_skip]
-                data2[:,i] += full_data2[:,i*n_skip]
-                Ws2[:,i] += full_Ws2[:,i*n_skip]
+                data[:,i] += full_data[:,i*n_skip]
+                Ws[:,i] += full_Ws[:,i*n_skip]
 
         # sample mean for each step
         sample_mean = np.zeros((n_step))
         sample_mean_num = np.zeros((n_step))
         for n in range(n_step):
-            sample_mean[n] = np.mean(data1[n]) / np.mean(Ws1[n]) - np.mean(data2[n]) / np.mean(Ws2[n])
-            sample_mean_num[n] = np.mean(data1[n])
+            sample_mean[n] = np.mean(data[n]) / np.mean(Ws[n])
+            sample_mean_num[n] = np.mean(data[n])
 
         print("\n SAMPLE MEAN")
         print(np.size(sample_mean))
@@ -171,7 +157,7 @@ for n_tau_skip_exp in range(round(np.log(dshape[0]//n_walk_full+1)/np.log(2)), r
         sample_covar_num = np.zeros((n_step,n_step))
         for n in range(n_step):
             for m in range(n_step):
-               sample_covar_num[n,m] = (np.mean(data1[n]*data1[m]) - np.mean(data1[n])*np.mean(data1[m])) * n_walk/(n_walk-1)
+               sample_covar_num[n,m] = (np.mean(data[n]*data[m]) - np.mean(data[n])*np.mean(data[m])) * n_walk/(n_walk-1)
 
         #print("\n SAMPLE ERR")
         #print(sample_covar.shape)
@@ -182,11 +168,9 @@ for n_tau_skip_exp in range(round(np.log(dshape[0]//n_walk_full+1)/np.log(2)), r
         for b in range(n_boot):
             inds = np.random.randint(n_walk, size=n_walk)
             for n in range(n_step):
-                this_boot1 = data1[n][inds]
-                this_boot_Ws1 = Ws1[n][inds]
-                this_boot2 = data2[n][inds]
-                this_boot_Ws2 = Ws2[n][inds]
-                boot_ensemble[b,n] = np.mean(this_boot1) / np.mean(this_boot_Ws1) - np.mean(this_boot2) / np.mean(this_boot_Ws2)
+                this_boot = data[n][inds]
+                this_boot_Ws = Ws[n][inds]
+                boot_ensemble[b,n] = np.mean(this_boot) / np.mean(this_boot_Ws)
 
         #print("\n BOOTSTRAP MEAN")
         #print(boot_ensemble.shape)
@@ -215,7 +199,7 @@ for n_tau_skip_exp in range(round(np.log(dshape[0]//n_walk_full+1)/np.log(2)), r
         #print(np.array([boot_covar[0,n] for n in range(0, n_step, n_print)]))
 
         # normalized sample mean and covariance
-        norm_data = np.array([ (data1[n,:] - sample_mean_num[n])/np.sqrt(sample_covar_num[n,n]) for n in range(n_step) ])
+        norm_data = np.array([ (data[n,:] - sample_mean_num[n])/np.sqrt(sample_covar_num[n,n]) for n in range(n_step) ])
         norm_covar = np.array([ [ sample_covar_num[n,m]/np.sqrt(sample_covar_num[n,n]*sample_covar_num[m,m]) for m in range(n_step) ] for n in range(n_step) ])
 
         if shrink:
@@ -241,6 +225,7 @@ for n_tau_skip_exp in range(round(np.log(dshape[0]//n_walk_full+1)/np.log(2)), r
                 lam = 0
         else:
             lam = 0.0
+
 
         print("\n OPTIMAL SHRINKAGE PARAMETER")
         print(lam)
@@ -314,7 +299,7 @@ for n_tau_skip_exp in range(round(np.log(dshape[0]//n_walk_full+1)/np.log(2)), r
         last_fit = model_averaged_fit
         n_tau_skip *= 2
 
-with open(outprefix+'.csv', 'w', newline='') as csvfile:
+with open(database[:-2]+'csv', 'w', newline='') as csvfile:
     fieldnames = ['mean', 'err', 'chi2dof']
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
@@ -322,26 +307,22 @@ with open(outprefix+'.csv', 'w', newline='') as csvfile:
 
 
 # plot H(tau)
-plot_data1 = np.real(dset1[:] * dset1_Ws[:])
-plot_Ws1 = np.real(dset1_Ws[:])
-plot_data2 = np.real(dset2[:] * dset2_Ws[:])
-plot_Ws2 = np.real(dset2_Ws[:])
-plot_n_step = len(plot_Ws1)
+plot_data = np.real(dset[:] * dset_Ws[:])
+plot_Ws = np.real(dset_Ws[:])
+plot_n_step = len(plot_Ws)
 plot_tau = np.arange(plot_n_step) * dtau
 
 plot_sample_mean = np.zeros((plot_n_step))
 for n in range(plot_n_step):
-    plot_sample_mean[n] = np.mean(plot_data1[n]) / np.mean(plot_Ws1[n]) - np.mean(plot_data2[n]) / np.mean(plot_Ws2[n])
+    plot_sample_mean[n] = np.mean(plot_data[n]) / np.mean(plot_Ws[n])
 
 plot_boot_ensemble = np.zeros((n_boot, plot_n_step))
 for b in range(n_boot):
-    inds = np.random.randint(n_walk_full, size=n_walk_full)
+    inds = np.random.randint(n_walk, size=n_walk_full)
     for n in range(plot_n_step):
-        this_boot1 = plot_data1[n][inds]
-        this_boot_Ws1 = plot_Ws1[n][inds]
-        this_boot2 = plot_data2[n][inds]
-        this_boot_Ws2 = plot_Ws2[n][inds]
-        plot_boot_ensemble[b,n] = np.mean(this_boot1) / np.mean(this_boot_Ws1) - np.mean(this_boot2) / np.mean(this_boot_Ws2)
+        this_boot = plot_data[n][inds]
+        this_boot_Ws = plot_Ws[n][inds]
+        plot_boot_ensemble[b,n] = np.mean(this_boot) / np.mean(this_boot_Ws)
 
 plot_boot_var = np.zeros((plot_n_step))
 for n in range(plot_n_step):
@@ -353,13 +334,29 @@ highest_weight_fit_num = np.argmax(model_weights)
 highest_weight_start_fit = highest_weight_fit_num * fit_step
 rect_start = highest_weight_start_fit * dtau
 
-fig, ax = plt.subplots(1,1, figsize=(4,3))
+# Plot the data with error bars in one figure
+fig, ax = plt.subplots(1, 1, figsize=(4, 3))
 ax.errorbar(plot_tau, plot_sample_mean, yerr=plot_errs, color='xkcd:forest green')
-ax.set_ylim(model_averaged_fit - plot_scale*model_averaged_err, model_averaged_fit + plot_scale*model_averaged_err)
-rect = patches.Rectangle((rect_start, model_averaged_fit - model_averaged_err), plot_tau[-1]-rect_start, 2*model_averaged_err, linewidth=0, facecolor='xkcd:blue', zorder=10, alpha=0.7)
+ax.set_ylim(model_averaged_fit - plot_scale * model_averaged_err, model_averaged_fit + plot_scale * model_averaged_err)
+rect = patches.Rectangle((rect_start, model_averaged_fit - model_averaged_err), plot_tau[-1] - rect_start, 2 * model_averaged_err, linewidth=0, facecolor='xkcd:blue', zorder=10, alpha=0.7)
 ax.add_patch(rect)
 ax.set_xlabel(r'$\tau \, m_Q$')
 ax.set_ylabel(r'$\left< H(\tau) \right> / m_Q$')
-fig.savefig(outprefix+'_EMP.pdf')
+fig.savefig(database[:-3] + '_EMP.pdf')
 
-print("\nintegrated autocorrelation time = ", tauint0, "\n")
+# Plot only the errors in a new figure with a log y-axis
+fig_err, ax_err = plt.subplots(1, 1, figsize=(4, 3))
+ax_err.errorbar(plot_tau, plot_errs, color='xkcd:forest green')
+ax_err.set_xlabel(r'$\tau \, m_Q$')
+ax_err.set_ylabel('Errors')
+ax_err.set_yscale('log')  # Set the y-axis to log scale
+fig_err.savefig(database[:-3] + '_errors_logy.pdf')
+
+plt.figure(figsize=(4, 3))
+plt.plot(plot_tau, effective_sample_size, color='xkcd:forest green')
+plt.xlabel(r'$\tau \, m_Q$')
+plt.ylabel('Effective Sample Size')
+plt.savefig('ESS_plot.pdf')
+
+# Show the plot (optional)
+plt.show()
