@@ -289,7 +289,7 @@ for n_tau_skip_exp in range(round(np.log(dshape[0]//n_walk_full+1)/np.log(2)), r
 
     model_averaged_stat_sq_noac = np.sum( model_weights * model_errs**2 )
 
-    if tauint0 > 1:
+    if tauint0 > 0.5:
         model_averaged_stat_sq = model_averaged_stat_sq_noac*2*tauint0
     else:
         model_averaged_stat_sq = model_averaged_stat_sq_noac
