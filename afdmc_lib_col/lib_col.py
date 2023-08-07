@@ -93,7 +93,6 @@ for a in range(8):
 lc_tensor = onp.zeros((NI, NI, NI))
 lc_tensor[0, 1, 2] = lc_tensor[1, 2, 0] = lc_tensor[2, 0, 1] = 1
 lc_tensor[0, 2, 1] = lc_tensor[2, 1, 0] = lc_tensor[1, 0, 2] = -1
-lc_tensor[0,0,0] = 1
 
 # QQ color symmetric potential operator
 iso_del = 1/2 * 1/2 * (onp.einsum('ab,cd->acdb', onp.identity(NI), onp.identity(NI)) + onp.einsum('ab,cd->cadb', onp.identity(NI), onp.identity(NI)))
@@ -398,8 +397,8 @@ def make_pairwise_product_potential(AVcoeffs, B3coeffs, masses):
 def batched_apply(M, S): # compute M|S>
     batch_size, src_sink_dims = M.shape[0], M.shape[1:]
     batch_size2, src_dims = S.shape[0], S.shape[1:]
-    print(src_sink_dims)
-    print(src_dims)
+    #print(src_sink_dims)
+    #print(src_dims)
     assert (batch_size == batch_size2 or
             batch_size == 1 or batch_size2 == 1), 'batch size must be broadcastable'
     assert src_sink_dims == src_dims + src_dims, 'matrix dims must match vector dims'

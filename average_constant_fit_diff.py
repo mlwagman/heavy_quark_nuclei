@@ -287,7 +287,13 @@ for n_tau_skip_exp in range(round(np.log(dshape[0]//n_walk_full+1)/np.log(2)), r
 
     model_averaged_fit = np.sum( model_weights * model_fits )
 
-    model_averaged_stat_sq = np.sum( model_weights * model_errs**2 )
+    model_averaged_stat_sq_noac = np.sum( model_weights * model_errs**2 )
+
+    if tauint0 > 0.5:
+        model_averaged_stat_sq = model_averaged_stat_sq_noac*2*tauint0
+    else:
+        model_averaged_stat_sq = model_averaged_stat_sq_noac
+
     model_averaged_sys_sq = np.sum( model_weights * model_fits**2 ) - np.sum( model_weights * model_fits )**2
     model_averaged_err = np.sqrt( model_averaged_stat_sq + model_averaged_sys_sq )
 
@@ -302,6 +308,7 @@ for n_tau_skip_exp in range(round(np.log(dshape[0]//n_walk_full+1)/np.log(2)), r
     print("weights = ", model_weights)
     print("model averaged fit = ", model_averaged_fit)
     print("model averaged reduced chisq = ", model_averaged_redchisq)
+    print("model averaged stat err without autocrrelations = ", np.sqrt(model_averaged_stat_sq_noac))
     print("model averaged stat err = ", np.sqrt(model_averaged_stat_sq))
     print("model averaged sys err = ", np.sqrt(model_averaged_sys_sq))
     print("model averaged err = ", model_averaged_err)
