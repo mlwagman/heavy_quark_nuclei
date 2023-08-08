@@ -60,6 +60,7 @@ parser.add_argument('--spoilS', type=float, default=1)
 parser.add_argument('--wavefunction', type=str, default="compact")
 parser.add_argument('--potential', type=str, default="full")
 parser.add_argument('--spoilaket', type=float, default=1)
+parser.add_argument('--masses', type=float, default=0., nargs='+')
 parser.add_argument('--verbose', dest='verbose', action='store_true', default=False)
 globals().update(vars(parser.parse_args()))
 
@@ -69,11 +70,12 @@ volume = "infinite"
 if L > 1e-2:
     volume = "finite"
 
-masses = onp.ones(N_coord)
-if N_coord == 2:
-    masses = [1,-1]
-if N_coord == 4:
-    masses = [1,-1,1,-1]
+if masses == 0.:
+    masses = onp.ones(N_coord)
+    if N_coord == 2:
+        masses = [1,-1]
+    if N_coord == 4:
+        masses = [1,-1,1,-1]
 
 print("masses = ", masses)
 
@@ -485,7 +487,7 @@ if input_Rs_database == "":
     R0 -= onp.mean(R0, axis=0, keepdims=True)
     print("R0 = ", R0)
     samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
-    #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
+    #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=0.1*2*a0/N_coord**2)
     
 #    if N_coord == 2:
 #        samples = adl.direct_sample_quarkonium(n_walkers, f_R_braket, a0=a0)
@@ -622,7 +624,8 @@ rand_draws = onp.random.random(size=(n_step, Rs_metropolis.shape[0]))
 gfmc = adl.gfmc_deform(
     Rs_metropolis, S_av4p_metropolis, f_R, params,
     rand_draws=rand_draws, tau_iMev=tau_iMev, N=n_step, potential=Coulomb_potential,
-    deform_f=deform_f, m_Mev=adl.mp_Mev,
+    #deform_f=deform_f, m_Mev=adl.mp_Mev,
+    deform_f=deform_f, m_Mev=np.abs(np.array(masses)),
     resampling_freq=resampling)
 gfmc_Rs = np.array([Rs for Rs,_,_,_, in gfmc])
 gfmc_Ws = np.array([Ws for _,_,_,Ws, in gfmc])
