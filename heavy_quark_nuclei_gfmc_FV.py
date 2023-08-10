@@ -486,28 +486,17 @@ if input_Rs_database == "":
     #R0 -= onp.mean(R0, axis=1, keepdims=True)
     R0 -= onp.mean(R0, axis=0, keepdims=True)
     print("R0 = ", R0)
-    samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
+    #samples = adl.direct_sample_metropolis(f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
+    #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
     #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=0.1*2*a0/N_coord**2)
     
-#    if N_coord == 2:
-#        samples = adl.direct_sample_quarkonium(n_walkers, f_R_braket, a0=a0)
-#    elif N_coord == 4:
-#        samples1 = adl.direct_sample_quarkonium(n_walkers, f_R_braket, a0=a0)
-#        samples2 = adl.direct_sample_quarkonium(n_walkers, f_R_braket, a0=a0)
-#        samples = []
-#        for n in range(n_walkers):
-#            this_R = onp.concatenate((samples1[n][0], samples2[n][0]), axis=0)
-#            this_W = f_R_braket(this_R)
-#            samples.append((this_R, this_W))
-#    else:
-#        samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
     fac_list = [1/2, 1.0, 2]
     streams = len(fac_list)
     R0_list = [ onp.random.normal(size=(N_coord,3)) for s in range(0,streams) ]
     for s in range(streams):
         R0_list[s] -= onp.mean(R0_list[s], axis=0, keepdims=True)
     print("R0 = ", R0_list[0])
-    #samples = adl.parallel_tempered_metropolis(fac_list, R0_list, f_R_braket_tempered, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
+    samples = adl.parallel_tempered_metropolis(fac_list, R0_list, f_R_braket_tempered, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
     #print(samples)
     print("first walker")
     print("R = ",samples[0])

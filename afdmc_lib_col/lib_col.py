@@ -47,17 +47,6 @@ def step_G0_symm_distinct(R, *, dtau_iMev, m_Mev):
     dR -= onp.mean(dR, axis=1, keepdims=True)
     return R+dR, R-dR
 
-def direct_sample_quarkonium(n_meas, f_R, *, a0):
-    shape = (n_meas)
-    u = onp.random.uniform(size=shape)
-    theta = onp.pi*onp.random.uniform(size=shape)
-    phi = 2*onp.pi*onp.random.uniform(size=shape)
-    r = -a0*onp.log(u)
-    Rrel = onp.array([r*onp.sin(theta)*onp.cos(phi), r*onp.sin(theta)*onp.sin(phi), r*onp.cos(theta)])
-    R = onp.array([Rrel/2, -Rrel/2])
-    samples = [(onp.array(R[:,:,n]), f_R(R[:,:,n])) for n in range(n_meas)]
-    return samples
-
 def normalize_wf(f_R, df_R, ddf_R):
     Rs = onp.linspace([0,0,0], [20,0,0], endpoint=False, num=10000)
     rs = onp.array(norm_3vec(Rs))
@@ -715,6 +704,42 @@ def metropolis(R, W, *, n_therm, n_step, n_skip, eps):
         if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R):
             R = new_R # accept
             W_R = new_W_R
+            acc += 1
+        if i >= 0 and (i+1) % n_skip == 0:
+            samples.append((R, W_R))
+    print(f'Total acc frac = {acc} / {n_therm+n_skip*n_step} = {1.0*acc/(n_therm+n_skip*n_step)}')
+    return samples
+
+def direct_sample_quarkonium(a0):
+    u = onp.random.uniform()
+    theta = onp.pi*onp.random.uniform()
+    phi = 2*onp.pi*onp.random.uniform()
+    r = -a0*onp.log(u)
+    Rrel = onp.array([r*onp.sin(theta)*onp.cos(phi), r*onp.sin(theta)*onp.sin(phi), r*onp.cos(theta)])
+    R = onp.array([Rrel/2, -Rrel/2])
+    detJ = -(a0**3)*(onp.log(u)**2)*onp.sin(theta)/u
+    return R, onp.abs(detJ/8)
+
+def direct_sample_metropolis(W, *, n_therm, n_step, n_skip, a0):
+    samples = []
+    acc = 0
+    R_1, q_1 = direct_sample_quarkonium(a0)
+    R_2, q_2 = direct_sample_quarkonium(a0)
+    R = onp.concatenate((R_1, R_2))
+    R -= onp.mean(R, axis=0, keepdims=True)
+    q = q_1 * q_2
+    for i in tqdm.tqdm(range(-n_therm, n_step*n_skip)):
+        new_R_1, new_q_1 = direct_sample_quarkonium(a0)
+        new_R_2, new_q_2 = direct_sample_quarkonium(a0)
+        new_R = onp.concatenate((new_R_1, new_R_2))
+        new_R -= onp.mean(new_R, axis=0, keepdims=True)
+        new_q = new_q_1 * new_q_2
+        W_R = W(R) / q
+        new_W_R = W(new_R) / new_q
+        if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R):
+            R = new_R # accept
+            W_R = new_W_R
+            q = new_q
             acc += 1
         if i >= 0 and (i+1) % n_skip == 0:
             samples.append((R, W_R))
