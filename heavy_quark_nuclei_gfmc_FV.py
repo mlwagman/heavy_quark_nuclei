@@ -486,9 +486,12 @@ if input_Rs_database == "":
     #R0 -= onp.mean(R0, axis=1, keepdims=True)
     R0 -= onp.mean(R0, axis=0, keepdims=True)
     print("R0 = ", R0)
-    #samples = adl.direct_sample_metropolis(f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
+    samples = adl.direct_sample_metropolis(N_coord, f_R_braket, 0, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
     #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
-    #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=0.1*2*a0/N_coord**2)
+
+    #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
+
+    #samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=8*2*a0/N_coord**2)
     
     fac_list = [1/2, 1.0, 2]
     streams = len(fac_list)
@@ -496,7 +499,7 @@ if input_Rs_database == "":
     for s in range(streams):
         R0_list[s] -= onp.mean(R0_list[s], axis=0, keepdims=True)
     print("R0 = ", R0_list[0])
-    samples = adl.parallel_tempered_metropolis(fac_list, R0_list, f_R_braket_tempered, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
+    #samples = adl.parallel_tempered_metropolis(fac_list, R0_list, f_R_braket_tempered, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=8*2*a0/N_coord**2)
     #print(samples)
     print("first walker")
     print("R = ",samples[0])
@@ -723,10 +726,13 @@ with h5py.File(outdir+'Rs_'+tag+'.h5', 'r') as f:
 
 dset = Ks+Vs
 print("dset = ", dset)
-last_point = n_walkers//8
-def tauint(t, littlec):
-     return 1 + 2 * np.sum(littlec[1:t]) 
-for tau_ac in range(0,n_step,10):
+
+if verbose:
+
+    last_point = n_walkers//8
+    def tauint(t, littlec):
+         return 1 + 2 * np.sum(littlec[1:t]) 
+    tau_ac=0
     sub_dset = np.real(dset[tau_ac] - np.mean(dset[tau_ac]))
     auto_corr = []
     c0 = np.mean(sub_dset * sub_dset)
@@ -738,8 +744,6 @@ for tau_ac in range(0,n_step,10):
     littlec = np.asarray(auto_corr) / c0
     print("tau = ", tau_ac)
     print("integrated autocorrelation time = ", tauint(last_point, littlec))
-
-if verbose:
 
     Hs = np.array([al.bootstrap(K + V, W, Nboot=100, f=adl.rw_mean)
             for K,V,W in zip(Ks, Vs, gfmc_Ws)])

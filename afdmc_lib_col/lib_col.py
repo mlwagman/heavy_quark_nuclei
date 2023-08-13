@@ -716,26 +716,38 @@ def direct_sample_quarkonium(a0):
     phi = 2*onp.pi*onp.random.uniform()
     r = -a0*onp.log(u)
     Rrel = onp.array([r*onp.sin(theta)*onp.cos(phi), r*onp.sin(theta)*onp.sin(phi), r*onp.cos(theta)])
-    R = onp.array([Rrel/2, -Rrel/2])
-    detJ = -(a0**3)*(onp.log(u)**2)*onp.sin(theta)/u
-    return R, onp.abs(detJ/8)
+    #R = onp.array([Rrel/2, -Rrel/2])
+    #detJ = -(a0**3)*(onp.log(u)**2)*onp.sin(theta)/u
+    detJ = onp.sin(theta)*onp.exp(-r/a0)
+    return Rrel, onp.abs(detJ)
 
-def direct_sample_metropolis(W, *, n_therm, n_step, n_skip, a0):
+def direct_sample_metropolis(N_coord, W, L, *, n_therm, n_step, n_skip, a0):
     samples = []
     acc = 0
-    R_1, q_1 = direct_sample_quarkonium(a0)
-    R_2, q_2 = direct_sample_quarkonium(a0)
-    R = onp.concatenate((R_1, R_2))
+    q = 1
+    R = onp.zeros((N_coord, 3))
+    for a in range(N_coord):
+        R[a,:], q_a = direct_sample_quarkonium(a0)
+        q *= q_a
+    for b in range(N_coord//2):
+        xi = L*onp.random.uniform()
+        R[2*b,:] += xi
+        R[2*b+1,:] += xi
     R -= onp.mean(R, axis=0, keepdims=True)
-    q = q_1 * q_2
     for i in tqdm.tqdm(range(-n_therm, n_step*n_skip)):
-        new_R_1, new_q_1 = direct_sample_quarkonium(a0)
-        new_R_2, new_q_2 = direct_sample_quarkonium(a0)
-        new_R = onp.concatenate((new_R_1, new_R_2))
-        new_R -= onp.mean(new_R, axis=0, keepdims=True)
-        new_q = new_q_1 * new_q_2
+        new_q = 1
+        new_R = onp.zeros((N_coord, 3))
+        for a in range(N_coord):
+            new_R[a,:], q_a = direct_sample_quarkonium(a0)
+            new_q *= q_a
+        for b in range(N_coord//2):
+            xi = L*onp.random.uniform()
+            R[2*b,:] += xi
+            R[2*b+1,:] += xi
         W_R = W(R) / q
         new_W_R = W(new_R) / new_q
+        #W_R = 1 / q
+        #new_W_R = 1 / new_q
         if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R):
             R = new_R # accept
             W_R = new_W_R
