@@ -49,6 +49,7 @@ parser.add_argument('--N_coord', type=int, default=3)
 parser.add_argument('--nf', type=int, default=5)
 parser.add_argument('--OLO', type=str, default="LO")
 parser.add_argument('--spoila', type=float, default=1)
+parser.add_argument('--afac', type=float, default=1)
 parser.add_argument('--spoilf', type=str, default="hwf")
 parser.add_argument('--outdir', type=str, required=True)
 parser.add_argument('--input_Rs_database', type=str, default="")
@@ -126,8 +127,14 @@ elif OLO == "NLO":
 if N_coord == 2 or N_coord == 4:
     a0 /= Nc-1
 
-    
+
 ket_a0 = a0
+
+biga0 = a0
+
+if wavefunction == "product":
+    biga0 = a0*afac
+
 if wavefunction == "asymmetric":
     ket_a0 = a0*spoilaket
 
@@ -310,6 +317,7 @@ def f_R_slow(Rs, wavefunction=wavefunction):
     psi = 1
     for i in range(N_coord):
        	for j in range(N_coord):
+            thisa0=a0
             if i!=j and j>=i:
                 if wavefunction == "product":
                     baryon_0 = 1
@@ -319,11 +327,11 @@ def f_R_slow(Rs, wavefunction=wavefunction):
                     if j < N_coord/2:
                         baryon_1 = 0
                     if baryon_0 != baryon_1:
-                        continue
+                        thisa0 = biga0
                 ri = Rs[...,i,:]
                 rj = Rs[...,j,:]
                 rij_norm = adl.norm_3vec(ri - rj)
-                psi = psi*np.exp(-rij_norm/a0)
+                psi = psi*np.exp(-rij_norm/thisa0)
     return psi
 
 pairs = np.array([np.array([i, j]) for i in range(0,N_coord) for j in range(0, i)])
@@ -355,10 +363,10 @@ def f_R(Rs, wavefunction=bra_wavefunction, a0=a0):
         return rij_norm
 
     if wavefunction == "product":
-        r_sum = np.sum( jax.lax.map(r_norm, product_pairs), axis=0 )
+        r_sum = np.sum( jax.lax.map(r_norm, product_pairs), axis=0 )/(a0) + np.sum( jax.lax.map(r_norm, pairs), axis=0 )/(a0*afac)
     else:
-        r_sum = np.sum( jax.lax.map(r_norm, pairs), axis=0 )
-    return np.exp(-r_sum/a0)
+        r_sum = np.sum( jax.lax.map(r_norm, pairs), axis=0 )/a0
+    return np.exp(-r_sum)
 
 def f_R_sq(Rs):
     return np.abs( f_R(Rs) )**2
@@ -383,6 +391,16 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction):
     for k in range(N_coord):
         for l in range(N_coord):
             if k!=l and l>=k:
+                #if wavefunction == "product":
+                #    baryon_0 = 1
+                #    if k < N_coord/2:
+                #        baryon_0 = 0
+                #    baryon_1 = 1
+                #    if l < N_coord/2:
+                #        baryon_1 = 0
+                #    if baryon_0 != baryon_1:
+                #        continue
+                # wvfn includes r_ij
                 if wavefunction == "product":
                     baryon_0 = 1
                     if k < N_coord/2:
@@ -391,11 +409,11 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction):
                     if l < N_coord/2:
                         baryon_1 = 0
                     if baryon_0 != baryon_1:
-                        continue
-                # wvfn includes r_ij
+                        thisa0 *= afac
                 nabla_psi = 1
                 for i in range(N_coord):
                     for j in range(N_coord):
+                        thisa0 = a0
                         if i!=j and j>=i:
                             if wavefunction == "product":
                                 baryon_0 = 1
@@ -405,16 +423,16 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction):
                                 if j < N_coord/2:
                                     baryon_1 = 0
                                 if baryon_0 != baryon_1:
-                                    continue
+                                    thisa0 *= afac
                             ri = Rs[...,i,:]
                             rj = Rs[...,j,:]
                             rij_norm = adl.norm_3vec(ri - rj)
                             # nabla_k^2 r_kl = nabla_l^2 r_kl
                             # factor of two included to account for both terms appearing in laplacian
                             if k == i and l == j:
-                                nabla_psi = nabla_psi * (2/a0**2 - 4/(a0*rij_norm)) * np.exp(-rij_norm/a0)
+                                nabla_psi = nabla_psi * (2/thisa0**2 - 4/(thisa0*rij_norm)) * np.exp(-rij_norm/thisa0)
                             else:
-                                nabla_psi = nabla_psi * np.exp(-rij_norm/a0)
+                                nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0)
                 nabla_psi_tot += nabla_psi
     # terms where gradients hit separate pieces of wvfn
     # laplacian involves particle a
@@ -423,6 +441,16 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction):
         for k in range(N_coord):
             for l in range(N_coord):
                 if k!=l and l>=k and (a==k or a==l):
+                    #if wavefunction == "product":
+                    #    baryon_0 = 1
+                    #    if k < N_coord/2:
+                    #        baryon_0 = 0
+                    #    baryon_1 = 1
+                    #    if l < N_coord/2:
+                    #        baryon_1 = 0
+                    #    if baryon_0 != baryon_1:
+                    #        continue
+                    # second gradient involves r_mn
                     if wavefunction == "product":
                         baryon_0 = 1
                         if k < N_coord/2:
@@ -431,8 +459,7 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction):
                         if l < N_coord/2:
                             baryon_1 = 0
                         if baryon_0 != baryon_1:
-                            continue
-                    # second gradient involves r_mn
+                            thisa0 *= afac
                     for m in range(N_coord):
                         for n in range(N_coord):
                             if m!=n and n>=m and (m!=k or n!=l) and (a==m or a==n):
@@ -444,13 +471,14 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction):
                                     if n < N_coord/2:
                                         baryon_1 = 0
                                     if baryon_0 != baryon_1:
-                                        continue
+                                        thisa0 *= afac
                                 # sum over the 3-d components of gradient
                                 for x in range(3):
                                     # wvfn involves r_ij
                                     nabla_psi = 1
                                     for i in range(N_coord):
                                         for j in range(N_coord):
+                                            thisa0 = a0
                                             if i!=j and j>=i:
                                                 if wavefunction == "product":
                                                     baryon_0 = 1
@@ -460,7 +488,7 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction):
                                                     if j < N_coord/2:
                                                         baryon_1 = 0
                                                     if baryon_0 != baryon_1:
-                                                        continue
+                                                        thisa0 *= afac
                                                 ri = Rs[...,i,:]
                                                 rj = Rs[...,j,:]
                                                 rij_norm = adl.norm_3vec(ri - rj)
@@ -471,9 +499,9 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction):
                                                 elif a == j:
                                                     rsign = -1
                                                 if (k == i and l == j) or (m == i and n == j):
-                                                    nabla_psi = rsign * nabla_psi * (ri[:,x] - rj[:,x])/(a0*rij_norm) * np.exp(-rij_norm/a0)
+                                                    nabla_psi = rsign * nabla_psi * (ri[:,x] - rj[:,x])/(thisa0*rij_norm) * np.exp(-rij_norm/thisa0)
                                                 else:
-                                                    nabla_psi = nabla_psi * np.exp(-rij_norm/a0)
+                                                    nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0)
                                     nabla_psi_tot += nabla_psi
     return nabla_psi_tot
 
@@ -487,16 +515,16 @@ if input_Rs_database == "":
     R0 -= onp.mean(R0, axis=0, keepdims=True)
     print("R0 = ", R0)
     #samples = adl.direct_sample_metropolis(f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
-    #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
+    samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
     #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=0.1*2*a0/N_coord**2)
-    
+
     fac_list = [1/2, 1.0, 2]
     streams = len(fac_list)
     R0_list = [ onp.random.normal(size=(N_coord,3)) for s in range(0,streams) ]
     for s in range(streams):
         R0_list[s] -= onp.mean(R0_list[s], axis=0, keepdims=True)
     print("R0 = ", R0_list[0])
-    samples = adl.parallel_tempered_metropolis(fac_list, R0_list, f_R_braket_tempered, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
+    #samples = adl.parallel_tempered_metropolis(fac_list, R0_list, f_R_braket_tempered, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
     #print(samples)
     print("first walker")
     print("R = ",samples[0])
@@ -725,8 +753,9 @@ dset = Ks+Vs
 print("dset = ", dset)
 last_point = n_walkers//8
 def tauint(t, littlec):
-     return 1 + 2 * np.sum(littlec[1:t]) 
-for tau_ac in range(0,n_step,10):
+     return 1 + 2 * np.sum(littlec[1:t])
+#for tau_ac in range(0,n_step,10):
+for tau_ac in range(0,10,10):
     sub_dset = np.real(dset[tau_ac] - np.mean(dset[tau_ac]))
     auto_corr = []
     c0 = np.mean(sub_dset * sub_dset)
