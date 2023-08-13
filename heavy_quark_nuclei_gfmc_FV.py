@@ -363,7 +363,7 @@ def f_R(Rs, wavefunction=bra_wavefunction, a0=a0):
         return rij_norm
 
     if wavefunction == "product":
-        r_sum = np.sum( jax.lax.map(r_norm, product_pairs), axis=0 )/(a0) + np.sum( jax.lax.map(r_norm, pairs), axis=0 )/(a0*afac)
+        r_sum = np.sum( jax.lax.map(r_norm, product_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm, pairs), axis=0 )/(a0*afac)
     else:
         r_sum = np.sum( jax.lax.map(r_norm, pairs), axis=0 )/a0
     return np.exp(-r_sum)
