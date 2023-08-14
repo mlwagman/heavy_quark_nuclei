@@ -401,15 +401,6 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction):
                 #    if baryon_0 != baryon_1:
                 #        continue
                 # wvfn includes r_ij
-                if wavefunction == "product":
-                    baryon_0 = 1
-                    if k < N_coord/2:
-                        baryon_0 = 0
-                    baryon_1 = 1
-                    if l < N_coord/2:
-                        baryon_1 = 0
-                    if baryon_0 != baryon_1:
-                        thisa0 *= afac
                 nabla_psi = 1
                 for i in range(N_coord):
                     for j in range(N_coord):
@@ -451,27 +442,9 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction):
                     #    if baryon_0 != baryon_1:
                     #        continue
                     # second gradient involves r_mn
-                    if wavefunction == "product":
-                        baryon_0 = 1
-                        if k < N_coord/2:
-                            baryon_0 = 0
-                        baryon_1 = 1
-                        if l < N_coord/2:
-                            baryon_1 = 0
-                        if baryon_0 != baryon_1:
-                            thisa0 *= afac
                     for m in range(N_coord):
                         for n in range(N_coord):
                             if m!=n and n>=m and (m!=k or n!=l) and (a==m or a==n):
-                                if wavefunction == "product":
-                                    baryon_0 = 1
-                                    if m < N_coord/2:
-                                        baryon_0 = 0
-                                    baryon_1 = 1
-                                    if n < N_coord/2:
-                                        baryon_1 = 0
-                                    if baryon_0 != baryon_1:
-                                        thisa0 *= afac
                                 # sum over the 3-d components of gradient
                                 for x in range(3):
                                     # wvfn involves r_ij
@@ -523,7 +496,7 @@ if input_Rs_database == "":
     #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
 
     #samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=8*2*a0/N_coord**2)
-    
+
     #samples = adl.direct_sample_metropolis(f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
     #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
     #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=0.1*2*a0/N_coord**2)
@@ -767,7 +740,7 @@ if verbose:
 
     last_point = n_walkers//8
     def tauint(t, littlec):
-         return 1 + 2 * np.sum(littlec[1:t]) 
+         return 1 + 2 * np.sum(littlec[1:t])
     tau_ac=0
     sub_dset = np.real(dset[tau_ac] - np.mean(dset[tau_ac]))
     auto_corr = []
