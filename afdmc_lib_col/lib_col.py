@@ -730,7 +730,7 @@ def direct_sample_metropolis(N_coord, W, L, *, n_therm, n_step, n_skip, a0):
         R[a,:], q_a = direct_sample_quarkonium(a0)
         q *= q_a
     for b in range(N_coord//2):
-        xi = L*onp.random.uniform()
+        xi = L*onp.random.uniform(3)
         R[2*b,:] += xi
         R[2*b+1,:] += xi
     R -= onp.mean(R, axis=0, keepdims=True)
@@ -741,7 +741,7 @@ def direct_sample_metropolis(N_coord, W, L, *, n_therm, n_step, n_skip, a0):
             new_R[a,:], q_a = direct_sample_quarkonium(a0)
             new_q *= q_a
         for b in range(N_coord//2):
-            xi = L*onp.random.uniform()
+            xi = L*onp.random.uniform(3)
             R[2*b,:] += xi
             R[2*b+1,:] += xi
         W_R = W(R) / q
