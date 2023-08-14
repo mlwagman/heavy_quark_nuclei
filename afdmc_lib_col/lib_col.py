@@ -710,48 +710,56 @@ def metropolis(R, W, *, n_therm, n_step, n_skip, eps):
     print(f'Total acc frac = {acc} / {n_therm+n_skip*n_step} = {1.0*acc/(n_therm+n_skip*n_step)}')
     return samples
 
-def direct_sample_quarkonium(a0):
+def direct_sample_inner_sphere(a0):
     u = onp.random.uniform()
     theta = onp.pi*onp.random.uniform()
     phi = 2*onp.pi*onp.random.uniform()
     r = -a0*onp.log(u)
-    Rrel = onp.array([r*onp.sin(theta)*onp.cos(phi), r*onp.sin(theta)*onp.sin(phi), r*onp.cos(theta)])
+    x = r*onp.sin(theta)*onp.cos(phi)
+    y = r*onp.sin(theta)*onp.sin(phi)
+    z = r*onp.cos(theta)
+    R = onp.array([x, y, z])
     #R = onp.array([Rrel/2, -Rrel/2])
     #detJ = -(a0**3)*(onp.log(u)**2)*onp.sin(theta)/u
-    detJ = onp.sin(theta)*onp.exp(-r/a0)
-    return Rrel, onp.abs(detJ)
+    #detJ = onp.exp(-r/a0)/(onp.sin(theta)*r**2)
+    detJ = onp.exp(-r/a0) /(r*onp.sqrt(x**2+y**2))
+    return R, onp.abs(detJ)
 
-def direct_sample_metropolis(N_coord, W, L, *, n_therm, n_step, n_skip, a0):
+def direct_sample_inner(a0):
+    R = -a0*np.log(onp.random.random((3)))
+    detJ = np.exp(-np.sum(R)/a0)
+    return R, detJ
+
+def direct_sample_outer(N_inner, N_outer, L, *, a0):
+    q = 1
+    R = onp.zeros((N_inner*N_outer, 3))
+    shift_list = onp.zeros((N_outer, 3))
+    for b in range(N_outer-1):
+        shift_list[b], q_b = direct_sample_inner(L/12)
+        q *= q_b 
+    shift_list[N_outer-1] = -onp.sum(shift_list[0:(N_outer-1)])
+    for b in range(N_outer):
+        for a in range(N_inner-1):
+            R[b*N_inner+a,:], q_a = direct_sample_inner(a0/4)
+            q *= q_a
+        R[b*N_inner+N_inner-1,:] = -onp.sum(R[(b*N_inner):(b*N_inner+N_inner-1),:], axis=0)
+        R[(b*N_inner):((b+1)*N_inner),:] += shift_list[b]
+    return R, q
+
+
+def direct_sample_metropolis(N_inner, N_outer, W, L, *, n_therm, n_step, n_skip, a0):
     samples = []
     acc = 0
-    q = 1
-    R = onp.zeros((N_coord, 3))
-    for a in range(N_coord):
-        R[a,:], q_a = direct_sample_quarkonium(a0)
-        q *= q_a
-    for b in range(N_coord//2):
-        xi = L*onp.random.uniform(3)
-        R[2*b,:] += xi
-        R[2*b+1,:] += xi
-    R -= onp.mean(R, axis=0, keepdims=True)
+    R, q = direct_sample_outer(N_inner, N_outer, L, a0=a0)
+    W_R = W(R) / q
     for i in tqdm.tqdm(range(-n_therm, n_step*n_skip)):
-        new_q = 1
-        new_R = onp.zeros((N_coord, 3))
-        for a in range(N_coord):
-            new_R[a,:], q_a = direct_sample_quarkonium(a0)
-            new_q *= q_a
-        for b in range(N_coord//2):
-            xi = L*onp.random.uniform(3)
-            R[2*b,:] += xi
-            R[2*b+1,:] += xi
-        W_R = W(R) / q
+        new_R, new_q = direct_sample_outer(N_inner, N_outer, L, a0=a0)
         new_W_R = W(new_R) / new_q
         #W_R = 1 / q
         #new_W_R = 1 / new_q
-        if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R):
+        if onp.random.random() < (new_W_R / W_R):
             R = new_R # accept
             W_R = new_W_R
-            q = new_q
             acc += 1
         if i >= 0 and (i+1) % n_skip == 0:
             samples.append((R, W_R))

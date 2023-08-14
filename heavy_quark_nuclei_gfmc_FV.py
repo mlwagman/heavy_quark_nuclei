@@ -310,8 +310,8 @@ else:
 
 
 # build Coulomb ground-state trial wavefunction
-@partial(jax.jit)
-def f_R_slow(Rs, wavefunction=wavefunction):
+@partial(jax.jit, static_argnums=(1,))
+def f_R_slow(Rs, wavefunction=bra_wavefunction, a0=a0):
     #N_walkers = Rs.shape[0]
     #assert Rs.shape == (N_walkers, N_coord, 3)
     psi = 1
@@ -514,8 +514,11 @@ if input_Rs_database == "":
     #R0 -= onp.mean(R0, axis=1, keepdims=True)
     R0 -= onp.mean(R0, axis=0, keepdims=True)
     print("R0 = ", R0)
-    samples = adl.direct_sample_metropolis(N_coord, f_R_braket, a0*afac, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
-    #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
+    print("NINNER = ", 2)
+    print("NCOORD = ", N_coord)
+    print("NOUTER = ", N_coord//2)
+    #samples = adl.direct_sample_metropolis(2, N_coord//2, f_R_braket, a0*afac, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
+    samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
 
     #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
 
