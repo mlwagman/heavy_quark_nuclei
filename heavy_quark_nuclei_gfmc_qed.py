@@ -16,7 +16,7 @@ import tqdm.auto as tqdm
 import afdmc_lib_qed as adl
 import os
 import pickle
-from afdmc_lib_col import NI,NS,mp_Mev,fm_Mev
+from afdmc_lib_qed import NI,NS,mp_Mev,fm_Mev
 import jax
 import jax.numpy as np
 import sys
@@ -87,7 +87,7 @@ else:
 assert Nc == NI
 
 CF = 1
-VB = alpha
+VB = -alpha
 SingC3 = -(1)/8
 
 #a0=4.514
@@ -121,8 +121,8 @@ if OLO == "LO":
 elif OLO == "NLO":
     a0=spoila*2/VB_NLO
 
-if N_coord == 2 or N_coord == 4:
-    a0 /= Nc-1
+#if N_coord == 2 or N_coord == 4:
+#    a0 /= Nc-1
 
 
 ket_a0 = a0
@@ -269,19 +269,19 @@ def trivial_fun(R):
 print("volume = ", volume)
 
 if volume == "finite":
-    AV_Coulomb['OA'] = potential_fun_sum
-    AV_Coulomb['OS'] = symmetric_potential_fun_sum
+    #AV_Coulomb['OA'] = potential_fun_sum
+    #AV_Coulomb['OS'] = symmetric_potential_fun_sum
     AV_Coulomb['OSing'] = singlet_potential_fun_sum
-    AV_Coulomb['OO'] = octet_potential_fun_sum
+    #AV_Coulomb['OO'] = octet_potential_fun_sum
 else:
     #AV_Coulomb['OA'] = trivial_fun
     #AV_Coulomb['OS'] = trivial_fun
     #AV_Coulomb['OSing'] = trivial_fun
     #AV_Coulomb['OO'] = trivial_fun
-    AV_Coulomb['OA'] = potential_fun
-    AV_Coulomb['OS'] = symmetric_potential_fun
+    #AV_Coulomb['OA'] = potential_fun
+    #AV_Coulomb['OS'] = symmetric_potential_fun
     AV_Coulomb['OSing'] = singlet_potential_fun
-    AV_Coulomb['OO'] = octet_potential_fun
+    #AV_Coulomb['OO'] = octet_potential_fun
 
 
 print("AV_Coulomb = ", AV_Coulomb)
@@ -478,18 +478,18 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction):
 # Metropolis
 if input_Rs_database == "":
     met_time = time.time()
-    #R0 = onp.random.normal(size=(N_coord,3))
+    R0 = onp.random.normal(size=(N_coord,3))
     # set center of mass position to 0
-    #R0 -= onp.mean(R0, axis=1, keepdims=True)
+    R0 -= onp.mean(R0, axis=1, keepdims=True)
     #print("R0 = ", R0)
-    #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
+    samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
     fac_list = [1/2, 1.0, 2]
     streams = len(fac_list)
     R0_list = [ onp.random.normal(size=(N_coord,3)) for s in range(0,streams) ]
     for s in range(streams):
         R0_list[s] -= onp.mean(R0_list[s], axis=1, keepdims=True)
     print("R0 = ", R0_list[0])
-    samples = adl.parallel_tempered_metropolis(fac_list, R0_list, f_R_braket_tempered, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
+    #samples = adl.parallel_tempered_metropolis(fac_list, R0_list, f_R_braket_tempered, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
     print(f"metropolis in {time.time() - met_time} sec")
     Rs_metropolis = np.array([R for R,_ in samples])
 else:
@@ -520,7 +520,7 @@ if N_coord == 3:
     for k in range(NI):
      if i != j and j != k and i != k:
       spin_slice = (slice(0, None),) + (i,0,j,0,k,0)
-      S_av4p_metropolis[spin_slice] = levi_civita(i, j, k) / np.sqrt(6)
+      S_av4p_metropolis[spin_slice] = levi_civita(i, j, k) / np.sqrt(2*NI)
 
 # symmetric
 #S_av4p_metropolis = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
@@ -530,9 +530,9 @@ if N_coord == 3:
 if N_coord == 2:
   for i in range(NI):
    for j in range(NI):
-        if i == j:
+        #if i == j:
           spin_slice = (slice(0, None),) + (i,0,j,0)
-          S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)/np.sqrt(3)
+          S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)/np.sqrt(NI)
 
 # adjoint
 #S_av4p_metropolis = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
@@ -555,12 +555,12 @@ if N_coord == 4:
    for j in range(NI):
     for k in range(NI):
      for l in range(NI):
-        if i == j and k == l:
+        #if i == j and k == l:
           # up up up up up up
           spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,0)
           # up up up down down down
           #spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,1,m,1,n,1)
-          S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)/3
+          S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)/NI
 
 if N_coord == 6:
   for i in range(NI):
@@ -569,12 +569,12 @@ if N_coord == 6:
      for l in range(NI):
       for m in range(NI):
        for n in range(NI):
-        if i != j and j != k and i != k and l != m and m != n and n != l:
+        #if i != j and j != k and i != k and l != m and m != n and n != l:
           # up up up up up up
           spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,0,m,0,n,0)
           # up up up down down down
           #spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,1,m,1,n,1)
-          S_av4p_metropolis[spin_slice] = levi_civita(i, j, k)*levi_civita(l, m, n) / 6
+          S_av4p_metropolis[spin_slice] = levi_civita(i, j, k)*levi_civita(l, m, n) / (2*NI)
           #spin_slice = (slice(0, None),) + (i,0,j,0,k,0,0,0,0,0,0,0)
           #S_av4p_metropolis[spin_slice] = levi_civita(i, j, k) / np.sqrt(6)
 
