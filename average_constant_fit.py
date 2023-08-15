@@ -26,7 +26,7 @@ parser.add_argument('--n_print', type=int, default=1)
 # how many fits to do
 parser.add_argument('--n_fits', type=int, default=30)
 # stop increase n_tau_skip after agreement within how many sigma
-parser.add_argument('--n_tau_tol', type=float, default=2.0)
+parser.add_argument('--n_tau_tol', type=float, default=3.0)
 # dtau for plotting
 parser.add_argument('--dtau', type=float, default=0.4)
 # plot height in sigma
@@ -83,7 +83,7 @@ for i in range(1,n_walk_full//4):
 littlec = np.asarray(auto_corr) / c0
 last_point = n_walk_full//8
 def tauint(t, littlec):
-     return 1 + 2 * np.sum(littlec[1:t]) 
+     return 1 + 2 * np.sum(littlec[1:t])
 y = [tauint(i, littlec) for i in range(1, last_point)]
 fig, ax = plt.subplots(1,1, figsize=(4,3))
 ax.plot(range(1, last_point), y, 'x')
@@ -94,6 +94,7 @@ print("tau = ", tau_ac)
 tauint0 = tauint(last_point, littlec)
 print("integrated autocorrelation time = ", tauint0)
 for tau_ac in range(1,n_step_full,10):
+    print(tau_ac)
     sub_dset = np.real(dset[tau_ac] - np.mean(dset[tau_ac]))
     auto_corr = []
     c0 = np.mean(sub_dset * sub_dset)
