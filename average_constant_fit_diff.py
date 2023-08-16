@@ -63,6 +63,21 @@ if dataset == "Rs":
 dset1_Ws = f1["Ws"]
 dset2_Ws = f2["Ws"]
 
+dset1_Ws = dset1_Ws[0:n_step_full]
+dset2_Ws = dset2_Ws[0:n_step_full]
+
+for n in range(n_step_full):
+    print("n = ", n)
+    scale_n = np.abs(np.mean(dset1_Ws[n]))
+    print("scale = ", scale_n)
+    dset1_Ws[n] /= scale_n
+
+for n in range(n_step_full):
+    print("n = ", n)
+    scale_n = np.abs(np.mean(dset2_Ws[n]))
+    print("scale = ", scale_n)
+    dset2_Ws[n] /= scale_n
+
 model_fits = np.zeros((n_fits))
 model_errs = np.zeros((n_fits))
 model_redchisq = np.zeros((n_fits))
@@ -76,7 +91,7 @@ min_dof = 3
 
 
 tau_ac = 0
-this_dset = dset1[tau_ac] - dset2[tau_ac]
+this_dset = dset1[tau_ac]*dset1_Ws[tau_ac] - dset2[tau_ac]*dset2_Ws[tau_ac]
 sub_dset = np.real(this_dset - np.mean(this_dset))
 auto_corr = []
 c0 = np.mean(sub_dset * sub_dset)
@@ -101,7 +116,7 @@ tauint0 = tauint(last_point, littlec)
 print("integrated autocorrelation time = ", tauint0)
 for tau_ac in range(1,n_step_full,10):
     print(tau_ac)
-    this_dset = dset1[tau_ac] - dset2[tau_ac]
+    this_dset = dset1[tau_ac]*dset1_Ws[tau_ac] - dset2[tau_ac]*dset2_Ws[tau_ac]
     sub_dset = np.real(this_dset - np.mean(this_dset))
     auto_corr = []
     c0 = np.mean(sub_dset * sub_dset)

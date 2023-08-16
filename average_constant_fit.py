@@ -60,6 +60,12 @@ dset_Ws = f["Ws"]
 
 dset_Ws = dset_Ws[0:n_step_full]
 
+for n in range(n_step_full):
+    print("n = ", n)
+    scale_n = np.abs(np.mean(dset_Ws[n]))
+    print("scale = ", scale_n)
+    dset_Ws[n] /= scale_n
+
 model_fits = np.zeros((n_fits))
 model_errs = np.zeros((n_fits))
 model_redchisq = np.zeros((n_fits))
@@ -71,7 +77,7 @@ min_dof = 3
 
 
 tau_ac = 0
-sub_dset = np.real(dset[tau_ac] - np.mean(dset[tau_ac]))
+sub_dset = np.real(dset[tau_ac]*dset_Ws[tau_ac] - np.mean(dset[tau_ac]*dset_Ws[tau_ac]))
 auto_corr = []
 c0 = np.mean(sub_dset * sub_dset)
 print("dset = ", dset)
@@ -95,7 +101,7 @@ tauint0 = tauint(last_point, littlec)
 print("integrated autocorrelation time = ", tauint0)
 for tau_ac in range(1,n_step_full,10):
     print(tau_ac)
-    sub_dset = np.real(dset[tau_ac] - np.mean(dset[tau_ac]))
+    sub_dset = np.real(dset[tau_ac]*dset_Ws[tau_ac] - np.mean(dset[tau_ac]*dset_Ws[tau_ac]))
     auto_corr = []
     c0 = np.mean(sub_dset * sub_dset)
     auto_corr.append(c0)
@@ -168,7 +174,15 @@ for n_tau_skip_exp in range(round(np.log(dset.shape[0]//n_walk_full+1)/np.log(2)
         sample_covar_num = np.zeros((n_step,n_step))
         for n in range(n_step):
             for m in range(n_step):
-               sample_covar_num[n,m] = (np.mean(data[n]*data[m]) - np.mean(data[n])*np.mean(data[m])) * n_walk/(n_walk-1)
+                #scale_n = np.mean(Ws[n])
+                #scale_m = np.mean(Ws[m])
+                #sample_covar_num[n,m] = np.mean(data[n]*data[m]/(scale_n*scale_m))
+                #sample_covar_num[n,m] = ((np.mean(data[n]*data[m]/(scale_n*scale_m)) - np.mean(data[n]/scale_n)*np.mean(data[m]/scale_m)) * n_walk/(n_walk-1))
+                #print("n = ",n, ", m = ", m)
+                #print("mean = ", np.mean(data[m]))
+                #print("max = ", np.max(data[m]))
+                #print("min = ", np.min(data[m]))
+                sample_covar_num[n,m] = ((np.mean(data[n]*data[m]) - np.mean(data[n])*np.mean(data[m])) * n_walk/(n_walk-1))
 
         #print("\n SAMPLE ERR")
         #print(sample_covar.shape)
@@ -210,7 +224,8 @@ for n_tau_skip_exp in range(round(np.log(dset.shape[0]//n_walk_full+1)/np.log(2)
         #print(np.array([boot_covar[0,n] for n in range(0, n_step, n_print)]))
 
         # normalized sample mean and covariance
-        norm_data = np.array([ (data[n,:] - sample_mean_num[n])/np.sqrt(sample_covar_num[n,n]) for n in range(n_step) ])
+        scale_n = np.mean(Ws[n])
+        norm_data = np.array([ (data[n,:] - sample_mean_num[n])/np.sqrt(sample_covar_num[n,n])/scale_n for n in range(n_step) ])
         norm_covar = np.array([ [ sample_covar_num[n,m]/np.sqrt(sample_covar_num[n,n]*sample_covar_num[m,m]) for m in range(n_step) ] for n in range(n_step) ])
 
         if shrink:
