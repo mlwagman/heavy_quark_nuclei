@@ -364,6 +364,7 @@ def f_R(Rs, wavefunction=bra_wavefunction, a0=a0):
 
     if wavefunction == "product":
         r_sum = np.sum( jax.lax.map(r_norm, product_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm, pairs), axis=0 )/(a0*afac)
+        #r_sum = np.sum( jax.lax.map(r_norm, product_pairs), axis=0 )*(1/a0) 
     else:
         r_sum = np.sum( jax.lax.map(r_norm, pairs), axis=0 )/a0
     return np.exp(-r_sum)
@@ -415,6 +416,7 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction):
                                     baryon_1 = 0
                                 if baryon_0 != baryon_1:
                                     thisa0 *= afac
+                                    #continue
                             ri = Rs[...,i,:]
                             rj = Rs[...,j,:]
                             rij_norm = adl.norm_3vec(ri - rj)
@@ -462,6 +464,7 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction):
                                                         baryon_1 = 0
                                                     if baryon_0 != baryon_1:
                                                         thisa0 *= afac
+                                                        #continue
                                                 ri = Rs[...,i,:]
                                                 rj = Rs[...,j,:]
                                                 rij_norm = adl.norm_3vec(ri - rj)
@@ -490,8 +493,8 @@ if input_Rs_database == "":
     print("NINNER = ", 2)
     print("NCOORD = ", N_coord)
     print("NOUTER = ", N_coord//2)
-    samples = adl.direct_sample_metropolis(2, N_coord//2, f_R_braket, a0*afac, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
-    #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
+    #samples = adl.direct_sample_metropolis(2, N_coord//2, f_R_braket, a0*afac, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
+    samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
 
     #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
 

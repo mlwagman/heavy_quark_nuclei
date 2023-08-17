@@ -954,14 +954,11 @@ def kinetic_step_absolute(R_fwd, R_bwd, R, R_deform, S, u, params_i, S_T,
     # correct kinetic energy
     # TODO distinct masses
     denom = 1/(2*dtau_iMev*fm_Mev**2/m_Mev)
-    G_ratio_fwd_num = np.exp(
-        (-np.einsum('...j,...j->...', R_fwd-R_deform, R_fwd-R_deform)
-         +np.einsum('...j,...j->...', R_fwd_old-R, R_fwd_old-R)))
-    G_ratio_fwd = np.einsum('...i,i->...', G_ratio_fwd_num, denom)
-    G_ratio_bwd_num = np.exp(
-        (-np.einsum('...j,...j->...', R_bwd-R_deform, R_bwd-R_deform)
-         +np.einsum('...j,...j->...', R_bwd_old-R, R_bwd_old-R)))
-    G_ratio_bwd = np.einsum('...i,i->...', G_ratio_bwd_num, denom)
+
+    G_ratio_fwd_num = -np.einsum('...j,...j->...', R_fwd-R_deform, R_fwd-R_deform)+np.einsum('...j,...j->...', R_fwd_old-R, R_fwd_old-R)
+    G_ratio_fwd = np.exp(np.einsum('...i,i->...', G_ratio_fwd_num, denom))
+    G_ratio_bwd_num = -np.einsum('...j,...j->...', R_bwd-R_deform, R_bwd-R_deform)+np.einsum('...j,...j->...', R_bwd_old-R, R_bwd_old-R)
+    G_ratio_bwd = np.exp(np.einsum('...i,i->...', G_ratio_bwd_num, denom))
     #G_ratio_fwd = np.exp(
     #    (-np.einsum('...ij,...ij->...', R_fwd-R_deform, R_fwd-R_deform)
     #     +np.einsum('...ij,...ij->...', R_fwd_old-R, R_fwd_old-R))
@@ -1018,6 +1015,7 @@ def gfmc_deform(
         S = compute_VS(R_deform, S, potential, dtau_iMev=dtau_iMev)
 
         # exp(-dtau V/2) exp(-dtau K)|R,S> using fwd/bwd heatbath
+        #R_fwd, R_bwd = step_G0_symm(onp.array(R), dtau_iMev=dtau_iMev, m_Mev=1)
         R_fwd, R_bwd = step_G0_symm_distinct(onp.array(R), dtau_iMev=dtau_iMev, m_Mev=m_Mev)
         R_fwd, R_bwd = np.array(R_fwd), np.array(R_bwd)
         u = rand_draws[i] # np.array(onp.random.random(size=R_fwd.shape[0]))
