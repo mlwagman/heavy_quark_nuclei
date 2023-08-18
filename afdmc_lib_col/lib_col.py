@@ -36,16 +36,16 @@ def step_G0_symm(R, *, dtau_iMev, m_Mev):
     dR = draw_dR(R.shape, lam=lam_fm)
     return R+dR, R-dR
 
-def direct_sample_quarkonium(n_meas, f_R, *, a0):
-    shape = (n_meas)
-    u = onp.random.uniform(size=shape)
-    theta = onp.pi*onp.random.uniform(size=shape)
-    phi = 2*onp.pi*onp.random.uniform(size=shape)
-    r = -a0*onp.log(u)
-    Rrel = onp.array([r*onp.sin(theta)*onp.cos(phi), r*onp.sin(theta)*onp.sin(phi), r*onp.cos(theta)])
-    R = onp.array([Rrel/2, -Rrel/2])
-    samples = [(onp.array(R[:,:,n]), f_R(R[:,:,n])) for n in range(n_meas)]
-    return samples
+def step_G0_symm_distinct(R, *, dtau_iMev, m_Mev):
+    dtau_fm = dtau_iMev * fm_Mev
+    lam_fm = onp.sqrt(2/m_Mev * fm_Mev * dtau_fm)
+    (n_walkers, n_coord, n_d) = R.shape
+    dR = 1/onp.sqrt(2) * onp.random.normal(size=R.shape)
+    for i in range(0, n_coord):
+        dR[:,i,:] = dR[:,i,:] * lam_fm[i]
+    # subtract mean dR to avoid "drift" in the system
+    dR -= onp.mean(dR, axis=1, keepdims=True)
+    return R+dR, R-dR
 
 def normalize_wf(f_R, df_R, ddf_R):
     Rs = onp.linspace([0,0,0], [20,0,0], endpoint=False, num=10000)
@@ -710,6 +710,62 @@ def metropolis(R, W, *, n_therm, n_step, n_skip, eps):
     print(f'Total acc frac = {acc} / {n_therm+n_skip*n_step} = {1.0*acc/(n_therm+n_skip*n_step)}')
     return samples
 
+def direct_sample_inner_sphere(a0):
+    u = onp.random.uniform()
+    theta = onp.pi*onp.random.uniform()
+    phi = 2*onp.pi*onp.random.uniform()
+    r = -a0*onp.log(u)
+    x = r*onp.sin(theta)*onp.cos(phi)
+    y = r*onp.sin(theta)*onp.sin(phi)
+    z = r*onp.cos(theta)
+    R = onp.array([x, y, z])
+    #R = onp.array([Rrel/2, -Rrel/2])
+    #detJ = -(a0**3)*(onp.log(u)**2)*onp.sin(theta)/u
+    #detJ = onp.exp(-r/a0)/(onp.sin(theta)*r**2)
+    detJ = onp.exp(-r/a0) /(r*onp.sqrt(x**2+y**2))
+    return R, onp.abs(detJ)
+
+def direct_sample_inner(a0):
+    R = -a0*np.log(onp.random.random((3)))
+    detJ = np.exp(-np.sum(R)/a0)
+    return R, detJ
+
+def direct_sample_outer(N_inner, N_outer, L, *, a0):
+    q = 1
+    R = onp.zeros((N_inner*N_outer, 3))
+    shift_list = onp.zeros((N_outer, 3))
+    for b in range(N_outer-1):
+        shift_list[b], q_b = direct_sample_inner(L/12)
+        q *= q_b 
+    shift_list[N_outer-1] = -onp.sum(shift_list[0:(N_outer-1)])
+    for b in range(N_outer):
+        for a in range(N_inner-1):
+            R[b*N_inner+a,:], q_a = direct_sample_inner(a0/4)
+            q *= q_a
+        R[b*N_inner+N_inner-1,:] = -onp.sum(R[(b*N_inner):(b*N_inner+N_inner-1),:], axis=0)
+        R[(b*N_inner):((b+1)*N_inner),:] += shift_list[b]
+    return R, q
+
+
+def direct_sample_metropolis(N_inner, N_outer, W, L, *, n_therm, n_step, n_skip, a0):
+    samples = []
+    acc = 0
+    R, q = direct_sample_outer(N_inner, N_outer, L, a0=a0)
+    W_R = W(R) / q
+    for i in tqdm.tqdm(range(-n_therm, n_step*n_skip)):
+        new_R, new_q = direct_sample_outer(N_inner, N_outer, L, a0=a0)
+        new_W_R = W(new_R) / new_q
+        #W_R = 1 / q
+        #new_W_R = 1 / new_q
+        if onp.random.random() < (new_W_R / W_R):
+            R = new_R # accept
+            W_R = new_W_R
+            acc += 1
+        if i >= 0 and (i+1) % n_skip == 0:
+            samples.append((R, W_R))
+    print(f'Total acc frac = {acc} / {n_therm+n_skip*n_step} = {1.0*acc/(n_therm+n_skip*n_step)}')
+    return samples
+
 ### Apply exp(-dtau/2 V_SI) (1 - (dtau/2) V_SD + (dtau^2/8) V_SD^2) to |S>,
 ### separately returning the updated spin-isospin wavefunction
 ###     |S'> = (1 - (dtau/2) V_SD + (dtau^2/8) V_SD^2) |S>
@@ -897,14 +953,20 @@ def kinetic_step_absolute(R_fwd, R_bwd, R, R_deform, S, u, params_i, S_T,
 
     # correct kinetic energy
     # TODO distinct masses
-    G_ratio_fwd = np.exp(
-        (-np.einsum('...ij,...ij->...', R_fwd-R_deform, R_fwd-R_deform)
-         +np.einsum('...ij,...ij->...', R_fwd_old-R, R_fwd_old-R))
-        / (2*dtau_iMev*fm_Mev**2/m_Mev))
-    G_ratio_bwd = np.exp(
-        (-np.einsum('...ij,...ij->...', R_bwd-R_deform, R_bwd-R_deform)
-         + np.einsum('...ij,...ij->...', R_bwd_old-R, R_bwd_old-R))
-        / (2*dtau_iMev*fm_Mev**2/m_Mev))
+    denom = 1/(2*dtau_iMev*fm_Mev**2/m_Mev)
+
+    G_ratio_fwd_num = -np.einsum('...j,...j->...', R_fwd-R_deform, R_fwd-R_deform)+np.einsum('...j,...j->...', R_fwd_old-R, R_fwd_old-R)
+    G_ratio_fwd = np.exp(np.einsum('...i,i->...', G_ratio_fwd_num, denom))
+    G_ratio_bwd_num = -np.einsum('...j,...j->...', R_bwd-R_deform, R_bwd-R_deform)+np.einsum('...j,...j->...', R_bwd_old-R, R_bwd_old-R)
+    G_ratio_bwd = np.exp(np.einsum('...i,i->...', G_ratio_bwd_num, denom))
+    #G_ratio_fwd = np.exp(
+    #    (-np.einsum('...ij,...ij->...', R_fwd-R_deform, R_fwd-R_deform)
+    #     +np.einsum('...ij,...ij->...', R_fwd_old-R, R_fwd_old-R))
+    #    / (2*dtau_iMev*fm_Mev**2/m_Mev))
+    #G_ratio_bwd = np.exp(
+    #    (-np.einsum('...ij,...ij->...', R_bwd-R_deform, R_bwd-R_deform)
+    #     + np.einsum('...ij,...ij->...', R_bwd_old-R, R_bwd_old-R))
+    #    / (2*dtau_iMev*fm_Mev**2/m_Mev))
     w_fwd = w_fwd * G_ratio_fwd
     w_bwd = w_bwd * G_ratio_bwd
 
@@ -953,7 +1015,8 @@ def gfmc_deform(
         S = compute_VS(R_deform, S, potential, dtau_iMev=dtau_iMev)
 
         # exp(-dtau V/2) exp(-dtau K)|R,S> using fwd/bwd heatbath
-        R_fwd, R_bwd = step_G0_symm(onp.array(R), dtau_iMev=dtau_iMev, m_Mev=m_Mev)
+        #R_fwd, R_bwd = step_G0_symm(onp.array(R), dtau_iMev=dtau_iMev, m_Mev=1)
+        R_fwd, R_bwd = step_G0_symm_distinct(onp.array(R), dtau_iMev=dtau_iMev, m_Mev=m_Mev)
         R_fwd, R_bwd = np.array(R_fwd), np.array(R_bwd)
         u = rand_draws[i] # np.array(onp.random.random(size=R_fwd.shape[0]))
         step_params = tuple(param[i+1] for param in params)

@@ -49,7 +49,7 @@ dset1 = f1[dataset]
 dset2 = f2[dataset]
 
 dshape = dset1.shape
-assert(dshape == dset2.shape)
+#assert(dshape == dset2.shape)
 
 n_step_full = dshape[0]
 n_walk_full = dshape[1]
@@ -63,6 +63,21 @@ if dataset == "Rs":
 dset1_Ws = f1["Ws"]
 dset2_Ws = f2["Ws"]
 
+dset1_Ws = dset1_Ws[0:n_step_full]
+dset2_Ws = dset2_Ws[0:n_step_full]
+
+for n in range(n_step_full):
+    print("n = ", n)
+    scale_n = np.abs(np.mean(dset1_Ws[n]))
+    print("scale = ", scale_n)
+    dset1_Ws[n] /= scale_n
+
+for n in range(n_step_full):
+    print("n = ", n)
+    scale_n = np.abs(np.mean(dset2_Ws[n]))
+    print("scale = ", scale_n)
+    dset2_Ws[n] /= scale_n
+
 model_fits = np.zeros((n_fits))
 model_errs = np.zeros((n_fits))
 model_redchisq = np.zeros((n_fits))
@@ -74,27 +89,43 @@ last_fit = 1e6
 
 min_dof = 3
 
+
 tau_ac = 0
-sub_dset1 = np.real(dset1[tau_ac] - np.mean(dset1[tau_ac]))
-sub_dset2 = np.real(dset2[tau_ac] - np.mean(dset2[tau_ac]))
+this_dset = dset1[tau_ac]*dset1_Ws[tau_ac] - dset2[tau_ac]*dset2_Ws[tau_ac]
+sub_dset = np.real(this_dset - np.mean(this_dset))
 auto_corr = []
-c0 = np.mean((sub_dset1-sub_dset2) * (sub_dset1-sub_dset2))
+c0 = np.mean(sub_dset * sub_dset)
+print("dset = ", this_dset)
+print("sub_dset = ", sub_dset)
+print("c0 = ", c0)
 auto_corr.append(c0)
-print(c0)
 for i in range(1,n_walk_full//4):
-     auto_corr.append(np.mean((sub_dset1[i:]-sub_dset2[i:]) * (sub_dset1[:-i]-sub_dset2[:-i])))
+     auto_corr.append(np.mean(sub_dset[i:] * sub_dset[:-i]))
 littlec = np.asarray(auto_corr) / c0
 last_point = n_walk_full//8
 def tauint(t, littlec):
-     return 1 + 2 * np.sum(littlec[1:t])
+     return 1 + 2 * np.sum(littlec[1:t]) 
 y = [tauint(i, littlec) for i in range(1, last_point)]
 fig, ax = plt.subplots(1,1, figsize=(4,3))
 ax.plot(range(1, last_point), y, 'x')
 ax.set_xlabel(r'$N_{walkers}$')
 ax.set_ylabel(r'$\tau_{int}$')
 plt.savefig(outprefix+'_autocorrelation.pdf')
+print("tau = ", tau_ac)
 tauint0 = tauint(last_point, littlec)
 print("integrated autocorrelation time = ", tauint0)
+for tau_ac in range(1,n_step_full,10):
+    print(tau_ac)
+    this_dset = dset1[tau_ac]*dset1_Ws[tau_ac] - dset2[tau_ac]*dset2_Ws[tau_ac]
+    sub_dset = np.real(this_dset - np.mean(this_dset))
+    auto_corr = []
+    c0 = np.mean(sub_dset * sub_dset)
+    auto_corr.append(c0)
+    for i in range(1,n_walk_full//4):
+        auto_corr.append(np.mean(sub_dset[i:] * sub_dset[:-i]))
+    littlec = np.asarray(auto_corr) / c0
+    print("tau = ", tau_ac)
+    print("integrated autocorrelation time = ", tauint(last_point, littlec))
 
 for n_tau_skip_exp in range(round(np.log(dshape[0]//n_walk_full+1)/np.log(2)), round(np.log(dshape[0])/np.log(2))-1):
     n_tau_skip = 2**(n_tau_skip_exp+1)
