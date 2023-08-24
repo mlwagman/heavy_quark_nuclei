@@ -115,14 +115,24 @@ dFF = (18-Nc**2+Nc**4)/(96*Nc**2)
 dFA = Nc*(Nc**2+6)/48
 alpha4 = float(mpmath.polylog(4,1/2))*0+(-np.log(2))**4/(4*3*2*1)
 ss6 = zeta51+zeta6
-VB_LO = VB
+aa30 = dFA*( np.pi**2*( 7432/9-4736*alpha4+np.log(2)*(14752/3-3472*zeta3)-6616*zeta3/3)  +  np.pi**4*(-156+560*np.log(2)/3+496*np.log(2)**2/3)+1511*np.pi**6/45)  + Nc**3*(385645/2916 + np.pi**2*( -953/54 +584/3*alpha4 +175/2*zeta3 + np.log(2)*(-922/9+217*zeta3/3) ) +584*zeta3/3 + np.pi**4*( 1349/270-20*np.log(2)/9-40*np.log(2)**2/9 ) -1927/6*zeta5 -143/2*zeta3**2-4621/3024*np.pi**6+144*ss6  )
+aa31 = dFF*( np.pi**2*(1264/9-976*zeta3/3+np.log(2)*(64+672*zeta3)) + np.pi**4*(-184/3+32/3*np.log(2)-32*np.log(2)**2) +10/3*np.pi**6 ) + CF**2/2*(286/9+296/3*zeta3-160*zeta5)+Nc*CF/2*(-71281/162+264*zeta3+80*zeta5)+Nc**2/2*(-58747/486+np.pi**2*(17/27-32*alpha4+np.log(2)*(-4/3-14*zeta3)-19/3*zeta3)-356*zeta3+np.pi**4*(-157/54-5*np.log(2)/9+np.log(2)**2)+1091*zeta5/6+57/2*zeta3**2+761*np.pi**6/2520-48*ss6)
+aa32 = Nc/4*(12541/243+368/3*zeta3+64*np.pi**4/135)+CF/4*(14002/81-416*zeta3/3)
+aa33 = -(20/9)**3*1/8
+aa3 = aa30+aa31*nf+aa32*nf**2+aa33*nf**3
 
+L = log_mu_r
+VB_LO = VB
 VB_NLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*log_mu_r))
+VB_NNLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*L) + (alpha/(4*np.pi))**2*( beta0**2*(4*L**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*L + aa2 ) )
+
 
 if OLO == "LO":
     a0=spoila*2/VB_LO
 elif OLO == "NLO":
     a0=spoila*2/VB_NLO
+elif OLO == "NNLO":
+    a0=spoila*2/VB_NNLO
 
 if N_coord == 2 or N_coord == 4:
     a0 /= Nc-1
@@ -260,6 +270,27 @@ elif OLO == "NLO":
             return calculate_sum(potential_fun, R, L, nn)
     def octet_potential_fun(R):
         return spoilS*(Nc - 1)/CF/(2*Nc)*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1))
+    def octet_potential_fun_sum(R):
+            return calculate_sum(symmetric_potential_fun, R, L, nn)
+elif OLO == "NNLO":
+    @partial(jax.jit)
+    def potential_fun(R):
+        return -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 + Nc*(Nc-2)/2*((np.pi)**4-12*(np.pi)**2) ) )
+    @partial(jax.jit)
+    def potential_fun_sum(R):
+            return calculate_sum(potential_fun, R, L, nn)
+    def symmetric_potential_fun(R):
+        return (Nc - 1)/(Nc + 1)**VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 + Nc*(Nc+2)/2*((np.pi)**4-12*(np.pi)**2) ) )
+    def symmetric_potential_fun_sum(R):
+            return calculate_sum(symmetric_potential_fun, R, L, nn)
+    @partial(jax.jit)
+    def singlet_potential_fun(R):
+        return -1*(Nc - 1)**VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 ) )
+    @partial(jax.jit)
+    def singlet_potential_fun_sum(R):
+            return calculate_sum(potential_fun, R, L, nn)
+    def octet_potential_fun(R):
+        return spoilS*(Nc - 1)/CF/(2*Nc)*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 + (Nc**2)*((np.pi)**4-12*(np.pi)**2) ) )
     def octet_potential_fun_sum(R):
             return calculate_sum(symmetric_potential_fun, R, L, nn)
 else:
