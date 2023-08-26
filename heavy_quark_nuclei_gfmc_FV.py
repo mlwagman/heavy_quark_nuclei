@@ -278,17 +278,17 @@ elif OLO == "NLO":
 elif OLO == "NNLO":
     @partial(jax.jit)
     def potential_fun(R):
-        return -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 + Nc*(Nc-2)/2*((np.pi)**4-12*(np.pi)**2) ) )
+        return -1*spoilS*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 + Nc*(Nc-2)/2*((np.pi)**4-12*(np.pi)**2) ) )
     @partial(jax.jit)
     def potential_fun_sum(R):
             return calculate_sum(potential_fun, R, L, nn)
     def symmetric_potential_fun(R):
-        return (Nc - 1)/(Nc + 1)**VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 + Nc*(Nc+2)/2*((np.pi)**4-12*(np.pi)**2) ) )
+        return spoilS*(Nc - 1)/(Nc + 1)*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 + Nc*(Nc+2)/2*((np.pi)**4-12*(np.pi)**2) ) )
     def symmetric_potential_fun_sum(R):
             return calculate_sum(symmetric_potential_fun, R, L, nn)
     @partial(jax.jit)
     def singlet_potential_fun(R):
-        return -1*(Nc - 1)**VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 ) )
+        return -1*(Nc - 1)*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 ) )
     @partial(jax.jit)
     def singlet_potential_fun_sum(R):
             return calculate_sum(potential_fun, R, L, nn)
@@ -583,7 +583,7 @@ if N_coord == 3:
     for k in range(NI):
      if i != j and j != k and i != k:
       spin_slice = (slice(0, None),) + (i,0,j,0,k,0)
-      S_av4p_metropolis[spin_slice] = levi_civita(i, j, k) / np.sqrt(6)
+      S_av4p_metropolis[spin_slice] = levi_civita(i, j, k) / np.sqrt(2*NI)
 
 # symmetric
 #S_av4p_metropolis = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
@@ -623,7 +623,7 @@ if N_coord == 4:
           spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,0)
           # up up up down down down
           #spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,1,m,1,n,1)
-          S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)/3
+          S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)/NI
 
 if N_coord == 6:
   for i in range(NI):
