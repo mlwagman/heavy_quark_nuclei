@@ -407,8 +407,8 @@ def f_R_sq(Rs):
     return np.abs( f_R(Rs) )**2
 
 def f_R_braket(Rs):
-    return np.abs( f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, afac=ket_afac) )
-    #return np.abs( f_R(Rs, wavefunction=bra_wavefunction)**2 )
+    #return np.abs( f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, afac=ket_afac) )
+    return np.abs( f_R(Rs, wavefunction=bra_wavefunction)**2 )
     #return np.abs( f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, afac=ket_afac)**2 )
 
 def f_R_braket_tempered(Rs, fac):
@@ -421,7 +421,7 @@ def f_R_braket_phase(Rs):
     return prod / np.abs( prod )
 
 @partial(jax.jit)
-def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac):
+def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=masses):
     #N_walkers = Rs.shape[0]
     #assert Rs.shape == (N_walkers, N_coord, 3)
     nabla_psi_tot = 0
@@ -461,7 +461,8 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac):
                             # nabla_k^2 r_kl = nabla_l^2 r_kl
                             # factor of two included to account for both terms appearing in laplacian
                             if k == i and l == j:
-                                nabla_psi = nabla_psi * (2/thisa0**2 - 4/(thisa0*rij_norm)) * np.exp(-rij_norm/thisa0)
+                                #nabla_psi = nabla_psi * (2/thisa0**2 - 4/(thisa0*rij_norm)) * np.exp(-rij_norm/thisa0)
+                                nabla_psi = nabla_psi * ((1/thisa0**2 - 2/(thisa0*rij_norm))/masses[k] + (1/thisa0**2 - 2/(thisa0*rij_norm))/masses[l]) * np.exp(-rij_norm/thisa0)
                             else:
                                 nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0)
                 nabla_psi_tot += nabla_psi
@@ -513,7 +514,7 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac):
                                                 elif a == j:
                                                     rsign = -1
                                                 if (k == i and l == j) or (m == i and n == j):
-                                                    nabla_psi = rsign * nabla_psi * (ri[:,x] - rj[:,x])/(thisa0*rij_norm) * np.exp(-rij_norm/thisa0)
+                                                    nabla_psi = rsign * nabla_psi * (ri[:,x] - rj[:,x])/(thisa0*rij_norm) * np.exp(-rij_norm/thisa0) / masses[a]
                                                 else:
                                                     nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0)
                                     nabla_psi_tot += nabla_psi
