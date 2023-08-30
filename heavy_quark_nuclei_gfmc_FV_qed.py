@@ -230,72 +230,40 @@ def FV_Coulomb_slow(R, L, nn):
 
 if OLO == "LO":
     @partial(jax.jit)
-    def potential_fun(R):
-            return -1*VB/adl.norm_3vec(R)
-    @partial(jax.jit)
-    def symmetric_potential_fun(R):
-            return spoilS*(Nc - 1)/(Nc + 1)*VB/adl.norm_3vec(R)
-    @partial(jax.jit)
     def singlet_potential_fun(R):
-            return -1*VB/adl.norm_3vec(R)
+            return -VB/adl.norm_3vec(R)
     @partial(jax.jit)
-    def octet_potential_fun(R):
-            return spoilS*(Nc - 1)/CF/(2*Nc)*VB/adl.norm_3vec(R)
-            #return -1*(CF-Nc/2)*(Nc - 1)/CF*VB/adl.norm_3vec(R)
-    @partial(jax.jit)
-    def potential_fun_sum(R):
-            return -1*VB*FV_Coulomb(R, L, nn)
-    @partial(jax.jit)
-    def symmetric_potential_fun_sum(R):
-            return spoilS*(Nc - 1)/(Nc + 1)*VB*FV_Coulomb(R, L, nn)
+    def singlet_potential_fun_p(R):
+            return VB/adl.norm_3vec(R)
     @partial(jax.jit)
     def singlet_potential_fun_sum(R):
-            return -1*VB*FV_Coulomb(R, L, nn)
+            return -VB*FV_Coulomb(R, L, nn)
     @partial(jax.jit)
-    def octet_potential_fun_sum(R):
-            return spoilS*(Nc - 1)/CF/(2*Nc)*VB*FV_Coulomb(R, L, nn)
+    def singlet_potential_fun_p_sum(R):
+            return VB*FV_Coulomb(R, L, nn)
 elif OLO == "NLO":
-    @partial(jax.jit)
-    def potential_fun(R):
-        return -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1))
-    @partial(jax.jit)
-    def potential_fun_sum(R):
-            return calculate_sum(potential_fun, R, L, nn)
-    def symmetric_potential_fun(R):
-        return (Nc - 1)/(Nc + 1)*VB*spoilS/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1))
-    def symmetric_potential_fun_sum(R):
-            return calculate_sum(symmetric_potential_fun, R, L, nn)
-    @partial(jax.jit)
     def singlet_potential_fun(R):
         return -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1))
     @partial(jax.jit)
+    def singlet_potential_fun_p(R):
+        return VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1))
+    @partial(jax.jit)
     def singlet_potential_fun_sum(R):
-            return calculate_sum(potential_fun, R, L, nn)
-    def octet_potential_fun(R):
-        return spoilS*(Nc - 1)/CF/(2*Nc)*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1))
-    def octet_potential_fun_sum(R):
-            return calculate_sum(symmetric_potential_fun, R, L, nn)
+            return calculate_sum(singlet_potential_fun, R, L, nn)
+    def singlet_potential_fun_p_sum(R):
+            return calculate_sum(singlet_potential_fun_p, R, L, nn)
 elif OLO == "NNLO":
-    @partial(jax.jit)
-    def potential_fun(R):
-        return -1*spoilS*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 + Nc*(Nc-2)/2*((np.pi)**4-12*(np.pi)**2) ) )
-    @partial(jax.jit)
-    def potential_fun_sum(R):
-            return calculate_sum(potential_fun, R, L, nn)
-    def symmetric_potential_fun(R):
-        return spoilS*(Nc - 1)/(Nc + 1)*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 + Nc*(Nc+2)/2*((np.pi)**4-12*(np.pi)**2) ) )
-    def symmetric_potential_fun_sum(R):
-            return calculate_sum(symmetric_potential_fun, R, L, nn)
-    @partial(jax.jit)
     def singlet_potential_fun(R):
         return -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 ) )
     @partial(jax.jit)
+    def singlet_potential_fun_p(R):
+        return VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 ) )
+    @partial(jax.jit)
     def singlet_potential_fun_sum(R):
-            return calculate_sum(potential_fun, R, L, nn)
-    def octet_potential_fun(R):
-        return spoilS*(Nc - 1)/CF/(2*Nc)*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 + (Nc**2)*((np.pi)**4-12*(np.pi)**2) ) )
-    def octet_potential_fun_sum(R):
-            return calculate_sum(symmetric_potential_fun, R, L, nn)
+            return calculate_sum(singlet_potential_fun, R, L, nn)
+    @partial(jax.jit)
+    def singlet_potential_fun_p_sum(R):
+            return calculate_sum(singlet_potential_fun_p, R, L, nn)
 else:
         print("order not supported")
         throw(0)
@@ -323,10 +291,11 @@ else:
     #AV_Coulomb['OO'] = trivial_fun
     #AV_Coulomb['OA'] = potential_fun
     #AV_Coulomb['OS'] = symmetric_potential_fun
-    AV_Coulomb['OSing'] = singlet_potential_fun
+    #AV_Coulomb['OSing'] = singlet_potential_fun
+    #AV_Coulomb['OSingp'] = singlet_potential_fun_p
     #AV_Coulomb['OO'] = octet_potential_fun
     #AV_Coulomb['O1'] = potential_fun
-
+    print("hi")
 
 print("AV_Coulomb = ", AV_Coulomb)
 

@@ -159,20 +159,14 @@ def three_body_outer(three_body_iso, three_body_spin):
     return np.einsum('zacebdf,zikmjln->zaickembjdlfn', three_body_iso, three_body_spin)
 
 qq_two_body_ops = {
-    'OA': lambda Rij: two_body_outer(
-        two_body_pieces['iso_A'][np.newaxis],
-        two_body_pieces['sp_I'][np.newaxis]),
-    'OS': lambda Rij: two_body_outer(
-        two_body_pieces['iso_S'][np.newaxis],
+    'OSingp': lambda Rij: two_body_outer(
+        two_body_pieces['iso_sing'][np.newaxis],
         two_body_pieces['sp_I'][np.newaxis]),
 }
 
 qqbar_two_body_ops = {
     'OSing': lambda Rij: two_body_outer(
         two_body_pieces['iso_sing'][np.newaxis],
-        two_body_pieces['sp_I'][np.newaxis]),
-    'OO': lambda Rij: two_body_outer(
-        two_body_pieces['iso_oct'][np.newaxis],
         two_body_pieces['sp_I'][np.newaxis]),
 }
 
