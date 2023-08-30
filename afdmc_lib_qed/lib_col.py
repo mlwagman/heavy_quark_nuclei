@@ -36,6 +36,16 @@ def step_G0_symm(R, *, dtau_iMev, m_Mev):
     dR = draw_dR(R.shape, lam=lam_fm)
     return R+dR, R-dR
 
+def step_G0_symm_distinct(R, *, dtau_iMev, m_Mev):
+    dtau_fm = dtau_iMev * fm_Mev
+    lam_fm = onp.sqrt(2/m_Mev * fm_Mev * dtau_fm)
+    (n_walkers, n_coord, n_d) = R.shape
+    dR = 1/onp.sqrt(2) * onp.random.normal(size=R.shape)
+    for i in range(0, n_coord):
+        dR[:,i,:] = dR[:,i,:] * lam_fm[i]
+    # subtract mean dR to avoid "drift" in the system
+    dR -= onp.mean(dR, axis=1, keepdims=True)
+    return R+dR, R-dR
 
 def normalize_wf(f_R, df_R, ddf_R):
     Rs = onp.linspace([0,0,0], [20,0,0], endpoint=False, num=10000)
@@ -83,7 +93,8 @@ for a in range(8):
 lc_tensor = onp.zeros((NI, NI, NI))
 #lc_tensor[0, 1, 2] = lc_tensor[1, 2, 0] = lc_tensor[2, 0, 1] = 1
 #lc_tensor[0, 2, 1] = lc_tensor[2, 1, 0] = lc_tensor[1, 0, 2] = -1
-lc_tensor[0, 0, 0]=0
+lc_tensor[0, 0, 0] = 1
+
 # QQ color symmetric potential operator
 iso_del = 1/2 * 1/2 * (onp.einsum('ab,cd->acdb', onp.identity(NI), onp.identity(NI)) + onp.einsum('ab,cd->cadb', onp.identity(NI), onp.identity(NI)))
 
@@ -387,6 +398,8 @@ def make_pairwise_product_potential(AVcoeffs, B3coeffs, masses):
 def batched_apply(M, S): # compute M|S>
     batch_size, src_sink_dims = M.shape[0], M.shape[1:]
     batch_size2, src_dims = S.shape[0], S.shape[1:]
+    #print(src_sink_dims)
+    #print(src_dims)
     assert (batch_size == batch_size2 or
             batch_size == 1 or batch_size2 == 1), 'batch size must be broadcastable'
     assert src_sink_dims == src_dims + src_dims, 'matrix dims must match vector dims'
@@ -571,15 +584,181 @@ def make_wf_weight(f_R):
         return onp.real(f_R(dR))**2
     return weight
 
+def parallel_tempered_metropolis(fac_list, R_list, W, *, n_therm, n_step, n_skip, eps):
+    samples = []
+    streams = len(R_list)
+    target = (streams-1)//2
+    print(f"Starting parallel tempered Metropolis with {streams} streams")
+    acc_list = [ 0 for s in range(0,streams) ]
+    swap_acc_list = [ 0 for s in range(0,streams) ]
+    #for i in range(-n_therm, n_step*n_skip):
+    (N_coord, N_d) = R_list[0].shape
+    W_R_list = [ 0 for s in range(0,streams) ]
+    for s in range(streams):
+        W_R_list[s] = W(R_list[s], fac_list[s])
+    for i in tqdm.tqdm(range(-n_therm, n_step*n_skip)):
+        # cluster update
+        for s in range(streams):
+            R_flat = onp.reshape(R_list[s], (N_coord*N_d))
+            #onp.random.shuffle(R_flat)
+            new_R = onp.reshape(R_flat, (N_coord,N_d))
+            new_R -= onp.mean(new_R, axis=0, keepdims=True)
+            new_W_R = W(new_R, fac_list[s])
+            W_R = W(R_list[s], fac_list[s])
+            if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R):
+                R_list[s] = new_R # accept
+                W_R_list[s] = new_W_R # accept
+                #acc_list[s] += 1
+        # in-stream update
+        for s in range(streams):
+            dR = draw_dR(R_list[s].shape, lam=eps, axis=0)
+            new_R = R_list[s] + dR
+            new_W_R = W(new_R, fac_list[s])
+            W_R = W_R_list[s]
+            if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R):
+                R_list[s] = new_R # accept
+                W_R_list[s] = new_W_R # accept
+                acc_list[s] += 1
+        # swap (0,1), (2,3), ...
+        for s in range(0, streams-1, 2):
+            W_R_a = W_R_list[s]
+            W_R_b = W_R_list[s+1]
+            W_R = W_R_a * W_R_b
+            new_R_a = R_list[s+1]
+            new_R_b = R_list[s]
+            new_W_R_a = W(new_R_a, fac_list[s])
+            new_W_R_b = W(new_R_b, fac_list[s+1])
+            new_W_R = new_W_R_a * new_W_R_b
+            if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R):
+                R_list[s] = new_R_a # accept
+                R_list[s+1] = new_R_b # accept
+                W_R_list[s] = new_W_R_a # accept
+                W_R_list[s+1] = new_W_R_b # accept
+                swap_acc_list[s] += 1
+                swap_acc_list[s+1] += 1
+        # cluster update
+        for s in range(streams):
+            R_flat = onp.reshape(R_list[s], (N_coord*N_d))
+            #onp.random.shuffle(R_flat)
+            R_new = onp.reshape(R_flat, (N_coord,N_d))
+            R_new -= onp.mean(R_new, axis=0, keepdims=True)
+            R_list[s] = R_new
+        W_R_list = [ W(R_list[s], fac_list[s]) for s in range(0,streams) ]
+        # in-stream update
+        for s in range(streams):
+            dR = draw_dR(R_list[s].shape, lam=eps, axis=0)
+            new_R = R_list[s] + dR
+            new_W_R = W(new_R, fac_list[s])
+            W_R = W_R_list[s]
+            if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R):
+                R_list[s] = new_R # accept
+                W_R_list[s] = new_W_R # accept
+                acc_list[s] += 1
+        # swap (1,2), (3,4), ...
+        for s in range(1, streams-1, 2):
+            W_R_a = W_R_list[s]
+            W_R_b = W_R_list[s+1]
+            W_R = W_R_a * W_R_b
+            new_R_a = R_list[s+1]
+            new_R_b = R_list[s]
+            new_W_R_a = W(new_R_a, fac_list[s])
+            new_W_R_b = W(new_R_b, fac_list[s+1])
+            new_W_R = new_W_R_a * new_W_R_b
+            if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R):
+                R_list[s] = new_R_a # accept
+                R_list[s+1] = new_R_b # accept
+                W_R_list[s] = new_W_R_a # accept
+                W_R_list[s+1] = new_W_R_b # accept
+                swap_acc_list[s] += 1
+                swap_acc_list[s+1] += 1
+        # save
+        if i >= 0 and (i+1) % n_skip == 0:
+            samples.append((R_list[target], W_R_list[target]))
+    acc = acc_list[target]
+    n_tot = (n_therm+n_skip*n_step)*2
+    print(f'In-stream acc frac = {acc} / {n_tot} = {1.0*acc/(n_tot)}')
+    acc = swap_acc_list[target]
+    print(f'Swap acc frac = {acc} / {n_tot} = {1.0*acc/(n_tot)}')
+    return samples
+
 def metropolis(R, W, *, n_therm, n_step, n_skip, eps):
     samples = []
     acc = 0
+    #(N_coord, N_d) = R.shape
+    print('R0=',R)
     for i in tqdm.tqdm(range(-n_therm, n_step*n_skip)):
+        #R_flat = onp.reshape(R, (N_coord*N_d))
+        #onp.random.seed(42)
+        #onp.random.shuffle(R_flat)
+        #R = onp.reshape(R_flat, (N_coord,N_d))
+        #print('old_R=',R)
+        #onp.random.seed(42)
         dR = draw_dR(R.shape, lam=eps, axis=0)
+        #print('dR=',dR)
         new_R = R + dR
+        #print('new_R=',new_R)
         W_R = W(R)
+        #print('W_R=',W_R)
         new_W_R = W(new_R)
+        #print('new_W_R=',new_W_R)
+        #Exit
         if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R):
+            R = new_R # accept
+            W_R = new_W_R
+            acc += 1
+        if i >= 0 and (i+1) % n_skip == 0:
+            samples.append((R, W_R))
+    print(f'Total acc frac = {acc} / {n_therm+n_skip*n_step} = {1.0*acc/(n_therm+n_skip*n_step)}')
+    return samples
+
+def direct_sample_inner_sphere(a0):
+    u = onp.random.uniform()
+    theta = onp.pi*onp.random.uniform()
+    phi = 2*onp.pi*onp.random.uniform()
+    r = -a0*onp.log(u)
+    x = r*onp.sin(theta)*onp.cos(phi)
+    y = r*onp.sin(theta)*onp.sin(phi)
+    z = r*onp.cos(theta)
+    R = onp.array([x, y, z])
+    #R = onp.array([Rrel/2, -Rrel/2])
+    #detJ = -(a0**3)*(onp.log(u)**2)*onp.sin(theta)/u
+    #detJ = onp.exp(-r/a0)/(onp.sin(theta)*r**2)
+    detJ = onp.exp(-r/a0) /(r*onp.sqrt(x**2+y**2))
+    return R, onp.abs(detJ)
+
+def direct_sample_inner(a0):
+    R = -a0*np.log(onp.random.random((3)))
+    detJ = np.exp(-np.sum(R)/a0)
+    return R, detJ
+
+def direct_sample_outer(N_inner, N_outer, L, *, a0):
+    q = 1
+    R = onp.zeros((N_inner*N_outer, 3))
+    shift_list = onp.zeros((N_outer, 3))
+    for b in range(N_outer-1):
+        shift_list[b], q_b = direct_sample_inner(L/12)
+        q *= q_b
+    shift_list[N_outer-1] = -onp.sum(shift_list[0:(N_outer-1)])
+    for b in range(N_outer):
+        for a in range(N_inner-1):
+            R[b*N_inner+a,:], q_a = direct_sample_inner(a0/4)
+            q *= q_a
+        R[b*N_inner+N_inner-1,:] = -onp.sum(R[(b*N_inner):(b*N_inner+N_inner-1),:], axis=0)
+        R[(b*N_inner):((b+1)*N_inner),:] += shift_list[b]
+    return R, q
+
+
+def direct_sample_metropolis(N_inner, N_outer, W, L, *, n_therm, n_step, n_skip, a0):
+    samples = []
+    acc = 0
+    R, q = direct_sample_outer(N_inner, N_outer, L, a0=a0)
+    W_R = W(R) / q
+    for i in tqdm.tqdm(range(-n_therm, n_step*n_skip)):
+        new_R, new_q = direct_sample_outer(N_inner, N_outer, L, a0=a0)
+        new_W_R = W(new_R) / new_q
+        #W_R = 1 / q
+        #new_W_R = 1 / new_q
+        if onp.random.random() < (new_W_R / W_R):
             R = new_R # accept
             W_R = new_W_R
             acc += 1
@@ -607,15 +786,18 @@ def compute_VS(R_deform, S, potential, *, dtau_iMev):
     N_coord = R_deform.shape[1]
     old_S = S
     V_SI, V_SD = potential(R_deform)
-    #print("V_SD shape ", V_SD.shape)
-    #print("V_SI shape ", V_SI.shape)
+    print("V_SD shape ", V_SD.shape)
+    print("V_SI shape ", V_SI.shape)
     V_SD = V_SD + V_SI
+    print("S shape ", S.shape)
     VS = batched_apply(V_SD, S)
     #print("V_SD ", V_SD[0,0,0,1,0,2,0,0,0,1,0,2,0])
     #print("norm old_S ", inner(old_S,old_S))
     #print("norm VS ", inner(VS,VS))
     #print("old_S.VS/norms  ", inner(VS,old_S) / np.sqrt( inner(VS,VS)*inner(old_S,old_S) ))
-    ang = np.arccos(inner(VS, old_S) / np.sqrt( inner(VS,VS)*inner(old_S,old_S) ))
+
+    #ang = np.arccos(inner(VS, old_S) / np.sqrt( inner(VS,VS)*inner(old_S,old_S) ))
+
     #print("angle between old and new spin-color vec is ", ang)
     # TODO THIS OUGHT TO FAIL FOR DEUTERON
     #if (np.abs(inner(VS,VS)) > 1e-6).all():
@@ -775,14 +957,20 @@ def kinetic_step_absolute(R_fwd, R_bwd, R, R_deform, S, u, params_i, S_T,
 
     # correct kinetic energy
     # TODO distinct masses
-    G_ratio_fwd = np.exp(
-        (-np.einsum('...ij,...ij->...', R_fwd-R_deform, R_fwd-R_deform)
-         +np.einsum('...ij,...ij->...', R_fwd_old-R, R_fwd_old-R))
-        / (2*dtau_iMev*fm_Mev**2/m_Mev))
-    G_ratio_bwd = np.exp(
-        (-np.einsum('...ij,...ij->...', R_bwd-R_deform, R_bwd-R_deform)
-         + np.einsum('...ij,...ij->...', R_bwd_old-R, R_bwd_old-R))
-        / (2*dtau_iMev*fm_Mev**2/m_Mev))
+    denom = 1/(2*dtau_iMev*fm_Mev**2/m_Mev)
+
+    G_ratio_fwd_num = -np.einsum('...j,...j->...', R_fwd-R_deform, R_fwd-R_deform)+np.einsum('...j,...j->...', R_fwd_old-R, R_fwd_old-R)
+    G_ratio_fwd = np.exp(np.einsum('...i,i->...', G_ratio_fwd_num, denom))
+    G_ratio_bwd_num = -np.einsum('...j,...j->...', R_bwd-R_deform, R_bwd-R_deform)+np.einsum('...j,...j->...', R_bwd_old-R, R_bwd_old-R)
+    G_ratio_bwd = np.exp(np.einsum('...i,i->...', G_ratio_bwd_num, denom))
+    #G_ratio_fwd = np.exp(
+    #    (-np.einsum('...ij,...ij->...', R_fwd-R_deform, R_fwd-R_deform)
+    #     +np.einsum('...ij,...ij->...', R_fwd_old-R, R_fwd_old-R))
+    #    / (2*dtau_iMev*fm_Mev**2/m_Mev))
+    #G_ratio_bwd = np.exp(
+    #    (-np.einsum('...ij,...ij->...', R_bwd-R_deform, R_bwd-R_deform)
+    #     + np.einsum('...ij,...ij->...', R_bwd_old-R, R_bwd_old-R))
+    #    / (2*dtau_iMev*fm_Mev**2/m_Mev))
     w_fwd = w_fwd * G_ratio_fwd
     w_bwd = w_bwd * G_ratio_bwd
 
@@ -791,12 +979,10 @@ def kinetic_step_absolute(R_fwd, R_bwd, R, R_deform, S, u, params_i, S_T,
     p_bwd = np.abs(w_bwd) / (np.abs(w_fwd) + np.abs(w_bwd))
     pc_bwd = w_bwd / (w_fwd + w_bwd)
     ind_fwd = u < p_fwd
-    # TODO I DONT UNDERSTAND THIS LINE
     ind_fwd_R = np.expand_dims(ind_fwd, axis=(-2,-1))
     R = np.where(ind_fwd_R, R_fwd_old, R_bwd_old)
     R_deform = np.where(ind_fwd_R, R_fwd, R_bwd)
     N_coord = R_deform.shape[1]
-    # TODO I REALLY DONT UNDERSTAND THIS LINE
     axis_tup = tuple([i for i in range(-2*N_coord,0)])
     ind_fwd_S = np.expand_dims(ind_fwd, axis=axis_tup)
     S = np.where(ind_fwd_S, S_fwd, S_bwd)
@@ -833,7 +1019,8 @@ def gfmc_deform(
         S = compute_VS(R_deform, S, potential, dtau_iMev=dtau_iMev)
 
         # exp(-dtau V/2) exp(-dtau K)|R,S> using fwd/bwd heatbath
-        R_fwd, R_bwd = step_G0_symm(onp.array(R), dtau_iMev=dtau_iMev, m_Mev=m_Mev)
+        #R_fwd, R_bwd = step_G0_symm(onp.array(R), dtau_iMev=dtau_iMev, m_Mev=1)
+        R_fwd, R_bwd = step_G0_symm_distinct(onp.array(R), dtau_iMev=dtau_iMev, m_Mev=m_Mev)
         R_fwd, R_bwd = np.array(R_fwd), np.array(R_bwd)
         u = rand_draws[i] # np.array(onp.random.random(size=R_fwd.shape[0]))
         step_params = tuple(param[i+1] for param in params)
