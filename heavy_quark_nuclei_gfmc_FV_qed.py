@@ -234,7 +234,7 @@ if OLO == "LO":
             return -VB/adl.norm_3vec(R)
     @partial(jax.jit)
     def singlet_potential_fun_p(R):
-            return VB/adl.norm_3vec(R)
+            return 1/2*VB/adl.norm_3vec(R)
     @partial(jax.jit)
     def singlet_potential_fun_sum(R):
             return -VB*FV_Coulomb(R, L, nn)
@@ -246,7 +246,7 @@ elif OLO == "NLO":
         return -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1))
     @partial(jax.jit)
     def singlet_potential_fun_p(R):
-        return VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1))
+        return 1/2*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1))
     @partial(jax.jit)
     def singlet_potential_fun_sum(R):
             return calculate_sum(singlet_potential_fun, R, L, nn)
@@ -257,7 +257,7 @@ elif OLO == "NNLO":
         return -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 ) )
     @partial(jax.jit)
     def singlet_potential_fun_p(R):
-        return VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 ) )
+        return 1/2*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 ) )
     @partial(jax.jit)
     def singlet_potential_fun_sum(R):
             return calculate_sum(singlet_potential_fun, R, L, nn)
@@ -291,11 +291,10 @@ else:
     #AV_Coulomb['OO'] = trivial_fun
     #AV_Coulomb['OA'] = potential_fun
     #AV_Coulomb['OS'] = symmetric_potential_fun
-    #AV_Coulomb['OSing'] = singlet_potential_fun
-    #AV_Coulomb['OSingp'] = singlet_potential_fun_p
+    AV_Coulomb['OSing'] = singlet_potential_fun
+    AV_Coulomb['OSingp'] = singlet_potential_fun_p
     #AV_Coulomb['OO'] = octet_potential_fun
     #AV_Coulomb['O1'] = potential_fun
-    print("hi")
 
 print("AV_Coulomb = ", AV_Coulomb)
 
@@ -502,7 +501,7 @@ if input_Rs_database == "":
     print("NCOORD = ", N_coord)
     print("NOUTER = ", N_coord//2)
     samples = adl.direct_sample_metropolis(2, N_coord//2, f_R_braket, a0*afac, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
-    #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
+    #samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
 
     #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
 
