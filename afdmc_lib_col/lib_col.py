@@ -727,7 +727,8 @@ def direct_sample_inner_sphere(a0):
 
 def direct_sample_inner(a0):
     R = -a0*np.log(onp.random.random((3)))
-    detJ = np.exp(-np.sum(R)/a0)
+    R *= onp.random.randint(2, size=3)*2 - 1
+    detJ = np.exp(-np.sum(np.abs(R))/a0)
     return R, detJ
 
 def direct_sample_outer(N_inner, N_outer, L, *, a0):
