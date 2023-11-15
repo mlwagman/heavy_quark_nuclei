@@ -6,6 +6,7 @@ import csv
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import paper_plt
+import afdmc_lib_col as adl
 paper_plt.load_latex_config()
 
 np.random.seed(0)
@@ -53,7 +54,8 @@ dset = dset[0:n_step_full]
 
 print(dset.shape)
 if dataset == "Rs":
-    dset = np.mean(np.abs(dset), axis=(2,3))
+    dset = np.mean(adl.norm_3vec(dset), axis=(2))
+print(dset)
 
 # read weights
 dset_Ws = f["Ws"]
@@ -112,7 +114,7 @@ for tau_ac in range(1,n_step_full,10):
     print("integrated autocorrelation time = ", tauint(last_point, littlec))
 
 for n_tau_skip_exp in range(round(np.log(dset.shape[0]//n_walk_full+1)/np.log(2)), round(np.log(dset.shape[0])/np.log(2))-1):
-    n_tau_skip = 2**(n_tau_skip_exp+1)
+    n_tau_skip = 2**(n_tau_skip_exp+1) * 4
     if dset.shape[0] < 32:
         n_tau_skip = 2
     fit_step = ((dset.shape[0]-min_dof*n_tau_skip) // n_fits)
