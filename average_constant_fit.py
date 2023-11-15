@@ -6,6 +6,7 @@ import csv
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import paper_plt
+import afdmc_lib_col as adl
 paper_plt.load_latex_config()
 
 np.random.seed(0)
@@ -54,6 +55,7 @@ dset = dset[0:n_step_full]
 print(dset.shape)
 if dataset == "Rs":
     dset = np.mean(adl.norm_3vec(dset), axis=(2))
+print(dset)
 
 # read weights
 dset_Ws = f["Ws"]
