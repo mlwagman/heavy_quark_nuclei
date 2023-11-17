@@ -227,6 +227,29 @@ def Chi_no_v(N_coord, r, t, p, C, A):
         	for j in range(N_coord):
             		if i!=j and j>=i:
                 		Chi = Chi*exp(-1/2*(rrSpher(i,j,r,t,p)/A[0])**2)
+    elif spoilf == "Anwar_gauss":
+        GeV = 1/4.82
+        b1 = 0.77*GeV
+        b3 = 0.60*GeV
+        Chi = Chi*exp(-1/2*(rrSpher(0,2,r,t,p)*b1)**2)
+        Chi = Chi*exp(-1/2*(rrSpher(1,3,r,t,p)*b1)**2)
+        x1 = r[0]*sin(t[0])*cos(p[0])
+        x2 = r[1]*sin(t[1])*cos(p[1])
+        x3 = r[2]*sin(t[2])*cos(p[2])
+        x4 = r[3]*sin(t[3])*cos(p[3])
+        y1 = r[0]*sin(t[0])*sin(p[0])
+        y2 = r[1]*sin(t[1])*sin(p[1])
+        y3 = r[2]*sin(t[2])*sin(p[2])
+        y4 = r[3]*sin(t[3])*sin(p[3])
+        z1 = r[0]*cos(t[0])
+        z2 = r[1]*cos(t[1])
+        z3 = r[2]*cos(t[2])
+        z4 = r[3]*cos(t[3])
+        lam_x = (x1 - x2 + x3 - x4)/2
+        lam_y = (y1 - y2 + y3 - y4)/2
+        lam_z = (z1 - z2 + z3 - z4)/2
+        lam_sq = lam_x**2 + lam_y**2 + lam_z**2
+        Chi = Chi*exp(-1/2*(b3**2)*lam_sq)
     return C[0]*Chi
 
 print(simplify(Chi_no_v_test(N_coord, r, t, p, C, A)))
@@ -801,11 +824,20 @@ if N_coord == 4:
      for l in range(NI):
         #if i == j and k == l:
         spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,0)
-        S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)/NI
+        if spoilf == "Anwar_gauss":
+           S_av4p_metropolis[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2-2*NI)
+           S_av4p_metropolis[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(k, j)/np.sqrt(2*NI**2-2*NI)
+           #S_av4p_metropolis[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/(2*np.sqrt(NI))
+           #S_av4p_metropolis[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(k, j)/(2*np.sqrt(NI))
+        else:
+           S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)/NI
 
 
 
 print("spin-flavor wavefunction shape = ", S_av4p_metropolis.shape)
+S_av4p_metropolis_norm = adl.inner(S_av4p_metropolis, S_av4p_metropolis)
+print("spin-flavor wavefunction normalization = ", S_av4p_metropolis_norm)
+assert (np.abs(S_av4p_metropolis_norm - 1.0) < 1e-6).all()
 
 print("old ", f_R_old(Rs_metropolis))
 print("new ", f_R(Rs_metropolis))
@@ -820,7 +852,7 @@ params = (np.zeros((n_step+1)),)
 print('Running GFMC evolution:')
 rand_draws = np.random.random(size=(n_step, Rs_metropolis.shape[0]))
 gfmc = adl.gfmc_deform(
-    Rs_metropolis, S_av4p_metropolis, f_R, params,
+    Rs_metropolis, S_av4p_metropolis, f_R_old, params,
     rand_draws=rand_draws, tau_iMev=tau_iMev, N=n_step, potential=Coulomb_potential,
     deform_f=deform_f, m_Mev=np.abs(np.array(masses)),
     resampling_freq=resampling)
@@ -840,7 +872,8 @@ for count, R in enumerate(gfmc_Rs):
     print('Calculating Laplacian for step ', count)
     K_time = time.time()
     #Ks.append(-1/2*laplacian_f_R(R) / f_R(R) / adl.mp_Mev)
-    Ks.append(-1/2*laplacian_f_R(R) / f_R(R) / 1)
+    #Ks.append(-1/2*laplacian_f_R(R) / f_R(R) / 1)
+    Ks.append(-1/2*laplacian_f_R_old(R) / f_R_old(R) / 1)
     print(f"calculated kinetic in {time.time() - K_time} sec")
 Ks = np.array(Ks)
 
@@ -891,7 +924,7 @@ p_n = np.arctan2(y, x)
 print("r = ",r_n[0,0])
 print("theta = ",t_n[0,0])
 print("phi = ",p_n[0,0])
-print("psi(R) = ",f_R(gfmc_Rs[0])[0])
+print("psi(R) = ",f_R_old(gfmc_Rs[0])[0])
 print("K(R) = ",Ks[0,0])
 print("V(R) = ",Vs[0,0])
 print("H(R) = ",Ks[0,0]+Vs[0,0])
@@ -909,7 +942,7 @@ p_n = np.arctan2(y, x)
 print("r = ",r_n[0,1])
 print("theta = ",t_n[0,1])
 print("phi = ",p_n[0,1])
-print("psi(R) = ",f_R(gfmc_Rs[0])[1])
+print("psi(R) = ",f_R_old(gfmc_Rs[0])[1])
 print("K(R) = ",Ks[0,1])
 print("V(R) = ",Vs[0,1])
 print("H(R) = ",Ks[0,1]+Vs[0,1])
