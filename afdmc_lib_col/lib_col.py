@@ -95,6 +95,7 @@ lc_tensor[0, 1, 2] = lc_tensor[1, 2, 0] = lc_tensor[2, 0, 1] = 1
 lc_tensor[0, 2, 1] = lc_tensor[2, 1, 0] = lc_tensor[1, 0, 2] = -1
 
 # QQ color symmetric potential operator
+#iso_del = 1/2 * 1/2 * (onp.einsum('ab,cd->acdb', onp.identity(NI), onp.identity(NI)) + onp.einsum('ab,cd->cadb', onp.identity(NI), onp.identity(NI)))
 iso_del = 1/2 * 1/2 * (onp.einsum('ab,cd->acdb', onp.identity(NI), onp.identity(NI)) + onp.einsum('ab,cd->cadb', onp.identity(NI), onp.identity(NI)))
 
 # QQ color antisymmetric potential operator
@@ -206,6 +207,16 @@ def generate_sequence(AA):
 
 def extend_sequence(seq):
     seqlen = len(seq)
+    # batch index
+    newseq = [0]
+    # pad batch index and double spin/color
+    for i in range(seqlen):
+        newseq.append(2*seq[i] + 1)
+        newseq.append(2*seq[i] + 1 + 1)
+    return newseq
+
+def extend_sequence(seq):
+    seqlen = len(seq)
     newseq = [0]
     for i in range(seqlen):
         newseq.append(2*seq[i] + 1)
@@ -234,6 +245,10 @@ def make_pairwise_potential(AVcoeffs, B3coeffs, masses):
         # two-body potentials
         for i in range(A):
             for j in range(A):
+        #for i in range(2,3):
+        #    for j in range(0,1):
+        #for i in range(1,2):
+        #    for j in range(3,4):
                 if i==j:
                     continue
                 Rij = R[:,i] - R[:,j]
@@ -275,17 +290,24 @@ def make_pairwise_potential(AVcoeffs, B3coeffs, masses):
                     perm[2*i] = 0
                     perm[2*i+1] = 1
                     perm_copy = perm.copy()
-                    j_slot = perm.index(2*j)
-                    perm[2] = perm_copy[j_slot]
-                    perm[3] = perm_copy[j_slot+1]
-                    perm[j_slot] = perm_copy[2]
-                    perm[j_slot+1] = perm_copy[3]
-                    #src_perm = [ perm[l] + 1 for l in range(len(perm)) ]
+                    # print perm after first swap for diagnostic purposes
+                    src_perm = [ perm[l] + 1 for l in range(len(perm)) ]
+                    snk_perm = [ src_perm[l] + 2*A for l in range(len(perm)) ]
+                    full_perm = [0] + src_perm + snk_perm
+                    print("half perm = ",full_perm)
+                    # TODO -- something below is broken
+                    j_slot = perm.index(2)
+                    print("j_slot = ", j_slot)
+                    perm[2*j] = perm_copy[j_slot]
+                    perm[2*j+1] = perm_copy[j_slot+1]
+                    perm[j_slot] = perm_copy[2*j]
+                    perm[j_slot+1] = perm_copy[2*j+1]
+                    # TODO -- something above is broken
                     src_perm = [ perm[l] + 1 for l in range(len(perm)) ]
                     snk_perm = [ src_perm[l] + 2*A for l in range(len(perm)) ]
                     full_perm = [0] + src_perm + snk_perm
                     #print(perm)
-                    #print("full perm = ",full_perm)
+                    print("full perm = ",full_perm)
                     scaled_O_perm = np.transpose(scaled_O, axes=full_perm)
                     if name == 'O1':
                         broadcast_inds = (slice(None),) + (0,)*(len(Oij.shape)-1)
@@ -737,7 +759,7 @@ def direct_sample_outer(N_inner, N_outer, L, *, a0):
     shift_list = onp.zeros((N_outer, 3))
     for b in range(N_outer-1):
         shift_list[b], q_b = direct_sample_inner(L/12)
-        q *= q_b 
+        q *= q_b
     shift_list[N_outer-1] = -onp.sum(shift_list[0:(N_outer-1)])
     for b in range(N_outer):
         for a in range(N_inner-1):
