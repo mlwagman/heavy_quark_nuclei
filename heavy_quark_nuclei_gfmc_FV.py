@@ -80,12 +80,12 @@ if masses == 0.:
 
 print("masses = ", masses)
 
-if wavefunction == "asymmetric":
-    bra_wavefunction = "product"
-    ket_wavefunction = "compact"
-else:
-    bra_wavefunction = wavefunction
-    ket_wavefunction = wavefunction
+#if wavefunction == "asymmetric":
+#    bra_wavefunction = "product"
+#    ket_wavefunction = "compact"
+#else:
+bra_wavefunction = wavefunction
+ket_wavefunction = wavefunction
 
 #assert Nc == NI
 
@@ -145,11 +145,14 @@ biga0 = a0
 if wavefunction == "product":
     biga0 = a0*afac
 
-if wavefunction == "asymmetric":
-    ket_a0 = a0*spoilaket
+#if correlator == "asymmetric":
+#ket_a0 = a0*spoilaket
+ket_afac = afac*spoilaket
 
 print("a0 = ", a0)
 print("ket_a0 = ", ket_a0)
+print("afac = ", afac)
+print("ket_afac = ", ket_afac)
 
 Rprime = lambda R: adl.norm_3vec(R)*np.exp(np.euler_gamma)*mu
 # build Coulomb potential
@@ -385,7 +388,7 @@ product_pairs = np.array(product_pairs)
 print("product pairs = ", product_pairs)
 
 @partial(jax.jit, static_argnums=(1,))
-def f_R(Rs, wavefunction=bra_wavefunction, a0=a0):
+def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac):
 
     def r_norm(pair):
         [i,j] = pair
@@ -404,17 +407,21 @@ def f_R_sq(Rs):
     return np.abs( f_R(Rs) )**2
 
 def f_R_braket(Rs):
-    return np.abs( f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0) )
+    #return np.abs( f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, afac=ket_afac) )
+    return np.abs( f_R(Rs, wavefunction=bra_wavefunction)**2 )
+    #return np.abs( f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, afac=ket_afac)**2 )
 
 def f_R_braket_tempered(Rs, fac):
     return np.abs( f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction, a0=fac*ket_a0) )
 
 def f_R_braket_phase(Rs):
-    prod = f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0)
+    prod = f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, afac=ket_afac)
+    #prod = ( f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, afac=ket_afac) / f_R(Rs, wavefunction=bra_wavefunction) )
+    #prod = ( f_R(Rs, wavefunction=bra_wavefunction) / f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, afac=ket_afac) )**2
     return prod / np.abs( prod )
 
 @partial(jax.jit)
-def laplacian_f_R(Rs, wavefunction=bra_wavefunction):
+def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=masses):
     #N_walkers = Rs.shape[0]
     #assert Rs.shape == (N_walkers, N_coord, 3)
     nabla_psi_tot = 0
@@ -454,7 +461,8 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction):
                             # nabla_k^2 r_kl = nabla_l^2 r_kl
                             # factor of two included to account for both terms appearing in laplacian
                             if k == i and l == j:
-                                nabla_psi = nabla_psi * (2/thisa0**2 - 4/(thisa0*rij_norm)) * np.exp(-rij_norm/thisa0)
+                                #nabla_psi = nabla_psi * (2/thisa0**2 - 4/(thisa0*rij_norm)) * np.exp(-rij_norm/thisa0)
+                                nabla_psi = nabla_psi * ((1/thisa0**2 - 2/(thisa0*rij_norm))/np.abs(masses[k]) + (1/thisa0**2 - 2/(thisa0*rij_norm))/np.abs(masses[l])) * np.exp(-rij_norm/thisa0)
                             else:
                                 nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0)
                 nabla_psi_tot += nabla_psi
@@ -506,7 +514,7 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction):
                                                 elif a == j:
                                                     rsign = -1
                                                 if (k == i and l == j) or (m == i and n == j):
-                                                    nabla_psi = rsign * nabla_psi * (ri[:,x] - rj[:,x])/(thisa0*rij_norm) * np.exp(-rij_norm/thisa0)
+                                                    nabla_psi = rsign * nabla_psi * (ri[:,x] - rj[:,x])/(thisa0*rij_norm) * np.exp(-rij_norm/thisa0) / np.abs(masses[a])
                                                 else:
                                                     nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0)
                                     nabla_psi_tot += nabla_psi
@@ -524,8 +532,8 @@ if input_Rs_database == "":
     print("NINNER = ", 2)
     print("NCOORD = ", N_coord)
     print("NOUTER = ", N_coord//2)
-    #samples = adl.direct_sample_metropolis(2, N_coord//2, f_R_braket, a0*afac, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
-    samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
+    samples = adl.direct_sample_metropolis(2, N_coord//2, f_R_braket, a0*afac, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
+    #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
 
     #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
 
@@ -667,6 +675,7 @@ gfmc_Ws = np.array([Ws for _,_,_,Ws, in gfmc])
 gfmc_Ss = np.array([Ss for _,_,Ss,_, in gfmc])
 
 phase_Ws = f_R_braket_phase(gfmc_Rs)
+print('phase Ws', phase_Ws)
 gfmc_Ws *= phase_Ws
 
 print('GFMC tau=0 weights:', gfmc_Ws[0])
@@ -746,9 +755,9 @@ print(Vs.shape)
 #    for dRs, S in zip(map(adl.to_relative, gfmc_Rs), gfmc_Ss)])
 
 if volume == "finite":
-    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilf"+str(spoilf) + "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)
+    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilaket"+str(spoilaket) + "_spoilf"+str(spoilf) + "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)
 else:
-    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilf"+str(spoilf)+ "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)
+    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilaket"+str(spoilaket) + "_spoilf"+str(spoilf)+ "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)
 
 
 with h5py.File(outdir+'Hammys_'+tag+'.h5', 'w') as f:
