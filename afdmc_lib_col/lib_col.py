@@ -759,8 +759,8 @@ def direct_sample_outer(N_inner, N_outer, L, *, a0):
     shift_list = onp.zeros((N_outer, 3))
     for b in range(N_outer-1):
         #shift_list[b], q_b = direct_sample_inner(L/12)
-        shift_list[b], q_b = direct_sample_inner(L/9)
-        #shift_list[b], q_b = direct_sample_inner(L/6)
+        #shift_list[b], q_b = direct_sample_inner(L/9)
+        shift_list[b], q_b = direct_sample_inner(L/6)
         #shift_list[b], q_b = direct_sample_inner(L/3)
         q *= q_b
     shift_list[N_outer-1] = -onp.sum(shift_list[0:(N_outer-1)])
