@@ -619,12 +619,13 @@ if N_coord == 4:
    for j in range(NI):
     for k in range(NI):
      for l in range(NI):
-        if i == j and k == l:
-          # up up up up up up
-          spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,0)
-          # up up up down down down
-          #spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,1,m,1,n,1)
-          S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)/NI
+        #if i == j and k == l:
+        spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,0)
+        S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)/NI
+        #S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)/(2*np.sqrt(NI))
+        #S_av4p_metropolis[spin_slice] += kronecker_delta(i, l)*kronecker_delta(k, j)/(2*np.sqrt(NI))
+        #S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)/(2*np.sqrt(2*NI))
+        #S_av4p_metropolis[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(k, j)/(2*np.sqrt(2*NI))
 
 if N_coord == 6:
   for i in range(NI):
@@ -649,8 +650,8 @@ if N_coord == 6:
 
 print("spin-flavor wavefunction shape = ", S_av4p_metropolis.shape)
 S_av4p_metropolis_norm = adl.inner(S_av4p_metropolis, S_av4p_metropolis)
-assert (np.abs(S_av4p_metropolis_norm - 1.0) < 1e-6).all()
 print("spin-flavor wavefunction normalization = ", S_av4p_metropolis_norm)
+assert (np.abs(S_av4p_metropolis_norm - 1.0) < 1e-6).all()
 
 #print("old ", f_R_old(Rs_metropolis))
 #print("new ", f_R(Rs_metropolis))
