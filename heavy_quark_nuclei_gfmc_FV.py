@@ -387,14 +387,17 @@ for i in range(N_coord):
 product_pairs = np.array(product_pairs)
 print("product pairs = ", product_pairs)
 
+absmasses=np.abs(np.array(masses))
+
 @partial(jax.jit, static_argnums=(1,))
-def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac):
+def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
 
     def r_norm(pair):
         [i,j] = pair
         rdiff = Rs[...,i,:] - Rs[...,j,:]
+        mij = 2*masses[i]*masses[j]/(masses[i]+masses[j])
         rij_norm = np.sqrt( np.sum(rdiff*rdiff, axis=-1) )
-        return rij_norm
+        return rij_norm * mij
 
     if wavefunction == "product":
         r_sum = np.sum( jax.lax.map(r_norm, product_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm, pairs), axis=0 )/(a0*afac)
@@ -421,7 +424,7 @@ def f_R_braket_phase(Rs):
     return prod / np.abs( prod )
 
 @partial(jax.jit)
-def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=masses):
+def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
     #N_walkers = Rs.shape[0]
     #assert Rs.shape == (N_walkers, N_coord, 3)
     nabla_psi_tot = 0
@@ -458,11 +461,13 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ma
                             ri = Rs[...,i,:]
                             rj = Rs[...,j,:]
                             rij_norm = adl.norm_3vec(ri - rj)
+                            mij = 2*masses[i]*masses[j]/(masses[i]+masses[j])
+                            thisa0 /= mij
                             # nabla_k^2 r_kl = nabla_l^2 r_kl
                             # factor of two included to account for both terms appearing in laplacian
                             if k == i and l == j:
                                 #nabla_psi = nabla_psi * (2/thisa0**2 - 4/(thisa0*rij_norm)) * np.exp(-rij_norm/thisa0)
-                                nabla_psi = nabla_psi * ((1/thisa0**2 - 2/(thisa0*rij_norm))/np.abs(masses[k]) + (1/thisa0**2 - 2/(thisa0*rij_norm))/np.abs(masses[l])) * np.exp(-rij_norm/thisa0)
+                                nabla_psi = nabla_psi * ((1/thisa0**2 - 2/(thisa0*rij_norm))/masses[k] + (1/thisa0**2 - 2/(thisa0*rij_norm))/masses[l]) * np.exp(-rij_norm/thisa0)
                             else:
                                 nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0)
                 nabla_psi_tot += nabla_psi
@@ -507,6 +512,8 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ma
                                                 ri = Rs[...,i,:]
                                                 rj = Rs[...,j,:]
                                                 rij_norm = adl.norm_3vec(ri - rj)
+                                                mij = 2*masses[i]*masses[j]/(masses[i]+masses[j])
+                                                thisa0 /= mij
                                                 rsign = 0
                                                 # grad_a r_ij = rsign * (ri - rj)
                                                 if a == i:
@@ -514,7 +521,7 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ma
                                                 elif a == j:
                                                     rsign = -1
                                                 if (k == i and l == j) or (m == i and n == j):
-                                                    nabla_psi = rsign * nabla_psi * (ri[:,x] - rj[:,x])/(thisa0*rij_norm) * np.exp(-rij_norm/thisa0) / np.abs(masses[a])
+                                                    nabla_psi = rsign * nabla_psi * (ri[:,x] - rj[:,x])/(thisa0*rij_norm) * np.exp(-rij_norm/thisa0) / masses[a]
                                                 else:
                                                     nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0)
                                     nabla_psi_tot += nabla_psi
@@ -622,10 +629,12 @@ if N_coord == 4:
         #if i == j and k == l:
         spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,0)
         S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)/NI
-        #S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)/(2*np.sqrt(NI))
-        #S_av4p_metropolis[spin_slice] += kronecker_delta(i, l)*kronecker_delta(k, j)/(2*np.sqrt(NI))
-        #S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)/(2*np.sqrt(2*NI))
-        #S_av4p_metropolis[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(k, j)/(2*np.sqrt(2*NI))
+        # 3bar x 3
+        #S_av4p_metropolis[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2-2*NI)
+        #S_av4p_metropolis[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(k, j)/np.sqrt(2*NI**2-2*NI)
+        # 6 x 6
+        #S_av4p_metropolis[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2+2*NI)
+        #S_av4p_metropolis[spin_slice] += kronecker_delta(i, l)*kronecker_delta(k,j)/np.sqrt(2*NI**2+2*NI)
 
 if N_coord == 6:
   for i in range(NI):

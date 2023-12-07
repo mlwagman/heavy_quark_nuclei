@@ -723,7 +723,8 @@ def metropolis(R, W, *, n_therm, n_step, n_skip, eps):
         new_W_R = W(new_R)
         #print('new_W_R=',new_W_R)
         #Exit
-        if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R):
+        #if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R):
+        if onp.random.random() < (new_W_R / W_R):
             R = new_R # accept
             W_R = new_W_R
             acc += 1
