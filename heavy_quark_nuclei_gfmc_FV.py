@@ -553,7 +553,6 @@ if input_Rs_database == "":
         samples = adl.direct_sample_metropolis(N_inner, N_outer, f_R_braket, a0*afac/3, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0/2)
     else:
         samples = adl.direct_sample_metropolis(N_inner, N_outer, f_R_braket, a0*afac, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
-    throw(17)
     #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
 
     #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
