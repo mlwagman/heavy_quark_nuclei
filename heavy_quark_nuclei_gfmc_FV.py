@@ -75,8 +75,12 @@ if masses == 0.:
     masses = onp.ones(N_coord)
     if N_coord == 2:
         masses = [1,-1]
-    if N_coord == 4:
+    elif N_coord == 3:
+        masses = [1,1,1]
+    elif N_coord == 4:
         masses = [1,-1,1,-1]
+    elif N_coord == 6:
+        masses = [1,1,1,1,1,1]
 
 print("masses = ", masses)
 
@@ -528,6 +532,12 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
     return nabla_psi_tot
 
 
+N_inner = 2
+if N_coord % 3 == 0:
+    N_inner = 3
+
+N_outer = N_coord//N_inner
+
 # Metropolis
 if input_Rs_database == "":
     met_time = time.time()
@@ -536,10 +546,13 @@ if input_Rs_database == "":
     #R0 -= onp.mean(R0, axis=1, keepdims=True)
     R0 -= onp.mean(R0, axis=0, keepdims=True)
     print("R0 = ", R0)
-    print("NINNER = ", 2)
     print("NCOORD = ", N_coord)
-    print("NOUTER = ", N_coord//2)
-    samples = adl.direct_sample_metropolis(2, N_coord//2, f_R_braket, a0*afac, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
+    print("NINNER = ", N_inner)
+    print("NOUTER = ", N_outer)
+    if N_coord % 3 == 0:
+        samples = adl.direct_sample_metropolis(N_inner, N_outer, f_R_braket, a0*afac/3, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0/2)
+    else:
+        samples = adl.direct_sample_metropolis(N_inner, N_outer, f_R_braket, a0*afac, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
     #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
 
     #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
