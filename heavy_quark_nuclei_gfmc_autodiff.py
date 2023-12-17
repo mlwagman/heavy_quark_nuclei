@@ -283,8 +283,9 @@ print(simplify(Chi_no_v_test(N_coord, r, t, p, C, A)))
 def psi_no_v(N_coord, r, t, p, C, A):
     psi = Chi_no_v(N_coord, r, t, p, C, A)
     psi = psi.rewrite(cos)
-    #modules = {'sin': math.sin, 'cos': math.cos} #, 're': torch.real, 'im': torch.imag
-    modules = {'mpmath'}
+    modules = {'sin': math.sin, 'cos': math.cos} #, 're': torch.real, 'im': torch.imag
+    if spoilf == "hwf_1F1":
+        modules = {'mpmath'}
     #return psi
     return lambdify([C, A, r, t, p], psi, modules)
 
@@ -296,8 +297,9 @@ def nabla_psi_no_v(N_coord, r, t, p, C, A):
     for a in range(N_coord):
         nabla_wvfn += laPlaceSpher(psi, r[a], t[a], p[a])
     nabla_wvfn = nabla_wvfn.rewrite(cos)
-    #modules = {'sin': math.sin, 'cos': math.cos}
-    modules = {'mpmath'}
+    modules = {'sin': math.sin, 'cos': math.cos}
+    if spoilf == "hwf_1F1":
+        modules = {'mpmath'}
     return lambdify([C, A, r, t, p], nabla_wvfn, modules)
 
 #######################################################################################
