@@ -52,7 +52,7 @@ parser.add_argument('--N_coord', type=int, default=2)
 parser.add_argument('--nf', type=int, default=5)
 parser.add_argument('--OLO', type=str, default="LO")
 parser.add_argument('--spoila', type=float, default=1)
-parser.add_argument('--spoilf', type=str, default="hwf")
+parser.add_argument('--spoilf', type=str, default="sharma")
 parser.add_argument('--outdir', type=str, required=True)
 parser.add_argument('--input_Rs_database', type=str, default="")
 parser.add_argument('--log_mu_r', type=float, default=1)
@@ -237,12 +237,13 @@ def Chi_no_v(N_coord, r, t, p, C, A):
         C00001 = -0.023818
         C00110 = -0.79730
         C10000 = 0.036824
+        RR = rrSpher(0,2,r,t,p)
         lam1 = rrSpher(0,1,r,t,p)+rrSpher(2,1,r,t,p)
         lam2 = rrSpher(0,3,r,t,p)+rrSpher(2,3,r,t,p)
         mu1 = rrSpher(0,1,r,t,p)-rrSpher(2,1,r,t,p)
         mu2 = rrSpher(0,3,r,t,p)-rrSpher(2,3,r,t,p)
         rho = 2*rrSpher(1,3,r,t,p)
-        Chi = exp(-delt*(lam1+lam2))*(C00000 + C00020*(mu2**2+mu1**2)+C00001*2*rho + C00110*2*mu1*mu2 + C10000*(lam1+lam2))
+        Chi = exp(-delt*(lam1+lam2)/RR)*(C00000 + C00020*((mu2/RR)**2+(mu1/RR)**2)+C00001*2*rho/RR + C00110*2*mu1*mu2/RR**2 + C10000*(lam1+lam2)/RR)
     elif spoilf == "hwf_1F1":
         p = [0, 0, 1]
         p_mag = sqrt(p[0]*p[0] + p[1]*p[1] + p[2]*p[2])
@@ -268,7 +269,7 @@ def Chi_no_v(N_coord, r, t, p, C, A):
                     #Chi = Chi*hyper_F_fac*exp(1j*pdotr)
     return C[0]*Chi
 
-print(simplify(Chi_no_v_test(N_coord, r, t, p, C, A)))
+print(simplify(Chi_no_v(N_coord, r, t, p, C, A)))
 
 #  Define psi(r1,..,rn)=chi(r1)*...*chi(rn)
 
