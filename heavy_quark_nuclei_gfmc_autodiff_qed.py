@@ -26,8 +26,12 @@ import mpmath
 from functools import partial
 
 #import sympy
-from sympy import simplify, summation, sqrt, Eq, Integral, oo, pprint, symbols, Symbol, log, exp, diff, Sum, factorial, IndexedBase, Function, cos, sin, atan, acot, pi, atan2, trigsimp, lambdify, re, im, gamma, hyper
+from sympy import simplify, gamma, hyper, summation, sqrt, Eq, Integral, oo, pprint, symbols, Symbol, log, exp, diff, Sum, factorial, IndexedBase, Function, cos, sin, atan, acot, pi, atan2, trigsimp, lambdify, re, im, assoc_laguerre
 from sympy.physics.hydrogen import R_nl, Psi_nlm
+
+from sympy import symbols, lambdify
+from sympy.functions.special.hyper import hyper
+import mpmath
 
 from itertools import permutations
 import torch
@@ -230,20 +234,27 @@ def Chi_no_v(N_coord, r, t, p, C, A):
             		if i!=j and j>=i:
                 		Chi = Chi*exp(-1/2*(rrSpher(i,j,r,t,p)/A[0])**2)
     elif spoilf == "sharma":
-        eV = 1/511099.895
-        delt=2.20*eV
+        delt=2.20
         C00000 = 0.0033784
         C00020 = 1.0
         C00001 = -0.023818
         C00110 = -0.79730
         C10000 = 0.036824
         RR = rrSpher(0,2,r,t,p)
+        qq=6.38084
+        ll=7.8665
+        nn=1
+        def hyper_F(eta, l, rho):
+        # Confluent hypergeometric function (1F1)
+           return hyper([l + 1 - 1j*eta], [2*l + 2], 2j*rho)
+        hyper_F_fac = exp(-qq*RR/nn)*hyper_F(-nn+ll+1, 2*ll+2, 2*RR*qq/nn)
+        ff=(2*qq*RR/nn)**(ll+1)*hyper_F_fac
         lam1 = rrSpher(0,1,r,t,p)+rrSpher(2,1,r,t,p)
         lam2 = rrSpher(0,3,r,t,p)+rrSpher(2,3,r,t,p)
         mu1 = rrSpher(0,1,r,t,p)-rrSpher(2,1,r,t,p)
         mu2 = rrSpher(0,3,r,t,p)-rrSpher(2,3,r,t,p)
         rho = 2*rrSpher(1,3,r,t,p)
-        Chi = exp(-delt*(lam1+lam2)/RR)*(C00000 + C00020*((mu2/RR)**2+(mu1/RR)**2)+C00001*2*rho/RR + C00110*2*mu1*mu2/RR**2 + C10000*(lam1+lam2)/RR)
+        Chi = ff*exp(-delt*(lam1+lam2)/RR)*(C00000 + C00020*((mu2/RR)**2+(mu1/RR)**2)+C00001*2*rho/RR + C00110*2*mu1*mu2/RR**2 + C10000*(lam1+lam2)/RR)
     elif spoilf == "hwf_1F1":
         p = [0, 0, 1]
         p_mag = sqrt(p[0]*p[0] + p[1]*p[1] + p[2]*p[2])
