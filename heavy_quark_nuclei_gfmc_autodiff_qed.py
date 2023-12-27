@@ -30,7 +30,7 @@ from sympy import simplify, gamma, hyper, summation, sqrt, Eq, Integral, oo, ppr
 from sympy.physics.hydrogen import R_nl, Psi_nlm
 
 from sympy import symbols, lambdify
-from sympy.functions.special.hyper import hyper
+#from sympy.functions.special.hyper import hyper
 import mpmath
 
 from itertools import permutations
@@ -288,7 +288,7 @@ def psi_no_v(N_coord, r, t, p, C, A):
     psi = Chi_no_v(N_coord, r, t, p, C, A)
     psi = psi.rewrite(cos)
     modules = {'sin': math.sin, 'cos': math.cos} #, 're': torch.real, 'im': torch.imag
-    if spoilf == "hwf_1F1":
+    if spoilf == "hwf_1F1" or spoilf == "sharma":
         modules = {'mpmath'}
     #return psi
     return lambdify([C, A, r, t, p], psi, modules)
@@ -302,7 +302,7 @@ def nabla_psi_no_v(N_coord, r, t, p, C, A):
         nabla_wvfn += laPlaceSpher(psi, r[a], t[a], p[a])
     nabla_wvfn = nabla_wvfn.rewrite(cos)
     modules = {'sin': math.sin, 'cos': math.cos}
-    if spoilf == "hwf_1F1":
+    if spoilf == "hwf_1F1" or spoilf == "sharma":
         modules = {'mpmath'}
     return lambdify([C, A, r, t, p], nabla_wvfn, modules)
 
@@ -336,7 +336,7 @@ def total_Psi_nlm(Rs, A_n, C_n, psi_fn):
     p_n = torch.atan2(y, x)
     # evaluate wavefunction
     for i in range(N_walkers):
-        if spoilf == "hwf_1F1":
+        if spoilf == "hwf_1F1" or spoilf == "sharma":
             Psi_nlm_s[i] = complex(psi_fn(C_n.detach().numpy(), A_n.detach().numpy(), r_n[i].detach().numpy(), t_n[i].detach().numpy(), p_n[i].detach().numpy()))
         else:
             Psi_nlm_s[i] = psi_fn(C_n, A_n, r_n[i], t_n[i], p_n[i])
@@ -356,7 +356,7 @@ def nabla_total_Psi_nlm(Rs, A_n, C_n, nabla_psi_fn):
     p_n = torch.atan2(y, x)
     # evaluate wavefunction
     for i in range(N_walkers):
-        if spoilf == "hwf_1F1":
+        if spoilf == "hwf_1F1" or spoilf == "sharma":
             nabla_Psi_nlm_s[i] = complex(nabla_psi_fn(C_n.detach().numpy(), A_n.detach().numpy(), r_n[i].detach().numpy(), t_n[i].detach().numpy(), p_n[i].detach().numpy()))
         else:
             nabla_Psi_nlm_s[i] = nabla_psi_fn(C_n, A_n, r_n[i], t_n[i], p_n[i])
