@@ -246,7 +246,7 @@ def Chi_no_v(N_coord, r, t, p, C, A):
         def radial_F(R, P, Q, n):
            P_fac = 1 + sqrt(1 + 4*P)
            n_fac = P_fac/2 + n
-           Q_fac = R*Q/n_fac
+           Q_fac = alpha*R*Q/n_fac
            hyper_F_fac = hyper([P_fac/2 - n_fac], [P_fac], Q_fac)
            power_fac = (Q_fac/2)**(P_fac/2)
            return exp(-Q_fac/2)*power_fac*hyper_F_fac
@@ -803,13 +803,7 @@ def laplacian_f_R(Rs):
 
 # Metropolis
 if input_Rs_database == "":
-    #Rs_metropolis = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=n_walkers, n_skip=n_skip, eps=2*trial_wvfn.A[0].item()/N_coord**2)[0]
-    if spoilf == "sharma":
-        s_fac = 50
-        Rs_metropolis = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=n_walkers, n_skip=n_skip, eps=2*trial_wvfn.A[0].item()/N_coord**2/s_fac)[0]
-        #Rs_metropolis = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=n_walkers, n_skip=n_skip*s_fac, eps=2*trial_wvfn.A[0].item()/N_coord**2/s_fac)[0]
-    else:
-        Rs_metropolis = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=n_walkers, n_skip=n_skip, eps=2*trial_wvfn.A[0].item()/N_coord**2)[0]
+    Rs_metropolis = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=n_walkers, n_skip=n_skip, eps=2*trial_wvfn.A[0].item()/N_coord**2)[0]
     Rs_metropolis = Rs_metropolis.detach().numpy()
 else:
     f = h5py.File(input_Rs_database, 'r')
