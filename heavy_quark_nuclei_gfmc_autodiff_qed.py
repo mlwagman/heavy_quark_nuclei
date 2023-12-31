@@ -241,20 +241,26 @@ def Chi_no_v(N_coord, r, t, p, C, A):
         C00110 = -0.79730
         C10000 = 0.036824
         RR = rrSpher(0,2,r,t,p)
-        qq=6.38084
-        ll=7.8665
-        nn=1
-        def hyper_F(eta, l, rho):
-        # Confluent hypergeometric function (1F1)
-           return hyper([l + 1 - 1j*eta], [2*l + 2], 2j*rho)
-        hyper_F_fac = exp(-qq*RR/nn)*hyper_F(-nn+ll+1, 2*ll+2, 2*RR*qq/nn)
-        ff=(2*qq*RR/nn)**(ll+1)*hyper_F_fac
+        P=23.548
+        Q=7.8665
+        def radial_F(R, P, Q, n):
+           P_fac = 1 + sqrt(1 + 4*P)
+           n_fac = P_fac/2 + n
+           Q_fac = R*Q/n_fac
+           hyper_F_fac = hyper([P_fac/2 - n_fac], [P_fac], Q_fac)
+           power_fac = (Q_fac/2)**(P_fac/2)
+           return exp(-Q_fac/2)*power_fac*hyper_F_fac
+           #return 0.0742671*exp(-0.616659*R)*(1.000000000000000 - 0.1146565054041128*R)*R**5.37832
+        ff = radial_F(RR, P, Q, 1)/RR**5
         lam1 = rrSpher(0,1,r,t,p)+rrSpher(2,1,r,t,p)
         lam2 = rrSpher(0,3,r,t,p)+rrSpher(2,3,r,t,p)
         mu1 = rrSpher(0,1,r,t,p)-rrSpher(2,1,r,t,p)
         mu2 = rrSpher(0,3,r,t,p)-rrSpher(2,3,r,t,p)
         rho = 2*rrSpher(1,3,r,t,p)
-        Chi = ff*exp(-delt*(lam1+lam2)/RR)*(C00000 + C00020*((mu2/RR)**2+(mu1/RR)**2)+C00001*2*rho/RR + C00110*2*mu1*mu2/RR**2 + C10000*(lam1+lam2)/RR)
+        #Chi = ff*exp(-delt*(lam1+lam2)/RR)*(C00000 + C00020*((mu2/RR)**2+(mu1/RR)**2)+C00001*2*rho/RR + C00110*2*mu1*mu2/RR**2 + C10000*(lam1+lam2)/RR)
+        C_fac = C00000 + C00020*((mu2/RR)**2+(mu1/RR)**2) + C00001*rho/RR + C00110*mu1*mu2/RR**2 + C10000*(lam1+lam2)/RR
+        #C_fac = 1
+        Chi = ff*exp(-delt*(lam1+lam2)/RR)*C_fac
     elif spoilf == "hwf_1F1":
         p = [0, 0, 1]
         p_mag = sqrt(p[0]*p[0] + p[1]*p[1] + p[2]*p[2])
@@ -280,7 +286,7 @@ def Chi_no_v(N_coord, r, t, p, C, A):
                     #Chi = Chi*hyper_F_fac*exp(1j*pdotr)
     return C[0]*Chi
 
-print(simplify(Chi_no_v(N_coord, r, t, p, C, A)))
+#print(simplify(Chi_no_v(N_coord, r, t, p, C, A)))
 
 #  Define psi(r1,..,rn)=chi(r1)*...*chi(rn)
 
@@ -443,6 +449,8 @@ def metropolis_coordinate_ensemble(this_psi, *, n_therm, N_walkers, n_skip, eps)
         p_R = abspsi**2
         abspsi_new = torch.abs(this_psi(new_R))
         p_new_R = abspsi_new**2
+        #print("old ", p_R)
+        #print("new ", p_new_R)
         #if (torch.rand(1) < (p_new_R / p_R) and not torch.isnan(p_new_R) and p_new_R > 0 and p_new_R < 1 ):
         if (torch.rand(1) < (p_new_R / p_R)):
             R = new_R #accept
@@ -795,7 +803,13 @@ def laplacian_f_R(Rs):
 
 # Metropolis
 if input_Rs_database == "":
-    Rs_metropolis = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=n_walkers, n_skip=n_skip, eps=2*trial_wvfn.A[0].item()/N_coord**2)[0]
+    #Rs_metropolis = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=n_walkers, n_skip=n_skip, eps=2*trial_wvfn.A[0].item()/N_coord**2)[0]
+    if spoilf == "sharma":
+        s_fac = 50
+        Rs_metropolis = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=n_walkers, n_skip=n_skip, eps=2*trial_wvfn.A[0].item()/N_coord**2/s_fac)[0]
+        #Rs_metropolis = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=n_walkers, n_skip=n_skip*s_fac, eps=2*trial_wvfn.A[0].item()/N_coord**2/s_fac)[0]
+    else:
+        Rs_metropolis = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=n_walkers, n_skip=n_skip, eps=2*trial_wvfn.A[0].item()/N_coord**2)[0]
     Rs_metropolis = Rs_metropolis.detach().numpy()
 else:
     f = h5py.File(input_Rs_database, 'r')
