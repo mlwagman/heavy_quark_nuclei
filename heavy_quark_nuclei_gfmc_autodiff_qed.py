@@ -250,12 +250,12 @@ def Chi_no_v(N_coord, r, t, p, C, A):
            hyper_F_fac = hyper([1-n], [2+P_fac], Q_fac)
            power_fac = (Q_fac)**(P_fac/2)
            aR = alpha*R
-           #return exp(-Q_fac/2)*power_fac*hyper_F_fac
+           return exp(-Q_fac/2)*power_fac*hyper_F_fac
            # equivalent
            #return 5.28462*exp(-0.731316 * aR)*aR**4.37832
            # no F'(R) term, times one R power
            #return 5.28462*exp(-0.731316 * aR)*aR**5.37832
-           return 5.28462*exp(-0.5 * aR)*aR**4.37832
+           #return 5.28462*exp(-0.5 * aR)*aR**4.37832
         #ff = radial_F(RR, P, Q, 1)/RR**5
         #ff = radial_F(RR, P, Q, 1)/RR**2
         ff = radial_F(RR, P, Q, 1)/RR
