@@ -244,14 +244,21 @@ def Chi_no_v(N_coord, r, t, p, C, A):
         P=23.548
         Q=7.8665
         def radial_F(R, P, Q, n):
-           P_fac = 1 + sqrt(1 + 4*P)
-           n_fac = P_fac/2 + n
-           Q_fac = alpha*R*Q/n_fac
-           hyper_F_fac = hyper([P_fac/2 - n_fac], [P_fac], Q_fac)
-           power_fac = (Q_fac/2)**(P_fac/2)
-           return exp(-Q_fac/2)*power_fac*hyper_F_fac
-           #return 0.0742671*exp(-0.616659*R)*(1.000000000000000 - 0.1146565054041128*R)*R**5.37832
-        ff = radial_F(RR, P, Q, 1)/RR**5
+           P_fac = -1 + sqrt(1 + 4*P)
+           n_fac = 2*n + P_fac
+           Q_fac = alpha*2*R*Q/n_fac
+           hyper_F_fac = hyper([1-n], [2+P_fac], Q_fac)
+           power_fac = (Q_fac)**(P_fac/2)
+           aR = alpha*R
+           #return exp(-Q_fac/2)*power_fac*hyper_F_fac
+           # equivalent
+           #return 5.28462*exp(-0.731316 * aR)*aR**4.37832
+           # no F'(R) term, times one R power
+           #return 5.28462*exp(-0.731316 * aR)*aR**5.37832
+           return 5.28462*exp(-0.5 * aR)*aR**4.37832
+        #ff = radial_F(RR, P, Q, 1)/RR**5
+        #ff = radial_F(RR, P, Q, 1)/RR**2
+        ff = radial_F(RR, P, Q, 1)/RR
         lam1 = rrSpher(0,1,r,t,p)+rrSpher(2,1,r,t,p)
         lam2 = rrSpher(0,3,r,t,p)+rrSpher(2,3,r,t,p)
         mu1 = rrSpher(0,1,r,t,p)-rrSpher(2,1,r,t,p)
@@ -800,11 +807,21 @@ def laplacian_f_R(Rs):
                                     nabla_psi_tot += nabla_psi
     return nabla_psi_tot
 
+def f_R_braket(Rs):
+    return torch.abs( trial_wvfn.psi(torch.Tensor(np.array([Rs])))**2 ).detach().numpy()
 
 # Metropolis
 if input_Rs_database == "":
-    Rs_metropolis = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=n_walkers, n_skip=n_skip, eps=2*trial_wvfn.A[0].item()/N_coord**2)[0]
-    Rs_metropolis = Rs_metropolis.detach().numpy()
+    #Rs_metropolis = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=n_walkers, n_skip=n_skip, eps=5*2*trial_wvfn.A[0].item()/N_coord**2)[0]
+    #Rs_metropolis = Rs_metropolis.detach().numpy()
+    N_inner = 2
+    N_outer = N_coord//N_inner
+    R0 = np.random.normal(size=(N_coord,3))
+    R0 -= np.mean(R0, axis=0, keepdims=True)
+    print(R0)
+    samples = adl.direct_sample_metropolis(N_inner, N_outer, f_R_braket, 10*a0, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
+    Rs_metropolis = np.array([R for R,_ in samples])
+    print(Rs_metropolis.shape)
 else:
     f = h5py.File(input_Rs_database, 'r')
     Rs_metropolis = f["Rs"][-1]
