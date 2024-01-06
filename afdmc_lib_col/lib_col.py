@@ -107,7 +107,8 @@ iso_sing = 1/NI * onp.einsum('ab,cd->abcd', onp.identity(NI), onp.identity(NI))
 # QQbar color octet potential operator
 iso_oct = np.zeros((NI,NI,NI,NI))
 for a in range(8):
-    iso_oct += 2*onp.einsum('ab,cd->abcd', gells[a], gells[a])
+    #iso_oct += 2*onp.einsum('ab,cd->abcd', gells[a], gells[a])
+    iso_oct += 2*onp.einsum('ab,cd->bacd', gells[a], gells[a])
 
 # NOTE(gkanwar): spin and isospin pieces are identical matrices, but are
 # semantically different objects.

@@ -307,6 +307,18 @@ else:
 def trivial_fun(R):
     return 0*adl.norm_3vec(R)+1
 
+def trivial_fun_1(R):
+    return 0*adl.norm_3vec(R)-4/3
+
+def trivial_fun_8(R):
+    return 0*adl.norm_3vec(R)+1/6
+
+def trivial_fun_A(R):
+    return 0*adl.norm_3vec(R)-2/3
+
+def trivial_fun_S(R):
+    return 0*adl.norm_3vec(R)+1/3
+
 # MODE 1
 #AV_Coulomb['O1'] = potential_fun
 #AV_Coulomb['O1'] = symmetric_potential_fun
@@ -321,10 +333,10 @@ if volume == "finite":
     AV_Coulomb['OSing'] = singlet_potential_fun_sum
     AV_Coulomb['OO'] = octet_potential_fun_sum
 else:
-    #AV_Coulomb['OA'] = trivial_fun
-    #AV_Coulomb['OS'] = trivial_fun
-    #AV_Coulomb['OSing'] = trivial_fun
-    #AV_Coulomb['OO'] = trivial_fun
+    #AV_Coulomb['OA'] = trivial_fun_A
+    #AV_Coulomb['OS'] = trivial_fun_S
+    #AV_Coulomb['OSing'] = trivial_fun_1
+    #AV_Coulomb['OO'] = trivial_fun_8
     AV_Coulomb['OA'] = potential_fun
     AV_Coulomb['OS'] = symmetric_potential_fun
     AV_Coulomb['OSing'] = singlet_potential_fun
@@ -568,7 +580,7 @@ if input_Rs_database == "":
     R0_list = [ onp.random.normal(size=(N_coord,3)) for s in range(0,streams) ]
     for s in range(streams):
         R0_list[s] -= onp.mean(R0_list[s], axis=0, keepdims=True)
-    print("R0 = ", R0_list[0])
+    #print("R0 = ", R0_list[0])
     #samples = adl.parallel_tempered_metropolis(fac_list, R0_list, f_R_braket_tempered, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=8*2*a0/N_coord**2)
     #samples = adl.parallel_tempered_metropolis(fac_list, R0_list, f_R_braket_tempered, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
     #print(samples)
@@ -641,10 +653,10 @@ if N_coord == 4:
      for l in range(NI):
         #if i == j and k == l:
         spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,0)
-        S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)/NI
+        #S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)/NI
         # 3bar x 3
-        #S_av4p_metropolis[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2-2*NI)
-        #S_av4p_metropolis[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(k, j)/np.sqrt(2*NI**2-2*NI)
+        S_av4p_metropolis[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2-2*NI)
+        S_av4p_metropolis[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(k, j)/np.sqrt(2*NI**2-2*NI)
         # 6 x 6
         #S_av4p_metropolis[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2+2*NI)
         #S_av4p_metropolis[spin_slice] += kronecker_delta(i, l)*kronecker_delta(k,j)/np.sqrt(2*NI**2+2*NI)
