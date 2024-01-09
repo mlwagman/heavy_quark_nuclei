@@ -288,6 +288,7 @@ else:
     #AV_Coulomb['OA'] = trivial_fun
     #AV_Coulomb['OS'] = trivial_fun
     #AV_Coulomb['OSing'] = trivial_fun
+    #AV_Coulomb['OSingp'] = trivial_fun
     #AV_Coulomb['OO'] = trivial_fun
     #AV_Coulomb['OA'] = potential_fun
     #AV_Coulomb['OS'] = symmetric_potential_fun
@@ -336,7 +337,16 @@ def f_R_slow(Rs, wavefunction=bra_wavefunction, a0=a0):
                 psi = psi*np.exp(-rij_norm/thisa0)
     return psi
 
-pairs = np.array([np.array([i, j]) for i in range(0,N_coord) for j in range(0, i)])
+#pairs = np.array([np.array([i, j]) for i in range(0,N_coord) for j in range(0, i)])
+
+pairs = []
+for i in range(N_coord):
+    for j in range(N_coord):
+        if i!=j and j>=i:
+            if masses[i]*masses[j] > 0:
+                continue
+            pairs.append(np.array([i,j]))
+pairs = np.array(pairs)
 print("pairs = ", pairs)
 
 product_pairs = []
@@ -369,7 +379,26 @@ def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac):
         #r_sum = np.sum( jax.lax.map(r_norm, product_pairs), axis=0 )*(1/a0)
     else:
         r_sum = np.sum( jax.lax.map(r_norm, pairs), axis=0 )/a0
-    return np.exp(-r_sum)
+
+    psi = np.exp(-r_sum)
+
+    Rs_T = Rs
+    Rs_T = Rs_T.at[...,1,:].set(Rs[...,3,:])
+    Rs_T = Rs_T.at[...,3,:].set(Rs[...,1,:])
+
+    def r_norm_T(pair):
+        [i,j] = pair
+        rdiff = Rs_T[...,i,:] - Rs_T[...,j,:]
+        rij_norm = np.sqrt( np.sum(rdiff*rdiff, axis=-1) )
+        return rij_norm
+
+    if wavefunction == "product":
+        r_sum_T = np.sum( jax.lax.map(r_norm_T, product_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/(a0*afac)
+    else:
+        r_sum_T = np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/a0
+
+    psi += np.exp(-r_sum_T)
+    return psi
 
 def f_R_sq(Rs):
     return np.abs( f_R(Rs) )**2
@@ -398,15 +427,9 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ma
     for k in range(N_coord):
         for l in range(N_coord):
             if k!=l and l>=k:
-                #if wavefunction == "product":
-                #    baryon_0 = 1
-                #    if k < N_coord/2:
-                #        baryon_0 = 0
-                #    baryon_1 = 1
-                #    if l < N_coord/2:
-                #        baryon_1 = 0
-                #    if baryon_0 != baryon_1:
-                #        continue
+                if wavefunction == "product":
+                    if masses[k] * masses[l] > 0:
+                        continue
                 # wvfn includes r_ij
                 nabla_psi = 1
                 for i in range(N_coord):
@@ -414,6 +437,8 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ma
                         thisa0 = a0
                         if i!=j and j>=i:
                             if wavefunction == "product":
+                                if masses[i] * masses[j] > 0:
+                                    continue
                                 baryon_0 = 1
                                 if i < N_coord/2:
                                     baryon_0 = 0
@@ -441,15 +466,9 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ma
         for k in range(N_coord):
             for l in range(N_coord):
                 if k!=l and l>=k and (a==k or a==l):
-                    #if wavefunction == "product":
-                    #    baryon_0 = 1
-                    #    if k < N_coord/2:
-                    #        baryon_0 = 0
-                    #    baryon_1 = 1
-                    #    if l < N_coord/2:
-                    #        baryon_1 = 0
-                    #    if baryon_0 != baryon_1:
-                    #        continue
+                    if wavefunction == "product":
+                        if masses[k] * masses[l] > 0:
+                            continue
                     # second gradient involves r_mn
                     for m in range(N_coord):
                         for n in range(N_coord):
@@ -463,6 +482,8 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ma
                                             thisa0 = a0
                                             if i!=j and j>=i:
                                                 if wavefunction == "product":
+                                                    if masses[i] * masses[j] > 0:
+                                                        continue
                                                     baryon_0 = 1
                                                     if i < N_coord/2:
                                                         baryon_0 = 0
@@ -500,8 +521,8 @@ if input_Rs_database == "":
     print("NINNER = ", 2)
     print("NCOORD = ", N_coord)
     print("NOUTER = ", N_coord//2)
-    samples = adl.direct_sample_metropolis(2, N_coord//2, f_R_braket, a0*afac, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
-    #samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
+    #samples = adl.direct_sample_metropolis(2, N_coord//2, f_R_braket, a0*afac, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
+    samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
 
     #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
 
@@ -658,9 +679,19 @@ for count, R in enumerate(gfmc_Rs):
     print('Calculating Laplacian for step ', count)
     K_time = time.time()
     #Ks.append(-1/2*laplacian_f_R(R) / f_R(R) / adl.mp_Mev)
-    Ks.append(-1/2*laplacian_f_R(R) / f_R(R, wavefunction=bra_wavefunction) / 1)
+    K_term = -1/2*laplacian_f_R(R) / f_R(R, wavefunction=bra_wavefunction) / 1
+
+    R_T = R
+    R_T = R_T.at[...,1,:].set(R[...,3,:])
+    R_T = R_T.at[...,3,:].set(R[...,1,:])
+
+    K_term +=  -1/2*laplacian_f_R(R_T) / f_R(R, wavefunction=bra_wavefunction) / 1
+
+    Ks.append(K_term)
+
     print(f"calculated kinetic in {time.time() - K_time} sec")
 Ks = np.array(Ks)
+
 
 Vs = []
 for count, R in enumerate(gfmc_Rs):
@@ -750,6 +781,8 @@ print("dset = ", dset)
 if verbose:
 
     last_point = n_walkers//8
+    if last_point > 50:
+        last_point = 50
     def tauint(t, littlec):
          return 1 + 2 * np.sum(littlec[1:t])
     tau_ac=0
@@ -759,7 +792,7 @@ if verbose:
     print("sub_dset = ", sub_dset)
     print("c0 = ", c0)
     auto_corr.append(c0)
-    for i in range(1,n_walkers//4):
+    for i in range(1,2*last_point):
         auto_corr.append(np.mean(sub_dset[i:] * sub_dset[:-i]))
     littlec = np.asarray(auto_corr) / c0
     print("tau = ", tau_ac)

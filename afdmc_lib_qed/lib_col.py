@@ -722,8 +722,7 @@ def direct_sample_inner_sphere(a0):
 
 def direct_sample_inner(a0):
     R = -a0*np.log(onp.random.random((3)))
-    R *= onp.random.randint(2, size=3)*2 - 1
-    detJ = np.exp(-np.sum(np.abs(R))/a0)
+    detJ = np.exp(-np.sum(R)/a0)
     return R, detJ
 
 def direct_sample_outer(N_inner, N_outer, L, *, a0):
@@ -731,19 +730,12 @@ def direct_sample_outer(N_inner, N_outer, L, *, a0):
     R = onp.zeros((N_inner*N_outer, 3))
     shift_list = onp.zeros((N_outer, 3))
     for b in range(N_outer-1):
-        #shift_list[b], q_b = direct_sample_inner(L/12)
-        #shift_list[b], q_b = direct_sample_inner(L/9)
-        shift_list[b], q_b = direct_sample_inner(L/6)
-        #shift_list[b], q_b = direct_sample_inner(L/3)
+        shift_list[b], q_b = direct_sample_inner(L/12)
         q *= q_b
     shift_list[N_outer-1] = -onp.sum(shift_list[0:(N_outer-1)])
     for b in range(N_outer):
         for a in range(N_inner-1):
-            # works
-            R[b*N_inner+a,:], q_a = direct_sample_inner(a0/2)
-            # mega autocorrs
-            #R[b*N_inner+a,:], q_a = direct_sample_inner(a0/4)
-            #R[b*N_inner+a,:], q_a = direct_sample_inner(a0)
+            R[b*N_inner+a,:], q_a = direct_sample_inner(a0/4)
             q *= q_a
         R[b*N_inner+N_inner-1,:] = -onp.sum(R[(b*N_inner):(b*N_inner+N_inner-1),:], axis=0)
         R[(b*N_inner):((b+1)*N_inner),:] += shift_list[b]

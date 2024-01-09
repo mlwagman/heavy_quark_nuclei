@@ -56,7 +56,9 @@ parser.add_argument('--N_coord', type=int, default=2)
 parser.add_argument('--nf', type=int, default=5)
 parser.add_argument('--OLO', type=str, default="LO")
 parser.add_argument('--spoila', type=float, default=1)
-parser.add_argument('--spoilf', type=str, default="sharma")
+parser.add_argument('--spoilf', type=str, default="hylleraas")
+parser.add_argument('--betasq', type=float, default=0.5)
+parser.add_argument('--sharma_power', type=float, default=2)
 parser.add_argument('--outdir', type=str, required=True)
 parser.add_argument('--input_Rs_database', type=str, default="")
 parser.add_argument('--log_mu_r', type=float, default=1)
@@ -82,6 +84,15 @@ if masses == 0.:
         masses = [1,-1,1,-1]
 
 print("masses = ", masses)
+
+bs = betasq
+if bs == 0.0:
+    hk = 0.603175
+elif bs == 1.0:
+    hk = 0.5
+else:
+    hk = (bs*(6 - 27*bs + 199*bs**2 - 297*bs**3 + 243*bs**4 - 76*bs**5) - 6*(-1 + bs)**5*log(1 - bs))/(6*bs**3*(42 - 81*bs + 100*bs**2 - 57*bs**3 + 12*bs**4))
+print("hk = ", hk)
 
 CF = 1
 VB = alpha*CF
@@ -233,6 +244,46 @@ def Chi_no_v(N_coord, r, t, p, C, A):
         	for j in range(N_coord):
             		if i!=j and j>=i:
                 		Chi = Chi*exp(-1/2*(rrSpher(i,j,r,t,p)/A[0])**2)
+    elif spoilf == "hylleraas":
+        s1 = rrSpher(1,0,r,t,p) + rrSpher(1,2,r,t,p)
+        s2 = rrSpher(3,0,r,t,p) + rrSpher(3,2,r,t,p)
+        unit = alpha*hk
+        #Chi = exp(-alpha*(s1+s2)/4)
+        Chi = exp(-unit*(s1+s2)/2)
+        t1 = rrSpher(1,0,r,t,p) - rrSpher(1,2,r,t,p)
+        t2 = rrSpher(3,0,r,t,p) - rrSpher(3,2,r,t,p)
+        beta = sqrt(betasq)
+        #Chi = Chi*(exp(beta*unit*(t1-t2)/2) + exp(-beta*unit*(t1-t2)/2))
+        Chi = Chi*(exp(beta*unit*(t1-t2)/2))
+    elif spoilf == "polarized":
+        Chi = 1
+        for i in range(N_coord):
+       	    for j in range(N_coord):
+                thisa0 = A[0]
+                biga0 = 10*thisa0
+                thispow = 1
+                if i!=j and j>=i:
+                    rij_norm = rrSpher(i,j,r,t,p)
+                    baryon_0 = 1
+                    if i < N_coord/2:
+                        baryon_0 = 0
+                    baryon_1 = 1
+                    if j < N_coord/2:
+                        baryon_1 = 0
+                    if baryon_0 != baryon_1:
+                        thisa0 = biga0
+                        thispow = 2
+                    Chi = Chi*exp(-(rij_norm/thisa0)**thispow)
+        #Chi = Chi*(1 - rrSpher(0,2,r,t,p)/(alpha+rrSpher(0,3,r,t,p)) - rrSpher(1,3,r,t,p)/(alpha+rrSpher(1,2,r,t,p))
+        #Chi = Chi*(1 - 2*rrSpher(0,2,r,t,p)/rrSpher(0,3,r,t,p) - 2*rrSpher(1,3,r,t,p)/rrSpher(1,2,r,t,p))
+        #Chi = Chi*(1 + 2*rrSpher(0,2,r,t,p)/rrSpher(0,3,r,t,p) + 2*rrSpher(1,3,r,t,p)/rrSpher(1,2,r,t,p))
+        #Chi = Chi*(rrSpher(0,2,r,t,p)/rrSpher(0,3,r,t,p) + rrSpher(1,3,r,t,p)/rrSpher(1,2,r,t,p))
+        #Chi = Chi*(1 + rrSpher(0,2,r,t,p)/(0.1/alpha+rrSpher(0,3,r,t,p)) + rrSpher(1,3,r,t,p)/(0.1/alpha+rrSpher(1,2,r,t,p)))
+        #Chi = Chi*(rrSpher(0,2,r,t,p)/(0.1/alpha+rrSpher(0,3,r,t,p)) + rrSpher(1,3,r,t,p)/(0.1/alpha+rrSpher(1,2,r,t,p)))
+        #Chi = Chi*(rrSpher(0,2,r,t,p)/(0.1+alpha*rrSpher(0,3,r,t,p)) + rrSpher(1,3,r,t,p)/(0.1+alpha*rrSpher(1,2,r,t,p)))/alpha
+        #Chi = Chi*(rrSpher(0,2,r,t,p)/(0.1+alpha*rrSpher(0,3,r,t,p)) + rrSpher(1,3,r,t,p)/(0.1+alpha*rrSpher(1,2,r,t,p)))
+        #Chi = Chi*(1+rrSpher(0,2,r,t,p)/(0.1+alpha*rrSpher(0,3,r,t,p)) + rrSpher(1,3,r,t,p)/(0.1+alpha*rrSpher(1,2,r,t,p)))/alpha
+        #Chi = Chi*(-1+rrSpher(0,2,r,t,p)/(0.1+alpha*rrSpher(0,3,r,t,p)) + rrSpher(1,3,r,t,p)/(0.1+alpha*rrSpher(1,2,r,t,p)))/alpha
     elif spoilf == "sharma":
         delt=2.20
         C00000 = 0.0033784
@@ -258,7 +309,9 @@ def Chi_no_v(N_coord, r, t, p, C, A):
            #return 5.28462*exp(-0.5 * aR)*aR**4.37832
         #ff = radial_F(RR, P, Q, 1)/RR**5
         #ff = radial_F(RR, P, Q, 1)/RR**2
-        ff = radial_F(RR, P, Q, 1)/RR
+        # empirically best
+        #ff = radial_F(RR, P, Q, 1)/RR
+        ff = radial_F(RR, P, Q, 1)/(RR**sharma_power)
         lam1 = rrSpher(0,1,r,t,p)+rrSpher(2,1,r,t,p)
         lam2 = rrSpher(0,3,r,t,p)+rrSpher(2,3,r,t,p)
         mu1 = rrSpher(0,1,r,t,p)-rrSpher(2,1,r,t,p)
@@ -293,7 +346,7 @@ def Chi_no_v(N_coord, r, t, p, C, A):
                     #Chi = Chi*hyper_F_fac*exp(1j*pdotr)
     return C[0]*Chi
 
-#print(simplify(Chi_no_v(N_coord, r, t, p, C, A)))
+print(simplify(Chi_no_v(N_coord, r, t, p, C, A)))
 
 #  Define psi(r1,..,rn)=chi(r1)*...*chi(rn)
 
@@ -517,9 +570,6 @@ class wvfn(nn.Module):
         psistar = torch.conj(total_Psi_nlm(Rs, A_n, C_n, psitab))
         return psistar*H_psi / VB**2, torch.pow(torch.abs(psistar), 2)
 
-trial_wvfn = wvfn()
-print("built wvfn")
-print(trial_wvfn.A)
 #######################################################################################
 
 @partial(jax.jit)
@@ -553,10 +603,6 @@ def V3(r1, r2):
 
    return V3_integral
 
-trial_wvfn = wvfn()
-print("built wvfn")
-print(trial_wvfn.A)
-
 Rprime = lambda R: adl.norm_3vec(R)*np.exp(np.euler_gamma)*mu
 # build Coulomb potential
 AV_Coulomb = {}
@@ -565,9 +611,6 @@ B3_Coulomb = {}
 # Generate the nn array representing 3D shifts in a cubic grid
 pp = np.array([np.array([i, j, k]) for i in range(-Lcut, Lcut+1) for j in range(-Lcut, Lcut+1) for k in range(-Lcut, Lcut+1)])
 
-trial_wvfn = wvfn()
-print("built wvfn")
-print(trial_wvfn.A)
 
 print(pp.shape)
 
@@ -575,16 +618,9 @@ print("zero mode is ", pp[Lcut*(2*Lcut+1)*(2*Lcut+1)+Lcut*(2*Lcut+1)+Lcut])
 
 mm = np.delete(pp, Lcut*(2*Lcut+1)*(2*Lcut+1)+Lcut*(2*Lcut+1)+Lcut, axis=0)
 
-trial_wvfn = wvfn()
-print("built wvfn")
-print(trial_wvfn.A)
-
 print(mm.shape)
 print(pp.shape)
 
-trial_wvfn = wvfn()
-print("built wvfn")
-print(trial_wvfn.A)
 
 #from jax.config import config
 #config.update('jax_disable_jit', True)
@@ -693,9 +729,6 @@ def trivial_fun(R):
 # MODE 2
 
 print("volume = ", volume)
-trial_wvfn = wvfn()
-print("built wvfn")
-print(trial_wvfn.A)
 
 if volume == "finite":
     AV_Coulomb['OA'] = potential_fun_sum
@@ -812,15 +845,15 @@ def f_R_braket(Rs):
 
 # Metropolis
 if input_Rs_database == "":
-    #Rs_metropolis = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=n_walkers, n_skip=n_skip, eps=5*2*trial_wvfn.A[0].item()/N_coord**2)[0]
-    #Rs_metropolis = Rs_metropolis.detach().numpy()
+    Rs_metropolis = metropolis_coordinate_ensemble(trial_wvfn.psi, n_therm=500, N_walkers=n_walkers, n_skip=n_skip, eps=5*2*trial_wvfn.A[0].item()/N_coord**2)[0]
+    Rs_metropolis = Rs_metropolis.detach().numpy()
     N_inner = 2
     N_outer = N_coord//N_inner
     R0 = np.random.normal(size=(N_coord,3))
     R0 -= np.mean(R0, axis=0, keepdims=True)
     print(R0)
-    samples = adl.direct_sample_metropolis(N_inner, N_outer, f_R_braket, 10*a0, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
-    Rs_metropolis = np.array([R for R,_ in samples])
+    #samples = adl.direct_sample_metropolis(N_inner, N_outer, f_R_braket, 10*a0, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
+    #Rs_metropolis = np.array([R for R,_ in samples])
     print(Rs_metropolis.shape)
 else:
     f = h5py.File(input_Rs_database, 'r')
@@ -875,29 +908,35 @@ S_av4p_metropolis_norm = adl.inner(S_av4p_metropolis, S_av4p_metropolis)
 print("spin-flavor wavefunction normalization = ", S_av4p_metropolis_norm)
 assert (np.abs(S_av4p_metropolis_norm - 1.0) < 1e-6).all()
 
-print("old ", f_R_old(Rs_metropolis))
-print("new ", f_R(Rs_metropolis))
+#print("old ", f_R_old(Rs_metropolis))
+#print("new ", f_R(Rs_metropolis))
 
-print("old laplacian ", laplacian_f_R_old(Rs_metropolis))
-print("new laplacian ", laplacian_f_R(Rs_metropolis))
+#print("old laplacian ", laplacian_f_R_old(Rs_metropolis))
+#print("new laplacian ", laplacian_f_R(Rs_metropolis))
 
 # trivial contour deformation
 deform_f = lambda x, params: x
 params = (np.zeros((n_step+1)),)
 
 print('Running GFMC evolution:')
-rand_draws = np.random.random(size=(n_step, Rs_metropolis.shape[0]))
-gfmc = adl.gfmc_deform(
-    Rs_metropolis, S_av4p_metropolis, f_R_old, params,
-    rand_draws=rand_draws, tau_iMev=tau_iMev, N=n_step, potential=Coulomb_potential,
-    deform_f=deform_f, m_Mev=np.abs(np.array(masses)),
-    resampling_freq=resampling)
-gfmc_Rs = np.array([Rs for Rs,_,_,_, in gfmc])
-gfmc_Ws = np.array([Ws for _,_,_,Ws, in gfmc])
-gfmc_Ss = np.array([Ss for _,_,Ss,_, in gfmc])
+if n_step > 0:
+    rand_draws = np.random.random(size=(n_step, Rs_metropolis.shape[0]))
+    gfmc = adl.gfmc_deform(
+        Rs_metropolis, S_av4p_metropolis, f_R_old, params,
+        rand_draws=rand_draws, tau_iMev=tau_iMev, N=n_step, potential=Coulomb_potential,
+        deform_f=deform_f, m_Mev=np.abs(np.array(masses)),
+        resampling_freq=resampling)
+    gfmc_Rs = np.array([Rs for Rs,_,_,_, in gfmc])
+    gfmc_Ws = np.array([Ws for _,_,_,Ws, in gfmc])
+    gfmc_Ss = np.array([Ss for _,_,Ss,_, in gfmc])
+else:
+    gfmc_Rs = np.array([Rs_metropolis])
+    gfmc_Ws = np.array([0*Rs_metropolis[:,1,1]+1])
+    gfmc_Ss = np.array([S_av4p_metropolis])
 
 print('GFMC tau=0 weights:', gfmc_Ws[0])
-print('GFMC tau=dtau weights:', gfmc_Ws[1])
+if n_step > 0:
+    print('GFMC tau=dtau weights:', gfmc_Ws[1])
 
 # measure H
 print('Measuring <H>...')
@@ -939,8 +978,11 @@ for count, R in enumerate(gfmc_Rs):
 
 Vs = np.array(Vs)
 print(Vs.shape)
+print(Ks.shape)
+print(gfmc_Ws.shape)
 
 Hs = np.array([al.bootstrap(K + V, W, Nboot=100, f=adl.rw_mean)
+#Hs = np.array([al.bootstrap(-V**2/(4*K), W, Nboot=100, f=adl.rw_mean)
         for K,V,W in zip(Ks, Vs, gfmc_Ws)])
 
 ave_Ks = np.array([al.bootstrap(K, W, Nboot=100, f=adl.rw_mean)
