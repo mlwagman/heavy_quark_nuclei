@@ -50,6 +50,7 @@ parser.add_argument('--nf', type=int, default=5)
 parser.add_argument('--OLO', type=str, default="LO")
 parser.add_argument('--spoila', type=float, default=1)
 parser.add_argument('--afac', type=float, default=1)
+parser.add_argument('--samefac', type=float, default=1)
 parser.add_argument('--spoilf', type=str, default="hwf")
 parser.add_argument('--outdir', type=str, required=True)
 parser.add_argument('--input_Rs_database', type=str, default="")
@@ -142,7 +143,7 @@ ket_a0 = a0
 
 biga0 = a0
 
-if wavefunction == "product":
+if wavefunction == "product" or wavefunction == "hylleraas":
     biga0 = a0*afac
 
 #if correlator == "asymmetric":
@@ -337,17 +338,29 @@ def f_R_slow(Rs, wavefunction=bra_wavefunction, a0=a0):
                 psi = psi*np.exp(-rij_norm/thisa0)
     return psi
 
-#pairs = np.array([np.array([i, j]) for i in range(0,N_coord) for j in range(0, i)])
 
-pairs = []
+pairs = np.array([np.array([j, i]) for i in range(0,N_coord) for j in range(0, i)])
+
+if wavefunction == "hylleraas":
+    pairs = []
+    for i in range(N_coord):
+        for j in range(N_coord):
+            if i!=j and j>=i:
+                if masses[i]*masses[j] > 0:
+                    continue
+                else:
+                    pairs.append(np.array([i,j]))
+    pairs = np.array(pairs)
+print("pairs = ", pairs)
+
+same_pairs = []
 for i in range(N_coord):
     for j in range(N_coord):
         if i!=j and j>=i:
             if masses[i]*masses[j] > 0:
-                continue
-            pairs.append(np.array([i,j]))
-pairs = np.array(pairs)
-print("pairs = ", pairs)
+                same_pairs.append(np.array([i,j]))
+same_pairs = np.array(same_pairs)
+print("same_pairs = ", same_pairs)
 
 product_pairs = []
 for i in range(N_coord):
@@ -376,7 +389,9 @@ def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac):
 
     if wavefunction == "product":
         r_sum = np.sum( jax.lax.map(r_norm, product_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm, pairs), axis=0 )/(a0*afac)
-        #r_sum = np.sum( jax.lax.map(r_norm, product_pairs), axis=0 )*(1/a0)
+        r_sum += np.sum( jax.lax.map(r_norm, same_pairs), axis=0 )*(1/(a0*afac*samefac)-1/(a0*afac))
+    elif wavefunction == "hylleraas":
+        r_sum = np.sum( jax.lax.map(r_norm, product_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm, pairs), axis=0 )/(a0*afac)
     else:
         r_sum = np.sum( jax.lax.map(r_norm, pairs), axis=0 )/a0
 
@@ -393,6 +408,9 @@ def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac):
         return rij_norm
 
     if wavefunction == "product":
+        r_sum_T = np.sum( jax.lax.map(r_norm_T, product_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/(a0*afac)
+        r_sum_T += np.sum( jax.lax.map(r_norm_T, same_pairs), axis=0 )*(1/(a0*afac*samefac)-1/(a0*afac))
+    elif wavefunction == "hylleraas":
         r_sum_T = np.sum( jax.lax.map(r_norm_T, product_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/(a0*afac)
     else:
         r_sum_T = np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/a0
@@ -427,7 +445,7 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ma
     for k in range(N_coord):
         for l in range(N_coord):
             if k!=l and l>=k:
-                if wavefunction == "product":
+                if wavefunction == "hylleraas":
                     if masses[k] * masses[l] > 0:
                         continue
                 # wvfn includes r_ij
@@ -436,9 +454,12 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ma
                     for j in range(N_coord):
                         thisa0 = a0
                         if i!=j and j>=i:
-                            if wavefunction == "product":
+                            if wavefunction == "product" or wavefunction == "hylleraas":
+                                if wavefunction == "hylleraas":
+                                    if masses[i] * masses[j] > 0:
+                                        continue
                                 if masses[i] * masses[j] > 0:
-                                    continue
+                                    thisa0 *= samefac
                                 baryon_0 = 1
                                 if i < N_coord/2:
                                     baryon_0 = 0
@@ -466,7 +487,7 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ma
         for k in range(N_coord):
             for l in range(N_coord):
                 if k!=l and l>=k and (a==k or a==l):
-                    if wavefunction == "product":
+                    if wavefunction == "hylleraas":
                         if masses[k] * masses[l] > 0:
                             continue
                     # second gradient involves r_mn
@@ -481,9 +502,12 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ma
                                         for j in range(N_coord):
                                             thisa0 = a0
                                             if i!=j and j>=i:
-                                                if wavefunction == "product":
+                                                if wavefunction == "product" or wavefunction == "hylleraas":
+                                                    if wavefunction == "hylleraas":
+                                                        if masses[i] * masses[j] > 0:
+                                                            continue
                                                     if masses[i] * masses[j] > 0:
-                                                        continue
+                                                        thisa0 *= samefac
                                                     baryon_0 = 1
                                                     if i < N_coord/2:
                                                         baryon_0 = 0
