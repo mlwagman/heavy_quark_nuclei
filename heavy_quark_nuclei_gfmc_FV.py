@@ -49,6 +49,7 @@ parser.add_argument('--N_coord', type=int, default=3)
 parser.add_argument('--nf', type=int, default=5)
 parser.add_argument('--OLO', type=str, default="LO")
 parser.add_argument('--spoila', type=float, default=1)
+parser.add_argument('--g', type=float, default=0)
 parser.add_argument('--afac', type=float, default=1)
 parser.add_argument('--spoilf', type=str, default="hwf")
 parser.add_argument('--outdir', type=str, required=True)
@@ -59,6 +60,7 @@ parser.add_argument('--L', type=float, default=0.0)
 parser.add_argument('--Lcut', type=int, default=5)
 parser.add_argument('--spoilS', type=float, default=1)
 parser.add_argument('--wavefunction', type=str, default="compact")
+parser.add_argument('--color', type=str, default="1x1")
 parser.add_argument('--potential', type=str, default="full")
 parser.add_argument('--spoilaket', type=float, default=1)
 parser.add_argument('--masses', type=float, default=0., nargs='+')
@@ -83,6 +85,9 @@ if masses == 0.:
         masses = [1,1,1,1,1,1]
 
 print("masses = ", masses)
+print("spatial wavefunction = ", wavefunction)
+print("g = ", g)
+print("color wavefunction = ", color)
 
 #if wavefunction == "asymmetric":
 #    bra_wavefunction = "product"
@@ -384,8 +389,17 @@ def f_R_slow(Rs, wavefunction=bra_wavefunction, a0=a0):
                 psi = psi*np.exp(-rij_norm/thisa0)
     return psi
 
-pairs = np.array([np.array([i, j]) for i in range(0,N_coord) for j in range(0, i)])
+pairs = np.array([np.array([j, i]) for i in range(0,N_coord) for j in range(0, i)])
 print("pairs = ", pairs)
+
+same_pairs = []
+for i in range(N_coord):
+    for j in range(N_coord):
+        if i!=j and j>=i:
+            if masses[i]*masses[j] > 0:
+                same_pairs.append(np.array([i,j]))
+same_pairs = np.array(same_pairs)
+print("same_pairs = ", same_pairs)
 
 product_pairs = []
 for i in range(N_coord):
@@ -417,10 +431,28 @@ def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
 
     if wavefunction == "product":
         r_sum = np.sum( jax.lax.map(r_norm, product_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm, pairs), axis=0 )/(a0*afac)
-        #r_sum = np.sum( jax.lax.map(r_norm, product_pairs), axis=0 )*(1/a0)
     else:
         r_sum = np.sum( jax.lax.map(r_norm, pairs), axis=0 )/a0
-    return np.exp(-r_sum)
+
+    psi = np.exp(-r_sum)
+
+    Rs_T = Rs
+    Rs_T = Rs_T.at[...,1,:].set(Rs[...,3,:])
+    Rs_T = Rs_T.at[...,3,:].set(Rs[...,1,:])
+
+    def r_norm_T(pair):
+        [i,j] = pair
+        rdiff = Rs_T[...,i,:] - Rs_T[...,j,:]
+        rij_norm = np.sqrt( np.sum(rdiff*rdiff, axis=-1) )
+        return rij_norm
+
+    if wavefunction == "product":
+        r_sum_T = np.sum( jax.lax.map(r_norm_T, product_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/(a0*afac)
+    else:
+        r_sum_T = np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/a0
+
+    psi += g * np.exp(-r_sum_T)
+    return psi
 
 def f_R_sq(Rs):
     return np.abs( f_R(Rs) )**2
@@ -449,15 +481,6 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
     for k in range(N_coord):
         for l in range(N_coord):
             if k!=l and l>=k:
-                #if wavefunction == "product":
-                #    baryon_0 = 1
-                #    if k < N_coord/2:
-                #        baryon_0 = 0
-                #    baryon_1 = 1
-                #    if l < N_coord/2:
-                #        baryon_1 = 0
-                #    if baryon_0 != baryon_1:
-                #        continue
                 # wvfn includes r_ij
                 nabla_psi = 1
                 for i in range(N_coord):
@@ -494,15 +517,6 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
         for k in range(N_coord):
             for l in range(N_coord):
                 if k!=l and l>=k and (a==k or a==l):
-                    #if wavefunction == "product":
-                    #    baryon_0 = 1
-                    #    if k < N_coord/2:
-                    #        baryon_0 = 0
-                    #    baryon_1 = 1
-                    #    if l < N_coord/2:
-                    #        baryon_1 = 0
-                    #    if baryon_0 != baryon_1:
-                    #        continue
                     # second gradient involves r_mn
                     for m in range(N_coord):
                         for n in range(N_coord):
@@ -561,11 +575,11 @@ if input_Rs_database == "":
     print("NCOORD = ", N_coord)
     print("NINNER = ", N_inner)
     print("NOUTER = ", N_outer)
-    if N_coord % 3 == 0:
-        samples = adl.direct_sample_metropolis(N_inner, N_outer, f_R_braket, a0*afac/3, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0/2)
-    else:
-        samples = adl.direct_sample_metropolis(N_inner, N_outer, f_R_braket, a0*afac, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
-    #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
+    #if N_coord % 3 == 0:
+        #samples = adl.direct_sample_metropolis(N_inner, N_outer, f_R_braket, a0*afac/3, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0/2)
+    #else:
+        #samples = adl.direct_sample_metropolis(N_inner, N_outer, f_R_braket, a0*afac, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
+    samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
 
     #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
 
@@ -653,13 +667,22 @@ if N_coord == 4:
      for l in range(NI):
         #if i == j and k == l:
         spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,0)
-        S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)/NI
-        # 3bar x 3
-        #S_av4p_metropolis[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2-2*NI)
-        #S_av4p_metropolis[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(k, j)/np.sqrt(2*NI**2-2*NI)
-        # 6 x 6
-        #S_av4p_metropolis[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2+2*NI)
-        #S_av4p_metropolis[spin_slice] += kronecker_delta(i, l)*kronecker_delta(k,j)/np.sqrt(2*NI**2+2*NI)
+        if color == "1x1":
+            S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)/NI
+        if color == "3x3bar":
+            # 3bar x 3 -- Q Qbar Q Qbar
+            #S_av4p_metropolis[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2-2*NI)
+            #S_av4p_metropolis[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(k, j)/np.sqrt(2*NI**2-2*NI)
+            # 3bar x 3 -- Q Q Qbar Qbar
+            S_av4p_metropolis[spin_slice] += kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2-2*NI)
+            S_av4p_metropolis[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(j, k)/np.sqrt(2*NI**2-2*NI)
+        if color == "6x6bar":
+            # 6bar x 6 -- Q Qbar Q Qbar
+            #S_av4p_metropolis[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2+2*NI)
+            #S_av4p_metropolis[spin_slice] += kronecker_delta(i, l)*kronecker_delta(k,j)/np.sqrt(2*NI**2+2*NI)
+            # 6bar x 6 -- Q Q Qbar Qbar
+            S_av4p_metropolis[spin_slice] += kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2+2*NI)
+            S_av4p_metropolis[spin_slice] += kronecker_delta(i, l)*kronecker_delta(j,k)/np.sqrt(2*NI**2+2*NI)
 
 if N_coord == 6:
   for i in range(NI):
@@ -725,7 +748,16 @@ for count, R in enumerate(gfmc_Rs):
     print('Calculating Laplacian for step ', count)
     K_time = time.time()
     #Ks.append(-1/2*laplacian_f_R(R) / f_R(R) / adl.mp_Mev)
-    Ks.append(-1/2*laplacian_f_R(R) / f_R(R, wavefunction=bra_wavefunction) / 1)
+    K_term = -1/2*laplacian_f_R(R) / f_R(R, wavefunction=bra_wavefunction)
+
+    R_T = R
+    R_T = R_T.at[...,1,:].set(R[...,3,:])
+    R_T = R_T.at[...,3,:].set(R[...,1,:])
+
+    K_term += -1/2*laplacian_f_R(R_T) / f_R(R, wavefunction=bra_wavefunction) * g
+
+    Ks.append(K_term)
+
     print(f"calculated kinetic in {time.time() - K_time} sec")
 Ks = np.array(Ks)
 
@@ -790,9 +822,9 @@ print(Vs.shape)
 #    for dRs, S in zip(map(adl.to_relative, gfmc_Rs), gfmc_Ss)])
 
 if volume == "finite":
-    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilaket"+str(spoilaket) + "_spoilf"+str(spoilf) + "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)
+    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilaket"+str(spoilaket) + "_spoilf"+str(spoilf) + "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
 else:
-    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilaket"+str(spoilaket) + "_spoilf"+str(spoilf)+ "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)
+    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilaket"+str(spoilaket) + "_spoilf"+str(spoilf)+ "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
 
 
 with h5py.File(outdir+'Hammys_'+tag+'.h5', 'w') as f:
@@ -817,6 +849,8 @@ print("dset = ", dset)
 if verbose:
 
     last_point = n_walkers//8
+    if last_point > 50:
+        last_point = 50
     def tauint(t, littlec):
          return 1 + 2 * np.sum(littlec[1:t])
     tau_ac=0
@@ -826,7 +860,7 @@ if verbose:
     print("sub_dset = ", sub_dset)
     print("c0 = ", c0)
     auto_corr.append(c0)
-    for i in range(1,n_walkers//4):
+    for i in range(1,2*last_point):
         auto_corr.append(np.mean(sub_dset[i:] * sub_dset[:-i]))
     littlec = np.asarray(auto_corr) / c0
     print("tau = ", tau_ac)
