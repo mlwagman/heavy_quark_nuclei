@@ -73,6 +73,7 @@ volume = "infinite"
 if L > 1e-2:
     volume = "finite"
 
+
 if masses == 0.:
     masses = onp.ones(N_coord)
     if N_coord == 2:
@@ -135,10 +136,9 @@ aa32 = Nc/4*(12541/243+368/3*zeta3+64*np.pi**4/135)+CF/4*(14002/81-416*zeta3/3)
 aa33 = -(20/9)**3*1/8
 aa3 = aa30+aa31*nf+aa32*nf**2+aa33*nf**3
 
-L = log_mu_r
 VB_LO = VB
 VB_NLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*log_mu_r))
-VB_NNLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*L) + (alpha/(4*np.pi))**2*( beta0**2*(4*L**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*L + aa2 ) )
+VB_NNLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*log_mu_r) + (alpha/(4*np.pi))**2*( beta0**2*(4*log_mu_r**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*log_mu_r + aa2 ) )
 
 
 if OLO == "LO":
@@ -213,6 +213,7 @@ def FV_Coulomb(R, L, nn):
     pmRL = np.sqrt( Rdotp*(-2.0/L) + pdotp[(np.newaxis,slice(None))] + (1.0/L)**2*RdotR[(slice(None),np.newaxis)] )
     sums += np.sum( np.pi/pmRL*(1-jax.scipy.special.erf(np.pi*pmRL)), axis=1 )
     #assert( (np.abs(sums/(np.pi*L) - FV_Coulomb_slow(R,L,nn)) < 1e-6).all() )
+    #print("FV Coulomb test")
     #print(sums/(np.pi*L))
     #print(FV_Coulomb_slow(R,L,nn))
     return sums/(np.pi*L)
@@ -422,6 +423,26 @@ for i in range(N_coord):
 product_pairs = np.array(product_pairs)
 print("product pairs = ", product_pairs)
 
+diquark_pairs = []
+for i in range(N_coord):
+    for j in range(N_coord):
+        if i!=j and j>=i:
+            diquark_0 = 2
+            if i < 2:
+                diquark_0 = 0
+            elif i < 4:
+                diquark_0 = 1
+            diquark_1 = 2
+            if j < 2:
+                diquark_1 = 0
+            elif j < 4:
+                diquark_1 = 1
+            if diquark_0 != diquark_1:
+                continue
+            diquark_pairs.append(np.array([i,j]))
+diquark_pairs = np.array(diquark_pairs)
+print("diquark pairs = ", diquark_pairs)
+
 absmasses=np.abs(np.array(masses))
 
 @partial(jax.jit, static_argnums=(1,))
@@ -436,6 +457,8 @@ def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
 
     if wavefunction == "product":
         r_sum = np.sum( jax.lax.map(r_norm, product_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm, pairs), axis=0 )/(a0*afac)
+    elif wavefunction == "diquark":
+        r_sum = np.sum( jax.lax.map(r_norm, diquark_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm, pairs), axis=0 )/(a0*afac)
     else:
         r_sum = np.sum( jax.lax.map(r_norm, pairs), axis=0 )/a0
 
@@ -454,6 +477,8 @@ def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
     
         if wavefunction == "product":
             r_sum_T = np.sum( jax.lax.map(r_norm_T, product_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/(a0*afac)
+        elif wavefunction == "diquark":
+            r_sum_T = np.sum( jax.lax.map(r_norm_T, diquark_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/(a0*afac)
         else:
             r_sum_T = np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/a0
     
@@ -503,6 +528,19 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
                                 if baryon_0 != baryon_1:
                                     thisa0 *= afac
                                     #continue
+                            elif wavefunction == "diquark":
+                                diquark_0 = 2
+                                if i < 2:
+                                    diquark_0 = 0
+                                elif i < 4:
+                                    diquark_0 = 1
+                                diquark_1 = 2
+                                if j < 2:
+                                    diquark_1 = 0
+                                elif j < 4:
+                                    diquark_1 = 1
+                                if diquark_0 != diquark_1:
+                                    thisa0 *= afac
                             ri = Rs[...,i,:]
                             rj = Rs[...,j,:]
                             rij_norm = adl.norm_3vec(ri - rj)
@@ -545,6 +583,19 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
                                                     if baryon_0 != baryon_1:
                                                         thisa0 *= afac
                                                         #continue
+                                                elif wavefunction == "diquark":
+                                                    diquark_0 = 2
+                                                    if i < 2:
+                                                        diquark_0 = 0
+                                                    elif i < 4:
+                                                        diquark_0 = 1
+                                                    diquark_1 = 2
+                                                    if j < 2:
+                                                        diquark_1 = 0
+                                                    elif j < 4:
+                                                        diquark_1 = 1
+                                                    if diquark_0 != diquark_1:
+                                                        thisa0 *= afac
                                                 ri = Rs[...,i,:]
                                                 rj = Rs[...,j,:]
                                                 rij_norm = adl.norm_3vec(ri - rj)
@@ -563,7 +614,7 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
                                     nabla_psi_tot += nabla_psi
     return nabla_psi_tot
 
-if N_coord >= 6 and verbose:
+if N_coord >= 6: #and verbose:
     print("No JIT for Laplacian")
     def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
         #N_walkers = Rs.shape[0]
@@ -590,6 +641,19 @@ if N_coord >= 6 and verbose:
                                     if baryon_0 != baryon_1:
                                         thisa0 *= afac
                                         #continue
+                                elif wavefunction == "diquark":
+                                    diquark_0 = 2
+                                    if i < 2:
+                                        diquark_0 = 0
+                                    elif i < 4:
+                                        diquark_0 = 1
+                                    diquark_1 = 2
+                                    if j < 2:
+                                        diquark_1 = 0
+                                    elif j < 4:
+                                        diquark_1 = 1
+                                    if diquark_0 != diquark_1:
+                                        thisa0 *= afac
                                 ri = Rs[...,i,:]
                                 rj = Rs[...,j,:]
                                 rij_norm = adl.norm_3vec(ri - rj)
@@ -632,6 +696,19 @@ if N_coord >= 6 and verbose:
                                                         if baryon_0 != baryon_1:
                                                             thisa0 *= afac
                                                             #continue
+                                                    elif wavefunction == "diquark":
+                                                        diquark_0 = 2
+                                                        if i < 2:
+                                                            diquark_0 = 0
+                                                        elif i < 4:
+                                                            diquark_0 = 1
+                                                        diquark_1 = 2
+                                                        if j < 2:
+                                                            diquark_1 = 0
+                                                        elif j < 4:
+                                                            diquark_1 = 1
+                                                        if diquark_0 != diquark_1:
+                                                            thisa0 *= afac
                                                     ri = Rs[...,i,:]
                                                     rj = Rs[...,j,:]
                                                     rij_norm = adl.norm_3vec(ri - rj)
@@ -808,17 +885,20 @@ if N_coord == 6:
               S_av4p_metropolis[spin_slice] = levi_civita(i, j, k)*levi_civita(l, m, n) / 6
           # color tensors are ordered as diquark, diquark, diquark, each baryon has one diquark
           elif color == "AAA":
-              S_av4p_metropolis[spin_slice] = TAAA(i, j, l, m, k, n)
+              #S_av4p_metropolis[spin_slice] = TAAA(i, j, l, m, k, n)
+              S_av4p_metropolis[spin_slice] = TAAA(i, j, k, l, m, n)
           elif color == "AAS":
-              S_av4p_metropolis[spin_slice] = TAAS(i, j, l, m, k, n)
+              #S_av4p_metropolis[spin_slice] = TAAS(i, j, l, m, k, n)
+              S_av4p_metropolis[spin_slice] = TAAS(i, j, k, l, m, n)
           elif color == "ASA":
-              S_av4p_metropolis[spin_slice] = TASA(i, j, l, m, k, n)
+              #S_av4p_metropolis[spin_slice] = TASA(i, j, l, m, k, n)
+              S_av4p_metropolis[spin_slice] = TASA(i, j, k, l, m, n)
           elif color == "SAA":
-              S_av4p_metropolis[spin_slice] = TSAA(i, j, l, m, k, n)
+              #S_av4p_metropolis[spin_slice] = TSAA(i, j, l, m, k, n)
+              S_av4p_metropolis[spin_slice] = TSAA(i, j, k, l, m, n)
           elif color == "SSS":
-              S_av4p_metropolis[spin_slice] = TSSS(i, j, l, m, k, n)
-          #spin_slice = (slice(0, None),) + (i,0,j,0,k,0,0,0,0,0,0,0)
-          #S_av4p_metropolis[spin_slice] = levi_civita(i, j, k) / np.sqrt(6)
+              #S_av4p_metropolis[spin_slice] = TSSS(i, j, l, m, k, n)
+              S_av4p_metropolis[spin_slice] = TSSS(i, j, k, l, m, n)
 
 
 
@@ -995,6 +1075,9 @@ if verbose:
     Hs = np.array([al.bootstrap(K + V, W, Nboot=100, f=adl.rw_mean)
             for K,V,W in zip(Ks, Vs, gfmc_Ws)])
 
+    Hs_opt = np.array([al.bootstrap(-V**2/(4*K), W, Nboot=100, f=adl.rw_mean)
+            for K,V,W in zip(Ks, Vs, gfmc_Ws)])
+
     ave_Ks = np.array([al.bootstrap(K, W, Nboot=100, f=adl.rw_mean)
             for K,V,W in zip(Ks, Vs, gfmc_Ws)])
     ave_Vs = np.array([al.bootstrap(V, W, Nboot=100, f=adl.rw_mean)
@@ -1036,5 +1119,6 @@ if verbose:
     print("H(R) = ",Ks[0,1]+Vs[0,1])
 
     print("H=",Hs,"\n\n")
+    print("H_opt=",Hs_opt,"\n\n")
     print("K=",ave_Ks,"\n\n")
     print("V=",ave_Vs,"\n\n")
