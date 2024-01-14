@@ -84,6 +84,11 @@ if masses == 0.:
     elif N_coord == 6:
         masses = [1,1,1,1,1,1]
 
+swapI = 1
+for i in range(1,N_coord):
+    if masses[1]*masses[i] > 0:
+        swapI = i
+
 print("masses = ", masses)
 print("spatial wavefunction = ", wavefunction)
 print("g = ", g)
@@ -436,22 +441,23 @@ def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
 
     psi = np.exp(-r_sum)
 
-    Rs_T = Rs
-    Rs_T = Rs_T.at[...,1,:].set(Rs[...,3,:])
-    Rs_T = Rs_T.at[...,3,:].set(Rs[...,1,:])
-
-    def r_norm_T(pair):
-        [i,j] = pair
-        rdiff = Rs_T[...,i,:] - Rs_T[...,j,:]
-        rij_norm = np.sqrt( np.sum(rdiff*rdiff, axis=-1) )
-        return rij_norm
-
-    if wavefunction == "product":
-        r_sum_T = np.sum( jax.lax.map(r_norm_T, product_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/(a0*afac)
-    else:
-        r_sum_T = np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/a0
-
-    psi += g * np.exp(-r_sum_T)
+    if N_coord == 4:
+        Rs_T = Rs
+        Rs_T = Rs_T.at[...,1,:].set(Rs[...,swapI,:])
+        Rs_T = Rs_T.at[...,swapI,:].set(Rs[...,1,:])
+    
+        def r_norm_T(pair):
+            [i,j] = pair
+            rdiff = Rs_T[...,i,:] - Rs_T[...,j,:]
+            rij_norm = np.sqrt( np.sum(rdiff*rdiff, axis=-1) )
+            return rij_norm
+    
+        if wavefunction == "product":
+            r_sum_T = np.sum( jax.lax.map(r_norm_T, product_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/(a0*afac)
+        else:
+            r_sum_T = np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/a0
+    
+        psi += g * np.exp(-r_sum_T)
     return psi
 
 def f_R_sq(Rs):
@@ -557,6 +563,94 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
                                     nabla_psi_tot += nabla_psi
     return nabla_psi_tot
 
+if N_coord >= 6 and verbose:
+    print("No JIT for Laplacian")
+    def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
+        #N_walkers = Rs.shape[0]
+        #assert Rs.shape == (N_walkers, N_coord, 3)
+        nabla_psi_tot = 0
+        # terms where laplacian hits one piece of wvfn
+        # laplacian hits r_kl
+        for k in range(N_coord):
+            for l in range(N_coord):
+                if k!=l and l>=k:
+                    # wvfn includes r_ij
+                    nabla_psi = 1
+                    for i in range(N_coord):
+                        for j in range(N_coord):
+                            thisa0 = a0
+                            if i!=j and j>=i:
+                                if wavefunction == "product":
+                                    baryon_0 = 1
+                                    if i < N_coord/2:
+                                        baryon_0 = 0
+                                    baryon_1 = 1
+                                    if j < N_coord/2:
+                                        baryon_1 = 0
+                                    if baryon_0 != baryon_1:
+                                        thisa0 *= afac
+                                        #continue
+                                ri = Rs[...,i,:]
+                                rj = Rs[...,j,:]
+                                rij_norm = adl.norm_3vec(ri - rj)
+                                mij = 2*masses[i]*masses[j]/(masses[i]+masses[j])
+                                thisa0 /= mij
+                                # nabla_k^2 r_kl = nabla_l^2 r_kl
+                                # factor of two included to account for both terms appearing in laplacian
+                                if k == i and l == j:
+                                    #nabla_psi = nabla_psi * (2/thisa0**2 - 4/(thisa0*rij_norm)) * np.exp(-rij_norm/thisa0)
+                                    nabla_psi = nabla_psi * ((1/thisa0**2 - 2/(thisa0*rij_norm))/masses[k] + (1/thisa0**2 - 2/(thisa0*rij_norm))/masses[l]) * np.exp(-rij_norm/thisa0)
+                                else:
+                                    nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0)
+                    nabla_psi_tot += nabla_psi
+        # terms where gradients hit separate pieces of wvfn
+        # laplacian involves particle a
+        for a in range(N_coord):
+            # first gradient involves r_kl
+            for k in range(N_coord):
+                for l in range(N_coord):
+                    if k!=l and l>=k and (a==k or a==l):
+                        # second gradient involves r_mn
+                        for m in range(N_coord):
+                            for n in range(N_coord):
+                                if m!=n and n>=m and (m!=k or n!=l) and (a==m or a==n):
+                                    # sum over the 3-d components of gradient
+                                    for x in range(3):
+                                        # wvfn involves r_ij
+                                        nabla_psi = 1
+                                        for i in range(N_coord):
+                                            for j in range(N_coord):
+                                                thisa0 = a0
+                                                if i!=j and j>=i:
+                                                    if wavefunction == "product":
+                                                        baryon_0 = 1
+                                                        if i < N_coord/2:
+                                                            baryon_0 = 0
+                                                        baryon_1 = 1
+                                                        if j < N_coord/2:
+                                                            baryon_1 = 0
+                                                        if baryon_0 != baryon_1:
+                                                            thisa0 *= afac
+                                                            #continue
+                                                    ri = Rs[...,i,:]
+                                                    rj = Rs[...,j,:]
+                                                    rij_norm = adl.norm_3vec(ri - rj)
+                                                    mij = 2*masses[i]*masses[j]/(masses[i]+masses[j])
+                                                    thisa0 /= mij
+                                                    rsign = 0
+                                                    # grad_a r_ij = rsign * (ri - rj)
+                                                    if a == i:
+                                                        rsign = 1
+                                                    elif a == j:
+                                                        rsign = -1
+                                                    if (k == i and l == j) or (m == i and n == j):
+                                                        nabla_psi = rsign * nabla_psi * (ri[:,x] - rj[:,x])/(thisa0*rij_norm) * np.exp(-rij_norm/thisa0) / masses[a]
+                                                    else:
+                                                        nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0)
+                                        nabla_psi_tot += nabla_psi
+        return nabla_psi_tot
+else:
+    print("JIT Laplacian")
 
 N_inner = 2
 if N_coord % 3 == 0:
@@ -619,6 +713,21 @@ def levi_civita(i, j, k):
     else:
         return -1
 
+def TAAA(i, j, k, l, m, n):
+    return (levi_civita(i,j,m)*levi_civita(k,l,n) - levi_civita(i,j,n)*levi_civita(k,l,m))/(4*np.sqrt(3))
+
+def TAAS(i, j, k, l, m, n):
+    return (levi_civita(i,j,m)*levi_civita(k,l,n) + levi_civita(i,j,n)*levi_civita(k,l,m))/(4*np.sqrt(6))
+
+def TASA(i, j, k, l, m, n):
+    return (levi_civita(i,j,k)*levi_civita(m,n,l) + levi_civita(i,j,l)*levi_civita(m,n,k))/(4*np.sqrt(6))
+
+def TSAA(i, j, k, l, m, n):
+    return (levi_civita(m,n,i)*levi_civita(k,l,j) + levi_civita(m,n,j)*levi_civita(k,l,i))/(4*np.sqrt(6))
+
+def TSSS(i, j, k, l, m, n):
+    return (levi_civita(i,k,m)*levi_civita(j,l,n) + levi_civita(i,k,n)*levi_civita(j,l,m) + levi_civita(j,k,m)*levi_civita(i,l,n) + levi_civita(j,k,n)*levi_civita(i,l,m))/(12*np.sqrt(2))
+
 def kronecker_delta(i, j):
     return 1 if i == j else 0
 
@@ -669,14 +778,14 @@ if N_coord == 4:
         spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,0)
         if color == "1x1":
             S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)/NI
-        if color == "3x3bar":
+        elif color == "3x3bar":
             # 3bar x 3 -- Q Qbar Q Qbar
             #S_av4p_metropolis[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2-2*NI)
             #S_av4p_metropolis[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(k, j)/np.sqrt(2*NI**2-2*NI)
             # 3bar x 3 -- Q Q Qbar Qbar
             S_av4p_metropolis[spin_slice] += kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2-2*NI)
             S_av4p_metropolis[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(j, k)/np.sqrt(2*NI**2-2*NI)
-        if color == "6x6bar":
+        elif color == "6x6bar":
             # 6bar x 6 -- Q Qbar Q Qbar
             #S_av4p_metropolis[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2+2*NI)
             #S_av4p_metropolis[spin_slice] += kronecker_delta(i, l)*kronecker_delta(k,j)/np.sqrt(2*NI**2+2*NI)
@@ -691,12 +800,23 @@ if N_coord == 6:
      for l in range(NI):
       for m in range(NI):
        for n in range(NI):
-        if i != j and j != k and i != k and l != m and m != n and n != l:
           # up up up up up up
           spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,0,m,0,n,0)
           # up up up down down down
           #spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,1,m,1,n,1)
-          S_av4p_metropolis[spin_slice] = levi_civita(i, j, k)*levi_civita(l, m, n) / 6
+          if color == "1x1":
+              S_av4p_metropolis[spin_slice] = levi_civita(i, j, k)*levi_civita(l, m, n) / 6
+          # color tensors are ordered as diquark, diquark, diquark, each baryon has one diquark
+          elif color == "AAA":
+              S_av4p_metropolis[spin_slice] = TAAA(i, j, l, m, k, n)
+          elif color == "AAS":
+              S_av4p_metropolis[spin_slice] = TAAS(i, j, l, m, k, n)
+          elif color == "ASA":
+              S_av4p_metropolis[spin_slice] = TASA(i, j, l, m, k, n)
+          elif color == "SAA":
+              S_av4p_metropolis[spin_slice] = TSAA(i, j, l, m, k, n)
+          elif color == "SSS":
+              S_av4p_metropolis[spin_slice] = TSSS(i, j, l, m, k, n)
           #spin_slice = (slice(0, None),) + (i,0,j,0,k,0,0,0,0,0,0,0)
           #S_av4p_metropolis[spin_slice] = levi_civita(i, j, k) / np.sqrt(6)
 
@@ -721,23 +841,28 @@ deform_f = lambda x, params: x
 params = (np.zeros((n_step+1)),)
 
 print('Running GFMC evolution:')
-rand_draws = onp.random.random(size=(n_step, Rs_metropolis.shape[0]))
-gfmc = adl.gfmc_deform(
-    Rs_metropolis, S_av4p_metropolis, f_R, params,
-    rand_draws=rand_draws, tau_iMev=tau_iMev, N=n_step, potential=Coulomb_potential,
-    #deform_f=deform_f, m_Mev=adl.mp_Mev,
-    deform_f=deform_f, m_Mev=np.abs(np.array(masses)),
-    resampling_freq=resampling)
-gfmc_Rs = np.array([Rs for Rs,_,_,_, in gfmc])
-gfmc_Ws = np.array([Ws for _,_,_,Ws, in gfmc])
-gfmc_Ss = np.array([Ss for _,_,Ss,_, in gfmc])
+if n_step > 0:
+    rand_draws = onp.random.random(size=(n_step, Rs_metropolis.shape[0]))
+    gfmc = adl.gfmc_deform(
+        Rs_metropolis, S_av4p_metropolis, f_R, params,
+        rand_draws=rand_draws, tau_iMev=tau_iMev, N=n_step, potential=Coulomb_potential,
+        deform_f=deform_f, m_Mev=np.abs(np.array(masses)),
+        resampling_freq=resampling)
+    gfmc_Rs = np.array([Rs for Rs,_,_,_, in gfmc])
+    gfmc_Ws = np.array([Ws for _,_,_,Ws, in gfmc])
+    gfmc_Ss = np.array([Ss for _,_,Ss,_, in gfmc])
+else:
+    gfmc_Rs = np.array([Rs_metropolis])
+    gfmc_Ws = np.array([0*Rs_metropolis[:,1,1]+1])
+    gfmc_Ss = np.array([S_av4p_metropolis])
 
 phase_Ws = f_R_braket_phase(gfmc_Rs)
 print('phase Ws', phase_Ws)
 gfmc_Ws *= phase_Ws
 
 print('GFMC tau=0 weights:', gfmc_Ws[0])
-print('GFMC tau=dtau weights:', gfmc_Ws[1])
+if n_step > 0:
+    print('GFMC tau=dtau weights:', gfmc_Ws[1])
 
 # measure H
 print('Measuring <H>...')
@@ -750,11 +875,12 @@ for count, R in enumerate(gfmc_Rs):
     #Ks.append(-1/2*laplacian_f_R(R) / f_R(R) / adl.mp_Mev)
     K_term = -1/2*laplacian_f_R(R) / f_R(R, wavefunction=bra_wavefunction)
 
-    R_T = R
-    R_T = R_T.at[...,1,:].set(R[...,3,:])
-    R_T = R_T.at[...,3,:].set(R[...,1,:])
-
-    K_term += -1/2*laplacian_f_R(R_T) / f_R(R, wavefunction=bra_wavefunction) * g
+    if N_coord == 4:
+        R_T = R
+        R_T = R_T.at[...,1,:].set(R[...,swapI,:])
+        R_T = R_T.at[...,swapI,:].set(R[...,1,:])
+    
+        K_term += -1/2*laplacian_f_R(R_T) / f_R(R, wavefunction=bra_wavefunction) * g
 
     Ks.append(K_term)
 
