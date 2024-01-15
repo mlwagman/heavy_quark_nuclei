@@ -854,21 +854,30 @@ if N_coord == 4:
         #if i == j and k == l:
         spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,0)
         if color == "1x1":
-            S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)/NI
+            if swapI == 1:
+                # 1 x 1 -- Q Q Qbar Qbar
+                S_av4p_metropolis[spin_slice] = kronecker_delta(i, k)*kronecker_delta(j,l)/NI
+            else:
+                # 1 x 1 -- Q Qbar Q Qbar
+                S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)/NI
         elif color == "3x3bar":
-            # 3bar x 3 -- Q Qbar Q Qbar
-            #S_av4p_metropolis[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2-2*NI)
-            #S_av4p_metropolis[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(k, j)/np.sqrt(2*NI**2-2*NI)
-            # 3bar x 3 -- Q Q Qbar Qbar
-            S_av4p_metropolis[spin_slice] += kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2-2*NI)
-            S_av4p_metropolis[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(j, k)/np.sqrt(2*NI**2-2*NI)
+            if swapI == 1:
+                # 3bar x 3 -- Q Q Qbar Qbar
+                S_av4p_metropolis[spin_slice] += kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2-2*NI)
+                S_av4p_metropolis[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(j, k)/np.sqrt(2*NI**2-2*NI)
+            else:
+                # 3bar x 3 -- Q Qbar Q Qbar
+                S_av4p_metropolis[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2-2*NI)
+                S_av4p_metropolis[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(k, j)/np.sqrt(2*NI**2-2*NI)
         elif color == "6x6bar":
-            # 6bar x 6 -- Q Qbar Q Qbar
-            #S_av4p_metropolis[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2+2*NI)
-            #S_av4p_metropolis[spin_slice] += kronecker_delta(i, l)*kronecker_delta(k,j)/np.sqrt(2*NI**2+2*NI)
-            # 6bar x 6 -- Q Q Qbar Qbar
-            S_av4p_metropolis[spin_slice] += kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2+2*NI)
-            S_av4p_metropolis[spin_slice] += kronecker_delta(i, l)*kronecker_delta(j,k)/np.sqrt(2*NI**2+2*NI)
+            if swapI == 1:
+                # 6bar x 6 -- Q Q Qbar Qbar
+                S_av4p_metropolis[spin_slice] += kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2+2*NI)
+                S_av4p_metropolis[spin_slice] += kronecker_delta(i, l)*kronecker_delta(j,k)/np.sqrt(2*NI**2+2*NI)
+            else:
+                # 6bar x 6 -- Q Qbar Q Qbar
+                S_av4p_metropolis[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2+2*NI)
+                S_av4p_metropolis[spin_slice] += kronecker_delta(i, l)*kronecker_delta(k,j)/np.sqrt(2*NI**2+2*NI)
 
 if N_coord == 6:
   for i in range(NI):
@@ -1010,6 +1019,43 @@ Vs = np.array(Vs)
 
 print(Vs.shape)
 
+if N_coord == 4:
+  S_1x1 = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
+  S_3x3bar = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
+  S_6x6bar = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
+  for i in range(NI):
+   for j in range(NI):
+    for k in range(NI):
+     for l in range(NI):
+        #if i == j and k == l:
+        spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,0)
+        if swapI == 1:
+            S_1x1[spin_slice] = kronecker_delta(i, k)*kronecker_delta(j,l)/NI
+            S_3x3bar[spin_slice] += kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2-2*NI)
+            S_3x3bar[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(j, k)/np.sqrt(2*NI**2-2*NI)
+            S_6x6bar[spin_slice] += kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2+2*NI)
+            S_6x6bar[spin_slice] += kronecker_delta(i, l)*kronecker_delta(j,k)/np.sqrt(2*NI**2+2*NI)
+        else:
+            S_1x1[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)/NI
+            S_3x3bar[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2-2*NI)
+            S_3x3bar[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(k, j)/np.sqrt(2*NI**2-2*NI)
+            S_6x6bar[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2+2*NI)
+            S_6x6bar[spin_slice] += kronecker_delta(i, l)*kronecker_delta(k,j)/np.sqrt(2*NI**2+2*NI)
+
+  Z_1x1 = []
+  Z_3x3bar = []
+  Z_6x6bar = []
+  for count, R in enumerate(gfmc_Rs):
+    print('Calculating potential for step ', count)
+    V_time = time.time()
+    S = gfmc_Ss[count]
+    Z_1x1.append(adl.inner(S_1x1, S) / np.sqrt(adl.inner(S, S)))
+    Z_3x3bar.append(adl.inner(S_3x3bar, S) / np.sqrt(adl.inner(S, S)))
+    Z_6x6bar.append(adl.inner(S_6x6bar, S) / np.sqrt(adl.inner(S, S)))
+  Z_1x1 = np.array(Z_1x1)
+  Z_3x3bar = np.array(Z_3x3bar)
+  Z_6x6bar = np.array(Z_6x6bar)
+
 #if verbose:
     #ave_Vs = np.array([al.bootstrap(V, W, Nboot=100, f=adl.rw_mean)
     #        for V,W in zip(Vs, gfmc_Ws)])
@@ -1036,6 +1082,12 @@ else:
 with h5py.File(outdir+'Hammys_'+tag+'.h5', 'w') as f:
     dset = f.create_dataset("Hammys", data=Ks+Vs)
     dset = f.create_dataset("Ws", data=gfmc_Ws)
+
+if N_coord == 4:
+    with h5py.File(outdir+'Zs_'+tag+'.h5', 'w') as f:
+        dset = f.create_dataset("Z_1x1", data=Z_1x1)
+        dset = f.create_dataset("Z_3x3bar", data=Z_3x3bar)
+        dset = f.create_dataset("Z_6x6bar", data=Z_6x6bar)
 
 with h5py.File(outdir+'Hammys_'+tag+'.h5', 'r') as f:
     data = f['Hammys']
@@ -1122,3 +1174,15 @@ if verbose:
     print("H_opt=",Hs_opt,"\n\n")
     print("K=",ave_Ks,"\n\n")
     print("V=",ave_Vs,"\n\n")
+
+    if N_coord == 4:
+      ave_Z_1x1 = np.array([al.bootstrap(Z, Nboot=100, f=al.rmean)
+              for Z in Z_1x1])
+      ave_Z_3x3bar = np.array([al.bootstrap(Z, Nboot=100, f=al.rmean)
+              for Z in Z_3x3bar])
+      ave_Z_6x6bar = np.array([al.bootstrap(Z, Nboot=100, f=al.rmean)
+              for Z in Z_6x6bar])
+
+      print("Z_1x1=",ave_Z_1x1,"\n\n")
+      print("Z_3x3bar=",ave_Z_3x3bar,"\n\n")
+      print("Z_6x6bar=",ave_Z_6x6bar,"\n\n")
