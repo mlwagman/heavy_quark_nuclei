@@ -85,6 +85,8 @@ if masses == 0.:
     elif N_coord == 6:
         masses = [1,1,1,1,1,1]
 
+masses_copy = masses
+
 swapI = 1
 for i in range(1,N_coord):
     if masses[1]*masses[i] > 0:
@@ -464,7 +466,7 @@ def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
 
     psi = np.exp(-r_sum)
 
-    if N_coord == 4:
+    if N_coord == 4 and abs(g) > 0:
         Rs_T = Rs
         Rs_T = Rs_T.at[...,1,:].set(Rs[...,swapI,:])
         Rs_T = Rs_T.at[...,swapI,:].set(Rs[...,1,:])
@@ -473,7 +475,8 @@ def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
             [i,j] = pair
             rdiff = Rs_T[...,i,:] - Rs_T[...,j,:]
             rij_norm = np.sqrt( np.sum(rdiff*rdiff, axis=-1) )
-            return rij_norm
+            mij = 2*masses[i]*masses[j]/(masses[i]+masses[j])
+            return rij_norm * mij
     
         if wavefunction == "product":
             r_sum_T = np.sum( jax.lax.map(r_norm_T, product_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/(a0*afac)
@@ -970,7 +973,7 @@ for count, R in enumerate(gfmc_Rs):
     #Ks.append(-1/2*laplacian_f_R(R) / f_R(R) / adl.mp_Mev)
     K_term = -1/2*laplacian_f_R(R) / f_R(R, wavefunction=bra_wavefunction)
 
-    if N_coord == 4:
+    if N_coord == 4 and abs(g) > 0:
         R_T = R
         R_T = R_T.at[...,1,:].set(R[...,swapI,:])
         R_T = R_T.at[...,swapI,:].set(R[...,1,:])
