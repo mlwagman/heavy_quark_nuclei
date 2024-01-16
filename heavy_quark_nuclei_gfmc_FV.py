@@ -856,32 +856,32 @@ if N_coord == 4:
         if color == "1x1":
             if swapI == 1:
                 # 1 x 1 -- Q Q Qbar Qbar
-                print("QQ QbarQbar ordering")
+                #print("QQ QbarQbar ordering")
                 S_av4p_metropolis[spin_slice] = kronecker_delta(i, k)*kronecker_delta(j,l)/NI
             else:
                 # 1 x 1 -- Q Qbar Q Qbar
-                print("QQbar QQbar ordering")
+                #print("QQbar QQbar ordering")
                 S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)/NI
         elif color == "3x3bar":
             if swapI == 1:
-                print("QQ QbarQbar ordering")
                 # 3bar x 3 -- Q Q Qbar Qbar
+                #print("QQ QbarQbar ordering")
                 S_av4p_metropolis[spin_slice] += kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2-2*NI)
                 S_av4p_metropolis[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(j, k)/np.sqrt(2*NI**2-2*NI)
             else:
                 # 3bar x 3 -- Q Qbar Q Qbar
-                print("QQbar QQbar ordering")
+                #print("QQbar QQbar ordering")
                 S_av4p_metropolis[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2-2*NI)
                 S_av4p_metropolis[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(k, j)/np.sqrt(2*NI**2-2*NI)
         elif color == "6x6bar":
             if swapI == 1:
-                print("QQ QbarQbar ordering")
                 # 6bar x 6 -- Q Q Qbar Qbar
+                #print("QQ QbarQbar ordering")
                 S_av4p_metropolis[spin_slice] += kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2+2*NI)
                 S_av4p_metropolis[spin_slice] += kronecker_delta(i, l)*kronecker_delta(j,k)/np.sqrt(2*NI**2+2*NI)
             else:
-                print("QQbar QQbar ordering")
                 # 6bar x 6 -- Q Qbar Q Qbar
+                #print("QQbar QQbar ordering")
                 S_av4p_metropolis[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2+2*NI)
                 S_av4p_metropolis[spin_slice] += kronecker_delta(i, l)*kronecker_delta(k,j)/np.sqrt(2*NI**2+2*NI)
 
