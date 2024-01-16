@@ -51,6 +51,7 @@ parser.add_argument('--OLO', type=str, default="LO")
 parser.add_argument('--spoila', type=float, default=1)
 parser.add_argument('--g', type=float, default=0)
 parser.add_argument('--afac', type=float, default=1)
+parser.add_argument('--samefac', type=float, default=1)
 parser.add_argument('--spoilf', type=str, default="hwf")
 parser.add_argument('--outdir', type=str, required=True)
 parser.add_argument('--input_Rs_database', type=str, default="")
@@ -459,6 +460,7 @@ def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
 
     if wavefunction == "product":
         r_sum = np.sum( jax.lax.map(r_norm, product_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm, pairs), axis=0 )/(a0*afac)
+        r_sum += np.sum( jax.lax.map(r_norm, same_pairs), axis=0 )*(1/(a0*afac*samefac)-1/(a0*afac))
     elif wavefunction == "diquark":
         r_sum = np.sum( jax.lax.map(r_norm, diquark_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm, pairs), axis=0 )/(a0*afac)
     else:
@@ -480,6 +482,7 @@ def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
     
         if wavefunction == "product":
             r_sum_T = np.sum( jax.lax.map(r_norm_T, product_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/(a0*afac)
+            r_sum_T += np.sum( jax.lax.map(r_norm_T, same_pairs), axis=0 )*(1/(a0*afac*samefac)-1/(a0*afac))
         elif wavefunction == "diquark":
             r_sum_T = np.sum( jax.lax.map(r_norm_T, diquark_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/(a0*afac)
         else:
@@ -544,6 +547,8 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
                                     diquark_1 = 1
                                 if diquark_0 != diquark_1:
                                     thisa0 *= afac
+                                if masses_copy[i]*masses_copy[j] > 0:
+                                    thisa0 *= samefac
                             ri = Rs[...,i,:]
                             rj = Rs[...,j,:]
                             rij_norm = adl.norm_3vec(ri - rj)
@@ -586,6 +591,8 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
                                                     if baryon_0 != baryon_1:
                                                         thisa0 *= afac
                                                         #continue
+                                                    if masses_copy[i]*masses_copy[j] > 0:
+                                                        thisa0 *= samefac
                                                 elif wavefunction == "diquark":
                                                     diquark_0 = 2
                                                     if i < 2:
