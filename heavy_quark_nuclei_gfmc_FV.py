@@ -472,14 +472,14 @@ def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
         Rs_T = Rs
         Rs_T = Rs_T.at[...,1,:].set(Rs[...,swapI,:])
         Rs_T = Rs_T.at[...,swapI,:].set(Rs[...,1,:])
-    
+
         def r_norm_T(pair):
             [i,j] = pair
             rdiff = Rs_T[...,i,:] - Rs_T[...,j,:]
             rij_norm = np.sqrt( np.sum(rdiff*rdiff, axis=-1) )
             mij = 2*masses[i]*masses[j]/(masses[i]+masses[j])
             return rij_norm * mij
-    
+
         if wavefunction == "product":
             r_sum_T = np.sum( jax.lax.map(r_norm_T, product_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/(a0*afac)
             r_sum_T += np.sum( jax.lax.map(r_norm_T, same_pairs), axis=0 )*(1/(a0*afac*samefac)-1/(a0*afac))
@@ -487,7 +487,7 @@ def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
             r_sum_T = np.sum( jax.lax.map(r_norm_T, diquark_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/(a0*afac)
         else:
             r_sum_T = np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/a0
-    
+
         psi += g * np.exp(-r_sum_T)
     return psi
 
@@ -534,6 +534,8 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
                                 if baryon_0 != baryon_1:
                                     thisa0 *= afac
                                     #continue
+                                if masses_copy[i]*masses_copy[j] > 0:
+                                    thisa0 *= samefac
                             elif wavefunction == "diquark":
                                 diquark_0 = 2
                                 if i < 2:
@@ -984,7 +986,7 @@ for count, R in enumerate(gfmc_Rs):
         R_T = R
         R_T = R_T.at[...,1,:].set(R[...,swapI,:])
         R_T = R_T.at[...,swapI,:].set(R[...,1,:])
-    
+
         K_term += -1/2*laplacian_f_R(R_T) / f_R(R, wavefunction=bra_wavefunction) * g
 
     Ks.append(K_term)
