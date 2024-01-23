@@ -1042,6 +1042,22 @@ for count, R in enumerate(gfmc_Rs):
 
         K_term += -1/2*laplacian_f_R(R_T) / f_R(R, wavefunction=bra_wavefunction) * g
 
+    if N_coord == 4 and abs(g) > 0:
+        R_T = R
+        R_T = R_T.at[...,2,:].set(R[...,swapJ,:])
+        R_T = R_T.at[...,swapJ,:].set(R[...,2,:])
+
+        K_term += -1/2*laplacian_f_R(R_T) / f_R(R, wavefunction=bra_wavefunction) * g
+
+    if N_coord == 4 and abs(g) > 0:
+        R_T = R
+        R_T = R_T.at[...,1,:].set(R[...,swapI,:])
+        R_T = R_T.at[...,swapI,:].set(R[...,1,:])
+        R_T = R_T.at[...,2,:].set(R[...,swapJ,:])
+        R_T = R_T.at[...,swapJ,:].set(R[...,2,:])
+
+        K_term += -1/2*laplacian_f_R(R_T) / f_R(R, wavefunction=bra_wavefunction) * g
+
     Ks.append(K_term)
 
     print(f"calculated kinetic in {time.time() - K_time} sec")
