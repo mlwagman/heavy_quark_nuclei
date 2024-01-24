@@ -93,11 +93,6 @@ for i in range(1,N_coord):
     if masses[1]*masses[i] > 0:
         swapI = i
 
-swapJ = 1
-for i in range(1,N_coord):
-    if masses[2]*masses[i] > 0:
-        swapJ = i
-
 print("masses = ", masses)
 print("spatial wavefunction = ", wavefunction)
 print("g = ", g)
@@ -477,54 +472,6 @@ def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
         Rs_T = Rs
         Rs_T = Rs_T.at[...,1,:].set(Rs[...,swapI,:])
         Rs_T = Rs_T.at[...,swapI,:].set(Rs[...,1,:])
-
-        def r_norm_T(pair):
-            [i,j] = pair
-            rdiff = Rs_T[...,i,:] - Rs_T[...,j,:]
-            rij_norm = np.sqrt( np.sum(rdiff*rdiff, axis=-1) )
-            mij = 2*masses[i]*masses[j]/(masses[i]+masses[j])
-            return rij_norm * mij
-
-        if wavefunction == "product":
-            r_sum_T = np.sum( jax.lax.map(r_norm_T, product_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/(a0*afac)
-            r_sum_T += np.sum( jax.lax.map(r_norm_T, same_pairs), axis=0 )*(1/(a0*afac*samefac)-1/(a0*afac))
-        elif wavefunction == "diquark":
-            r_sum_T = np.sum( jax.lax.map(r_norm_T, diquark_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/(a0*afac)
-        else:
-            r_sum_T = np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/a0
-
-        psi += g * np.exp(-r_sum_T)
-    return psi
-
-    if N_coord == 4 and abs(g) > 0:
-        Rs_T = Rs
-        Rs_T = Rs_T.at[...,2,:].set(Rs[...,swapJ,:])
-        Rs_T = Rs_T.at[...,swapJ,:].set(Rs[...,2,:])
-
-        def r_norm_T(pair):
-            [i,j] = pair
-            rdiff = Rs_T[...,i,:] - Rs_T[...,j,:]
-            rij_norm = np.sqrt( np.sum(rdiff*rdiff, axis=-1) )
-            mij = 2*masses[i]*masses[j]/(masses[i]+masses[j])
-            return rij_norm * mij
-
-        if wavefunction == "product":
-            r_sum_T = np.sum( jax.lax.map(r_norm_T, product_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/(a0*afac)
-            r_sum_T += np.sum( jax.lax.map(r_norm_T, same_pairs), axis=0 )*(1/(a0*afac*samefac)-1/(a0*afac))
-        elif wavefunction == "diquark":
-            r_sum_T = np.sum( jax.lax.map(r_norm_T, diquark_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/(a0*afac)
-        else:
-            r_sum_T = np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/a0
-
-        psi += g * np.exp(-r_sum_T)
-    return psi
-
-    if N_coord == 4 and abs(g) > 0:
-        Rs_T = Rs
-        Rs_T = Rs_T.at[...,1,:].set(Rs[...,swapI,:])
-        Rs_T = Rs_T.at[...,swapI,:].set(Rs[...,1,:])
-        Rs_T = Rs_T.at[...,2,:].set(Rs[...,swapJ,:])
-        Rs_T = Rs_T.at[...,swapJ,:].set(Rs[...,2,:])
 
         def r_norm_T(pair):
             [i,j] = pair
@@ -1039,22 +986,6 @@ for count, R in enumerate(gfmc_Rs):
         R_T = R
         R_T = R_T.at[...,1,:].set(R[...,swapI,:])
         R_T = R_T.at[...,swapI,:].set(R[...,1,:])
-
-        K_term += -1/2*laplacian_f_R(R_T) / f_R(R, wavefunction=bra_wavefunction) * g
-
-    if N_coord == 4 and abs(g) > 0:
-        R_T = R
-        R_T = R_T.at[...,2,:].set(R[...,swapJ,:])
-        R_T = R_T.at[...,swapJ,:].set(R[...,2,:])
-
-        K_term += -1/2*laplacian_f_R(R_T) / f_R(R, wavefunction=bra_wavefunction) * g
-
-    if N_coord == 4 and abs(g) > 0:
-        R_T = R
-        R_T = R_T.at[...,1,:].set(R[...,swapI,:])
-        R_T = R_T.at[...,swapI,:].set(R[...,1,:])
-        R_T = R_T.at[...,2,:].set(R[...,swapJ,:])
-        R_T = R_T.at[...,swapJ,:].set(R[...,2,:])
 
         K_term += -1/2*laplacian_f_R(R_T) / f_R(R, wavefunction=bra_wavefunction) * g
 
