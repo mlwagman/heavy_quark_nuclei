@@ -50,6 +50,7 @@ parser.add_argument('--nf', type=int, default=5)
 parser.add_argument('--OLO', type=str, default="LO")
 parser.add_argument('--spoila', type=float, default=1)
 parser.add_argument('--g', type=float, default=0)
+parser.add_argument('--gfac', type=float, default=1)
 parser.add_argument('--afac', type=float, default=1)
 parser.add_argument('--samefac', type=float, default=1)
 parser.add_argument('--spoilf', type=str, default="hwf")
@@ -467,6 +468,8 @@ def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
         r_sum = np.sum( jax.lax.map(r_norm, pairs), axis=0 )/a0
 
     psi = np.exp(-r_sum)
+    afac *= gfac
+    a0 /= gfac
 
     if N_coord == 4 and abs(g) > 0:
         Rs_T = Rs
@@ -620,10 +623,10 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
                                                 elif a == j:
                                                     rsign = -1
                                                 if (k == i and l == j) or (m == i and n == j):
-                                                    nabla_psi = rsign * nabla_psi * (ri[:,x] - rj[:,x])/(thisa0*rij_norm) * np.exp(-rij_norm/thisa0) / masses[a]
+                                                    nabla_psi = rsign * nabla_psi * (ri[:,x] - rj[:,x])/(thisa0*rij_norm) * np.exp(-rij_norm/thisa0)
                                                 else:
                                                     nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0)
-                                    nabla_psi_tot += nabla_psi
+                                    nabla_psi_tot += nabla_psi / np.abs(masses[a])
     return nabla_psi_tot
 
 if N_coord >= 6: #and verbose:
@@ -733,10 +736,10 @@ if N_coord >= 6: #and verbose:
                                                     elif a == j:
                                                         rsign = -1
                                                     if (k == i and l == j) or (m == i and n == j):
-                                                        nabla_psi = rsign * nabla_psi * (ri[:,x] - rj[:,x])/(thisa0*rij_norm) * np.exp(-rij_norm/thisa0) / masses[a]
+                                                        nabla_psi = rsign * nabla_psi * (ri[:,x] - rj[:,x])/(thisa0*rij_norm) * np.exp(-rij_norm/thisa0)
                                                     else:
                                                         nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0)
-                                        nabla_psi_tot += nabla_psi
+                                        nabla_psi_tot += nabla_psi / np.abs(masses[a])
         return nabla_psi_tot
 else:
     print("JIT Laplacian")
@@ -750,7 +753,7 @@ N_outer = N_coord//N_inner
 # Metropolis
 if input_Rs_database == "":
     met_time = time.time()
-    R0 = onp.random.normal(size=(N_coord,3))
+    R0 = onp.random.normal(size=(N_coord,3))/np.mean(absmasses)
     # set center of mass position to 0
     #R0 -= onp.mean(R0, axis=1, keepdims=True)
     R0 -= onp.mean(R0, axis=0, keepdims=True)
@@ -762,7 +765,8 @@ if input_Rs_database == "":
         #samples = adl.direct_sample_metropolis(N_inner, N_outer, f_R_braket, a0*afac/3, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0/2)
     #else:
         #samples = adl.direct_sample_metropolis(N_inner, N_outer, f_R_braket, a0*afac, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
-    samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
+    #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
+    samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2/np.mean(absmasses))
 
     #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
 
@@ -885,6 +889,39 @@ if N_coord == 4:
                 #print("QQbar QQbar ordering")
                 S_av4p_metropolis[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2-2*NI)
                 S_av4p_metropolis[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(k, j)/np.sqrt(2*NI**2-2*NI)
+        elif color == "3x3bar-1":
+            if swapI == 1:
+                # 3bar x 3 -- Q Q Qbar Qbar
+                #print("QQ QbarQbar ordering")
+                part3x3bar = kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2-2*NI)
+                part3x3bar -= kronecker_delta(i, l)*kronecker_delta(j, k)/np.sqrt(2*NI**2-2*NI)
+                part1x1 = kronecker_delta(i, k)*kronecker_delta(j,l)/NI
+                S_av4p_metropolis[spin_slice] = (part3x3bar - (1/np.sqrt(3))*part1x1)/np.sqrt(2/3)
+            else:
+                # 3bar x 3 -- Q Qbar Q Qbar
+                #print("QQbar QQbar ordering")
+                part3x3bar = kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2-2*NI)
+                part3x3bar -= kronecker_delta(i, l)*kronecker_delta(k, j)/np.sqrt(2*NI**2-2*NI)
+                part1x1 = kronecker_delta(i, j)*kronecker_delta(k,l)/NI
+                S_av4p_metropolis[spin_slice] = (part3x3bar - (1/np.sqrt(3))*part1x1)/np.sqrt(2/3)
+        elif color == "3x3bar-6x6bar":
+            theta_c = 0.0
+            if swapI == 1:
+                # 3bar x 3 -- Q Q Qbar Qbar
+                #print("QQ QbarQbar ordering")
+                part3x3bar = kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2-2*NI)
+                part3x3bar -= kronecker_delta(i, l)*kronecker_delta(j, k)/np.sqrt(2*NI**2-2*NI)
+                part6x6bar = kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2+2*NI)
+                part6x6bar += kronecker_delta(i, l)*kronecker_delta(j,k)/np.sqrt(2*NI**2+2*NI)
+                S_av4p_metropolis[spin_slice] = np.cos(theta_c)*part3x3bar + np.sin(theta_c)*part6x6bar
+            else:
+                # 3bar x 3 -- Q Qbar Q Qbar
+                #print("QQbar QQbar ordering")
+                part3x3bar = kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2-2*NI)
+                part3x3bar -= kronecker_delta(i, l)*kronecker_delta(k, j)/np.sqrt(2*NI**2-2*NI)
+                part6x6bar = kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2+2*NI)
+                part6x6bar += kronecker_delta(i, l)*kronecker_delta(k,j)/np.sqrt(2*NI**2+2*NI)
+                S_av4p_metropolis[spin_slice] = np.cos(theta_c)*part3x3bar + np.sin(theta_c)*part6x6bar
         elif color == "6x6bar":
             if swapI == 1:
                 # 6bar x 6 -- Q Q Qbar Qbar
@@ -987,7 +1024,7 @@ for count, R in enumerate(gfmc_Rs):
         R_T = R_T.at[...,1,:].set(R[...,swapI,:])
         R_T = R_T.at[...,swapI,:].set(R[...,1,:])
 
-        K_term += -1/2*laplacian_f_R(R_T) / f_R(R, wavefunction=bra_wavefunction) * g
+        K_term += -1/2*laplacian_f_R(R_T, afac=afac*gfac, a0=a0/gfac) / f_R(R_T, wavefunction=bra_wavefunction) * g
 
     Ks.append(K_term)
 
@@ -1063,6 +1100,7 @@ if N_coord == 4:
   Z_1x1 = []
   Z_3x3bar = []
   Z_6x6bar = []
+  Z_norm = []
   for count, R in enumerate(gfmc_Rs):
     print('Calculating potential for step ', count)
     V_time = time.time()
@@ -1070,9 +1108,11 @@ if N_coord == 4:
     Z_1x1.append(adl.inner(S_1x1, S) / np.sqrt(adl.inner(S, S)))
     Z_3x3bar.append(adl.inner(S_3x3bar, S) / np.sqrt(adl.inner(S, S)))
     Z_6x6bar.append(adl.inner(S_6x6bar, S) / np.sqrt(adl.inner(S, S)))
+    Z_norm.append(np.sqrt( adl.inner(S_6x6bar, S)**2 + adl.inner(S_3x3bar, S)**2 ) / np.sqrt(adl.inner(S, S)))
   Z_1x1 = np.array(Z_1x1)
   Z_3x3bar = np.array(Z_3x3bar)
   Z_6x6bar = np.array(Z_6x6bar)
+  Z_norm = np.array(Z_norm)
 
 #if verbose:
     #ave_Vs = np.array([al.bootstrap(V, W, Nboot=100, f=adl.rw_mean)
@@ -1200,7 +1240,10 @@ if verbose:
               for Z in Z_3x3bar])
       ave_Z_6x6bar = np.array([al.bootstrap(Z, Nboot=100, f=al.rmean)
               for Z in Z_6x6bar])
+      ave_Z_norm = np.array([al.bootstrap(Z, Nboot=100, f=al.rmean)
+              for Z in Z_norm])
 
       print("Z_1x1=",ave_Z_1x1,"\n\n")
       print("Z_3x3bar=",ave_Z_3x3bar,"\n\n")
       print("Z_6x6bar=",ave_Z_6x6bar,"\n\n")
+      print("Z_norm=",ave_Z_norm,"\n\n")

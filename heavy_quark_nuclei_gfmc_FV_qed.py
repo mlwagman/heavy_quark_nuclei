@@ -63,20 +63,16 @@ parser.add_argument('--wavefunction', type=str, default="compact")
 parser.add_argument('--potential', type=str, default="full")
 parser.add_argument('--spoilaket', type=float, default=1)
 parser.add_argument('--masses', type=float, default=0., nargs='+')
-parser.add_argument('--g', type=float, default=1)
 parser.add_argument('--verbose', dest='verbose', action='store_true', default=False)
 globals().update(vars(parser.parse_args()))
 
 #######################################################################################
 
-swapI = 1
-for i in range(1,N_coord):
-    if masses[1]*masses[i] > 0:
-        swapI = i
-
 volume = "infinite"
 if L > 1e-2:
     volume = "finite"
+
+masses_copy = masses
 
 if masses == 0.:
     masses = onp.ones(N_coord)
@@ -84,8 +80,6 @@ if masses == 0.:
         masses = [1,-1]
     if N_coord == 4:
         masses = [1,-1,1,-1]
-
-masses_copy = masses 
 
 print("masses = ", masses)
 
@@ -130,9 +124,10 @@ aa32 = Nc/4*(12541/243+368/3*zeta3+64*np.pi**4/135)+CF/4*(14002/81-416*zeta3/3)
 aa33 = -(20/9)**3*1/8
 aa3 = aa30+aa31*nf+aa32*nf**2+aa33*nf**3
 
+L = log_mu_r
 VB_LO = VB
 VB_NLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*log_mu_r))
-VB_NNlog_mu_rO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*log_mu_r) + (alpha/(4*np.pi))**2*( beta0**2*(4*log_mu_r**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*log_mu_r + aa2 ) )
+VB_NNLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*L) + (alpha/(4*np.pi))**2*( beta0**2*(4*L**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*L + aa2 ) )
 
 
 if OLO == "LO":
@@ -288,8 +283,10 @@ def trivial_fun(R):
 print("volume = ", volume)
 
 if volume == "finite":
+    AV_Coulomb['OA'] = potential_fun_sum
+    AV_Coulomb['OS'] = symmetric_potential_fun_sum
     AV_Coulomb['OSing'] = singlet_potential_fun_sum
-    AV_Coulomb['OSingp'] = singlet_potential_fun_p_sum
+    AV_Coulomb['OO'] = octet_potential_fun_sum
 else:
     #AV_Coulomb['OA'] = trivial_fun
     #AV_Coulomb['OS'] = trivial_fun
@@ -383,6 +380,7 @@ for i in range(N_coord):
 product_pairs = np.array(product_pairs)
 print("product pairs = ", product_pairs)
 
+
 absmasses=np.abs(np.array(masses))
 
 @partial(jax.jit, static_argnums=(1,))
@@ -398,31 +396,33 @@ def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
     if wavefunction == "product":
         r_sum = np.sum( jax.lax.map(r_norm, product_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm, pairs), axis=0 )/(a0*afac)
         r_sum += np.sum( jax.lax.map(r_norm, same_pairs), axis=0 )*(1/(a0*afac*samefac)-1/(a0*afac))
+    elif wavefunction == "hylleraas":
+        r_sum = np.sum( jax.lax.map(r_norm, product_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm, pairs), axis=0 )/(a0*afac)
     else:
         r_sum = np.sum( jax.lax.map(r_norm, pairs), axis=0 )/a0
 
     psi = np.exp(-r_sum)
 
-    if N_coord == 4 and abs(g) > 0:
-        print("Symmetrizing with g=", g)
-        Rs_T = Rs
-        Rs_T = Rs_T.at[...,1,:].set(Rs[...,swapI,:])
-        Rs_T = Rs_T.at[...,swapI,:].set(Rs[...,1,:])
-    
-        def r_norm_T(pair):
-            [i,j] = pair
-            rdiff = Rs_T[...,i,:] - Rs_T[...,j,:]
-            rij_norm = np.sqrt( np.sum(rdiff*rdiff, axis=-1) )
-            mij = 2*masses[i]*masses[j]/(masses[i]+masses[j])
-            return rij_norm * mij
-    
-        if wavefunction == "product":
-            r_sum_T = np.sum( jax.lax.map(r_norm_T, product_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/(a0*afac)
-            r_sum_T += np.sum( jax.lax.map(r_norm_T, same_pairs), axis=0 )*(1/(a0*afac*samefac)-1/(a0*afac))
-        else:
-            r_sum_T = np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/a0
-    
-        psi += g * np.exp(-r_sum_T)
+    Rs_T = Rs
+    Rs_T = Rs_T.at[...,1,:].set(Rs[...,3,:])
+    Rs_T = Rs_T.at[...,3,:].set(Rs[...,1,:])
+
+    def r_norm_T(pair):
+        [i,j] = pair
+        rdiff = Rs_T[...,i,:] - Rs_T[...,j,:]
+        rij_norm = np.sqrt( np.sum(rdiff*rdiff, axis=-1) )
+        mij = 2*masses[i]*masses[j]/(masses[i]+masses[j])
+        return rij_norm * mij
+
+    if wavefunction == "product":
+        r_sum_T = np.sum( jax.lax.map(r_norm_T, product_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/(a0*afac)
+        r_sum_T += np.sum( jax.lax.map(r_norm_T, same_pairs), axis=0 )*(1/(a0*afac*samefac)-1/(a0*afac))
+    elif wavefunction == "hylleraas":
+        r_sum_T = np.sum( jax.lax.map(r_norm_T, product_pairs), axis=0 )*(1/a0-1/(a0*afac)) + np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/(a0*afac)
+    else:
+        r_sum_T = np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/a0
+
+    psi += np.exp(-r_sum_T)
     return psi
 
 def f_R_sq(Rs):
@@ -452,13 +452,21 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
     for k in range(N_coord):
         for l in range(N_coord):
             if k!=l and l>=k:
+                if wavefunction == "hylleraas":
+                    if masses_copy[k] * masses_copy[l] > 0:
+                        continue
                 # wvfn includes r_ij
                 nabla_psi = 1
                 for i in range(N_coord):
                     for j in range(N_coord):
                         thisa0 = a0
                         if i!=j and j>=i:
-                            if wavefunction == "product":
+                            if wavefunction == "product" or wavefunction == "hylleraas":
+                                if wavefunction == "hylleraas":
+                                    if masses_copy[i] * masses_copy[j] > 0:
+                                        continue
+                                if masses_copy[i] * masses_copy[j] > 0:
+                                    thisa0 *= samefac
                                 baryon_0 = 1
                                 if i < N_coord/2:
                                     baryon_0 = 0
@@ -468,8 +476,6 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
                                 if baryon_0 != baryon_1:
                                     thisa0 *= afac
                                     #continue
-                                if masses_copy[i]*masses_copy[j] > 0:
-                                    thisa0 *= samefac
                             ri = Rs[...,i,:]
                             rj = Rs[...,j,:]
                             rij_norm = adl.norm_3vec(ri - rj)
@@ -479,7 +485,7 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
                             # factor of two included to account for both terms appearing in laplacian
                             if k == i and l == j:
                                 #nabla_psi = nabla_psi * (2/thisa0**2 - 4/(thisa0*rij_norm)) * np.exp(-rij_norm/thisa0)
-                                nabla_psi = nabla_psi * ((1/thisa0**2 - 2/(thisa0*rij_norm))/masses[k] + (1/thisa0**2 - 2/(thisa0*rij_norm))/masses[l]) * np.exp(-rij_norm/thisa0)
+                                nabla_psi = nabla_psi * ((1/thisa0**2 - 2/(thisa0*rij_norm))/np.abs(masses[k]) + (1/thisa0**2 - 2/(thisa0*rij_norm))/np.abs(masses[l])) * np.exp(-rij_norm/thisa0)
                             else:
                                 nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0)
                 nabla_psi_tot += nabla_psi
@@ -490,6 +496,9 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
         for k in range(N_coord):
             for l in range(N_coord):
                 if k!=l and l>=k and (a==k or a==l):
+                    if wavefunction == "hylleraas":
+                        if masses_copy[k] * masses_copy[l] > 0:
+                            continue
                     # second gradient involves r_mn
                     for m in range(N_coord):
                         for n in range(N_coord):
@@ -502,7 +511,12 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
                                         for j in range(N_coord):
                                             thisa0 = a0
                                             if i!=j and j>=i:
-                                                if wavefunction == "product":
+                                                if wavefunction == "product" or wavefunction == "hylleraas":
+                                                    if wavefunction == "hylleraas":
+                                                        if masses_copy[i] * masses_copy[j] > 0:
+                                                            continue
+                                                    if masses_copy[i] * masses_copy[j] > 0:
+                                                        thisa0 *= samefac
                                                     baryon_0 = 1
                                                     if i < N_coord/2:
                                                         baryon_0 = 0
@@ -512,8 +526,6 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
                                                     if baryon_0 != baryon_1:
                                                         thisa0 *= afac
                                                         #continue
-                                                    if masses_copy[i]*masses_copy[j] > 0:
-                                                        thisa0 *= samefac
                                                 ri = Rs[...,i,:]
                                                 rj = Rs[...,j,:]
                                                 rij_norm = adl.norm_3vec(ri - rj)
@@ -526,17 +538,17 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
                                                 elif a == j:
                                                     rsign = -1
                                                 if (k == i and l == j) or (m == i and n == j):
-                                                    nabla_psi = rsign * nabla_psi * (ri[:,x] - rj[:,x])/(thisa0*rij_norm) * np.exp(-rij_norm/thisa0) / masses[a]
+                                                    nabla_psi = rsign * nabla_psi * (ri[:,x] - rj[:,x])/(thisa0*rij_norm) * np.exp(-rij_norm/thisa0)
                                                 else:
                                                     nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0)
-                                    nabla_psi_tot += nabla_psi
+                                    nabla_psi_tot += nabla_psi / np.abs(masses[a])
     return nabla_psi_tot
 
 
 # Metropolis
 if input_Rs_database == "":
     met_time = time.time()
-    R0 = onp.random.normal(size=(N_coord,3))
+    R0 = onp.random.normal(size=(N_coord,3))/np.mean(absmasses)
     # set center of mass position to 0
     #R0 -= onp.mean(R0, axis=1, keepdims=True)
     R0 -= onp.mean(R0, axis=0, keepdims=True)
@@ -545,7 +557,7 @@ if input_Rs_database == "":
     print("NCOORD = ", N_coord)
     print("NOUTER = ", N_coord//2)
     #samples = adl.direct_sample_metropolis(2, N_coord//2, f_R_braket, a0*afac, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
-    samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*a0/N_coord**2)
+    samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2/np.mean(absmasses))
 
     #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
 
@@ -704,13 +716,11 @@ for count, R in enumerate(gfmc_Rs):
     #Ks.append(-1/2*laplacian_f_R(R) / f_R(R) / adl.mp_Mev)
     K_term = -1/2*laplacian_f_R(R) / f_R(R, wavefunction=bra_wavefunction) / 1
 
-    if N_coord == 4 and abs(g) > 0:
-        print("Symmetrizing with g=", g)
-        R_T = R
-        R_T = R_T.at[...,1,:].set(R[...,swapI,:])
-        R_T = R_T.at[...,swapI,:].set(R[...,1,:])
-    
-        K_term += -1/2*laplacian_f_R(R_T) / f_R(R, wavefunction=bra_wavefunction) * g
+    R_T = R
+    R_T = R_T.at[...,1,:].set(R[...,3,:])
+    R_T = R_T.at[...,3,:].set(R[...,1,:])
+
+    K_term +=  -1/2*laplacian_f_R(R_T) / f_R(R, wavefunction=bra_wavefunction) / 1
 
     Ks.append(K_term)
 
