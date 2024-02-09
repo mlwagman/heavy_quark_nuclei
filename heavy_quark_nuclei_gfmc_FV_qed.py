@@ -51,6 +51,7 @@ parser.add_argument('--OLO', type=str, default="LO")
 parser.add_argument('--spoila', type=float, default=1)
 parser.add_argument('--afac', type=float, default=1)
 parser.add_argument('--samefac', type=float, default=1)
+parser.add_argument('--eps_fac', type=float, default=1)
 parser.add_argument('--spoilf', type=str, default="hwf")
 parser.add_argument('--outdir', type=str, required=True)
 parser.add_argument('--input_Rs_database', type=str, default="")
@@ -551,13 +552,15 @@ if input_Rs_database == "":
     R0 = onp.random.normal(size=(N_coord,3))/np.mean(absmasses)
     # set center of mass position to 0
     #R0 -= onp.mean(R0, axis=1, keepdims=True)
-    R0 -= onp.mean(R0, axis=0, keepdims=True)
+    #R0 -= onp.mean(R0, axis=0, keepdims=True)
+    R0 -= onp.transpose(onp.transpose(onp.mean(onp.transpose(onp.transpose(R0)*absmasses), axis=0, keepdims=True))/absmasses)
     print("R0 = ", R0)
     print("NINNER = ", 2)
     print("NCOORD = ", N_coord)
     print("NOUTER = ", N_coord//2)
     #samples = adl.direct_sample_metropolis(2, N_coord//2, f_R_braket, a0*afac, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
-    samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2/np.mean(absmasses))
+    #samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2/np.mean(absmasses))
+    samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*a0/N_coord**2*eps_fac, masses=absmasses)
 
     #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
 
@@ -572,7 +575,7 @@ if input_Rs_database == "":
     R0_list = [ onp.random.normal(size=(N_coord,3)) for s in range(0,streams) ]
     for s in range(streams):
         R0_list[s] -= onp.mean(R0_list[s], axis=0, keepdims=True)
-    print("R0 = ", R0_list[0])
+    #print("R0 = ", R0_list[0])
     #samples = adl.parallel_tempered_metropolis(fac_list, R0_list, f_R_braket_tempered, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=8*2*a0/N_coord**2)
     #samples = adl.parallel_tempered_metropolis(fac_list, R0_list, f_R_braket_tempered, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2)
     #print(samples)

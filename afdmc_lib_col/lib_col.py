@@ -19,10 +19,12 @@ fm_Mev = 1.0
 mp_Mev = 1.0
 
 ### GFMC utils
-def draw_dR(shape, *, lam, axis=1):
-    dR = lam/onp.sqrt(2) * onp.random.normal(size=shape)
+def draw_dR(shape, *, lam, axis=1, masses=1):
+    #dR = lam/onp.sqrt(2) * onp.random.normal(size=shape)
+    dR = onp.transpose( lam/onp.sqrt(2) * onp.transpose( onp.random.normal(size=shape) ) )
     # subtract mean dR to avoid "drift" in the system
-    dR -= onp.mean(dR, axis=axis, keepdims=True)
+    #dR -= onp.mean(dR, axis=axis, keepdims=True)
+    dR -= onp.transpose(onp.transpose(onp.mean(onp.transpose(onp.transpose(dR)*masses), axis=axis, keepdims=True))/masses)
     return dR
 def step_G0(R, *, dtau_iMev, m_Mev):
     dtau_fm = dtau_iMev * fm_Mev
@@ -703,19 +705,13 @@ def parallel_tempered_metropolis(fac_list, R_list, W, *, n_therm, n_step, n_skip
     print(f'Swap acc frac = {acc} / {n_tot} = {1.0*acc/(n_tot)}')
     return samples
 
-def metropolis(R, W, *, n_therm, n_step, n_skip, eps):
+def metropolis(R, W, *, n_therm, n_step, n_skip, eps, masses=1):
     samples = []
     acc = 0
     #(N_coord, N_d) = R.shape
     print('R0=',R)
     for i in tqdm.tqdm(range(-n_therm, n_step*n_skip)):
-        #R_flat = onp.reshape(R, (N_coord*N_d))
-        #onp.random.seed(42)
-        #onp.random.shuffle(R_flat)
-        #R = onp.reshape(R_flat, (N_coord,N_d))
-        #print('old_R=',R)
-        #onp.random.seed(42)
-        dR = draw_dR(R.shape, lam=eps, axis=0)
+        dR = draw_dR(R.shape, lam=eps/masses, axis=0, masses=masses)
         #print('dR=',dR)
         new_R = R + dR
         #print('new_R=',new_R)
@@ -723,7 +719,6 @@ def metropolis(R, W, *, n_therm, n_step, n_skip, eps):
         #print('W_R=',W_R)
         new_W_R = W(new_R)
         #print('new_W_R=',new_W_R)
-        #Exit
         #if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R):
         if onp.random.random() < (new_W_R / W_R):
             R = new_R # accept

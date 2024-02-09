@@ -756,7 +756,8 @@ if input_Rs_database == "":
     R0 = onp.random.normal(size=(N_coord,3))/np.mean(absmasses)
     # set center of mass position to 0
     #R0 -= onp.mean(R0, axis=1, keepdims=True)
-    R0 -= onp.mean(R0, axis=0, keepdims=True)
+    #R0 -= onp.mean(R0*absmasses, axis=0, keepdims=True)/absmasses
+    R0 -= onp.transpose(onp.transpose(onp.mean(onp.transpose(onp.transpose(R0)*absmasses), axis=0, keepdims=True))/absmasses)
     print("R0 = ", R0)
     print("NCOORD = ", N_coord)
     print("NINNER = ", N_inner)
@@ -766,7 +767,7 @@ if input_Rs_database == "":
     #else:
         #samples = adl.direct_sample_metropolis(N_inner, N_outer, f_R_braket, a0*afac, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
     #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
-    samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2/np.mean(absmasses))
+    samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2, masses=absmasses)
 
     #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
 

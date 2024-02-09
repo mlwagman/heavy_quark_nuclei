@@ -19,8 +19,17 @@ fm_Mev = 1.0
 mp_Mev = 1.0
 
 ### GFMC utils
-def draw_dR(shape, *, lam, axis=1):
+def draw_dR(shape, *, lam, axis=1, masses=1):
+    #dR = lam/onp.sqrt(2) * onp.random.normal(size=shape)
+    dR = onp.transpose( lam/onp.sqrt(2) * onp.transpose( onp.random.normal(size=shape) ) )
+    # subtract mean dR to avoid "drift" in the system
+    #dR -= onp.mean(dR, axis=axis, keepdims=True)
+    dR -= onp.transpose(onp.transpose(onp.mean(onp.transpose(onp.transpose(dR)*masses), axis=axis, keepdims=True))/masses)
+    return dR
+def fixed_draw_dR(shape, *, lam, axis=1, pair=[0,2]):
     dR = lam/onp.sqrt(2) * onp.random.normal(size=shape)
+    # fixed drift in second particle of fixed pair to match first
+    dR[pair[1]] = dR[pair[0]]
     # subtract mean dR to avoid "drift" in the system
     dR -= onp.mean(dR, axis=axis, keepdims=True)
     return dR
@@ -93,9 +102,9 @@ for a in range(8):
 lc_tensor = onp.zeros((NI, NI, NI))
 #lc_tensor[0, 1, 2] = lc_tensor[1, 2, 0] = lc_tensor[2, 0, 1] = 1
 #lc_tensor[0, 2, 1] = lc_tensor[2, 1, 0] = lc_tensor[1, 0, 2] = -1
-lc_tensor[0, 0, 0] = 1
 
 # QQ color symmetric potential operator
+#iso_del = 1/2 * 1/2 * (onp.einsum('ab,cd->acdb', onp.identity(NI), onp.identity(NI)) + onp.einsum('ab,cd->cadb', onp.identity(NI), onp.identity(NI)))
 iso_del = 1/2 * 1/2 * (onp.einsum('ab,cd->acdb', onp.identity(NI), onp.identity(NI)) + onp.einsum('ab,cd->cadb', onp.identity(NI), onp.identity(NI)))
 
 # QQ color antisymmetric potential operator
@@ -107,7 +116,8 @@ iso_sing = 1/NI * onp.einsum('ab,cd->abcd', onp.identity(NI), onp.identity(NI))
 # QQbar color octet potential operator
 iso_oct = np.zeros((NI,NI,NI,NI))
 for a in range(8):
-    iso_oct += 2*onp.einsum('ab,cd->abcd', gells[a], gells[a])
+    #iso_oct += 2*onp.einsum('ab,cd->abcd', gells[a], gells[a])
+    iso_oct += 2*onp.einsum('ab,cd->bacd', gells[a], gells[a])
 
 # NOTE(gkanwar): spin and isospin pieces are identical matrices, but are
 # semantically different objects.
@@ -201,6 +211,16 @@ def generate_sequence(AA):
 
 def extend_sequence(seq):
     seqlen = len(seq)
+    # batch index
+    newseq = [0]
+    # pad batch index and double spin/color
+    for i in range(seqlen):
+        newseq.append(2*seq[i] + 1)
+        newseq.append(2*seq[i] + 1 + 1)
+    return newseq
+
+def extend_sequence(seq):
+    seqlen = len(seq)
     newseq = [0]
     for i in range(seqlen):
         newseq.append(2*seq[i] + 1)
@@ -229,6 +249,10 @@ def make_pairwise_potential(AVcoeffs, B3coeffs, masses):
         # two-body potentials
         for i in range(A):
             for j in range(A):
+        #for i in range(2,3):
+        #    for j in range(0,1):
+        #for i in range(1,2):
+        #    for j in range(3,4):
                 if i==j:
                     continue
                 Rij = R[:,i] - R[:,j]
@@ -270,17 +294,24 @@ def make_pairwise_potential(AVcoeffs, B3coeffs, masses):
                     perm[2*i] = 0
                     perm[2*i+1] = 1
                     perm_copy = perm.copy()
-                    j_slot = perm.index(2*j)
-                    perm[2] = perm_copy[j_slot]
-                    perm[3] = perm_copy[j_slot+1]
-                    perm[j_slot] = perm_copy[2]
-                    perm[j_slot+1] = perm_copy[3]
-                    #src_perm = [ perm[l] + 1 for l in range(len(perm)) ]
+                    # print perm after first swap for diagnostic purposes
+                    src_perm = [ perm[l] + 1 for l in range(len(perm)) ]
+                    snk_perm = [ src_perm[l] + 2*A for l in range(len(perm)) ]
+                    full_perm = [0] + src_perm + snk_perm
+                    print("half perm = ",full_perm)
+                    # TODO -- something below is broken
+                    j_slot = perm.index(2)
+                    print("j_slot = ", j_slot)
+                    perm[2*j] = perm_copy[j_slot]
+                    perm[2*j+1] = perm_copy[j_slot+1]
+                    perm[j_slot] = perm_copy[2*j]
+                    perm[j_slot+1] = perm_copy[2*j+1]
+                    # TODO -- something above is broken
                     src_perm = [ perm[l] + 1 for l in range(len(perm)) ]
                     snk_perm = [ src_perm[l] + 2*A for l in range(len(perm)) ]
                     full_perm = [0] + src_perm + snk_perm
                     #print(perm)
-                    #print("full perm = ",full_perm)
+                    print("full perm = ",full_perm)
                     scaled_O_perm = np.transpose(scaled_O, axes=full_perm)
                     if name == 'O1':
                         broadcast_inds = (slice(None),) + (0,)*(len(Oij.shape)-1)
@@ -675,7 +706,7 @@ def parallel_tempered_metropolis(fac_list, R_list, W, *, n_therm, n_step, n_skip
     print(f'Swap acc frac = {acc} / {n_tot} = {1.0*acc/(n_tot)}')
     return samples
 
-def metropolis(R, W, *, n_therm, n_step, n_skip, eps):
+def fixed_metropolis(R, W, *, n_therm, n_step, n_skip, eps, pair=[0,2]):
     samples = []
     acc = 0
     #(N_coord, N_d) = R.shape
@@ -687,7 +718,7 @@ def metropolis(R, W, *, n_therm, n_step, n_skip, eps):
         #R = onp.reshape(R_flat, (N_coord,N_d))
         #print('old_R=',R)
         #onp.random.seed(42)
-        dR = draw_dR(R.shape, lam=eps, axis=0)
+        dR = fixed_draw_dR(R.shape, lam=eps, axis=0, pair=pair)
         #print('dR=',dR)
         new_R = R + dR
         #print('new_R=',new_R)
@@ -696,7 +727,39 @@ def metropolis(R, W, *, n_therm, n_step, n_skip, eps):
         new_W_R = W(new_R)
         #print('new_W_R=',new_W_R)
         #Exit
-        if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R):
+        #if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R):
+        if onp.random.random() < (new_W_R / W_R):
+            R = new_R # accept
+            W_R = new_W_R
+            acc += 1
+        if i >= 0 and (i+1) % n_skip == 0:
+            samples.append((R, W_R))
+    print(f'Total acc frac = {acc} / {n_therm+n_skip*n_step} = {1.0*acc/(n_therm+n_skip*n_step)}')
+    return samples
+
+def metropolis(R, W, *, n_therm, n_step, n_skip, eps, masses=1):
+    samples = []
+    acc = 0
+    #(N_coord, N_d) = R.shape
+    print('R0=',R)
+    for i in tqdm.tqdm(range(-n_therm, n_step*n_skip)):
+        #R_flat = onp.reshape(R, (N_coord*N_d))
+        #onp.random.seed(42)
+        #onp.random.shuffle(R_flat)
+        #R = onp.reshape(R_flat, (N_coord,N_d))
+        #print('old_R=',R)
+        #onp.random.seed(42)
+        dR = draw_dR(R.shape, lam=eps/masses, axis=0, masses=masses)
+        #print('dR=',dR)
+        new_R = R + dR
+        #print('new_R=',new_R)
+        W_R = W(R)
+        #print('W_R=',W_R)
+        new_W_R = W(new_R)
+        #print('new_W_R=',new_W_R)
+        #Exit
+        #if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R):
+        if onp.random.random() < (new_W_R / W_R):
             R = new_R # accept
             W_R = new_W_R
             acc += 1
@@ -722,7 +785,8 @@ def direct_sample_inner_sphere(a0):
 
 def direct_sample_inner(a0):
     R = -a0*np.log(onp.random.random((3)))
-    detJ = np.exp(-np.sum(R)/a0)
+    R *= onp.random.randint(2, size=3)*2 - 1
+    detJ = np.exp(-np.sum(np.abs(R))/a0)
     return R, detJ
 
 def direct_sample_outer(N_inner, N_outer, L, *, a0):
@@ -730,12 +794,19 @@ def direct_sample_outer(N_inner, N_outer, L, *, a0):
     R = onp.zeros((N_inner*N_outer, 3))
     shift_list = onp.zeros((N_outer, 3))
     for b in range(N_outer-1):
-        shift_list[b], q_b = direct_sample_inner(L/12)
+        #shift_list[b], q_b = direct_sample_inner(L/12)
+        #shift_list[b], q_b = direct_sample_inner(L/9)
+        shift_list[b], q_b = direct_sample_inner(L/6)
+        #shift_list[b], q_b = direct_sample_inner(L/3)
         q *= q_b
     shift_list[N_outer-1] = -onp.sum(shift_list[0:(N_outer-1)])
     for b in range(N_outer):
         for a in range(N_inner-1):
-            R[b*N_inner+a,:], q_a = direct_sample_inner(a0/4)
+            # works
+            R[b*N_inner+a,:], q_a = direct_sample_inner(a0/2)
+            # mega autocorrs
+            #R[b*N_inner+a,:], q_a = direct_sample_inner(a0/4)
+            #R[b*N_inner+a,:], q_a = direct_sample_inner(a0)
             q *= q_a
         R[b*N_inner+N_inner-1,:] = -onp.sum(R[(b*N_inner):(b*N_inner+N_inner-1),:], axis=0)
         R[(b*N_inner):((b+1)*N_inner),:] += shift_list[b]
@@ -780,18 +851,15 @@ def compute_VS(R_deform, S, potential, *, dtau_iMev):
     N_coord = R_deform.shape[1]
     old_S = S
     V_SI, V_SD = potential(R_deform)
-    print("V_SD shape ", V_SD.shape)
-    print("V_SI shape ", V_SI.shape)
+    #print("V_SD shape ", V_SD.shape)
+    #print("V_SI shape ", V_SI.shape)
     V_SD = V_SD + V_SI
-    print("S shape ", S.shape)
     VS = batched_apply(V_SD, S)
     #print("V_SD ", V_SD[0,0,0,1,0,2,0,0,0,1,0,2,0])
     #print("norm old_S ", inner(old_S,old_S))
     #print("norm VS ", inner(VS,VS))
     #print("old_S.VS/norms  ", inner(VS,old_S) / np.sqrt( inner(VS,VS)*inner(old_S,old_S) ))
-
-    #ang = np.arccos(inner(VS, old_S) / np.sqrt( inner(VS,VS)*inner(old_S,old_S) ))
-
+    ang = np.arccos(inner(VS, old_S) / np.sqrt( inner(VS,VS)*inner(old_S,old_S) ))
     #print("angle between old and new spin-color vec is ", ang)
     # TODO THIS OUGHT TO FAIL FOR DEUTERON
     #if (np.abs(inner(VS,VS)) > 1e-6).all():
