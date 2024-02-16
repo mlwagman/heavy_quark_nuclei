@@ -55,6 +55,10 @@ dset = dset[0:n_step_full]
 print(dset.shape)
 if dataset == "Rs":
     dset = np.mean(adl.norm_3vec(dset), axis=(2))
+elif dataset == "Rs_12":
+    dset = np.mean(adl.norm_3vec(dset)[:,:,0:1])
+elif dataset == "Rs_34":
+    dset = np.mean(adl.norm_3vec(dset)[:,:,2:3])
 print(dset)
 
 # read weights
@@ -101,20 +105,21 @@ plt.savefig(database[:-3]+'_autocorrelation.pdf')
 print("tau = ", tau_ac)
 tauint0 = tauint(last_point, littlec)
 print("integrated autocorrelation time = ", tauint0)
-for tau_ac in range(1,n_step_full,10):
-    print(tau_ac)
-    sub_dset = np.real(dset[tau_ac]*dset_Ws[tau_ac] - np.mean(dset[tau_ac]*dset_Ws[tau_ac]))
-    auto_corr = []
-    c0 = np.mean(sub_dset * sub_dset)
-    auto_corr.append(c0)
-    for i in range(1,n_walk_full//4):
-        auto_corr.append(np.mean(sub_dset[i:] * sub_dset[:-i]))
-    littlec = np.asarray(auto_corr) / c0
-    print("tau = ", tau_ac)
-    print("integrated autocorrelation time = ", tauint(last_point, littlec))
+#for tau_ac in range(1,n_step_full,10):
+#    print(tau_ac)
+#    sub_dset = np.real(dset[tau_ac]*dset_Ws[tau_ac] - np.mean(dset[tau_ac]*dset_Ws[tau_ac]))
+#    auto_corr = []
+#    c0 = np.mean(sub_dset * sub_dset)
+#    auto_corr.append(c0)
+#    for i in range(1,n_walk_full//4):
+#        auto_corr.append(np.mean(sub_dset[i:] * sub_dset[:-i]))
+#    littlec = np.asarray(auto_corr) / c0
+#    print("tau = ", tau_ac)
+#    print("integrated autocorrelation time = ", tauint(last_point, littlec))
 
 for n_tau_skip_exp in range(round(np.log(dset.shape[0]//n_walk_full+1)/np.log(2)), round(np.log(dset.shape[0])/np.log(2))-1):
-    n_tau_skip = 2**(n_tau_skip_exp+1) * 4
+    #n_tau_skip = 2**(n_tau_skip_exp+1)*2
+    n_tau_skip = 2**(n_tau_skip_exp+1)
     if dset.shape[0] < 32:
         n_tau_skip = 2
     fit_step = ((dset.shape[0]-min_dof*n_tau_skip) // n_fits)
@@ -371,6 +376,7 @@ rect_start = highest_weight_start_fit * dtau
 fig, ax = plt.subplots(1,1, figsize=(4,3))
 ax.errorbar(plot_tau, plot_sample_mean, yerr=plot_errs, color='xkcd:forest green')
 ax.set_ylim(model_averaged_fit - plot_scale*model_averaged_err, model_averaged_fit + plot_scale*model_averaged_err)
+#ax.set_ylim(-1.09,-1.01)
 rect = patches.Rectangle((rect_start, model_averaged_fit - model_averaged_err), plot_tau[-1]-rect_start, 2*model_averaged_err, linewidth=0, facecolor='xkcd:blue', zorder=10, alpha=0.7)
 ax.add_patch(rect)
 ax.set_xlabel(r'$\tau \, m_Q$')
