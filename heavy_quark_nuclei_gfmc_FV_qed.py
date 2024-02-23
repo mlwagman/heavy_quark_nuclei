@@ -52,6 +52,7 @@ parser.add_argument('--spoila', type=float, default=1)
 parser.add_argument('--afac', type=float, default=1)
 parser.add_argument('--samefac', type=float, default=1)
 parser.add_argument('--eps_fac', type=float, default=1)
+parser.add_argument('--BO_fac', type=float, default=0)
 parser.add_argument('--spoilf', type=str, default="hwf")
 parser.add_argument('--outdir', type=str, required=True)
 parser.add_argument('--input_Rs_database', type=str, default="")
@@ -560,7 +561,14 @@ if input_Rs_database == "":
     print("NOUTER = ", N_coord//2)
     #samples = adl.direct_sample_metropolis(2, N_coord//2, f_R_braket, a0*afac, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
     #samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2/np.mean(absmasses))
-    samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*a0/N_coord**2*eps_fac, masses=absmasses)
+
+    if BO_fac > 0:
+        pair=[1,3]
+        R0 = R0.at[pair[0],:].set(R0[pair[0],:] - BO_fac*np.array([0,0,1/2]))
+        R0 = R0.at[pair[1],:].set(R0[pair[0],:] + BO_fac*np.array([0,0,1]))
+        samples = adl.fixed_metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*a0/N_coord**2*eps_fac, masses=absmasses, pair=pair)
+    else:
+        samples = adl.metropolis(R0, f_R_braket, n_therm=50*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*a0/N_coord**2*eps_fac, masses=absmasses)
 
     #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
 
@@ -793,6 +801,8 @@ print(Vs.shape)
 
 if volume == "finite":
     tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilaket"+str(spoilaket) + "_spoilf"+str(spoilf) + "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)
+elif BO_fac > 0:
+    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilaket"+str(spoilaket) + "_spoilf"+str(spoilf)+ "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_BO"+str(BO_fac)+"_masses"+str(masses)
 else:
     tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilaket"+str(spoilaket) + "_spoilf"+str(spoilf)+ "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)
 

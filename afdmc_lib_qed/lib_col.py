@@ -26,12 +26,14 @@ def draw_dR(shape, *, lam, axis=1, masses=1):
     #dR -= onp.mean(dR, axis=axis, keepdims=True)
     dR -= onp.transpose(onp.transpose(onp.mean(onp.transpose(onp.transpose(dR)*masses), axis=axis, keepdims=True))/masses)
     return dR
-def fixed_draw_dR(shape, *, lam, axis=1, pair=[0,2]):
-    dR = lam/onp.sqrt(2) * onp.random.normal(size=shape)
+def fixed_draw_dR(shape, *, lam, axis=1, masses=1, pair=[1,3]):
+    #dR = lam/onp.sqrt(2) * onp.random.normal(size=shape)
+    dR = onp.transpose( lam/onp.sqrt(2) * onp.transpose( onp.random.normal(size=shape) ) )
     # fixed drift in second particle of fixed pair to match first
-    dR[pair[1]] = dR[pair[0]]
+    dR = dR.at[pair[1],:].set(dR[pair[0],:])
     # subtract mean dR to avoid "drift" in the system
-    dR -= onp.mean(dR, axis=axis, keepdims=True)
+    #dR -= onp.mean(dR, axis=axis, keepdims=True)
+    dR -= onp.transpose(onp.transpose(onp.mean(onp.transpose(onp.transpose(dR)*masses), axis=axis, keepdims=True))/masses)
     return dR
 def step_G0(R, *, dtau_iMev, m_Mev):
     dtau_fm = dtau_iMev * fm_Mev
@@ -706,7 +708,7 @@ def parallel_tempered_metropolis(fac_list, R_list, W, *, n_therm, n_step, n_skip
     print(f'Swap acc frac = {acc} / {n_tot} = {1.0*acc/(n_tot)}')
     return samples
 
-def fixed_metropolis(R, W, *, n_therm, n_step, n_skip, eps, pair=[0,2]):
+def fixed_metropolis(R, W, *, n_therm, n_step, n_skip, eps, masses=1, pair=[1,3]):
     samples = []
     acc = 0
     #(N_coord, N_d) = R.shape
@@ -718,7 +720,7 @@ def fixed_metropolis(R, W, *, n_therm, n_step, n_skip, eps, pair=[0,2]):
         #R = onp.reshape(R_flat, (N_coord,N_d))
         #print('old_R=',R)
         #onp.random.seed(42)
-        dR = fixed_draw_dR(R.shape, lam=eps, axis=0, pair=pair)
+        dR = fixed_draw_dR(R.shape, lam=eps/masses, axis=0, masses=masses, pair=pair)
         #print('dR=',dR)
         new_R = R + dR
         #print('new_R=',new_R)
