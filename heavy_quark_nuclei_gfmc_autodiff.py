@@ -25,7 +25,8 @@ import math
 import mpmath
 from functools import partial
 
-from sympy import simplify, summation, sqrt, Eq, Integral, oo, pprint, symbols, Symbol, log, exp, diff, Sum, factorial, IndexedBase, Function, cos, sin, atan, acot, pi, atan2, trigsimp, lambdify, re, im
+#import sympy
+from sympy import simplify, summation, sqrt, Eq, Integral, oo, pprint, symbols, Symbol, log, exp, diff, Sum, factorial, IndexedBase, Function, cos, sin, atan, acot, pi, atan2, trigsimp, lambdify, re, im, gamma, hyper
 from sympy.physics.hydrogen import R_nl, Psi_nlm
 
 from itertools import permutations
@@ -250,6 +251,29 @@ def Chi_no_v(N_coord, r, t, p, C, A):
         lam_z = (z1 - z2 + z3 - z4)/2
         lam_sq = lam_x**2 + lam_y**2 + lam_z**2
         Chi = Chi*exp(-1/2*(b3**2)*lam_sq)
+    elif spoilf == "hwf_1F1":
+        p = [0, 0, 1]
+        p_mag = sqrt(p[0]*p[0] + p[1]*p[1] + p[2]*p[2])
+        zeta = 1/(A[0]*p_mag)
+        for i in range(N_coord):
+            for j in range(N_coord):
+                if i!=j and j>=i:
+                    this_r = rrSpher(i,j,r,t,p)
+                    this_t = ttSpher(i,j,r,t,p)
+                    this_p = ppSpher(i,j,r,t,p)
+                    this_x = this_r * sin(this_t) * cos(this_p)
+                    this_y = this_r * sin(this_t) * sin(this_p)
+                    this_z = this_r * cos(this_t)
+                    pr = p_mag*this_r
+                    pdotr = p[0]*this_x + p[1]*this_y + p[2]*this_z
+                    z = 1j*(pr - pdotr)
+                    hyper_F_fac = hyper((1j*zeta,), (1,), z)
+                    gamma_fac = gamma(1 - 1j*zeta)
+                    exp_fac = exp(pi*zeta/2)
+                    Chi = Chi*exp_fac*gamma_fac*hyper_F_fac*exp(1j*pdotr)
+                    #Chi = 0.1*Chi*gamma_fac*hyper_F_fac*exp(1j*pdotr)
+                    # equivalent
+                    #Chi = Chi*hyper_F_fac*exp(1j*pdotr)
     return C[0]*Chi
 
 print(simplify(Chi_no_v_test(N_coord, r, t, p, C, A)))
@@ -260,7 +284,12 @@ def psi_no_v(N_coord, r, t, p, C, A):
     psi = Chi_no_v(N_coord, r, t, p, C, A)
     psi = psi.rewrite(cos)
     modules = {'sin': math.sin, 'cos': math.cos} #, 're': torch.real, 'im': torch.imag
+    if spoilf == "hwf_1F1":
+        modules = {'mpmath'}
+    #return psi
     return lambdify([C, A, r, t, p], psi, modules)
+
+print(Chi_no_v(N_coord, r, t, p, C, A))
 
 def nabla_psi_no_v(N_coord, r, t, p, C, A):
     psi = Chi_no_v(N_coord, r, t, p, C, A)
@@ -269,6 +298,8 @@ def nabla_psi_no_v(N_coord, r, t, p, C, A):
         nabla_wvfn += laPlaceSpher(psi, r[a], t[a], p[a])
     nabla_wvfn = nabla_wvfn.rewrite(cos)
     modules = {'sin': math.sin, 'cos': math.cos}
+    if spoilf == "hwf_1F1":
+        modules = {'mpmath'}
     return lambdify([C, A, r, t, p], nabla_wvfn, modules)
 
 #######################################################################################
@@ -279,6 +310,7 @@ psi_time = time.time()
 #psitab.append(psi_no_v(N_coord, r, t, p, C, A))
 psitab = psi_no_v(N_coord, r, t, p, C, A)
 print(f"precomputed wavefunctions in {time.time() - psi_time} sec")
+print(psitab)
 
 print(f'precomputing wavefunction Laplacians')
 nabla_psi_time = time.time()
@@ -300,7 +332,10 @@ def total_Psi_nlm(Rs, A_n, C_n, psi_fn):
     p_n = torch.atan2(y, x)
     # evaluate wavefunction
     for i in range(N_walkers):
-       Psi_nlm_s[i] = psi_fn(C_n, A_n, r_n[i], t_n[i], p_n[i])
+        if spoilf == "hwf_1F1":
+            Psi_nlm_s[i] = complex(psi_fn(C_n.detach().numpy(), A_n.detach().numpy(), r_n[i].detach().numpy(), t_n[i].detach().numpy(), p_n[i].detach().numpy()))
+        else:
+            Psi_nlm_s[i] = psi_fn(C_n, A_n, r_n[i], t_n[i], p_n[i])
     return Psi_nlm_s
 
 def nabla_total_Psi_nlm(Rs, A_n, C_n, nabla_psi_fn):
@@ -317,7 +352,10 @@ def nabla_total_Psi_nlm(Rs, A_n, C_n, nabla_psi_fn):
     p_n = torch.atan2(y, x)
     # evaluate wavefunction
     for i in range(N_walkers):
-        nabla_Psi_nlm_s[i] = nabla_psi_fn(C_n, A_n, r_n[i], t_n[i], p_n[i])
+        if spoilf == "hwf_1F1":
+            nabla_Psi_nlm_s[i] = complex(nabla_psi_fn(C_n.detach().numpy(), A_n.detach().numpy(), r_n[i].detach().numpy(), t_n[i].detach().numpy(), p_n[i].detach().numpy()))
+        else:
+            nabla_Psi_nlm_s[i] = nabla_psi_fn(C_n, A_n, r_n[i], t_n[i], p_n[i])
     print(f"calculated nabla in {time.time() - nabla_psi_time} sec")
     return nabla_Psi_nlm_s
 
@@ -401,7 +439,8 @@ def metropolis_coordinate_ensemble(this_psi, *, n_therm, N_walkers, n_skip, eps)
         p_R = abspsi**2
         abspsi_new = torch.abs(this_psi(new_R))
         p_new_R = abspsi_new**2
-        if (torch.rand(1) < (p_new_R / p_R) and not torch.isnan(p_new_R) and p_new_R > 0 and p_new_R < 1 ):
+        #if (torch.rand(1) < (p_new_R / p_R) and not torch.isnan(p_new_R) and p_new_R > 0 and p_new_R < 1 ):
+        if (torch.rand(1) < (p_new_R / p_R)):
             R = new_R #accept
             p_R = p_new_R
             if i >= 0:
