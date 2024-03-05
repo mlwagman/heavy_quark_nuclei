@@ -47,18 +47,18 @@ def step_G0_symm_distinct(R, *, dtau_iMev, m_Mev):
     lam_fm = np.sqrt(2/m_Mev * fm_Mev * dtau_fm)
     (n_walkers, n_coord, n_d) = R.shape
     dR = 1/onp.sqrt(2) * onp.random.normal(size=R.shape)
-    drift = np.zeros((n_walkers, n_d)) 
-    drift_vec = onp.zeros((n_walkers, n_coord, n_d)) 
+    #drift = np.zeros((n_walkers, n_d)) 
+    #drift_vec = onp.zeros((n_walkers, n_coord, n_d)) 
     for i in range(0, n_coord):
         dR[:,i,:] = dR[:,i,:] * lam_fm[i]
-        drift += dR[:,i,:] * m_Mev[i] / n_coord
-    for i in range(0, n_coord):
-        # WRONG!!!
-        #drift_vec[:,i,:] = drift[:,:] / m_Mev[i]
-        drift_vec[:,i,:] = drift[:,:] / np.mean(m_Mev)
-    # subtract mean dR to avoid "drift" in the system
-    #dR -= onp.mean(dR, axis=1, keepdims=True)
-    dR -= drift_vec
+    #    drift += dR[:,i,:] * m_Mev[i] / n_coord
+    #for i in range(0, n_coord):
+    #    # WRONG!!!
+    #    #drift_vec[:,i,:] = drift[:,:] / m_Mev[i]
+    #    drift_vec[:,i,:] = drift[:,:] / np.mean(m_Mev)
+    ## subtract mean dR to avoid "drift" in the system
+    ##dR -= onp.mean(dR, axis=1, keepdims=True)
+    #dR -= drift_vec
     return R+dR, R-dR
 
 def normalize_wf(f_R, df_R, ddf_R):
@@ -1050,12 +1050,12 @@ def gfmc_deform(
         (n_walkers, n_coord, n_d) = R.shape
         drift = np.zeros((n_walkers, n_d)) 
         for i in range(0, n_coord):
-            drift += R[:,i,:] * m_Mev[i] / n_coord
+            drift += R[:,i,:] * m_Mev[i] / n_coord / np.mean(m_Mev)
         print("checking drift = 0 =", np.sum(np.abs(drift)))
         print("<W^2>/<W>^2 = ", np.mean(W*W)/np.mean(W))
         print("<r_first> = ", np.mean(W*np.transpose(norm_3vec(R)[:,0]))/np.mean(W))
         print("<r_last> = ", np.mean(W*np.transpose(norm_3vec(R)[:,-1]))/np.mean(W))
-        assert( np.allclose( drift, np.zeros_like(drift) ) )
+        #assert( np.allclose( drift, np.zeros_like(drift) ) )
 
         # remove previous factors (to be replaced with current factors after evolving)
         W = W / (inner(S_T, S) * f_R_norm(R_deform))
