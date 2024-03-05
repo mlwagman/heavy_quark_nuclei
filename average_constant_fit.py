@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import paper_plt
 import afdmc_lib_col as adl
-paper_plt.load_latex_config()
+#paper_plt.load_latex_config()
 
 np.random.seed(0)
 
@@ -22,6 +22,8 @@ parser.add_argument('--n_skip', type=int, default=1)
 parser.add_argument('--n_block', type=int, default=5)
 # how many bootstrap samples
 parser.add_argument('--n_boot', type=int, default=200)
+# how many bootstrap samples
+parser.add_argument('--which_Rs', type=int, default=0, nargs='+')
 # how often to print
 parser.add_argument('--n_print', type=int, default=1)
 # how many fits to do
@@ -49,16 +51,23 @@ dset = f[dataset]
 n_step_full = dset.shape[0]
 n_walk_full = dset.shape[1]
 
-dset = dset[0:n_step_full]
+#n_step_full = 500
+#n_walk_full = 100
+
+dset = dset[0:n_step_full,0:n_walk_full]
 #dset = dset[n_step_full:]
 
 print(dset.shape)
+r_string = ""
 if dataset == "Rs":
-    dset = np.mean(adl.norm_3vec(dset), axis=(2))
-elif dataset == "Rs_12":
-    dset = np.mean(adl.norm_3vec(dset)[:,:,0:1])
-elif dataset == "Rs_34":
-    dset = np.mean(adl.norm_3vec(dset)[:,:,2:3])
+    full_dset = np.zeros((n_step_full,n_walk_full))
+    for r in which_Rs:
+        full_dset += adl.norm_3vec(dset)[:,:,r]/len(which_Rs)
+        r_string += str(r)
+else:
+    full_dset = dset
+
+dset=full_dset
 print(dset)
 
 # read weights
@@ -118,8 +127,9 @@ print("integrated autocorrelation time = ", tauint0)
 #    print("integrated autocorrelation time = ", tauint(last_point, littlec))
 
 for n_tau_skip_exp in range(round(np.log(dset.shape[0]//n_walk_full+1)/np.log(2)), round(np.log(dset.shape[0])/np.log(2))-1):
+    n_tau_skip = 2**(n_tau_skip_exp+1)*4
     #n_tau_skip = 2**(n_tau_skip_exp+1)*2
-    n_tau_skip = 2**(n_tau_skip_exp+1)
+    #n_tau_skip = 2**(n_tau_skip_exp+1)
     if dset.shape[0] < 32:
         n_tau_skip = 2
     fit_step = ((dset.shape[0]-min_dof*n_tau_skip) // n_fits)
@@ -170,7 +180,10 @@ for n_tau_skip_exp in range(round(np.log(dset.shape[0]//n_walk_full+1)/np.log(2)
         sample_mean = np.zeros((n_step))
         sample_mean_num = np.zeros((n_step))
         for n in range(n_step):
-            sample_mean[n] = np.mean(data[n]) / np.mean(Ws[n])
+            if np.mean(Ws[n]) == 0.0:
+                sample_mean[n] = np.mean(data[n])
+            else:
+                sample_mean[n] = np.mean(data[n]) / np.mean(Ws[n])
             sample_mean_num[n] = np.mean(data[n])
 
         print("\n SAMPLE MEAN")
@@ -338,11 +351,19 @@ for n_tau_skip_exp in range(round(np.log(dset.shape[0]//n_walk_full+1)/np.log(2)
         last_fit = model_averaged_fit
         n_tau_skip *= 2
 
-with open(database[:-2]+'csv', 'w', newline='') as csvfile:
-    fieldnames = ['mean', 'err', 'chi2dof']
-    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-    writer.writeheader()
-    writer.writerow({'mean': model_averaged_fit, 'err': model_averaged_err, 'chi2dof': model_averaged_redchisq})
+if dataset == "Rs":
+    after_Rs = database.find("Rs") + 2
+    with open(database[0:after_Rs]+r_string+database[after_Rs:-2]+'csv', 'w', newline='') as csvfile:
+        fieldnames = ['mean', 'err', 'chi2dof']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerow({'mean': model_averaged_fit, 'err': model_averaged_err, 'chi2dof': model_averaged_redchisq})
+else:
+    with open(database[:-2]+'csv', 'w', newline='') as csvfile:
+        fieldnames = ['mean', 'err', 'chi2dof']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerow({'mean': model_averaged_fit, 'err': model_averaged_err, 'chi2dof': model_averaged_redchisq})
 
 
 # plot H(tau)
