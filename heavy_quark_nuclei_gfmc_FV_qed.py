@@ -384,6 +384,11 @@ print("product pairs = ", product_pairs)
 
 
 absmasses=np.abs(np.array(masses))
+if BO_fac > 0 and N_coord == 4:
+    BO_absmasses=np.abs(np.array(masses)*np.array([1.0,0.5,1.0,0.5]))
+elif BO_fac > 0:
+    print("BO not supported for Ncoord != 4")
+    throw(17)
 
 @partial(jax.jit, static_argnums=(1,))
 def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
@@ -445,7 +450,7 @@ def f_R_braket_phase(Rs):
     return prod / np.abs( prod )
 
 @partial(jax.jit)
-def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
+def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses, k_masses=absmasses):
     #N_walkers = Rs.shape[0]
     #assert Rs.shape == (N_walkers, N_coord, 3)
     nabla_psi_tot = 0
@@ -487,7 +492,7 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
                             # factor of two included to account for both terms appearing in laplacian
                             if k == i and l == j:
                                 #nabla_psi = nabla_psi * (2/thisa0**2 - 4/(thisa0*rij_norm)) * np.exp(-rij_norm/thisa0)
-                                nabla_psi = nabla_psi * ((1/thisa0**2 - 2/(thisa0*rij_norm))/np.abs(masses[k]) + (1/thisa0**2 - 2/(thisa0*rij_norm))/np.abs(masses[l])) * np.exp(-rij_norm/thisa0)
+                                nabla_psi = nabla_psi * ((1/thisa0**2 - 2/(thisa0*rij_norm))/np.abs(k_masses[k]) + (1/thisa0**2 - 2/(thisa0*rij_norm))/np.abs(k_masses[l])) * np.exp(-rij_norm/thisa0)
                             else:
                                 nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0)
                 nabla_psi_tot += nabla_psi
@@ -543,7 +548,7 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
                                                     nabla_psi = rsign * nabla_psi * (ri[:,x] - rj[:,x])/(thisa0*rij_norm) * np.exp(-rij_norm/thisa0)
                                                 else:
                                                     nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0)
-                                    nabla_psi_tot += nabla_psi / np.abs(masses[a])
+                                    nabla_psi_tot += nabla_psi / np.abs(k_masses[a])
     return nabla_psi_tot
 
 
@@ -554,7 +559,7 @@ if input_Rs_database == "":
     # set center of mass position to 0
     #R0 -= onp.mean(R0, axis=1, keepdims=True)
     #R0 -= onp.mean(R0, axis=0, keepdims=True)
-    R0 -= onp.transpose(onp.transpose(onp.mean(onp.transpose(onp.transpose(R0)*absmasses), axis=0, keepdims=True))/absmasses)
+    R0 -= onp.transpose(onp.transpose(onp.mean(onp.transpose(onp.transpose(R0)*absmasses), axis=0, keepdims=True))/onp.mean(absmasses))
     print("R0 = ", R0)
     print("NINNER = ", 2)
     print("NCOORD = ", N_coord)
@@ -566,6 +571,7 @@ if input_Rs_database == "":
         pair=[1,3]
         R0 = R0.at[pair[0],:].set(R0[pair[0],:] - BO_fac*np.array([0,0,1/2]))
         R0 = R0.at[pair[1],:].set(R0[pair[0],:] + BO_fac*np.array([0,0,1]))
+        R0 -= onp.transpose(onp.transpose(onp.mean(onp.transpose(onp.transpose(R0)*absmasses), axis=0, keepdims=True))/onp.mean(absmasses))
         samples = adl.fixed_metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*a0/N_coord**2*eps_fac, masses=absmasses, pair=pair)
     else:
         samples = adl.metropolis(R0, f_R_braket, n_therm=50*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*a0/N_coord**2*eps_fac, masses=absmasses)
@@ -725,13 +731,20 @@ for count, R in enumerate(gfmc_Rs):
     print('Calculating Laplacian for step ', count)
     K_time = time.time()
     #Ks.append(-1/2*laplacian_f_R(R) / f_R(R) / adl.mp_Mev)
-    K_term = -1/2*laplacian_f_R(R) / f_R(R, wavefunction=bra_wavefunction) / 1
+
+    if BO_fac > 0:
+        K_term = -1/2*laplacian_f_R(R, k_masses=BO_absmasses) / f_R(R, wavefunction=bra_wavefunction) / 1
+    else:
+        K_term = -1/2*laplacian_f_R(R) / f_R(R, wavefunction=bra_wavefunction) / 1
 
     R_T = R
     R_T = R_T.at[...,1,:].set(R[...,3,:])
     R_T = R_T.at[...,3,:].set(R[...,1,:])
 
-    K_term +=  -1/2*laplacian_f_R(R_T) / f_R(R, wavefunction=bra_wavefunction) / 1
+    if BO_fac > 0:
+        K_term +=  -1/2*laplacian_f_R(R_T, k_masses=BO_absmasses) / f_R(R, wavefunction=bra_wavefunction) / 1
+    else:
+        K_term +=  -1/2*laplacian_f_R(R_T) / f_R(R, wavefunction=bra_wavefunction) / 1
 
     Ks.append(K_term)
 
