@@ -59,9 +59,9 @@ def step_G0_symm_distinct(R, *, dtau_iMev, m_Mev):
     for i in range(0, n_coord):
         dR[:,i,:] = dR[:,i,:] * lam_fm[i]
     # subtract mean dR to avoid "drift" in the system
-    drift = np.einsum("jik,i->jk", dR, m_Mev) / np.sum(m_Mev)
-    for i in range(0, n_coord):
-        dR[:,i,:] = dR[:,i,:] - drift
+    #drift = np.einsum("jik,i->jk", dR, m_Mev) / np.sum(m_Mev)
+    #for i in range(0, n_coord):
+    #    dR[:,i,:] = dR[:,i,:] - drift
     #dR -= onp.mean(dR, axis=1, keepdims=True)
     return R+dR, R-dR
 
@@ -1109,7 +1109,7 @@ def gfmc_deform(
         print("<W^2>/<W>^2 = ", np.mean(W*W)/np.mean(W))
         print("<r_first> = ", np.mean(W*np.transpose(norm_3vec(R)[:,0]))/np.mean(W))
         print("<r_last> = ", np.mean(W*np.transpose(norm_3vec(R)[:,-1]))/np.mean(W))
-        assert( np.allclose( drift, np.zeros_like(drift) ) )
+        #assert( np.allclose( drift, np.zeros_like(drift) ) )
 
         # remove previous factors (to be replaced with current factors after evolving)
         W = W / (inner(S_T, S) * f_R_norm(R_deform))

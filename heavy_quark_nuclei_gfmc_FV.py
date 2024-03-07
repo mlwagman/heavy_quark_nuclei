@@ -957,8 +957,11 @@ if N_coord == 6:
               #S_av4p_metropolis[spin_slice] = TAAA(i, j, l, m, k, n)
               S_av4p_metropolis[spin_slice] = TAAA(i, j, k, l, m, n)
           elif color == "AAS":
-              #S_av4p_metropolis[spin_slice] = TAAS(i, j, l, m, k, n)
-              S_av4p_metropolis[spin_slice] = TAAS(i, j, k, l, m, n)
+              # put first two quarks in each baryon in diquarks
+              # baryon x 2
+              S_av4p_metropolis[spin_slice] = TAAS(i, j, l, m, k, n)
+              # diquark x 3
+              #S_av4p_metropolis[spin_slice] = TAAS(i, j, k, l, m, n)
           elif color == "ASA":
               #S_av4p_metropolis[spin_slice] = TASA(i, j, l, m, k, n)
               S_av4p_metropolis[spin_slice] = TASA(i, j, k, l, m, n)
