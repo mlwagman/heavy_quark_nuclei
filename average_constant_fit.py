@@ -23,7 +23,6 @@ parser.add_argument('--n_block', type=int, default=5)
 # how many bootstrap samples
 parser.add_argument('--n_boot', type=int, default=200)
 # how many bootstrap samples
-parser.add_argument('--which_Rs', type=int, default=0, nargs='+')
 # how often to print
 parser.add_argument('--n_print', type=int, default=1)
 # how many fits to do
@@ -35,6 +34,8 @@ parser.add_argument('--dtau', type=float, default=0.4)
 # plot height in sigma
 parser.add_argument('--plot_scale', type=float, default=20)
 parser.add_argument('--noshrink', action='store_true', default=False)
+parser.add_argument('--which_Rs', type=int, default=0, nargs='+')
+parser.add_argument('--masses', type=float, default=0., nargs='+')
 globals().update(vars(parser.parse_args()))
 
 shrink = not noshrink
@@ -60,6 +61,11 @@ dset = dset[0:n_step_full,0:n_walk_full]
 print(dset.shape)
 r_string = ""
 if dataset == "Rs":
+    n_coord = dset.shape[2]
+    CoM = np.zeros((n_step_full,n_walk_full))
+    denom = np.sum(masses)
+    for r in range(n_coord):
+        CoM += masses[r]*adl.norm_3vec(dset)[:,:,r]/denom
     full_dset = np.zeros((n_step_full,n_walk_full))
     for r in which_Rs:
         full_dset += adl.norm_3vec(dset)[:,:,r]/len(which_Rs)
@@ -127,8 +133,8 @@ print("integrated autocorrelation time = ", tauint0)
 #    print("integrated autocorrelation time = ", tauint(last_point, littlec))
 
 for n_tau_skip_exp in range(round(np.log(dset.shape[0]//n_walk_full+1)/np.log(2)), round(np.log(dset.shape[0])/np.log(2))-1):
-    n_tau_skip = 2**(n_tau_skip_exp+1)*4
-    #n_tau_skip = 2**(n_tau_skip_exp+1)*2
+    #n_tau_skip = 2**(n_tau_skip_exp+1)*4
+    n_tau_skip = 2**(n_tau_skip_exp+1)*2
     #n_tau_skip = 2**(n_tau_skip_exp+1)
     if dset.shape[0] < 32:
         n_tau_skip = 2
@@ -397,7 +403,7 @@ rect_start = highest_weight_start_fit * dtau
 fig, ax = plt.subplots(1,1, figsize=(4,3))
 ax.errorbar(plot_tau, plot_sample_mean, yerr=plot_errs, color='xkcd:forest green')
 ax.set_ylim(model_averaged_fit - plot_scale*model_averaged_err, model_averaged_fit + plot_scale*model_averaged_err)
-#ax.set_ylim(-1.09,-1.01)
+#ax.set_ylim(0.5,1.5)
 rect = patches.Rectangle((rect_start, model_averaged_fit - model_averaged_err), plot_tau[-1]-rect_start, 2*model_averaged_err, linewidth=0, facecolor='xkcd:blue', zorder=10, alpha=0.7)
 ax.add_patch(rect)
 ax.set_xlabel(r'$\tau \, m_Q$')
