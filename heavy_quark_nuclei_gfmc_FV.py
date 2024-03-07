@@ -31,7 +31,7 @@ from itertools import permutations
 import torch
 import torch.nn as nn
 
-onp.random.seed(10)
+onp.random.seed(0)
 
 paper_plt.load_latex_config()
 

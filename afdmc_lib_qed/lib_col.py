@@ -56,19 +56,33 @@ def step_G0_symm_distinct(R, *, dtau_iMev, m_Mev):
     lam_fm = np.sqrt(2/m_Mev * fm_Mev * dtau_fm)
     (n_walkers, n_coord, n_d) = R.shape
     dR = 1/onp.sqrt(2) * onp.random.normal(size=R.shape)
-    drift = np.zeros((n_walkers, n_d)) 
-    drift_vec = onp.zeros((n_walkers, n_coord, n_d)) 
     for i in range(0, n_coord):
         dR[:,i,:] = dR[:,i,:] * lam_fm[i]
-        drift += dR[:,i,:] * m_Mev[i] / n_coord
-    for i in range(0, n_coord):
-        # WRONG!!!
-        #drift_vec[:,i,:] = drift[:,:] / m_Mev[i]
-        drift_vec[:,i,:] = drift[:,:] / np.mean(m_Mev)
     # subtract mean dR to avoid "drift" in the system
+    drift = np.einsum("jik,i->jk", dR, m_Mev) / np.sum(m_Mev)
+    for i in range(0, n_coord):
+        dR[:,i,:] = dR[:,i,:] - drift
     #dR -= onp.mean(dR, axis=1, keepdims=True)
-    dR -= drift_vec
     return R+dR, R-dR
+
+#def step_G0_symm_distinct(R, *, dtau_iMev, m_Mev):
+#    dtau_fm = dtau_iMev * fm_Mev
+#    lam_fm = np.sqrt(2/m_Mev * fm_Mev * dtau_fm)
+#    (n_walkers, n_coord, n_d) = R.shape
+#    dR = 1/onp.sqrt(2) * onp.random.normal(size=R.shape)
+#    drift = np.zeros((n_walkers, n_d)) 
+#    drift_vec = onp.zeros((n_walkers, n_coord, n_d)) 
+#    for i in range(0, n_coord):
+#        dR[:,i,:] = dR[:,i,:] * lam_fm[i]
+#        drift += dR[:,i,:] * m_Mev[i] / n_coord
+#    for i in range(0, n_coord):
+#        # WRONG!!!
+#        #drift_vec[:,i,:] = drift[:,:] / m_Mev[i]
+#        drift_vec[:,i,:] = drift[:,:] / np.mean(m_Mev)
+#    # subtract mean dR to avoid "drift" in the system
+#    #dR -= onp.mean(dR, axis=1, keepdims=True)
+#    dR -= drift_vec
+#    return R+dR, R-dR
 
 def normalize_wf(f_R, df_R, ddf_R):
     Rs = onp.linspace([0,0,0], [20,0,0], endpoint=False, num=10000)
