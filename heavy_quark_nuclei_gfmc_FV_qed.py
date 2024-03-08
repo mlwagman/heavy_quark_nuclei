@@ -571,7 +571,11 @@ if input_Rs_database == "":
         pair=[1,3]
         R0 = R0.at[pair[0],:].set(R0[pair[0],:] - BO_fac*np.array([0,0,1/2]))
         R0 = R0.at[pair[1],:].set(R0[pair[0],:] + BO_fac*np.array([0,0,1]))
+        print("R0 = ", R0)
         R0 -= onp.transpose(onp.transpose(onp.mean(onp.transpose(onp.transpose(R0)*absmasses), axis=0, keepdims=True))/onp.mean(absmasses))
+        print("R0 = ", R0)
+        print("BO = ", BO_fac, " =? ", adl.norm_3vec(R0[pair[0]]-R0[pair[1]]))
+        assert(np.allclose(BO_fac, adl.norm_3vec(R0[pair[0]]-R0[pair[1]])))
         samples = adl.fixed_metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*a0/N_coord**2*eps_fac, masses=absmasses, pair=pair)
     else:
         samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2/np.mean(absmasses))

@@ -767,7 +767,7 @@ if input_Rs_database == "":
     #else:
         #samples = adl.direct_sample_metropolis(N_inner, N_outer, f_R_braket, a0*afac, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
     #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
-    if color == "6x6bar":
+    if color == "6x6bar" or color == "SSS":
         samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0*afac/N_coord**2, masses=absmasses)
     else:
         #samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2, masses=absmasses)
