@@ -629,7 +629,7 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
                                     nabla_psi_tot += nabla_psi / np.abs(masses[a])
     return nabla_psi_tot
 
-if N_coord >= 6: #and verbose:
+if N_coord >= 6 and verbose:
     print("No JIT for Laplacian")
     def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
         #N_walkers = Rs.shape[0]
