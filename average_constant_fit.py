@@ -62,13 +62,15 @@ print(dset.shape)
 r_string = ""
 if dataset == "Rs":
     n_coord = dset.shape[2]
-    CoM = np.zeros((n_step_full,n_walk_full))
-    denom = np.sum(masses)
+    CoM = np.zeros_like(dset)
+    denom = np.mean(masses)
+    num = np.zeros_like(dset)
     for r in range(n_coord):
-        CoM += masses[r]*adl.norm_3vec(dset)[:,:,r]/denom
+        num[:,:,r,:] = masses[r]*dset[:,:,r,:]
+    CoM = np.mean(num, keepdims=True) / denom
     full_dset = np.zeros((n_step_full,n_walk_full))
     for r in which_Rs:
-        full_dset += adl.norm_3vec(dset)[:,:,r]/len(which_Rs)
+        full_dset += adl.norm_3vec(dset - CoM)[:,:,r]/len(which_Rs)
         r_string += str(r)
 else:
     full_dset = dset
