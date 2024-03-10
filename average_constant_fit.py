@@ -67,7 +67,7 @@ if dataset == "Rs":
     num = np.zeros_like(dset)
     for r in range(n_coord):
         num[:,:,r,:] = masses[r]*dset[:,:,r,:]
-    CoM = np.mean(num, keepdims=True) / denom
+    CoM = np.mean(num, axis=2, keepdims=True) / denom
     full_dset = np.zeros((n_step_full,n_walk_full))
     for r in which_Rs:
         full_dset += adl.norm_3vec(dset - CoM)[:,:,r]/len(which_Rs)
