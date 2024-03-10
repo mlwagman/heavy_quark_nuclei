@@ -75,6 +75,11 @@ if dataset == "Rs":
 else:
     full_dset = dset
 
+basename = database[:-3]
+if dataset == "Rs":
+    after_Rs = database.find("Rs") + 2
+    basename = database[0:after_Rs]+r_string+database[after_Rs:-3]
+
 dset=full_dset
 print(dset)
 
@@ -118,7 +123,7 @@ fig, ax = plt.subplots(1,1, figsize=(4,3))
 ax.plot(range(1, last_point), y, 'x')
 ax.set_xlabel(r'$N_{walkers}$')
 ax.set_ylabel(r'$\tau_{int}$')
-plt.savefig(database[:-3]+'_autocorrelation.pdf')
+plt.savefig(basename+'_autocorrelation.pdf')
 print("tau = ", tau_ac)
 tauint0 = tauint(last_point, littlec)
 print("integrated autocorrelation time = ", tauint0)
@@ -359,19 +364,11 @@ for n_tau_skip_exp in range(round(np.log(dset.shape[0]//n_walk_full+1)/np.log(2)
         last_fit = model_averaged_fit
         n_tau_skip *= 2
 
-if dataset == "Rs":
-    after_Rs = database.find("Rs") + 2
-    with open(database[0:after_Rs]+r_string+database[after_Rs:-2]+'csv', 'w', newline='') as csvfile:
-        fieldnames = ['mean', 'err', 'chi2dof']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerow({'mean': model_averaged_fit, 'err': model_averaged_err, 'chi2dof': model_averaged_redchisq})
-else:
-    with open(database[:-2]+'csv', 'w', newline='') as csvfile:
-        fieldnames = ['mean', 'err', 'chi2dof']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerow({'mean': model_averaged_fit, 'err': model_averaged_err, 'chi2dof': model_averaged_redchisq})
+with open(basename+'.csv', 'w', newline='') as csvfile:
+    fieldnames = ['mean', 'err', 'chi2dof']
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    writer.writeheader()
+    writer.writerow({'mean': model_averaged_fit, 'err': model_averaged_err, 'chi2dof': model_averaged_redchisq})
 
 
 # plot H(tau)
@@ -410,6 +407,6 @@ rect = patches.Rectangle((rect_start, model_averaged_fit - model_averaged_err), 
 ax.add_patch(rect)
 ax.set_xlabel(r'$\tau \, m_Q$')
 ax.set_ylabel(r'$\left< H(\tau) \right> / m_Q$')
-fig.savefig(database[:-3]+'_EMP.pdf')
+fig.savefig(basename+'_EMP.pdf')
 
 print("\nintegrated autocorrelation time = ", tauint0, "\n")
