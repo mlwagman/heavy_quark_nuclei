@@ -43,8 +43,8 @@ parser.add_argument('--dtau_iMev', type=float, required=True)
 parser.add_argument('--n_step', type=int, required=True)
 parser.add_argument('--n_skip', type=int, default=100)
 parser.add_argument('--resampling', type=int, default=None)
-parser.add_argument('--alpha', type=float, default=1)
-parser.add_argument('--mu', type=float, default=1.0)
+#parser.add_argument('--alpha', type=float, default=1)
+#parser.add_argument('--mu', type=float, default=1.0)
 parser.add_argument('--mufac', type=float, default=1.0)
 parser.add_argument('--Nc', type=int, default=3)
 parser.add_argument('--N_coord', type=int, default=3)
@@ -260,8 +260,21 @@ def Vl(l, L_pert, s, o, alpha):
 
              
 #@partial(jax.jit)
-def VB_MRS_definition(alpha, L_pert, s, o='singulet'):
+def VB_MRS_definition(alpha, Order, s, o='singulet'):
     
+    if Order == 'LO':
+        L_pert=1
+    elif Order == 'NLO':
+        L_pert=2
+    elif Order == 'NNLO':
+        L_pert=3
+    elif Order == 'NNNLO':
+        L_pert=4
+    else: 
+        print("Order non valide. Leading Order taken by default")
+        L_pert=1
+        
+        
     def V_RS(alpha, L_pert, s, o):
         Vl_list = [Vl(l, L_pert, s, o, alpha) for l in range(0, L_pert)]
         vl_list = [vl(l, s, o, alpha) for l in range(0, L_pert)]
@@ -842,10 +855,11 @@ ket_wavefunction = wavefunction
 #assert Nc == NI
 
 #CF = (Nc**2 - 1)/(2*Nc)
-#VB = alpha*CF/(Nc-1) 
-alpha = Alpha_s3Loop(Rstar)
-mu = 4 * alpha
-print('alpha is ', alpha, ' or ', Alpha_s(Rstar))
+#VB = alpha*CF/(Nc-1)
+
+#alpha = Alpha_s3Loop(Rstar)
+#mu = 4 * alpha
+#print('alpha is ', alpha, ' or ', Alpha_s(Rstar))
 
 #Have alpha bellow Rc fixed at alpha(Rc) ?
 #r0 = 2/alpha ? <--- initial guess, no need to be precise
@@ -866,25 +880,25 @@ L = log_mu_r
 #######################################################################################
 #Rprime = lambda R: adl.norm_3vec(R)*np.exp(np.euler_gamma)*mu*s
 
-VB_LO = lambda R: CF * VB_MRS_definition(Alpha_s1Loop(R), 1, mufac) / (Nc - 1) ############################### NEW to be independent of the change in mu
-VB_NLO = lambda R: CF * VB_MRS_definition(Alpha_s2Loop(R), 2, mufac) / (Nc - 1)
-VB_NNLO = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 3, mufac) / (Nc - 1)
+VB_LO = lambda R: CF * VB_MRS_definition(Alpha_s1Loop(R), 'LO', mufac) / (Nc - 1) 
+VB_NLO = lambda R: CF * VB_MRS_definition(Alpha_s2Loop(R), 'NLO', mufac) / (Nc - 1)
+VB_NNLO = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 'NNLO', mufac) / (Nc - 1)
 
-VB_NNNLO = lambda R: CF * VB_MRS_definition(Alpha_s(R), 4, mufac) / (Nc - 1) ################## NEW
+VB_NNNLO = lambda R: CF * VB_MRS_definition(Alpha_s(R), 'NNNLO', mufac) / (Nc - 1) ################## NEW
 
 #ANTISYMMETRIC AND SYMMETRIC:
 
-VB_NNLO_antisym = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 3, mufac, 'antisymmetric') / (Nc - 1)
-VB_NNLO_sym = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 3, mufac, 'symmetric') / (Nc + 1)
+VB_NNLO_antisym = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 'NNLO', mufac, 'antisymmetric') / (Nc - 1)
+VB_NNLO_sym = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 'NNLO', mufac, 'symmetric') / (Nc + 1)
 
-VB_NNNLO_antisym = lambda R: CF * VB_MRS_definition(Alpha_s(R), 4, mufac, 'antisymmetric') / (Nc - 1) #? not finish
-VB_NNNLO_sym = lambda R: CF * VB_MRS_definition(Alpha_s(R), 4, mufac, 'symmetric') / (Nc + 1) #? not finish
+VB_NNNLO_antisym = lambda R: CF * VB_MRS_definition(Alpha_s(R), 'NNNLO', mufac, 'antisymmetric') / (Nc - 1) #? not finish
+VB_NNNLO_sym = lambda R: CF * VB_MRS_definition(Alpha_s(R), 'NNNLO', mufac, 'symmetric') / (Nc + 1) #? not finish
 
 
 #OCTET :
 
-VB_NNLO_octet = lambda R: (CA/2 - CF) * VB_MRS_definition(Alpha_s3Loop(R), 3, mufac, 'octet') 
-VB_NNNLO_octet = lambda R: (CA/2 - CF) * VB_MRS_definition(Alpha_s(R), 4, mufac, 'octet') ################## NEW
+VB_NNLO_octet = lambda R: (CA/2 - CF) * VB_MRS_definition(Alpha_s3Loop(R), 'NNLO', mufac, 'octet') 
+VB_NNNLO_octet = lambda R: (CA/2 - CF) * VB_MRS_definition(Alpha_s(R), 'NNNLO', mufac, 'octet') ################## NEW, not finish
 
 #######################################################################################
 #Can only have a guess of the mass, so we take the mass of the quark at MS bar:
@@ -2133,10 +2147,10 @@ if N_coord == 4:
 
 if volume == "finite":
     #tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilaket"+str(spoilaket) + "_spoilf"+str(spoilf) + "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
-    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
+    tag = "MRS_alphaRc_" + str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_mQ"+str(mQ) + "_Rc"+str(Rc) + "_Rstar"+str(Rstar) + "_spoila"+str(spoila) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
 else:
     #tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilaket"+str(spoilaket) + "_spoilf"+str(spoilf)+ "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
-    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
+    tag = "MRS_alphaRc_" + str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_mQ"+str(mQ) + "_Rc"+str(Rc) + "_Rstar"+str(Rstar) + "_spoila"+str(spoila) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
 
 
 with h5py.File(outdir+'Hammys_'+tag+'.h5', 'w') as f:

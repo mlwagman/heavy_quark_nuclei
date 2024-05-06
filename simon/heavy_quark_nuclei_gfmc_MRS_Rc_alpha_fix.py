@@ -292,8 +292,21 @@ def Vl(l, L_pert, s, o, alpha):
 
              
 #@partial(jax.jit)
-def VB_MRS_definition(alpha, L_pert, s, o='singulet'):
+def VB_MRS_definition(alpha, Order, s, o='singulet'):
     
+    if Order == 'LO':
+        L_pert=1
+    elif Order == 'NLO':
+        L_pert=2
+    elif Order == 'NNLO':
+        L_pert=3
+    elif Order == 'NNNLO':
+        L_pert=4
+    else: 
+        print("Order non valide. Leading Order taken by default")
+        L_pert=1
+        
+        
     def V_RS(alpha, L_pert, s, o):
         Vl_list = [Vl(l, L_pert, s, o, alpha) for l in range(0, L_pert)]
         vl_list = [vl(l, s, o, alpha) for l in range(0, L_pert)]
@@ -899,23 +912,23 @@ Vb_NNLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*L) + (alpha/(4*np.pi))**2*( b
 #######################################################################################
 #Rprime = lambda R: adl.norm_3vec(R)*np.exp(np.euler_gamma)*mu
 
-VB_LO = lambda R: CF * VB_MRS_definition(Alpha_s1Loop(R), 1, mufac) / (Nc - 1) ############################### NEW to be independent of the change in mu
+VB_LO = lambda R: CF * VB_MRS_definition(Alpha_s1Loop(R), 'LO', mufac) / (Nc - 1) ############################### NEW 
 
 #VB_NLO(R) = Alpha_s2Loop(R)*CF/(Nc-1) * (1 + Alpha_s2Loop(R)/(4*np.pi)*(aa1 + 2*beta0*log_mu_r))
 #VB_NNLO(R) = Alpha_s3Loop(R)*CF/(Nc-1) * (1 + Alpha_s3Loop(R)/(4*np.pi)*(aa1 + 2*beta0*L) + (Alpha_s3Loop(R)/(4*np.pi))**2*( beta0**2*(4*L**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*L + aa2 ) )
 
-VB_NLO = lambda R: CF * VB_MRS_definition(Alpha_s2Loop(R), 2, mufac) / (Nc - 1)
-VB_NNLO = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 3, mufac) / (Nc - 1)
+VB_NLO = lambda R: CF * VB_MRS_definition(Alpha_s2Loop(R), 'NLO', mufac) / (Nc - 1)
+VB_NNLO = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 'NNLO', mufac) / (Nc - 1)
 
 #ANTISYMMETRIC AND SYMMETRIC:
 
-VB_NNLO_antisym = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 3, mufac, 'antisymmetric') / (Nc - 1)
-VB_NNLO_sym = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 3, mufac, 'symmetric') / (Nc + 1)
+VB_NNLO_antisym = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 'NNLO', mufac, 'antisymmetric') / (Nc - 1)
+VB_NNLO_sym = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 'NNLO', mufac, 'symmetric') / (Nc + 1)
 
 
 #OCTET :
 
-VB_NNLO_octet = lambda R: (CA/2 - CF) * VB_MRS_definition(Alpha_s3Loop(R), 3, mufac, 'octet') 
+VB_NNLO_octet = lambda R: (CA/2 - CF) * VB_MRS_definition(Alpha_s3Loop(R), 'NNLO', mufac, 'octet') 
 
 #######################################################################################
 
@@ -1371,7 +1384,8 @@ def f_R_slow(Rs, wavefunction=bra_wavefunction, a0=a0):
                 ri = Rs[...,i,:]
                 rj = Rs[...,j,:]
                 rij_norm = adl.norm_3vec(ri - rj)
-                psi = psi*np.exp(-rij_norm/thisa0)
+                psi = psi*np.exp(-rij_norm/thisa0) ################################################## HERE ?
+                #or psi = psi*(2 - rij_norm/thisa0)*np.exp(-rij_norm/thisa0)
     return psi
 
 pairs = np.array([np.array([j, i]) for i in range(0,N_coord) for j in range(0, i)])
@@ -1442,7 +1456,8 @@ def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
     else:
         r_sum = np.sum( jax.lax.map(r_norm, pairs), axis=0 )/a0
 
-    psi = np.exp(-r_sum)
+    psi = np.exp(-r_sum) ############################################################### HERE ?
+    # or psi = (2 - r_sum)*np.exp(-r_sum)
     afac *= gfac
     a0 /= gfac
 
@@ -1466,7 +1481,8 @@ def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
         else:
             r_sum_T = np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/a0
 
-        psi += g * np.exp(-r_sum_T)
+        psi += g * np.exp(-r_sum_T) ##################################################### HERE ?
+        # or psi += g * (2 - r_sum_T) * np.exp(-r_sum_T)
     return psi
 
 def f_R_sq(Rs):
@@ -1540,7 +1556,8 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
                                 #nabla_psi = nabla_psi * (2/thisa0**2 - 4/(thisa0*rij_norm)) * np.exp(-rij_norm/thisa0)
                                 nabla_psi = nabla_psi * ((1/thisa0**2 - 2/(thisa0*rij_norm))/masses[k] + (1/thisa0**2 - 2/(thisa0*rij_norm))/masses[l]) * np.exp(-rij_norm/thisa0)
                             else:
-                                nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0)
+                                nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0) ################################ HERE ?
+                                # or nabla_psi = nabla_psi * (2 - rij_norm/thisa0) * np.exp(-rij_norm/thisa0)
                 nabla_psi_tot += nabla_psi
     # terms where gradients hit separate pieces of wvfn
     # laplacian involves particle a
@@ -1600,7 +1617,8 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
                                                 if (k == i and l == j) or (m == i and n == j):
                                                     nabla_psi = rsign * nabla_psi * (ri[:,x] - rj[:,x])/(thisa0*rij_norm) * np.exp(-rij_norm/thisa0)
                                                 else:
-                                                    nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0)
+                                                    nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0) ############ HERE ?
+                                                    # or nabla_psi = nabla_psi * (2 - rij_norm/thisa0) * np.exp(-rij_norm/thisa0)
                                     nabla_psi_tot += nabla_psi / np.abs(masses[a])
     return nabla_psi_tot
 
@@ -1655,7 +1673,8 @@ if N_coord >= 6: #and verbose:
                                     #nabla_psi = nabla_psi * (2/thisa0**2 - 4/(thisa0*rij_norm)) * np.exp(-rij_norm/thisa0)
                                     nabla_psi = nabla_psi * ((1/thisa0**2 - 2/(thisa0*rij_norm))/masses[k] + (1/thisa0**2 - 2/(thisa0*rij_norm))/masses[l]) * np.exp(-rij_norm/thisa0)
                                 else:
-                                    nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0)
+                                    nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0) ############################# HERE ?
+                                    # or nabla_psi = nabla_psi * (2 - rij_norm/thisa0) * np.exp(-rij_norm/thisa0)
                     nabla_psi_tot += nabla_psi
         # terms where gradients hit separate pieces of wvfn
         # laplacian involves particle a
@@ -1713,7 +1732,8 @@ if N_coord >= 6: #and verbose:
                                                     if (k == i and l == j) or (m == i and n == j):
                                                         nabla_psi = rsign * nabla_psi * (ri[:,x] - rj[:,x])/(thisa0*rij_norm) * np.exp(-rij_norm/thisa0)
                                                     else:
-                                                        nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0)
+                                                        nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0) ############# HERE ?
+                                                        # or nabla_psi = nabla_psi * (2 - rij_norm/thisa0) * np.exp(-rij_norm/thisa0)
                                         nabla_psi_tot += nabla_psi / np.abs(masses[a])
         return nabla_psi_tot
 else:
@@ -2113,10 +2133,10 @@ if N_coord == 4:
 
 if volume == "finite":
     #tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilaket"+str(spoilaket) + "_spoilf"+str(spoilf) + "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
-    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
+    tag = "MRS_alpha_fix_" + str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_Rc"+str(Rc) + "_spoila"+str(spoila) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
 else:
     #tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilaket"+str(spoilaket) + "_spoilf"+str(spoilf)+ "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
-    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
+    tag = "MRS_alpha_fix_" + str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_Rc"+str(Rc) + "_spoila"+str(spoila) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
 
 
 with h5py.File(outdir+'Hammys_'+tag+'.h5', 'w') as f:

@@ -43,8 +43,8 @@ parser.add_argument('--dtau_iMev', type=float, required=True)
 parser.add_argument('--n_step', type=int, required=True)
 parser.add_argument('--n_skip', type=int, default=100)
 parser.add_argument('--resampling', type=int, default=None)
-parser.add_argument('--alpha', type=float, default=1)
-parser.add_argument('--mu', type=float, default=1.0)
+#parser.add_argument('--alpha', type=float, default=1)
+parser.add_argument('--mu', type=float, default=2.0) # or default=1.0
 parser.add_argument('--mufac', type=float, default=1.0)
 parser.add_argument('--Nc', type=int, default=3)
 parser.add_argument('--N_coord', type=int, default=3)
@@ -69,7 +69,7 @@ parser.add_argument('--potential', type=str, default="full")
 parser.add_argument('--spoilaket', type=float, default=1)
 parser.add_argument('--masses', type=float, default=0., nargs='+')
 #parser.add_argument('--L_pert', type=int, default=3) ################## NEW set at 3 because we don't go to 3-loop calculation
-parser.add_argument('--Rstar', type=float, default=0.03)  ############################ ?
+parser.add_argument('--Rstar', type=float, default=1.91)  # or default=1.5
 parser.add_argument('--verbose', dest='verbose', action='store_true', default=False)
 globals().update(vars(parser.parse_args()))
 
@@ -290,8 +290,20 @@ def Vl(l, L_pert, s, o, alpha):
 
              
 #@partial(jax.jit)
-def VB_MRS_definition(alpha, L_pert, s, o='singulet'):
+def VB_MRS_definition(alpha, Order, s, o='singulet'):
     
+    if Order == 'LO':
+        L_pert=1
+    elif Order == 'NLO':
+        L_pert=2
+    elif Order == 'NNLO':
+        L_pert=3
+    elif Order == 'NNNLO':
+        L_pert=4
+    else: 
+        print("Order non valide. Leading Order taken by default")
+        L_pert=1
+        
     def V_RS(alpha, L_pert, s, o):
         Vl_list = [Vl(l, L_pert, s, o, alpha) for l in range(0, L_pert)]
         vl_list = [vl(l, s, o, alpha) for l in range(0, L_pert)]
@@ -738,6 +750,7 @@ def MAlpha_s2Loop(Q, f):
 
 def mu_Prime(R):
     return np.sqrt(mu**2 + 1/R**2)
+    #return np.sqrt(mu**2 + 1/(mufac*R)**2) #?
 
 @jax.jit
 def Alpha_s(R):
@@ -878,10 +891,7 @@ ket_wavefunction = wavefunction
 
 #CF = (Nc**2 - 1)/(2*Nc)c
 #VB = alpha*CF/(Nc-1) 
-# Importante: bellow we have implemented a mu dependence where it wasn't before
-VB = CF * alpha / (Nc - 1) # ?
 
-print('VB is ', VB)
 SingC3 = -(Nc+1)/8
 
 #a0=4.514
@@ -893,40 +903,46 @@ SingC3 = -(Nc+1)/8
 tau_iMev = dtau_iMev * n_step
 xs = np.linspace(0, tau_iMev, endpoint=True, num=n_step+1)
 
-L = log_mu_r + np.log(mufac) ############ MODIFIED
-Vb_LO = VB
-Vb_NLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*L))
-Vb_NNLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*L) + (alpha/(4*np.pi))**2*( beta0**2*(4*L**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*L + aa2 ) )
+
 
 #######################################################################################
 #Rprime = lambda R: adl.norm_3vec(R)*np.exp(np.euler_gamma)*mu
 
-VB_LO = lambda R: CF * VB_MRS_definition(Alpha_s1Loop(R), 1, mufac) / (Nc - 1) ############################### NEW to be independent of the change in mu
+VB_LO = lambda R: CF * VB_MRS_definition(Alpha_s1Loop(R), 'LO', mufac) / (Nc - 1)
 
 #VB_NLO(R) = Alpha_s2Loop(R)*CF/(Nc-1) * (1 + Alpha_s2Loop(R)/(4*np.pi)*(aa1 + 2*beta0*log_mu_r))
 #VB_NNLO(R) = Alpha_s3Loop(R)*CF/(Nc-1) * (1 + Alpha_s3Loop(R)/(4*np.pi)*(aa1 + 2*beta0*L) + (Alpha_s3Loop(R)/(4*np.pi))**2*( beta0**2*(4*L**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*L + aa2 ) )
 
-VB_NLO = lambda R: CF * VB_MRS_definition(Alpha_s2Loop(R), 2, mufac) / (Nc - 1)
-VB_NNLO = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 3, mufac) / (Nc - 1)
+VB_NLO = lambda R: CF * VB_MRS_definition(Alpha_s2Loop(R), 'NLO', mufac) / (Nc - 1)
+VB_NNLO = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 'NNLO', mufac) / (Nc - 1)
+VB_NNNLO = lambda R: CF * VB_MRS_definition(Alpha_s(R), 'NNNLO', mufac) / (Nc - 1) ############ NEW
 
 #ANTISYMMETRIC AND SYMMETRIC:
 
-VB_NNLO_antisym = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 3, mufac, 'antisymmetric') / (Nc - 1)
-VB_NNLO_sym = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 3, mufac, 'symmetric') / (Nc - 1)
+VB_NNLO_antisym = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 'NNLO', mufac, 'antisymmetric') / (Nc - 1)
+VB_NNLO_sym = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 'NNLO', mufac, 'symmetric') / (Nc - 1)
 
 
 #OCTET :
 
-VB_NNLO_octet = lambda R: (CA/2 - CF) * VB_MRS_definition(Alpha_s3Loop(R), 3, mufac, 'octet') 
+VB_NNLO_octet = lambda R: (CA/2 - CF) * VB_MRS_definition(Alpha_s3Loop(R), 'NNLO', mufac, 'octet') 
 
 #######################################################################################
 
+print('VB_LO Rstar is ', VB_LO(Rstar))
+print('VB_NNLO Rstar is ', VB_NNLO(Rstar))
+print('VB_NNNLO Rstar is ', VB_NNNLO(Rstar))
+
+
+
+#r0 = 2/alpha ? <--- initial guess, no need to be precise
+
 if OLO == "LO":
-    a0=spoila*2/Vb_LO
+    a0=spoila*2/VB_LO(Rstar) ##### ? NEW
 elif OLO == "NLO":
-    a0=spoila*2/Vb_NLO
+    a0=spoila*2/VB_NLO(Rstar) ##### ? NEW
 elif OLO == "NNLO":
-    a0=spoila*2/Vb_NNLO
+    a0=spoila*2/VB_NNLO(Rstar) ##### ? NEW
 
 if N_coord == 2 or N_coord == 4:
     a0 /= Nc-1
@@ -948,7 +964,7 @@ print("ket_a0 = ", ket_a0)
 print("afac = ", afac)
 print("ket_afac = ", ket_afac)
 
-Rprime = lambda R: adl.norm_3vec(R)*np.exp(np.euler_gamma)*mu*mufac ######################### MODIFY
+Rprime = lambda R: adl.norm_3vec(R)*np.exp(np.euler_gamma)*mu*mufac ######################### MODIFIED
 # build Coulomb potential
 AV_Coulomb = {}
 B3_Coulomb = {}
@@ -1152,11 +1168,11 @@ elif OLO == "NNLO":
     def octet_potential_fun_sum(R):
         return calculate_sum(octet_potential_fun, R, L, nn)
     
-elif OLO == "NNNLO":
+elif OLO == "NNNLO": #not viable yet
     @partial(jax.jit)
     def potential_fun(R):
         norm_R = adl.norm_3vec(R)
-        potential_result = -1 * spoilS * VB_NNNLO(norm_R) / norm_R #+ an other color factor
+        potential_result = -1 * spoilS * VB_NNNLO_antisym(norm_R) / norm_R #+ an other color factor
         return potential_result
 
     @partial(jax.jit)
@@ -1165,7 +1181,7 @@ elif OLO == "NNNLO":
 
     def symmetric_potential_fun(R):
         norm_R = adl.norm_3vec(R)
-        potential_result = spoilS * (Nc - 1) / (Nc + 1) * VB_NNNLO(norm_R) / norm_R #+ an other color factor(np.pi)**2)))
+        potential_result = spoilS * (Nc - 1) / (Nc + 1) * VB_NNNLO_sym(norm_R) / norm_R #+ an other color factor(np.pi)**2)))
         return potential_result
 
     def symmetric_potential_fun_sum(R):
@@ -2011,10 +2027,10 @@ if N_coord == 4:
 
 if volume == "finite":
     #tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilaket"+str(spoilaket) + "_spoilf"+str(spoilf) + "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
-    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
+    tag = "muPrime_" + str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_Rstar" + str(Rstar) + "_spoila"+str(spoila) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
 else:
     #tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilaket"+str(spoilaket) + "_spoilf"+str(spoilf)+ "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
-    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
+    tag = "muPrime_" + str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_Rstar" + str(Rstar) + "_spoila"+str(spoila) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
 
 
 with h5py.File(outdir+'Hammys_'+tag+'.h5', 'w') as f:

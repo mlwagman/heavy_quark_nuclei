@@ -13,12 +13,12 @@ from scipy.optimize import root_scalar ###### NEW
 import jax.scipy
 import jax.scipy.special
 import pickle
-import paper_plt
+#import paper_plt
 import tqdm.auto as tqdm
-import afdmc_lib_col as adl
+#import afdmc_lib_col as adl
 import os
 import pickle
-from afdmc_lib_col import NI,NS,mp_Mev,fm_Mev
+#from afdmc_lib_col import NI,NS,mp_Mev,fm_Mev
 import jax
 import jax.numpy as np
 import sys
@@ -35,7 +35,7 @@ import torch.nn as nn
 
 onp.random.seed(0)
 
-paper_plt.load_latex_config()
+#paper_plt.load_latex_config()
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--n_walkers', type=int, default=1000)
@@ -70,6 +70,7 @@ parser.add_argument('--spoilaket', type=float, default=1)
 parser.add_argument('--masses', type=float, default=0., nargs='+')
 parser.add_argument('--Rc', type=float, default=1)  ############################ it's more about 0.5
 parser.add_argument('--V_0_r_test', type=float, default=0.0)  ####### NEW
+parser.add_argument('--V_1_r_test', type=float, default=0.0)  ####### NEW
 parser.add_argument('--r_test', type=float, default=0.03)  ### NEW
 parser.add_argument('--verbose', dest='verbose', action='store_true', default=False)
 globals().update(vars(parser.parse_args()))
@@ -699,7 +700,8 @@ def LR_2Loop_MSbar(R, f):
 def LR_1Loop_MSbar(R, f):
     return np.log(1 / (R**2 * Lambda1LoopNf(f)**2))
 
-
+#######################################################################################
+#######################################################################################
 
 def Alpha_sNf(R, f):
     LR_val = LR_4Loop_MSbar(R, f)
@@ -831,7 +833,39 @@ def Alpha_s3Loop(R):
 
 
 
-#muPrime = mu + 1/R #???
+#######################################################################################
+#######################################################################################
+
+def LRLambda(RLambda):
+    return np.log(1 / RLambda**2 )
+
+def Alpha_sNf_LRLambda(RLambda, f):
+    LR_val = LRLambda(RLambda)
+    #print(LR_val)
+    return 1 / (Beta0(f) * LR_val) - \
+           Beta1(f) * np.log(LR_val) / (Beta0(f)**3 * LR_val**2) + \
+           1 / (Beta0(f)**3 * LR_val**3) * (Beta1(f)**2 / Beta0(f)**2 * (np.log(LR_val)**2 - np.log(LR_val) - 1) + Beta2(f) / Beta0(f)) + \
+           1 / (Beta0(f)**4 * LR_val**4) * (Beta1(f)**3 / Beta0(f)**3 * (-np.log(LR_val)**3 + 2.5 * np.log(LR_val)**2 + 2 * np.log(LR_val) - 0.5) - \
+           3 * Beta1(f) * Beta2(f) * np.log(LR_val) / Beta0(f)**2 + Beta3(f) / (2 * Beta0(f)))
+
+
+def Alpha_sNf3Loop_LRLambda(RLambda, f):
+    LR_val = LRLambda(RLambda)
+    return 1 / (Beta0(f) * LR_val) - \
+           Beta1(f) * np.log(LR_val) / (Beta0(f)**3 * LR_val**2) + \
+           1 / (Beta0(f)**3 * LR_val**3) * (Beta1(f)**2 / Beta0(f)**2 * (np.log(LR_val)**2 - np.log(LR_val) - 1) + Beta2(f) / Beta0(f))
+
+def Alpha_sNf2Loop_LRLambda(RLambda, f):
+    LR_val = LRLambda(RLambda)
+    return 1 / (Beta0(f) * LR_val) - \
+           Beta1(f) * np.log(LR_val) / (Beta0(f)**3 * LR_val**2)
+
+def Alpha_sNf1Loop_LRLambda(RLambda, f):
+    LR_val = LRLambda(RLambda)
+    return 1 / (Beta0(f) * LR_val)
+
+
+
 #######################################################################################
 #######################################################################################
 
@@ -898,23 +932,23 @@ Vb_NNLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*L) + (alpha/(4*np.pi))**2*( b
 #######################################################################################
 #Rprime = lambda R: adl.norm_3vec(R)*np.exp(np.euler_gamma)*mu
 
-VB_LO = lambda R: CF * VB_MRS_definition(Alpha_s1Loop(R), 1, mufac) / (Nc - 1) ############################### NEW to be independent of the change in mu
+VB_LO = lambda R: CF * VB_MRS_definition(Alpha_sNf_LRLambda(R,4), 1, mufac) / (Nc - 1) ############################### NEW to be independent of the change in mu
 
 #VB_NLO(R) = Alpha_s2Loop(R)*CF/(Nc-1) * (1 + Alpha_s2Loop(R)/(4*np.pi)*(aa1 + 2*beta0*log_mu_r))
 #VB_NNLO(R) = Alpha_s3Loop(R)*CF/(Nc-1) * (1 + Alpha_s3Loop(R)/(4*np.pi)*(aa1 + 2*beta0*L) + (Alpha_s3Loop(R)/(4*np.pi))**2*( beta0**2*(4*L**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*L + aa2 ) )
 
-VB_NLO = lambda R: CF * VB_MRS_definition(Alpha_s2Loop(R), 2, mufac) / (Nc - 1)
-VB_NNLO = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 3, mufac) / (Nc - 1)
+VB_NLO = lambda R: CF * VB_MRS_definition(Alpha_sNf_LRLambda(R,4), 2, mufac) / (Nc - 1)
+VB_NNLO = lambda R: CF * VB_MRS_definition(Alpha_sNf_LRLambda(R,4), 3, mufac) / (Nc - 1)
 
 #ANTISYMMETRIC AND SYMMETRIC:
 
-VB_NNLO_antisym = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 3, mufac, 'antisymmetric') / (Nc - 1)
-VB_NNLO_sym = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 3, mufac, 'symmetric') / (Nc + 1)
+VB_NNLO_antisym = lambda R: CF * VB_MRS_definition(Alpha_sNf_LRLambda(R,4), 3, mufac, 'antisymmetric') / (Nc - 1)
+VB_NNLO_sym = lambda R: CF * VB_MRS_definition(Alpha_sNf_LRLambda(R,4), 3, mufac, 'symmetric') / (Nc + 1)
 
 
 #OCTET :
 
-VB_NNLO_octet = lambda R: (CA/2 - CF) * VB_MRS_definition(Alpha_s3Loop(R), 3, mufac, 'octet') 
+VB_NNLO_octet = lambda R: (CA/2 - CF) * VB_MRS_definition(Alpha_sNf_LRLambda(R,4), 3, mufac, 'octet') 
 
 #######################################################################################
 
@@ -943,7 +977,6 @@ elif OLO == "NNNLO":
 print('mQ is ', mQ)
 #######################################################################################
 
-
 VMRS_singulet_LO = -1 * (Nc - 1) * VB_LO(r_test) / r_test
 VMRS_singulet_NLO = -1 * (Nc - 1) * VB_NLO(r_test) / r_test
 
@@ -957,5 +990,25 @@ VMRS_antisym_NLO = -1 * VB_NLO(r_test) / r_test
 print('VMRS_antisym_LO is ', VMRS_antisym_LO)
 print('VMRS_antisym_NLO is ', VMRS_antisym_NLO)
 
-assert onp.allclose(VMRS_singulet_LO,V_0_r_test), "not close enough"
+VMRS_sym_LO = (Nc - 1) / (Nc + 1) * VB_LO(r_test) / r_test
+VMRS_sym_NLO = (Nc - 1) / (Nc + 1) * VB_NLO(r_test) / r_test
+
+print('VMRS_sym_LO is ', VMRS_sym_LO)
+print('VMRS_sym_NLO is ', VMRS_sym_NLO)
+
+assert onp.allclose(VMRS_singulet_LO , V_0_r_test), "singulet not close enough"
+assert onp.allclose(VMRS_antisym_LO , V_0_r_test / 2), "antisymmetric not close enough"
+assert onp.allclose(VMRS_sym_LO , -1 * V_0_r_test / 4), "symmetric not close enough"
 #onp.allclose(VMRS_singulet_LO,V_0(r_test)) 
+
+
+assert onp.allclose(VMRS_singulet_NLO , V_1_r_test), "singulet not close enough"
+assert onp.allclose(VMRS_antisym_NLO , V_1_r_test / 2), "antisymmetric not close enough"
+assert onp.allclose(VMRS_sym_NLO , -1 * V_1_r_test / 4), "symmetric not close enough"
+
+
+
+#######################################################################################
+
+
+
