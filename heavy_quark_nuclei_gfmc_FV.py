@@ -48,6 +48,7 @@ parser.add_argument('--Nc', type=int, default=3)
 parser.add_argument('--N_coord', type=int, default=3)
 parser.add_argument('--nf', type=int, default=5)
 parser.add_argument('--OLO', type=str, default="LO")
+parser.add_argument('--radial_n', type=int, default=1)
 parser.add_argument('--spoila', type=float, default=1)
 parser.add_argument('--g', type=float, default=0)
 parser.add_argument('--gfac', type=float, default=1)
@@ -449,6 +450,24 @@ print("diquark pairs = ", diquark_pairs)
 
 absmasses=np.abs(np.array(masses))
 
+def hydrogen_wvfn(r, n):
+    psi = np.exp(-r/n)
+    if n == 1:
+        return psi
+    if n == 2:
+        return psi*(2 - r)
+    if n == 3:
+        return psi*(27 - 18*r + 2*r**2)
+    if n == 4:
+        return psi*(192 - 144*r + 24*r**2 - r**3)
+    if n == 5:
+        return psi*(9375 - 7500*r + 1500*r**2 - 100*r**3 + 2*r**4)
+    if n == 6:
+        return psi*(174960 - 145800*r + 32400*r**2 - 2700*r**3 + 90*r**4 - r**5)
+    if n == 7:
+        return psi*(37059435 - 31765230*r + 7563150*r**2 - 720300*r**3 + 30870*r**4 - 588*r**5 + 4*r**6)
+
+
 @partial(jax.jit, static_argnums=(1,))
 def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
 
@@ -467,7 +486,8 @@ def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
     else:
         r_sum = np.sum( jax.lax.map(r_norm, pairs), axis=0 )/a0
 
-    psi = np.exp(-r_sum)
+    #psi = np.exp(-r_sum)
+    psi = hydrogen_wvfn(r_sum, radial_n)
     afac *= gfac
     a0 /= gfac
 
@@ -491,7 +511,8 @@ def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
         else:
             r_sum_T = np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/a0
 
-        psi += g * np.exp(-r_sum_T)
+        #psi += g * np.exp(-r_sum_T)
+        psi += g * hydrogen_wvfn(r_sum_T, radial_n)
     return psi
 
 def f_R_sq(Rs):
@@ -513,6 +534,8 @@ def f_R_braket_phase(Rs):
 
 @partial(jax.jit)
 def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
+    if radial_n > 1:
+        assert N_coord == 2
     #N_walkers = Rs.shape[0]
     #assert Rs.shape == (N_walkers, N_coord, 3)
     nabla_psi_tot = 0
@@ -563,9 +586,10 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
                             # factor of two included to account for both terms appearing in laplacian
                             if k == i and l == j:
                                 #nabla_psi = nabla_psi * (2/thisa0**2 - 4/(thisa0*rij_norm)) * np.exp(-rij_norm/thisa0)
-                                nabla_psi = nabla_psi * ((1/thisa0**2 - 2/(thisa0*rij_norm))/masses[k] + (1/thisa0**2 - 2/(thisa0*rij_norm))/masses[l]) * np.exp(-rij_norm/thisa0)
+                                #nabla_psi = nabla_psi * ((1/thisa0**2 - 2/(thisa0*rij_norm))/masses[k] + (1/thisa0**2 - 2/(thisa0*rij_norm))/masses[l]) * np.exp(-rij_norm/thisa0)
+                                nabla_psi = nabla_psi * ((1/(radial_n*thisa0)**2 - 2/(thisa0*rij_norm))/masses[k] + (1/(radial_n*thisa0)**2 - 2/(thisa0*rij_norm))/masses[l]) * hydrogen_wvfn(rij_norm/thisa0, radial_n)
                             else:
-                                nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0)
+                                nabla_psi = nabla_psi * hydrogen_wvfn(rij_norm/thisa0, radial_n)
                 nabla_psi_tot += nabla_psi
     # terms where gradients hit separate pieces of wvfn
     # laplacian involves particle a
