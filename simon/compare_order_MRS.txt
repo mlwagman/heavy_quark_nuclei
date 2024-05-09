@@ -1,0 +1,87 @@
+python3 average_constant_fit.py --database "simon/test/"
+
+Compare order of MRS:
+
+python3 average_constant_fit.py --database "simon/order_MRS/alpha_fixed_Rc/"
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py.py --alpha 0.2224388 --log_mu_r 0.0 --OLO "NNLO" --mu 0.889755 --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/order_MRS/alpha_fixed_Rc/" --wavefunction "compact" --potential "full" --n_skip 100 --Rc 1 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py --alpha 0.22467 --log_mu_r 0.0 --OLO "NLO" --mu 0.89868 --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/order_MRS/alpha_fixed_Rc/" --wavefunction "compact" --potential "full" --n_skip 100 --Rc 1 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py --alpha 0.21494 --log_mu_r 0.0 --OLO "LO" --mu 0.85976 --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/order_MRS/alpha_fixed_Rc/" --wavefunction "compact" --potential "full" --n_skip 100 --Rc 1 &
+
+mu_Prime:
+
+python3 average_constant_fit.py --database "simon/order_MRS/mu_Prime/"
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --alpha 0.2224388 --log_mu_r 0.0 --OLO "NNLO" --mu 2 --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/order_MRS/mu_Prime/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --alpha 0.22467 --log_mu_r 0.0 --OLO "NLO" --mu 2 --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/order_MRS/mu_Prime/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --alpha 0.21494 --log_mu_r 0.0 --OLO "LO" --mu 2 --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/order_MRS/mu_Prime/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+
+Baryon:
+
+python3 average_constant_fit.py --database "simon/order_MRS/MRS_classic/baryon/"
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py --alpha 0.2224388 --log_mu_r 0.5 --OLO "NNLO" --mu 0.889755 --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 3 --outdir "simon/order_MRS/MRS_classic/baryon/" --wavefunction "compact" --potential "full" --n_skip 100 --Rc 1 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py --alpha 0.22467 --log_mu_r 0.5 --OLO "NLO" --mu 0.89868 --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 3 --outdir "simon/order_MRS/MRS_classic/baryon/" --wavefunction "compact" --potential "full" --n_skip 100 --Rc 1 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py --alpha 0.21494 --log_mu_r 0.5 --OLO "LO" --mu 0.85976 --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 3 --outdir "simon/order_MRS/MRS_classic/baryon/" --wavefunction "compact" --potential "full" --n_skip 100 --Rc 1 &
+
+mu_Prime:
+
+python3 average_constant_fit.py --database "simon/order_MRS/mu_Prime/baryon/"
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --alpha 0.2224388 --log_mu_r 0.5 --OLO "NNLO" --mu 2 --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 3 --outdir "simon/order_MRS/mu_Prime/baryon/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --alpha 0.22467 --log_mu_r 0.5 --OLO "NLO" --mu 2 --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 3 --outdir "simon/order_MRS/mu_Prime/baryon/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --alpha 0.21494 --log_mu_r 0.5 --OLO "LO" --mu 2 --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 3 --outdir "simon/order_MRS/mu_Prime/baryon/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+
+
+Get the EMP pdf:
+
+python3 average_constant_fit.py --database "simon/EMP_meson/MRS_classic/"
+
+python3 heavy_quark_nuclei_gfmc_MRS_copy.py --alpha 0.2224388 --log_mu_r 0.0 --OLO "NNLO" --mu 0.889755 --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/EMP_meson/MRS_classic/" --wavefunction "compact" --potential "full" --n_skip 100 --Rc 1 &
+
+python3 heavy_quark_nuclei_gfmc_MRS_copy.py --alpha 0.221700 --log_mu_r 0.0 --OLO "NNLO" --mu 0.8868 --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/EMP_meson/MRS_classic/" --wavefunction "compact" --potential "full" --n_skip 100 --Rc 0.5 &
+
+python3 heavy_quark_nuclei_gfmc_MRS_copy.py --alpha 0.221700 --log_mu_r 0.0 --OLO "NNLO" --mu 0.8868 --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/EMP_meson/MRS_classic/" --wavefunction "compact" --potential "full" --n_skip 100 --Rc 0.25 &
+
+
+python3 average_constant_fit.py --database "simon/EMP_meson/alpha_fixed_Rc/"
+
+python3 heavy_quark_nuclei_gfmc_MRS_alpha_Rc_copy.py --log_mu_r 0.0 --OLO "NNLO" --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/EMP_meson/alpha_fixed_Rc/" --wavefunction "compact" --potential "full" --n_skip 100 --Rc 1 --Rstar 0.03 --mQ 4.75208 &
+
+python3 heavy_quark_nuclei_gfmc_MRS_alpha_Rc_copy.py --log_mu_r 0.0 --OLO "NNLO" --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/EMP_meson/alpha_fixed_Rc/" --wavefunction "compact" --potential "full" --n_skip 100 --Rc 0.5 --Rstar 0.03 --mQ 4.78808 &
+
+python3 heavy_quark_nuclei_gfmc_MRS_alpha_Rc_copy.py --log_mu_r 0.0 --OLO "NNLO" --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/EMP_meson/alpha_fixed_Rc/" --wavefunction "compact" --potential "full" --n_skip 100 --Rc 0.25 --Rstar 0.03 --mQ 4.79454 &
+
+
+python3 average_constant_fit.py --database "simon/EMP_meson/mu_Prime/"
+
+python3 heavy_quark_nuclei_gfmc_MRS_mu_prime_copy.py --alpha 0.223435 --log_mu_r 0.0 --OLO "NNLO" --mu 0.89374 --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/EMP_meson/mu_Prime/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+
+python3 average_constant_fit.py --database "simon/EMP_meson/FV/"
+
+python3 heavy_quark_nuclei_gfmc_FV_copy.py --alpha 0.22172 --log_mu_r 0.0 --OLO "NNLO" --mu 0.88688 --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/EMP_meson/FV/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+
+
+
+
+
+
+
+
+
+TEST MRS method in python and mathematica:
+
+python3 simon/MRS_rTest.py --alpha 0.223435 --log_mu_r 0.0 --OLO "LO" --mu 0.89374 --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/EMP_meson/mu_Prime/" --wavefunction "compact" --potential "full" --n_skip 100 --r_test 0.03 --V_0_r_test -10.2294 --V_1_r_test -10.0681
+
