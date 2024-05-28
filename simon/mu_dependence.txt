@@ -1,0 +1,7 @@
+python3 average_constant_fit.py --database "simon/test/"
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py --alpha 0.2224388 --log_mu_r 0.0 --OLO "NNLO" --mu 0.889755 --n_step 50 --n_walkers 500 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 --Rc 0.5 --mufac 1 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py --log_mu_r 0.0 --OLO "NNLO" --n_step 50 --n_walkers 500 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 --Rc 0.5 --mufac 1 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --log_mu_r 0.0 --OLO "NNLO" --mu 2 --n_step 50 --n_walkers 500 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 --mufac 1 &

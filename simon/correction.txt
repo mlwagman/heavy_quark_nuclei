@@ -79,6 +79,11 @@ python3 simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py --alpha 0.22333 --log_mu_r
 
 python3 simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py.py --alpha 0.22333 --log_mu_r 0.0 --OLO "NNLO" --mu 0.89332 --n_step 100 --n_walkers 1000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 --Rc 0.5 --Rstar 0.03 --verbose &
 
+New alpha_Rc code:
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py --log_mu_r 0.0 --OLO "NNLO" --n_step 10 --n_walkers 200 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 10 --Rc 1 --Rstar 0.03 --verbose &
+
+
 Find Rstar for muPrime:
 
 python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --log_mu_r 0.0 --OLO "NNLO" --mu 2 --n_step 100 --n_walkers 1000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 --Rstar 1.91 --verbose &
@@ -154,4 +159,18 @@ python3 heavy_quark_nuclei_gfmc_FV_copy.py --alpha 0.22172 --log_mu_r 0.5 --OLO 
 
 
 
+python3 average_constant_fit.py --database "simon/test/"
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py --log_mu_r 0.0 --OLO "NNLO" --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 --Rc 1 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py --log_mu_r 0.0 --OLO "NLO" --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 --Rc 1 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py --log_mu_r 0.0 --OLO "LO" --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 --Rc 1 &
+
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py --log_mu_r 0.0 --OLO "NNLO" --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 --Rc 1 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py --log_mu_r 0.0 --OLO "NLO" --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 --Rc 1 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py --log_mu_r 0.0 --OLO "LO" --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 --Rc 1 &
 

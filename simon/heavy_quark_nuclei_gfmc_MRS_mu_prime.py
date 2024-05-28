@@ -50,6 +50,7 @@ parser.add_argument('--Nc', type=int, default=3)
 parser.add_argument('--N_coord', type=int, default=3)
 parser.add_argument('--nf', type=int, default=5)
 parser.add_argument('--OLO', type=str, default="LO")
+parser.add_argument('--radial_n', type=int, default=1)
 parser.add_argument('--spoila', type=float, default=1)
 parser.add_argument('--g', type=float, default=0)
 parser.add_argument('--gfac', type=float, default=1)
@@ -69,7 +70,8 @@ parser.add_argument('--potential', type=str, default="full")
 parser.add_argument('--spoilaket', type=float, default=1)
 parser.add_argument('--masses', type=float, default=0., nargs='+')
 #parser.add_argument('--L_pert', type=int, default=3) ################## NEW set at 3 because we don't go to 3-loop calculation
-parser.add_argument('--Rstar', type=float, default=1.91)  # or default=1.5
+parser.add_argument('--Rstar', type=float, default=0.35)  # or default=1.91 ?
+parser.add_argument('--mQ', type=float, default=0.0)  ############################ NEW
 parser.add_argument('--verbose', dest='verbose', action='store_true', default=False)
 globals().update(vars(parser.parse_args()))
 
@@ -750,7 +752,7 @@ def MAlpha_s2Loop(Q, f):
 
 def mu_Prime(R):
     return np.sqrt(mu**2 + 1/R**2)
-    #return np.sqrt(mu**2 + 1/(mufac*R)**2) #?
+    #return np.sqrt(mu**2 + (mufac/R)**2) #?
 
 @jax.jit
 def Alpha_s(R):
@@ -848,7 +850,7 @@ def Alpha_s3Loop(R):
 
 
 
-# muPrime = np.sqrt((mufac*mu)**2 + 1/R**2)
+# muPrime = np.sqrt(mu**2 + (mufac/R)**2)
 #######################################################################################
 #######################################################################################
 
@@ -908,25 +910,38 @@ xs = np.linspace(0, tau_iMev, endpoint=True, num=n_step+1)
 #######################################################################################
 #Rprime = lambda R: adl.norm_3vec(R)*np.exp(np.euler_gamma)*mu
 
-VB_LO = lambda R: CF * VB_MRS_definition(Alpha_s1Loop(R), 'LO', mufac) / (Nc - 1)
+VB_LO = lambda R: CF * VB_MRS_definition(Alpha_s1Loop(R), 'LO', 1) / (Nc - 1)
 
 #VB_NLO(R) = Alpha_s2Loop(R)*CF/(Nc-1) * (1 + Alpha_s2Loop(R)/(4*np.pi)*(aa1 + 2*beta0*log_mu_r))
 #VB_NNLO(R) = Alpha_s3Loop(R)*CF/(Nc-1) * (1 + Alpha_s3Loop(R)/(4*np.pi)*(aa1 + 2*beta0*L) + (Alpha_s3Loop(R)/(4*np.pi))**2*( beta0**2*(4*L**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*L + aa2 ) )
 
-VB_NLO = lambda R: CF * VB_MRS_definition(Alpha_s2Loop(R), 'NLO', mufac) / (Nc - 1)
-VB_NNLO = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 'NNLO', mufac) / (Nc - 1)
-VB_NNNLO = lambda R: CF * VB_MRS_definition(Alpha_s(R), 'NNNLO', mufac) / (Nc - 1) ############ NEW
+VB_NLO = lambda R: CF * VB_MRS_definition(Alpha_s2Loop(R), 'NLO', 1) / (Nc - 1)
+VB_NNLO = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 'NNLO', 1) / (Nc - 1)
+VB_NNNLO = lambda R: CF * VB_MRS_definition(Alpha_s(R), 'NNNLO', 1) / (Nc - 1) ############ NEW
 
 #ANTISYMMETRIC AND SYMMETRIC:
 
-VB_NNLO_antisym = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 'NNLO', mufac, 'antisymmetric') / (Nc - 1)
-VB_NNLO_sym = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 'NNLO', mufac, 'symmetric') / (Nc - 1)
+VB_NNLO_antisym = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 'NNLO', 1, 'antisymmetric') / (Nc - 1)
+VB_NNLO_sym = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 'NNLO', 1, 'symmetric') / (Nc - 1)
 
 
 #OCTET :
 
-VB_NNLO_octet = lambda R: (CA/2 - CF) * VB_MRS_definition(Alpha_s3Loop(R), 'NNLO', mufac, 'octet') 
+VB_NNLO_octet = lambda R: (CA/2 - CF) * VB_MRS_definition(Alpha_s3Loop(R), 'NNLO', 1, 'octet') 
 
+#######################################################################################
+#Can only have a guess of the mass, so we take the mass of the quark at MS bar:
+if mQ == 0:
+    if nf == 3:
+        mQ = Mc
+    elif nf == 4:
+        mQ = Mb
+    elif nf == 5:
+        mQ = Mt
+    else: None 
+else: None
+#NEED TO BE CONFIRMED THAT IT MAKE SENSE OR NOT
+print('mQ is ', mQ)
 #######################################################################################
 
 print('VB_LO Rstar is ', VB_LO(Rstar))
@@ -1043,49 +1058,51 @@ if OLO == "LO":
     @partial(jax.jit)
     def potential_fun(R):
         norm_R = adl.norm_3vec(R)
-        potential_result = -1 * VB_LO(norm_R) / norm_R
+        potential_result = -1 * VB_LO(norm_R/(mufac*mQ)) / norm_R
+        #potential_result = -1 * VB_LO(norm_R/(mufac*mQ)) / norm_R # ?????????????????????????????????
         return potential_result
 
     @partial(jax.jit)
     def symmetric_potential_fun(R):
         norm_R = adl.norm_3vec(R)
-        potential_result = spoilS * (Nc - 1) / (Nc + 1) * VB_LO(norm_R) / norm_R
+        potential_result = spoilS * (Nc - 1) / (Nc + 1) * VB_LO(norm_R/(mufac*mQ)) / norm_R
         return potential_result
 
     @partial(jax.jit)
     def singlet_potential_fun(R):
         norm_R = adl.norm_3vec(R)
-        potential_result = -1 * (Nc - 1) * VB_LO(norm_R) / norm_R
+        potential_result = -1 * (Nc - 1) * VB_LO(norm_R/(mufac*mQ)) / norm_R
+        #potential_result = -1 * (Nc - 1) * VB_LO(norm_R/mQ) / norm_R # ?
         return potential_result
 
     @partial(jax.jit)
     def octet_potential_fun(R):
         norm_R = adl.norm_3vec(R)
-        potential_result = spoilS * (Nc - 1) / CF / (2 * Nc) * VB_LO(norm_R) / norm_R
+        potential_result = spoilS * (Nc - 1) / CF / (2 * Nc) * VB_LO(norm_R/(mufac*mQ)) / norm_R
         return potential_result
 
     @partial(jax.jit)
     def potential_fun_sum(R):
         norm_R = adl.norm_3vec(R)
-        potential_result = -1 * VB_LO(norm_R) * FV_Coulomb(R, L, nn)
+        potential_result = -1 * VB_LO(norm_R/(mufac*mQ)) * FV_Coulomb(R, L, nn)
         return potential_result
 
     @partial(jax.jit)
     def symmetric_potential_fun_sum(R):
         norm_R = adl.norm_3vec(R)
-        potential_result = spoilS * (Nc - 1) / (Nc + 1) * VB_LO(norm_R) * FV_Coulomb(R, L, nn)
+        potential_result = spoilS * (Nc - 1) / (Nc + 1) * VB_LO(norm_R/(mufac*mQ)) * FV_Coulomb(R, L, nn)
         return potential_result
 
     @partial(jax.jit)
     def singlet_potential_fun_sum(R):
         norm_R = adl.norm_3vec(R)
-        potential_result = -1 * (Nc - 1) * VB_LO(norm_R) * FV_Coulomb(R, L, nn)
+        potential_result = -1 * (Nc - 1) * VB_LO(norm_R/(mufac*mQ)) * FV_Coulomb(R, L, nn)
         return potential_result
 
     @partial(jax.jit)
     def octet_potential_fun_sum(R):
         norm_R = adl.norm_3vec(R)
-        potential_result = spoilS * (Nc - 1) / CF / (2 * Nc) * VB_LO(norm_R) * FV_Coulomb(R, L, nn)
+        potential_result = spoilS * (Nc - 1) / CF / (2 * Nc) * VB_LO(norm_R/(mufac*mQ)) * FV_Coulomb(R, L, nn)
         return potential_result
 
 
@@ -1093,8 +1110,7 @@ elif OLO == "NLO":
     @partial(jax.jit)
     def potential_fun(R):
         norm_R = adl.norm_3vec(R)
-        alpha_s2loop = Alpha_s2Loop(norm_R)
-        potential_result = -1 * VB_NLO(norm_R) / norm_R #* (1 + alpha_s2loop / (4 * np.pi) * aa1) # No more mu dependence but 1/R
+        potential_result = -1 * VB_NLO(norm_R/(mufac*mQ)) / norm_R #* (1 + alpha_s2loop / (4 * np.pi) * aa1) # No more mu dependence but 1/R
         return potential_result
 
     @partial(jax.jit)
@@ -1102,8 +1118,7 @@ elif OLO == "NLO":
         return calculate_sum(potential_fun, R, L, nn)
     def symmetric_potential_fun(R):
         norm_R = adl.norm_3vec(R)
-        alpha_s2loop = Alpha_s2Loop(norm_R)
-        VB_NLO_val = VB_NLO(norm_R)
+        VB_NLO_val = VB_NLO(norm_R/(mufac*mQ))
         potential_result = (Nc - 1) / (Nc + 1) * VB_NLO_val * spoilS / norm_R #* (1 + alpha_s2loop / (4 * np.pi) * aa1)
         return potential_result
 
@@ -1112,8 +1127,7 @@ elif OLO == "NLO":
     @partial(jax.jit)
     def singlet_potential_fun(R):
         norm_R = adl.norm_3vec(R)
-        alpha_s2loop = Alpha_s2Loop(norm_R)
-        VB_NLO_val = VB_NLO(norm_R)  
+        VB_NLO_val = VB_NLO(norm_R/(mufac*mQ))  
         potential_result = -1 * (Nc - 1) * VB_NLO_val / norm_R #* (1 + alpha_s2loop / (4 * np.pi) * aa1)
         return potential_result
 
@@ -1124,8 +1138,7 @@ elif OLO == "NLO":
     @partial(jax.jit)
     def octet_potential_fun(R):
         norm_R = adl.norm_3vec(R)
-        alpha_s2loop = Alpha_s2Loop(norm_R)
-        VB_NLO_val = VB_NLO(norm_R)
+        VB_NLO_val = VB_NLO(norm_R/(mufac*mQ))
         potential_result = spoilS * (Nc - 1) / CF / (2 * Nc) * VB_NLO_val / norm_R #* (1 + alpha_s2loop / (4 * np.pi) * aa1)
         return potential_result
 
@@ -1137,7 +1150,7 @@ elif OLO == "NNLO":
     @partial(jax.jit)
     def potential_fun(R):
         norm_R = adl.norm_3vec(R)
-        potential_result = -1 * spoilS * VB_NNLO_antisym(norm_R) / norm_R  #* (1 + Alpha_s3Loop(norm_R) / (4 * np.pi) * aa1 + (Alpha_s3Loop(norm_R) / (4 * np.pi))**2 * (beta0**2 * np.pi**2 / 3 + aa2 + Nc * (Nc - 2) / 2 * ((np.pi)**4 - 12 * (np.pi)**2)))
+        potential_result = -1 * spoilS * VB_NNLO_antisym(norm_R/(mufac*mQ)) / norm_R  #* (1 + Alpha_s3Loop(norm_R) / (4 * np.pi) * aa1 + (Alpha_s3Loop(norm_R) / (4 * np.pi))**2 * (beta0**2 * np.pi**2 / 3 + aa2 + Nc * (Nc - 2) / 2 * ((np.pi)**4 - 12 * (np.pi)**2)))
         return potential_result
 
     @partial(jax.jit)
@@ -1146,7 +1159,7 @@ elif OLO == "NNLO":
 
     def symmetric_potential_fun(R):
         norm_R = adl.norm_3vec(R)
-        potential_result = spoilS * (Nc - 1) / (Nc + 1) * VB_NNLO_sym(norm_R) / norm_R #* (1 + Alpha_s3Loop(norm_R) / (4 * np.pi) * aa1 + (Alpha_s3Loop(norm_R) / (4 * np.pi))**2 * (beta0**2 * np.pi**2 / 3 + aa2 + Nc * (Nc + 2) / 2 * ((np.pi)**4 - 12 * (np.pi)**2)))
+        potential_result = spoilS * (Nc - 1) / (Nc + 1) * VB_NNLO_sym(norm_R/(mufac*mQ)) / norm_R #* (1 + Alpha_s3Loop(norm_R) / (4 * np.pi) * aa1 + (Alpha_s3Loop(norm_R) / (4 * np.pi))**2 * (beta0**2 * np.pi**2 / 3 + aa2 + Nc * (Nc + 2) / 2 * ((np.pi)**4 - 12 * (np.pi)**2)))
         return potential_result
 
     def symmetric_potential_fun_sum(R):
@@ -1154,7 +1167,7 @@ elif OLO == "NNLO":
 
     def singlet_potential_fun(R):
         norm_R = adl.norm_3vec(R)
-        potential_result = -1 * (Nc - 1) * VB_NNLO(norm_R) / norm_R #* (1 + Alpha_s3Loop(norm_R) / (4 * np.pi) * aa1 + (Alpha_s3Loop(norm_R) / (4 * np.pi))**2 * (beta0**2 * np.pi**2 / 3 + aa2))
+        potential_result = -1 * (Nc - 1) * VB_NNLO(norm_R/(mufac*mQ)) / norm_R #* (1 + Alpha_s3Loop(norm_R) / (4 * np.pi) * aa1 + (Alpha_s3Loop(norm_R) / (4 * np.pi))**2 * (beta0**2 * np.pi**2 / 3 + aa2))
         return potential_result
 
     def singlet_potential_fun_sum(R):
@@ -1162,7 +1175,7 @@ elif OLO == "NNLO":
 
     def octet_potential_fun(R):
         norm_R = adl.norm_3vec(R)
-        potential_result = spoilS * VB_NNLO_octet(norm_R) / norm_R #* (1 + Alpha_s3Loop(norm_R) / (4 * np.pi) * aa1 + (Alpha_s3Loop(norm_R) / (4 * np.pi))**2 * (beta0**2 * np.pi**2 / 3 + aa2 + (Nc**2) * ((np.pi)**4 - 12 * (np.pi)**2)))
+        potential_result = spoilS * VB_NNLO_octet(norm_R/(mufac*mQ)) / norm_R #* (1 + Alpha_s3Loop(norm_R) / (4 * np.pi) * aa1 + (Alpha_s3Loop(norm_R) / (4 * np.pi))**2 * (beta0**2 * np.pi**2 / 3 + aa2 + (Nc**2) * ((np.pi)**4 - 12 * (np.pi)**2)))
         return potential_result
 
     def octet_potential_fun_sum(R):
@@ -1172,7 +1185,7 @@ elif OLO == "NNNLO": #not viable yet
     @partial(jax.jit)
     def potential_fun(R):
         norm_R = adl.norm_3vec(R)
-        potential_result = -1 * spoilS * VB_NNNLO_antisym(norm_R) / norm_R #+ an other color factor
+        potential_result = -1 * spoilS * VB_NNNLO_antisym(norm_R/(mufac*mQ)) / norm_R #+ an other color factor
         return potential_result
 
     @partial(jax.jit)
@@ -1181,7 +1194,7 @@ elif OLO == "NNNLO": #not viable yet
 
     def symmetric_potential_fun(R):
         norm_R = adl.norm_3vec(R)
-        potential_result = spoilS * (Nc - 1) / (Nc + 1) * VB_NNNLO_sym(norm_R) / norm_R #+ an other color factor(np.pi)**2)))
+        potential_result = spoilS * (Nc - 1) / (Nc + 1) * VB_NNNLO_sym(norm_R/(mufac*mQ)) / norm_R #+ an other color factor(np.pi)**2)))
         return potential_result
 
     def symmetric_potential_fun_sum(R):
@@ -1189,7 +1202,7 @@ elif OLO == "NNNLO": #not viable yet
 
     def singlet_potential_fun(R):
         norm_R = adl.norm_3vec(R)
-        potential_result = -1 * (Nc - 1) * VB_NNNLO(norm_R) / norm_R 
+        potential_result = -1 * (Nc - 1) * VB_NNNLO(norm_R/(mufac*mQ)) / norm_R 
         return potential_result
 
     def singlet_potential_fun_sum(R):
@@ -1197,7 +1210,7 @@ elif OLO == "NNNLO": #not viable yet
 
     def octet_potential_fun(R):
         norm_R = adl.norm_3vec(R)
-        potential_result = spoilS * VB_NNNLO_octet(norm_R) / norm_R 
+        potential_result = spoilS * VB_NNNLO_octet(norm_R/(mufac*mQ)) / norm_R 
         return potential_result
 
     def octet_potential_fun_sum(R):
@@ -1338,6 +1351,24 @@ print("diquark pairs = ", diquark_pairs)
 
 absmasses=np.abs(np.array(masses))
 
+def hydrogen_wvfn(r, n):
+    psi = np.exp(-r/n)
+    if n == 1:
+        return psi
+    if n == 2:
+        return psi*(2 - r)
+    if n == 3:
+        return psi*(27 - 18*r + 2*r**2)
+    if n == 4:
+        return psi*(192 - 144*r + 24*r**2 - r**3)
+    if n == 5:
+        return psi*(9375 - 7500*r + 1500*r**2 - 100*r**3 + 2*r**4)
+    if n == 6:
+        return psi*(174960 - 145800*r + 32400*r**2 - 2700*r**3 + 90*r**4 - r**5)
+    if n == 7:
+        return psi*(37059435 - 31765230*r + 7563150*r**2 - 720300*r**3 + 30870*r**4 - 588*r**5 + 4*r**6)
+
+
 @partial(jax.jit, static_argnums=(1,))
 def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
 
@@ -1356,7 +1387,8 @@ def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
     else:
         r_sum = np.sum( jax.lax.map(r_norm, pairs), axis=0 )/a0
 
-    psi = np.exp(-r_sum)
+    #psi = np.exp(-r_sum)
+    psi = hydrogen_wvfn(r_sum, radial_n)
     afac *= gfac
     a0 /= gfac
 
@@ -1380,7 +1412,8 @@ def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
         else:
             r_sum_T = np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/a0
 
-        psi += g * np.exp(-r_sum_T)
+        #psi += g * np.exp(-r_sum_T)
+        psi += g * hydrogen_wvfn(r_sum_T, radial_n)
     return psi
 
 def f_R_sq(Rs):
@@ -1402,6 +1435,8 @@ def f_R_braket_phase(Rs):
 
 @partial(jax.jit)
 def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
+    if radial_n > 1:
+        assert N_coord == 2
     #N_walkers = Rs.shape[0]
     #assert Rs.shape == (N_walkers, N_coord, 3)
     nabla_psi_tot = 0
@@ -1452,9 +1487,10 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
                             # factor of two included to account for both terms appearing in laplacian
                             if k == i and l == j:
                                 #nabla_psi = nabla_psi * (2/thisa0**2 - 4/(thisa0*rij_norm)) * np.exp(-rij_norm/thisa0)
-                                nabla_psi = nabla_psi * ((1/thisa0**2 - 2/(thisa0*rij_norm))/masses[k] + (1/thisa0**2 - 2/(thisa0*rij_norm))/masses[l]) * np.exp(-rij_norm/thisa0)
+                                #nabla_psi = nabla_psi * ((1/thisa0**2 - 2/(thisa0*rij_norm))/masses[k] + (1/thisa0**2 - 2/(thisa0*rij_norm))/masses[l]) * np.exp(-rij_norm/thisa0)
+                                nabla_psi = nabla_psi * ((1/(radial_n*thisa0)**2 - 2/(thisa0*rij_norm))/masses[k] + (1/(radial_n*thisa0)**2 - 2/(thisa0*rij_norm))/masses[l]) * hydrogen_wvfn(rij_norm/thisa0, radial_n)
                             else:
-                                nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0)
+                                nabla_psi = nabla_psi * hydrogen_wvfn(rij_norm/thisa0, radial_n)
                 nabla_psi_tot += nabla_psi
     # terms where gradients hit separate pieces of wvfn
     # laplacian involves particle a
@@ -1518,7 +1554,7 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
                                     nabla_psi_tot += nabla_psi / np.abs(masses[a])
     return nabla_psi_tot
 
-if N_coord >= 6: #and verbose:
+if N_coord >= 6 and verbose:
     print("No JIT for Laplacian")
     def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
         #N_walkers = Rs.shape[0]
@@ -1656,11 +1692,11 @@ if input_Rs_database == "":
     #else:
         #samples = adl.direct_sample_metropolis(N_inner, N_outer, f_R_braket, a0*afac, n_therm=500, n_step=n_walkers, n_skip=n_skip, a0=a0)
     #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
-    if color == "6x6bar":
-        samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0*afac/N_coord**2, masses=absmasses)
+    if color == "6x6bar" or color == "SSS":
+        samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0*afac/N_coord**2*radial_n, masses=absmasses)
     else:
         #samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2, masses=absmasses)
-        samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/4**2, masses=absmasses)
+        samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/4**2*radial_n, masses=absmasses)
 
     #samples = adl.metropolis(R0, f_R_braket, n_therm=500, n_step=n_walkers, n_skip=n_skip, eps=2*a0/N_coord**2)
 
@@ -2027,10 +2063,10 @@ if N_coord == 4:
 
 if volume == "finite":
     #tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilaket"+str(spoilaket) + "_spoilf"+str(spoilf) + "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
-    tag = "muPrime_" + str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_Rstar" + str(Rstar) + "_spoila"+str(spoila) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
+    tag = "muPrime_" + str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_radial_n"+str(radial_n) + "_mQ"+str(mQ) + "_mu"+str(mu) + "_mufac"+str(mufac) + "_Rstar" + str(Rstar) + "_spoila"+str(spoila) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
 else:
     #tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilaket"+str(spoilaket) + "_spoilf"+str(spoilf)+ "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
-    tag = "muPrime_" + str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_Rstar" + str(Rstar) + "_spoila"+str(spoila) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
+    tag = "muPrime_" + str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_radial_n"+str(radial_n) + "_mQ"+str(mQ) + "_mu"+str(mu) + "_mufac"+str(mufac) + "_Rstar" + str(Rstar) + "_spoila"+str(spoila) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
 
 
 with h5py.File(outdir+'Hammys_'+tag+'.h5', 'w') as f:

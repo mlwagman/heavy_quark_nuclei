@@ -533,3 +533,685 @@
 [W 17:19:36.573 NotebookApp] delete /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_2S.py
 [W 17:19:36.600 NotebookApp] delete /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime_2S.py
 [W 17:19:36.603 NotebookApp] delete /simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix_2S.py
+[I 18:23:59.759 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py
+[I 18:34:24.454 NotebookApp] Starting buffering for bd4f42ae-e5f6-415b-ad33-c1dfa60e70b7:93c5b01eec6d48568560cf07f8b2863d
+[W 12:19:55.178 NotebookApp] Error loading server extension ipyparallel.nbextension
+    Traceback (most recent call last):
+      File "/home/gofer/.local/lib/python3.10/site-packages/notebook/notebookapp.py", line 2026, in init_server_extensions
+        mod = importlib.import_module(modulename)
+      File "/usr/lib/python3.10/importlib/__init__.py", line 126, in import_module
+        return _bootstrap._gcd_import(name[level:], package, level)
+      File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+      File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+      File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+      File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+      File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+      File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+      File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+    ModuleNotFoundError: No module named 'ipyparallel'
+[I 12:19:55.183 NotebookApp] Serving notebooks from local directory: /home/gofer/programation/python/heavy_quark_nuclei
+[I 12:19:55.183 NotebookApp] Jupyter Notebook 6.5.1 is running at:
+[I 12:19:55.183 NotebookApp] http://localhost:8888/?token=f9ac137a0cd8471ba248c451312ad8e56767ca4e69c08fbc
+[I 12:19:55.183 NotebookApp]  or http://127.0.0.1:8888/?token=f9ac137a0cd8471ba248c451312ad8e56767ca4e69c08fbc
+[I 12:19:55.183 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[C 12:19:55.235 NotebookApp] 
+    
+    To access the notebook, open this file in a browser:
+        file:///home/gofer/.local/share/jupyter/runtime/nbserver-4684-open.html
+    Or copy and paste one of these URLs:
+        http://localhost:8888/?token=f9ac137a0cd8471ba248c451312ad8e56767ca4e69c08fbc
+     or http://127.0.0.1:8888/?token=f9ac137a0cd8471ba248c451312ad8e56767ca4e69c08fbc
+[E 12:19:57.002 NotebookApp] Could not open static file ''
+[W 12:19:57.321 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 28.700000ms referer=http://localhost:8888/tree?token=f9ac137a0cd8471ba248c451312ad8e56767ca4e69c08fbc
+[W 12:19:59.809 NotebookApp] 404 GET /clusters?_=1715102397446 (127.0.0.1) 2.550000ms referer=http://localhost:8888/tree
+[W 12:20:04.508 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.290000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py
+[W 12:20:06.425 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.820000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[W 12:20:08.315 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.410000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py
+[W 12:20:10.968 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 2.600000ms referer=http://localhost:8888/notebooks/simon/static-energy-PT.ipynb
+[W 12:20:11.901 NotebookApp] Notebook simon/static-energy-PT.ipynb is not trusted
+[I 12:20:14.440 NotebookApp] Kernel started: 01f5f394-57e9-41d2-83ca-87fd144c4c15, name: python3
+[IPKernelApp] ERROR | No such comm target registered: jupyter.widget.control
+[IPKernelApp] WARNING | No such comm: bf9f60a0-e825-43c6-98e9-83edccf41c4f
+[I 12:24:46.603 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py
+[I 12:25:03.231 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py
+[I 12:25:59.948 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py
+[I 12:26:22.380 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py
+[I 12:26:31.692 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py
+[I 12:27:32.626 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[I 15:20:46.055 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py
+[I 15:20:48.720 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[I 15:20:50.356 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py
+[I 15:20:57.549 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py
+[I 15:21:30.525 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[I 15:21:36.823 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py
+[I 15:21:43.136 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py
+[I 17:31:37.863 NotebookApp] Starting buffering for 01f5f394-57e9-41d2-83ca-87fd144c4c15:3118abfda5e645a3825b475c734103b3
+[W 15:33:59.016 NotebookApp] Error loading server extension ipyparallel.nbextension
+    Traceback (most recent call last):
+      File "/home/gofer/.local/lib/python3.10/site-packages/notebook/notebookapp.py", line 2026, in init_server_extensions
+        mod = importlib.import_module(modulename)
+      File "/usr/lib/python3.10/importlib/__init__.py", line 126, in import_module
+        return _bootstrap._gcd_import(name[level:], package, level)
+      File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+      File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+      File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+      File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+      File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+      File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+      File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+    ModuleNotFoundError: No module named 'ipyparallel'
+[I 15:33:59.020 NotebookApp] Serving notebooks from local directory: /home/gofer/programation/python/heavy_quark_nuclei
+[I 15:33:59.020 NotebookApp] Jupyter Notebook 6.5.1 is running at:
+[I 15:33:59.020 NotebookApp] http://localhost:8888/?token=3985f99eaf945cbf87ea216429995c46a28f85e55e114fb5
+[I 15:33:59.020 NotebookApp]  or http://127.0.0.1:8888/?token=3985f99eaf945cbf87ea216429995c46a28f85e55e114fb5
+[I 15:33:59.020 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[C 15:33:59.039 NotebookApp] 
+    
+    To access the notebook, open this file in a browser:
+        file:///home/gofer/.local/share/jupyter/runtime/nbserver-5835-open.html
+    Or copy and paste one of these URLs:
+        http://localhost:8888/?token=3985f99eaf945cbf87ea216429995c46a28f85e55e114fb5
+     or http://127.0.0.1:8888/?token=3985f99eaf945cbf87ea216429995c46a28f85e55e114fb5
+[E 15:34:00.552 NotebookApp] Could not open static file ''
+[W 15:34:00.615 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 12.780000ms referer=http://localhost:8888/tree?token=3985f99eaf945cbf87ea216429995c46a28f85e55e114fb5
+[W 15:34:01.481 NotebookApp] 404 GET /clusters?_=1715200440709 (127.0.0.1) 1.270000ms referer=http://localhost:8888/tree
+[W 15:34:10.007 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.130000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py
+[W 15:34:12.482 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.810000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[W 15:34:14.777 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.460000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py
+[W 15:34:17.278 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.700000ms referer=http://localhost:8888/notebooks/simon/static-energy-PT.ipynb
+[W 15:34:17.684 NotebookApp] Notebook simon/static-energy-PT.ipynb is not trusted
+[I 15:34:19.134 NotebookApp] Kernel started: 62541b64-9bd1-4c7d-b3ff-44200ab9279a, name: python3
+[IPKernelApp] ERROR | No such comm target registered: jupyter.widget.control
+[IPKernelApp] WARNING | No such comm: e595001f-80b5-4df1-82e6-c563fdbde25c
+[W 15:55:00.777 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.450000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 15:56:58.342 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 15:57:29.758 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 15:59:46.014 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 15:59:51.190 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 16:00:20.825 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 16:04:16.760 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 16:05:17.924 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 16:06:12.882 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 16:07:39.934 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 16:08:35.600 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 16:09:00.540 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 16:09:15.690 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 16:14:30.319 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 16:29:41.122 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[W 16:38:56.533 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.660000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[I 16:39:20.794 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[W 17:36:40.755 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 2.510000ms referer=http://localhost:8888/edit/heavy_quark_nuclei_gfmc_autodiff_qed.py
+[W 18:42:18.680 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.950000ms referer=http://localhost:8888/edit/heavy_quark_nuclei_gfmc_FV.py
+[I 19:05:44.342 NotebookApp] Starting buffering for 62541b64-9bd1-4c7d-b3ff-44200ab9279a:9b3daf5dc183469ebb13438ebfaf6c41
+[W 11:52:19.818 NotebookApp] Error loading server extension ipyparallel.nbextension
+    Traceback (most recent call last):
+      File "/home/gofer/.local/lib/python3.10/site-packages/notebook/notebookapp.py", line 2026, in init_server_extensions
+        mod = importlib.import_module(modulename)
+      File "/usr/lib/python3.10/importlib/__init__.py", line 126, in import_module
+        return _bootstrap._gcd_import(name[level:], package, level)
+      File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+      File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+      File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+      File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+      File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+      File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+      File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+    ModuleNotFoundError: No module named 'ipyparallel'
+[I 11:52:19.822 NotebookApp] Serving notebooks from local directory: /home/gofer/programation/python/heavy_quark_nuclei
+[I 11:52:19.823 NotebookApp] Jupyter Notebook 6.5.1 is running at:
+[I 11:52:19.823 NotebookApp] http://localhost:8888/?token=6326b3ce17c08391579a2972e55280622ced00379a9c328e
+[I 11:52:19.823 NotebookApp]  or http://127.0.0.1:8888/?token=6326b3ce17c08391579a2972e55280622ced00379a9c328e
+[I 11:52:19.823 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[C 11:52:19.841 NotebookApp] 
+    
+    To access the notebook, open this file in a browser:
+        file:///home/gofer/.local/share/jupyter/runtime/nbserver-4532-open.html
+    Or copy and paste one of these URLs:
+        http://localhost:8888/?token=6326b3ce17c08391579a2972e55280622ced00379a9c328e
+     or http://127.0.0.1:8888/?token=6326b3ce17c08391579a2972e55280622ced00379a9c328e
+[E 11:52:21.385 NotebookApp] Could not open static file ''
+[W 11:52:21.441 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 9.230000ms referer=http://localhost:8888/tree?token=6326b3ce17c08391579a2972e55280622ced00379a9c328e
+[W 11:52:22.328 NotebookApp] 404 GET /clusters?_=1715619141550 (127.0.0.1) 1.420000ms referer=http://localhost:8888/tree
+[W 11:52:48.908 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 2.120000ms referer=http://localhost:8888/edit/heavy_quark_nuclei_gfmc_FV.py
+[W 11:53:05.768 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.770000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py
+[W 11:53:07.996 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.410000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[W 11:53:09.963 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.400000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[W 11:53:11.881 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.930000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[W 11:53:13.988 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 2.420000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py
+[W 11:53:18.174 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 2.190000ms referer=http://localhost:8888/notebooks/simon/static-energy-PT.ipynb
+[W 11:53:18.621 NotebookApp] Notebook simon/static-energy-PT.ipynb is not trusted
+[I 11:53:20.385 NotebookApp] Kernel started: 3486d97c-dde6-476a-9b19-c110a220ebf9, name: python3
+[IPKernelApp] ERROR | No such comm target registered: jupyter.widget.control
+[IPKernelApp] WARNING | No such comm: 9b8a9d77-2d23-4d78-87c3-6a23351441d5
+[I 11:58:20.119 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py
+[I 11:58:21.346 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 11:58:21.882 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[I 11:58:22.592 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[I 11:58:23.179 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py
+[I 11:58:23.926 NotebookApp] Saving file at /heavy_quark_nuclei_gfmc_FV.py
+[I 11:59:26.186 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py
+[I 11:59:27.231 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 11:59:27.913 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[I 11:59:28.464 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[I 11:59:29.047 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py
+[I 12:00:48.433 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py
+[I 12:01:22.596 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py
+[I 12:01:23.777 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 12:01:24.387 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 12:01:27.045 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[I 12:01:27.708 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[I 12:01:29.740 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py
+[I 13:48:58.871 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 13:49:27.736 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 16:00:37.623 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 16:00:58.081 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[I 16:12:46.987 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[I 16:15:24.434 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 16:23:39.406 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 16:27:47.673 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 16:28:28.677 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 16:28:49.323 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 16:41:35.576 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 19:21:54.488 NotebookApp] Starting buffering for 3486d97c-dde6-476a-9b19-c110a220ebf9:e181f7e963fe4d01b0c0c14b75d4335e
+[W 12:08:49.583 NotebookApp] Error loading server extension ipyparallel.nbextension
+    Traceback (most recent call last):
+      File "/home/gofer/.local/lib/python3.10/site-packages/notebook/notebookapp.py", line 2026, in init_server_extensions
+        mod = importlib.import_module(modulename)
+      File "/usr/lib/python3.10/importlib/__init__.py", line 126, in import_module
+        return _bootstrap._gcd_import(name[level:], package, level)
+      File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+      File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+      File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+      File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+      File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+      File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+      File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+    ModuleNotFoundError: No module named 'ipyparallel'
+[I 12:08:49.588 NotebookApp] Serving notebooks from local directory: /home/gofer/programation/python/heavy_quark_nuclei
+[I 12:08:49.588 NotebookApp] Jupyter Notebook 6.5.1 is running at:
+[I 12:08:49.588 NotebookApp] http://localhost:8888/?token=8c56de0b651e30fae27bbb78c60984a1f3f636e7eff36173
+[I 12:08:49.588 NotebookApp]  or http://127.0.0.1:8888/?token=8c56de0b651e30fae27bbb78c60984a1f3f636e7eff36173
+[I 12:08:49.588 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[C 12:08:49.606 NotebookApp] 
+    
+    To access the notebook, open this file in a browser:
+        file:///home/gofer/.local/share/jupyter/runtime/nbserver-4871-open.html
+    Or copy and paste one of these URLs:
+        http://localhost:8888/?token=8c56de0b651e30fae27bbb78c60984a1f3f636e7eff36173
+     or http://127.0.0.1:8888/?token=8c56de0b651e30fae27bbb78c60984a1f3f636e7eff36173
+[E 12:08:51.244 NotebookApp] Could not open static file ''
+[W 12:08:51.530 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 11.840000ms referer=http://localhost:8888/tree?token=8c56de0b651e30fae27bbb78c60984a1f3f636e7eff36173
+[W 12:08:52.748 NotebookApp] 404 GET /clusters?_=1715706531646 (127.0.0.1) 2.170000ms referer=http://localhost:8888/tree
+[W 12:08:57.471 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.380000ms referer=http://localhost:8888/edit/heavy_quark_nuclei_gfmc_FV.py
+[W 12:09:04.448 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.560000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py
+[W 12:09:06.344 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.900000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[W 12:09:08.495 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.190000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[W 12:09:10.326 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.350000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[W 12:09:12.222 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.200000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py
+[W 12:09:14.648 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.800000ms referer=http://localhost:8888/notebooks/simon/static-energy-PT.ipynb
+[W 12:09:15.212 NotebookApp] Notebook simon/static-energy-PT.ipynb is not trusted
+[I 12:09:16.609 NotebookApp] Kernel started: cf469a63-e6af-40d1-a3e0-687cfdd2dee6, name: python3
+[IPKernelApp] ERROR | No such comm target registered: jupyter.widget.control
+[IPKernelApp] WARNING | No such comm: bcd9a111-5344-458a-a4b8-96bbe76c30a2
+[W 15:56:28.635 NotebookApp] Error loading server extension ipyparallel.nbextension
+    Traceback (most recent call last):
+      File "/home/gofer/.local/lib/python3.10/site-packages/notebook/notebookapp.py", line 2026, in init_server_extensions
+        mod = importlib.import_module(modulename)
+      File "/usr/lib/python3.10/importlib/__init__.py", line 126, in import_module
+        return _bootstrap._gcd_import(name[level:], package, level)
+      File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+      File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+      File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+      File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+      File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+      File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+      File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+    ModuleNotFoundError: No module named 'ipyparallel'
+[I 15:56:28.640 NotebookApp] Serving notebooks from local directory: /home/gofer/programation/python/heavy_quark_nuclei
+[I 15:56:28.640 NotebookApp] Jupyter Notebook 6.5.1 is running at:
+[I 15:56:28.640 NotebookApp] http://localhost:8888/?token=af39e326318e25febe8a77f12fe9fc710ff63a02fe8ada45
+[I 15:56:28.640 NotebookApp]  or http://127.0.0.1:8888/?token=af39e326318e25febe8a77f12fe9fc710ff63a02fe8ada45
+[I 15:56:28.640 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[C 15:56:28.659 NotebookApp] 
+    
+    To access the notebook, open this file in a browser:
+        file:///home/gofer/.local/share/jupyter/runtime/nbserver-6852-open.html
+    Or copy and paste one of these URLs:
+        http://localhost:8888/?token=af39e326318e25febe8a77f12fe9fc710ff63a02fe8ada45
+     or http://127.0.0.1:8888/?token=af39e326318e25febe8a77f12fe9fc710ff63a02fe8ada45
+[E 15:56:30.420 NotebookApp] Could not open static file ''
+[W 15:56:30.522 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 11.170000ms referer=http://localhost:8888/tree?token=af39e326318e25febe8a77f12fe9fc710ff63a02fe8ada45
+[W 15:56:31.656 NotebookApp] 404 GET /clusters?_=1715720190638 (127.0.0.1) 2.070000ms referer=http://localhost:8888/tree
+[W 15:56:34.810 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 2.930000ms referer=http://localhost:8888/edit/heavy_quark_nuclei_gfmc_FV.py
+[W 17:32:11.422 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 2.080000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 17:32:18.671 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 17:32:39.886 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 17:32:58.767 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 17:34:53.613 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 17:50:52.591 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[I 17:51:03.836 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[W 17:51:31.113 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 8.270000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[W 13:33:22.192 NotebookApp] Error loading server extension ipyparallel.nbextension
+    Traceback (most recent call last):
+      File "/home/gofer/.local/lib/python3.10/site-packages/notebook/notebookapp.py", line 2026, in init_server_extensions
+        mod = importlib.import_module(modulename)
+      File "/usr/lib/python3.10/importlib/__init__.py", line 126, in import_module
+        return _bootstrap._gcd_import(name[level:], package, level)
+      File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+      File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+      File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+      File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+      File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+      File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+      File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+    ModuleNotFoundError: No module named 'ipyparallel'
+[I 13:33:22.197 NotebookApp] Serving notebooks from local directory: /home/gofer/programation/python/heavy_quark_nuclei
+[I 13:33:22.197 NotebookApp] Jupyter Notebook 6.5.1 is running at:
+[I 13:33:22.197 NotebookApp] http://localhost:8888/?token=4b5349a52ede6a00b3c42805894c959a8a24cc51561a96af
+[I 13:33:22.197 NotebookApp]  or http://127.0.0.1:8888/?token=4b5349a52ede6a00b3c42805894c959a8a24cc51561a96af
+[I 13:33:22.197 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[C 13:33:22.217 NotebookApp] 
+    
+    To access the notebook, open this file in a browser:
+        file:///home/gofer/.local/share/jupyter/runtime/nbserver-10357-open.html
+    Or copy and paste one of these URLs:
+        http://localhost:8888/?token=4b5349a52ede6a00b3c42805894c959a8a24cc51561a96af
+     or http://127.0.0.1:8888/?token=4b5349a52ede6a00b3c42805894c959a8a24cc51561a96af
+[E 13:33:23.956 NotebookApp] Could not open static file ''
+[W 13:33:24.020 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 8.900000ms referer=http://localhost:8888/tree?token=4b5349a52ede6a00b3c42805894c959a8a24cc51561a96af
+[W 13:33:24.904 NotebookApp] 404 GET /clusters?_=1715798004095 (127.0.0.1) 1.130000ms referer=http://localhost:8888/tree
+[W 13:33:48.653 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.830000ms referer=http://localhost:8888/edit/heavy_quark_nuclei_gfmc_FV.py
+[W 13:33:54.401 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.700000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[W 13:33:56.597 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.310000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[W 13:33:59.467 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.970000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py
+[W 13:34:04.105 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.890000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
+[W 13:34:06.023 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.240000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py
+[W 13:34:09.694 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 2.030000ms referer=http://localhost:8888/notebooks/simon/static-energy-PT.ipynb
+[W 13:34:09.999 NotebookApp] Notebook simon/static-energy-PT.ipynb is not trusted
+[I 13:34:11.442 NotebookApp] Kernel started: 237e9d8e-69e2-407b-bd1c-abe45241dcd3, name: python3
+[W 13:34:13.118 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.950000ms referer=http://localhost:8888/notebooks/simon/MRS%20code.ipynb
+[W 13:34:13.343 NotebookApp] Notebook simon/MRS code.ipynb is not trusted
+[I 13:34:14.841 NotebookApp] Kernel started: 164f0d4d-8883-4d6c-8c8e-757d71e486f0, name: python3
+[IPKernelApp] ERROR | No such comm target registered: jupyter.widget.control
+[IPKernelApp] WARNING | No such comm: eb12f461-112a-4a00-a614-442a0ce0d6ef
+[I 13:34:27.158 NotebookApp] Starting buffering for 164f0d4d-8883-4d6c-8c8e-757d71e486f0:9cfe141372d64bc5915800886e4a2c50
+[IPKernelApp] ERROR | No such comm target registered: jupyter.widget.control
+[IPKernelApp] WARNING | No such comm: b82f1a92-873c-4463-80a9-08b9a8df4678
+[W 13:34:32.766 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.360000ms referer=http://localhost:8888/notebooks/simon/renormalon_clean.ipynb
+[W 13:34:33.018 NotebookApp] Notebook simon/renormalon_clean.ipynb is not trusted
+[I 13:34:34.430 NotebookApp] Kernel started: 157ba000-c59c-4286-a21b-0804229f9f8a, name: python3
+[IPKernelApp] ERROR | No such comm target registered: jupyter.widget.control
+[IPKernelApp] WARNING | No such comm: 5714c35f-d3ea-4fae-9653-032914c68dbb
+[I 18:26:37.930 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[I 18:50:21.801 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[I 18:50:29.702 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[I 18:56:12.609 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[I 18:59:20.245 NotebookApp] Starting buffering for 237e9d8e-69e2-407b-bd1c-abe45241dcd3:fbe3f53b64884f4c84c17ee7f7634fd0
+[I 18:59:20.452 NotebookApp] Starting buffering for 157ba000-c59c-4286-a21b-0804229f9f8a:d6f92424c291439ebab380eb7b94b88e
+[W 12:00:37.794 NotebookApp] Error loading server extension ipyparallel.nbextension
+    Traceback (most recent call last):
+      File "/home/gofer/.local/lib/python3.10/site-packages/notebook/notebookapp.py", line 2026, in init_server_extensions
+        mod = importlib.import_module(modulename)
+      File "/usr/lib/python3.10/importlib/__init__.py", line 126, in import_module
+        return _bootstrap._gcd_import(name[level:], package, level)
+      File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+      File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+      File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+      File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+      File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+      File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+      File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+    ModuleNotFoundError: No module named 'ipyparallel'
+[I 12:00:37.800 NotebookApp] Serving notebooks from local directory: /home/gofer/programation/python/heavy_quark_nuclei
+[I 12:00:37.800 NotebookApp] Jupyter Notebook 6.5.1 is running at:
+[I 12:00:37.800 NotebookApp] http://localhost:8888/?token=29a598b315d891bd7781e9402d1c06b16f9bb393d8eb7937
+[I 12:00:37.800 NotebookApp]  or http://127.0.0.1:8888/?token=29a598b315d891bd7781e9402d1c06b16f9bb393d8eb7937
+[I 12:00:37.800 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[C 12:00:37.821 NotebookApp] 
+    
+    To access the notebook, open this file in a browser:
+        file:///home/gofer/.local/share/jupyter/runtime/nbserver-4032-open.html
+    Or copy and paste one of these URLs:
+        http://localhost:8888/?token=29a598b315d891bd7781e9402d1c06b16f9bb393d8eb7937
+     or http://127.0.0.1:8888/?token=29a598b315d891bd7781e9402d1c06b16f9bb393d8eb7937
+[E 12:00:39.430 NotebookApp] Could not open static file ''
+[W 12:00:39.685 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 12.160000ms referer=http://localhost:8888/tree?token=29a598b315d891bd7781e9402d1c06b16f9bb393d8eb7937
+[W 12:00:41.002 NotebookApp] 404 GET /clusters?_=1715878839781 (127.0.0.1) 2.720000ms referer=http://localhost:8888/tree
+[W 12:01:04.755 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.690000ms referer=http://localhost:8888/edit/heavy_quark_nuclei_gfmc_FV.py
+[W 12:01:11.850 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 4.060000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py
+[W 12:01:13.853 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 2.260000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[W 12:01:15.936 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.200000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[W 12:01:17.858 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 2.080000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py
+[W 12:01:21.439 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 2.130000ms referer=http://localhost:8888/notebooks/simon/static-energy-PT.ipynb
+[W 12:01:22.010 NotebookApp] Notebook simon/static-energy-PT.ipynb is not trusted
+[I 12:01:23.435 NotebookApp] Kernel started: 2eaed983-9500-458f-85b1-b19d52171020, name: python3
+[IPKernelApp] ERROR | No such comm target registered: jupyter.widget.control
+[IPKernelApp] WARNING | No such comm: 5a3be44f-e4b7-4fd7-8ce5-08ae51109ad4
+[I 12:16:19.942 NotebookApp] Starting buffering for 2eaed983-9500-458f-85b1-b19d52171020:4a200d4d4b9843aead2f1f721bbd035f
+[W 12:40:32.882 NotebookApp] Error loading server extension ipyparallel.nbextension
+    Traceback (most recent call last):
+      File "/home/gofer/.local/lib/python3.10/site-packages/notebook/notebookapp.py", line 2026, in init_server_extensions
+        mod = importlib.import_module(modulename)
+      File "/usr/lib/python3.10/importlib/__init__.py", line 126, in import_module
+        return _bootstrap._gcd_import(name[level:], package, level)
+      File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+      File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+      File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+      File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+      File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+      File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+      File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+    ModuleNotFoundError: No module named 'ipyparallel'
+[I 12:40:32.887 NotebookApp] Serving notebooks from local directory: /home/gofer/programation/python/heavy_quark_nuclei
+[I 12:40:32.887 NotebookApp] Jupyter Notebook 6.5.1 is running at:
+[I 12:40:32.887 NotebookApp] http://localhost:8888/?token=097c07bb3bba36eca7db5597598436ed3a565b266eb1c493
+[I 12:40:32.887 NotebookApp]  or http://127.0.0.1:8888/?token=097c07bb3bba36eca7db5597598436ed3a565b266eb1c493
+[I 12:40:32.887 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[C 12:40:32.906 NotebookApp] 
+    
+    To access the notebook, open this file in a browser:
+        file:///home/gofer/.local/share/jupyter/runtime/nbserver-6399-open.html
+    Or copy and paste one of these URLs:
+        http://localhost:8888/?token=097c07bb3bba36eca7db5597598436ed3a565b266eb1c493
+     or http://127.0.0.1:8888/?token=097c07bb3bba36eca7db5597598436ed3a565b266eb1c493
+[E 12:40:34.548 NotebookApp] Could not open static file ''
+[W 12:40:34.644 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 20.890000ms referer=http://localhost:8888/tree?token=097c07bb3bba36eca7db5597598436ed3a565b266eb1c493
+[W 12:40:35.715 NotebookApp] 404 GET /clusters?_=1716226834789 (127.0.0.1) 2.340000ms referer=http://localhost:8888/tree
+[W 12:40:56.150 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.250000ms referer=http://localhost:8888/edit/heavy_quark_nuclei_gfmc_FV.py
+[W 12:41:04.984 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.840000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py
+[W 12:41:07.029 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.920000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[W 12:41:09.075 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.260000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[W 12:41:11.607 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.960000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py
+[W 12:41:14.294 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 2.050000ms referer=http://localhost:8888/notebooks/simon/static-energy-PT.ipynb
+[W 12:41:14.821 NotebookApp] Notebook simon/static-energy-PT.ipynb is not trusted
+[I 12:41:16.584 NotebookApp] Kernel started: 6f2bf625-0721-4dd2-a647-2d1fc0558a89, name: python3
+[IPKernelApp] ERROR | No such comm target registered: jupyter.widget.control
+[IPKernelApp] WARNING | No such comm: ac25573b-0fb5-4bfa-8374-1585ce02862b
+[I 12:42:34.243 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[I 12:43:05.015 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[I 12:44:26.208 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[I 12:44:47.028 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[I 12:45:31.510 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[I 12:48:24.658 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[I 12:48:38.996 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[I 12:49:14.657 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[I 12:49:16.603 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[I 12:49:56.969 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py
+[I 12:50:43.734 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py
+[I 12:51:55.588 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[I 13:19:49.217 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[I 13:19:49.693 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[I 13:24:28.341 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[I 13:55:55.663 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[I 13:56:25.740 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[I 13:57:00.039 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[I 13:57:04.913 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[I 13:58:12.442 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[I 13:58:18.125 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[I 15:27:12.350 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[I 15:27:20.365 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[I 15:27:40.677 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[I 15:27:58.220 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py
+[I 15:28:08.427 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py
+[I 16:35:09.412 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[I 17:03:39.230 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[I 19:03:29.978 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[I 19:03:55.394 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[I 19:08:50.610 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[I 19:09:37.131 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py
+[I 19:22:03.928 NotebookApp] Starting buffering for 6f2bf625-0721-4dd2-a647-2d1fc0558a89:ae783dc9ef0244aa9a24d4aaba6bbbff
+[W 15:13:40.021 NotebookApp] Error loading server extension ipyparallel.nbextension
+    Traceback (most recent call last):
+      File "/home/gofer/.local/lib/python3.10/site-packages/notebook/notebookapp.py", line 2026, in init_server_extensions
+        mod = importlib.import_module(modulename)
+      File "/usr/lib/python3.10/importlib/__init__.py", line 126, in import_module
+        return _bootstrap._gcd_import(name[level:], package, level)
+      File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+      File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+      File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+      File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+      File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+      File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+      File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+    ModuleNotFoundError: No module named 'ipyparallel'
+[I 15:13:40.026 NotebookApp] Serving notebooks from local directory: /home/gofer/programation/python/heavy_quark_nuclei
+[I 15:13:40.026 NotebookApp] Jupyter Notebook 6.5.1 is running at:
+[I 15:13:40.026 NotebookApp] http://localhost:8888/?token=55225c665a913b3912901f377a713396ed4a1daed119bdca
+[I 15:13:40.026 NotebookApp]  or http://127.0.0.1:8888/?token=55225c665a913b3912901f377a713396ed4a1daed119bdca
+[I 15:13:40.026 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[C 15:13:40.045 NotebookApp] 
+    
+    To access the notebook, open this file in a browser:
+        file:///home/gofer/.local/share/jupyter/runtime/nbserver-4237-open.html
+    Or copy and paste one of these URLs:
+        http://localhost:8888/?token=55225c665a913b3912901f377a713396ed4a1daed119bdca
+     or http://127.0.0.1:8888/?token=55225c665a913b3912901f377a713396ed4a1daed119bdca
+[E 15:13:41.487 NotebookApp] Could not open static file ''
+[W 15:13:41.650 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 10.920000ms referer=http://localhost:8888/tree?token=55225c665a913b3912901f377a713396ed4a1daed119bdca
+[W 15:13:42.559 NotebookApp] 404 GET /clusters?_=1716322421764 (127.0.0.1) 4.100000ms referer=http://localhost:8888/tree
+[W 15:14:33.332 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.940000ms referer=http://localhost:8888/edit/heavy_quark_nuclei_gfmc_FV.py
+[W 15:14:40.306 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.630000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py
+[W 15:14:42.440 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.550000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[W 15:14:44.651 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.290000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[W 15:14:48.413 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.270000ms referer=http://localhost:8888/notebooks/simon/static-energy-PT.ipynb
+[W 15:14:48.814 NotebookApp] Notebook simon/static-energy-PT.ipynb is not trusted
+[I 15:14:50.066 NotebookApp] Kernel started: a3e14f98-b739-4575-af0e-290304f093ef, name: python3
+[IPKernelApp] ERROR | No such comm target registered: jupyter.widget.control
+[IPKernelApp] WARNING | No such comm: 38ee8c53-649e-40d2-92c1-30e755e4a564
+[I 19:13:02.426 NotebookApp] Saving file at /heavy_quark_nuclei_gfmc_FV.py
+[I 19:13:21.147 NotebookApp] Saving file at /heavy_quark_nuclei_gfmc_FV.py
+[I 19:14:00.634 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py
+[I 19:14:17.541 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[I 19:14:29.719 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[I 19:15:12.077 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[I 19:16:08.267 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[I 19:16:42.296 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py
+[I 20:40:18.475 NotebookApp] Starting buffering for a3e14f98-b739-4575-af0e-290304f093ef:f4f949e961b9482a8036cc2651a0dc83
+[W 11:56:42.732 NotebookApp] Error loading server extension ipyparallel.nbextension
+    Traceback (most recent call last):
+      File "/home/gofer/.local/lib/python3.10/site-packages/notebook/notebookapp.py", line 2026, in init_server_extensions
+        mod = importlib.import_module(modulename)
+      File "/usr/lib/python3.10/importlib/__init__.py", line 126, in import_module
+        return _bootstrap._gcd_import(name[level:], package, level)
+      File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+      File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+      File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+      File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+      File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+      File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+      File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+    ModuleNotFoundError: No module named 'ipyparallel'
+[I 11:56:42.736 NotebookApp] Serving notebooks from local directory: /home/gofer/programation/python/heavy_quark_nuclei
+[I 11:56:42.736 NotebookApp] Jupyter Notebook 6.5.1 is running at:
+[I 11:56:42.736 NotebookApp] http://localhost:8888/?token=de785e1eec68dfa5bbce47f8998327a030eaf02bac125092
+[I 11:56:42.737 NotebookApp]  or http://127.0.0.1:8888/?token=de785e1eec68dfa5bbce47f8998327a030eaf02bac125092
+[I 11:56:42.737 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[C 11:56:42.777 NotebookApp] 
+    
+    To access the notebook, open this file in a browser:
+        file:///home/gofer/.local/share/jupyter/runtime/nbserver-4353-open.html
+    Or copy and paste one of these URLs:
+        http://localhost:8888/?token=de785e1eec68dfa5bbce47f8998327a030eaf02bac125092
+     or http://127.0.0.1:8888/?token=de785e1eec68dfa5bbce47f8998327a030eaf02bac125092
+[E 11:56:44.707 NotebookApp] Could not open static file ''
+[W 11:56:44.802 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 10.840000ms referer=http://localhost:8888/tree?token=de785e1eec68dfa5bbce47f8998327a030eaf02bac125092
+[W 11:56:48.208 NotebookApp] 404 GET /clusters?_=1716397004949 (127.0.0.1) 3.530000ms referer=http://localhost:8888/tree
+[W 11:56:58.817 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 11.780000ms referer=http://localhost:8888/edit/heavy_quark_nuclei_gfmc_FV.py
+[W 11:57:07.667 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 2.530000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py
+[W 11:57:09.614 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 2.050000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[W 11:57:12.722 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.960000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[W 11:57:15.694 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 2.280000ms referer=http://localhost:8888/notebooks/simon/static-energy-PT.ipynb
+[W 11:57:18.456 NotebookApp] Notebook simon/static-energy-PT.ipynb is not trusted
+[I 11:57:20.663 NotebookApp] Kernel started: 7abbdfb9-177e-46ff-9e90-00161876c8c6, name: python3
+[IPKernelApp] ERROR | No such comm target registered: jupyter.widget.control
+[IPKernelApp] WARNING | No such comm: c2c12fe7-6c9a-4a86-850a-a96c4038795d
+[I 18:35:02.413 NotebookApp] Starting buffering for 7abbdfb9-177e-46ff-9e90-00161876c8c6:f51154af6122444dae6c50a5e8915be8
+[W 10:59:36.525 NotebookApp] Error loading server extension ipyparallel.nbextension
+    Traceback (most recent call last):
+      File "/home/gofer/.local/lib/python3.10/site-packages/notebook/notebookapp.py", line 2026, in init_server_extensions
+        mod = importlib.import_module(modulename)
+      File "/usr/lib/python3.10/importlib/__init__.py", line 126, in import_module
+        return _bootstrap._gcd_import(name[level:], package, level)
+      File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+      File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+      File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+      File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+      File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+      File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+      File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+    ModuleNotFoundError: No module named 'ipyparallel'
+[I 10:59:36.530 NotebookApp] Serving notebooks from local directory: /home/gofer/programation/python/heavy_quark_nuclei
+[I 10:59:36.530 NotebookApp] Jupyter Notebook 6.5.1 is running at:
+[I 10:59:36.530 NotebookApp] http://localhost:8888/?token=1bba4057a447582db8aca06624ce4b5c116be13b79c0f55c
+[I 10:59:36.530 NotebookApp]  or http://127.0.0.1:8888/?token=1bba4057a447582db8aca06624ce4b5c116be13b79c0f55c
+[I 10:59:36.530 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[C 10:59:36.549 NotebookApp] 
+    
+    To access the notebook, open this file in a browser:
+        file:///home/gofer/.local/share/jupyter/runtime/nbserver-5280-open.html
+    Or copy and paste one of these URLs:
+        http://localhost:8888/?token=1bba4057a447582db8aca06624ce4b5c116be13b79c0f55c
+     or http://127.0.0.1:8888/?token=1bba4057a447582db8aca06624ce4b5c116be13b79c0f55c
+[E 10:59:37.939 NotebookApp] Could not open static file ''
+[W 10:59:38.106 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 12.890000ms referer=http://localhost:8888/tree?token=1bba4057a447582db8aca06624ce4b5c116be13b79c0f55c
+[W 10:59:39.044 NotebookApp] 404 GET /clusters?_=1716479978226 (127.0.0.1) 1.370000ms referer=http://localhost:8888/tree
+[W 10:59:44.567 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.810000ms referer=http://localhost:8888/edit/heavy_quark_nuclei_gfmc_FV.py
+[W 10:59:54.182 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.820000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py
+[W 10:59:56.758 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.970000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[W 10:59:59.223 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.300000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[W 11:00:01.991 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.540000ms referer=http://localhost:8888/notebooks/simon/static-energy-PT.ipynb
+[W 11:00:02.408 NotebookApp] Notebook simon/static-energy-PT.ipynb is not trusted
+[I 11:00:03.692 NotebookApp] Kernel started: 8988a366-b884-4799-a585-35e29ac4a30c, name: python3
+[IPKernelApp] ERROR | No such comm target registered: jupyter.widget.control
+[IPKernelApp] WARNING | No such comm: ce796982-15b6-4a17-87c0-839377442856
+[I 11:50:52.585 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[I 13:07:03.257 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[I 13:27:30.375 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[I 13:27:48.381 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[I 13:28:00.178 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py
+[I 18:10:35.965 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[I 18:10:55.963 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py
+[I 19:33:36.372 NotebookApp] Starting buffering for 8988a366-b884-4799-a585-35e29ac4a30c:0b9c12a0433b48e48bd1d0e17b067d35
+[W 13:15:43.084 NotebookApp] Error loading server extension ipyparallel.nbextension
+    Traceback (most recent call last):
+      File "/home/gofer/.local/lib/python3.10/site-packages/notebook/notebookapp.py", line 2026, in init_server_extensions
+        mod = importlib.import_module(modulename)
+      File "/usr/lib/python3.10/importlib/__init__.py", line 126, in import_module
+        return _bootstrap._gcd_import(name[level:], package, level)
+      File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+      File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+      File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+      File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+      File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+      File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+      File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+    ModuleNotFoundError: No module named 'ipyparallel'
+[I 13:15:43.088 NotebookApp] Serving notebooks from local directory: /home/gofer/programation/python/heavy_quark_nuclei
+[I 13:15:43.088 NotebookApp] Jupyter Notebook 6.5.1 is running at:
+[I 13:15:43.088 NotebookApp] http://localhost:8888/?token=89137fb23058e7bef406e9d60d22fc5c02365498c73156be
+[I 13:15:43.088 NotebookApp]  or http://127.0.0.1:8888/?token=89137fb23058e7bef406e9d60d22fc5c02365498c73156be
+[I 13:15:43.088 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[C 13:15:43.108 NotebookApp] 
+    
+    To access the notebook, open this file in a browser:
+        file:///home/gofer/.local/share/jupyter/runtime/nbserver-7164-open.html
+    Or copy and paste one of these URLs:
+        http://localhost:8888/?token=89137fb23058e7bef406e9d60d22fc5c02365498c73156be
+     or http://127.0.0.1:8888/?token=89137fb23058e7bef406e9d60d22fc5c02365498c73156be
+[E 13:15:44.952 NotebookApp] Could not open static file ''
+[W 13:15:45.017 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 12.580000ms referer=http://localhost:8888/tree?token=89137fb23058e7bef406e9d60d22fc5c02365498c73156be
+[W 13:15:46.135 NotebookApp] 404 GET /clusters?_=1716574545153 (127.0.0.1) 2.010000ms referer=http://localhost:8888/tree
+[W 13:15:50.700 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.910000ms referer=http://localhost:8888/edit/heavy_quark_nuclei_gfmc_FV.py
+[W 13:15:57.915 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.610000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py
+[W 13:16:00.653 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.920000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[W 13:16:02.921 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.760000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[W 13:16:06.678 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 11.890000ms referer=http://localhost:8888/notebooks/simon/static-energy-PT.ipynb
+[W 13:16:07.305 NotebookApp] Notebook simon/static-energy-PT.ipynb is not trusted
+[I 13:16:09.226 NotebookApp] Kernel started: dad09656-e811-4535-8bd0-932c9304a63c, name: python3
+[I 13:16:19.755 NotebookApp] Copying simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py to /simon
+[IPKernelApp] ERROR | No such comm target registered: jupyter.widget.control
+[IPKernelApp] WARNING | No such comm: ce390a72-af2f-45cd-831f-bc6d0f33bcb3
+[W 13:16:39.285 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.360000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_mu_prime3.py
+[I 13:18:39.828 NotebookApp] Saving file at /simon/heavy_quark_nuclei_gfmc_MRS_mu_prime3.py
+[I 18:35:54.666 NotebookApp] Starting buffering for dad09656-e811-4535-8bd0-932c9304a63c:c30572a3599943bebeffbffd302d74da
+[W 11:25:58.878 NotebookApp] Error loading server extension ipyparallel.nbextension
+    Traceback (most recent call last):
+      File "/home/gofer/.local/lib/python3.10/site-packages/notebook/notebookapp.py", line 2026, in init_server_extensions
+        mod = importlib.import_module(modulename)
+      File "/usr/lib/python3.10/importlib/__init__.py", line 126, in import_module
+        return _bootstrap._gcd_import(name[level:], package, level)
+      File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+      File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+      File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+      File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+      File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+      File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+      File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+    ModuleNotFoundError: No module named 'ipyparallel'
+[I 11:25:58.888 NotebookApp] Serving notebooks from local directory: /home/gofer/programation/python/heavy_quark_nuclei
+[I 11:25:58.888 NotebookApp] Jupyter Notebook 6.5.1 is running at:
+[I 11:25:58.888 NotebookApp] http://localhost:8888/?token=abe1cbff9ae2758efc73fed1840263c60442f64627bcfdbf
+[I 11:25:58.888 NotebookApp]  or http://127.0.0.1:8888/?token=abe1cbff9ae2758efc73fed1840263c60442f64627bcfdbf
+[I 11:25:58.888 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[C 11:25:58.915 NotebookApp] 
+    
+    To access the notebook, open this file in a browser:
+        file:///home/gofer/.local/share/jupyter/runtime/nbserver-3958-open.html
+    Or copy and paste one of these URLs:
+        http://localhost:8888/?token=abe1cbff9ae2758efc73fed1840263c60442f64627bcfdbf
+     or http://127.0.0.1:8888/?token=abe1cbff9ae2758efc73fed1840263c60442f64627bcfdbf
+[E 11:26:00.660 NotebookApp] Could not open static file ''
+[W 11:26:00.913 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 15.080000ms referer=http://localhost:8888/tree?token=abe1cbff9ae2758efc73fed1840263c60442f64627bcfdbf
+[W 11:26:02.150 NotebookApp] 404 GET /clusters?_=1716913561074 (127.0.0.1) 1.380000ms referer=http://localhost:8888/tree
+[W 11:26:05.869 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.680000ms referer=http://localhost:8888/edit/heavy_quark_nuclei_gfmc_FV.py
+[W 11:26:13.913 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.560000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py
+[W 11:26:16.965 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.160000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[W 11:26:18.874 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.650000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[W 11:26:23.819 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 2.670000ms referer=http://localhost:8888/notebooks/simon/static-energy-PT.ipynb
+[W 11:26:26.479 NotebookApp] Notebook simon/static-energy-PT.ipynb is not trusted
+[I 11:26:28.433 NotebookApp] Kernel started: fcb6ff5b-441f-4ab7-a115-c7e3a8ecf467, name: python3
+[IPKernelApp] ERROR | No such comm target registered: jupyter.widget.control
+[IPKernelApp] WARNING | No such comm: 62500149-93ab-46f2-9c64-34af63c86ff3
+[W 12:49:47.278 NotebookApp] WebSocket ping timeout after 107250 ms.
+[I 12:49:52.658 NotebookApp] Starting buffering for fcb6ff5b-441f-4ab7-a115-c7e3a8ecf467:4d008ee50cb14516814cb3daaeb78e71
+[W 12:52:05.965 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 11.840000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py
+[W 12:52:05.971 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.800000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py
+[W 12:52:06.022 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 2.400000ms referer=http://localhost:8888/edit/heavy_quark_nuclei_gfmc_FV.py
+[W 12:52:06.029 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 2.270000ms referer=http://localhost:8888/edit/simon/heavy_quark_nuclei_gfmc_MRS_Rc_alpha_fix.py
+[W 12:52:07.511 NotebookApp] Notebook simon/static-energy-PT.ipynb is not trusted
+[W 12:52:08.070 NotebookApp] 404 GET /clusters?_=1716918726617 (127.0.0.1) 2.530000ms referer=http://localhost:8888/tree/simon
+[IPKernelApp] ERROR | No such comm target registered: jupyter.widget.control
+[IPKernelApp] WARNING | No such comm: c5fcf776-a721-43bd-b512-c0da9d221cc8
+[I 13:56:20.420 NotebookApp] Starting buffering for fcb6ff5b-441f-4ab7-a115-c7e3a8ecf467:55cde6be66d8496eac7d8919e7179178
+[W 15:05:00.618 NotebookApp] Error loading server extension ipyparallel.nbextension
+    Traceback (most recent call last):
+      File "/home/gofer/.local/lib/python3.10/site-packages/notebook/notebookapp.py", line 2026, in init_server_extensions
+        mod = importlib.import_module(modulename)
+      File "/usr/lib/python3.10/importlib/__init__.py", line 126, in import_module
+        return _bootstrap._gcd_import(name[level:], package, level)
+      File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+      File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+      File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+      File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+      File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+      File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+      File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+    ModuleNotFoundError: No module named 'ipyparallel'
+[I 15:05:00.623 NotebookApp] Serving notebooks from local directory: /home/gofer/programation/python/heavy_quark_nuclei
+[I 15:05:00.623 NotebookApp] Jupyter Notebook 6.5.1 is running at:
+[I 15:05:00.623 NotebookApp] http://localhost:8888/?token=e2ef49b280c394ac5a68ef0d7784e9ff0e0b1a3e42b6034c
+[I 15:05:00.623 NotebookApp]  or http://127.0.0.1:8888/?token=e2ef49b280c394ac5a68ef0d7784e9ff0e0b1a3e42b6034c
+[I 15:05:00.623 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[C 15:05:00.642 NotebookApp] 
+    
+    To access the notebook, open this file in a browser:
+        file:///home/gofer/.local/share/jupyter/runtime/nbserver-4383-open.html
+    Or copy and paste one of these URLs:
+        http://localhost:8888/?token=e2ef49b280c394ac5a68ef0d7784e9ff0e0b1a3e42b6034c
+     or http://127.0.0.1:8888/?token=e2ef49b280c394ac5a68ef0d7784e9ff0e0b1a3e42b6034c
+[E 15:05:02.157 NotebookApp] Could not open static file ''
+[W 15:05:02.354 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 11.630000ms referer=http://localhost:8888/tree?token=e2ef49b280c394ac5a68ef0d7784e9ff0e0b1a3e42b6034c
+[W 15:05:03.324 NotebookApp] 404 GET /clusters?_=1716926702466 (127.0.0.1) 1.410000ms referer=http://localhost:8888/tree
+[W 15:05:07.048 NotebookApp] 404 GET /static/components/jquery-ui/themes/smoothness/jquery-ui.min.css (127.0.0.1) 1.820000ms referer=http://localhost:8888/edit/heavy_quark_nuclei_gfmc_FV.py
+[W 15:05:38.276 NotebookApp] delete /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py
+[W 15:05:38.291 NotebookApp] delete /simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py
