@@ -153,8 +153,8 @@ def unique_group_permutations(masses):
 # Define masses and call function
 perms, antisym_factors = unique_group_permutations(masses)
 
-perms = [(1,0,2,3,4,5)]
-antisym_factors = [-1]
+perms = [(0,1,2,3,4,5)]
+antisym_factors = [1]
 
 # Display permutations with antisymmetrization factors
 print("Unique permutations of indices and their antisymmetrization factors:")
@@ -535,12 +535,6 @@ def hydrogen_wvfn(r, n):
 
 @partial(jax.jit, static_argnums=(2,))
 def f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
-    def r_norm(pair):
-        [i,j] = pair
-        rdiff = Rs[...,i,:] - Rs[...,j,:]
-        mij = 2*masses[i]*masses[j]/(masses[i]+masses[j])
-        rij_norm = np.sqrt( np.sum(rdiff*rdiff, axis=-1) )
-        return rij_norm * mij
     # check permuting simply gives same and only do for one perm
     # Apply permutations if provided and N_coord is 6
     # Apply permutations if provided and N_coord is 6
@@ -551,7 +545,7 @@ def f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
         #print(f"Rs type: {type(Rs)}")
         print(f"Perm type: {type(perm)}")
         print(f"Perm contents: {perm}")
-        #print("Rs:", Rs)
+        #jax.debug.print("Rs before permutation: {}", Rs)
 
         perm = np.array(perm)
 
@@ -566,11 +560,16 @@ def f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
             else:
                 raise ValueError(f"Unexpected shape for Rs: {Rs.shape}")
 
-        #print("Rs after permutation:", Rs)
+        #jax.debug.print("Rs after permutation: {}", Rs)
 
 
 
-
+    def r_norm(pair):
+        [i,j] = pair
+        rdiff = Rs[...,i,:] - Rs[...,j,:]
+        mij = 2*masses[i]*masses[j]/(masses[i]+masses[j])
+        rij_norm = np.sqrt( np.sum(rdiff*rdiff, axis=-1) )
+        return rij_norm * mij
 
     #UNIT TESTED
 
@@ -588,6 +587,7 @@ def f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
     psi = hydrogen_wvfn(r_sum, radial_n)
     afac *= gfac
     a0 /= gfac
+    #jax.debug.print("PSI: {}", psi)
 
     # Additional logic for N_coord == 4
     if N_coord == 4 and abs(g) > 0:
@@ -918,11 +918,11 @@ N_outer = N_coord//N_inner
 #TODO: ADD PERMS OPTIONS AND BUILD MULTIPLE SPIN-FLAV WVFNS - DEFINE FUNCTION THAT DOES ALL THIS IF N_COORD==6
 
 
-Rs_metropolis=onp.random.normal(size=(N_coord,3))/np.mean(absmasses)
+#Rs_metropolis=onp.random.normal(size=(N_coord,3))/np.mean(absmasses)
 
-print("Rs_metropolis=",Rs_metropolis)
+#print("Rs_metropolis=",Rs_metropolis)
 
-S_av4p_metropolis = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
+S_av4p_metropolis = onp.zeros(shape=(N_coord,) + (NI,NS)*N_coord).astype(np.complex128)
 print("built Metropolis wavefunction ensemble")
 
 
@@ -1052,7 +1052,7 @@ def generate_wavefunction_tensor(NI, NS, N_coord, full_permutations, color):
     S_av4p_metropolis_set = []
 
     # Example shape for Rs_metropolis, ensure this matches your actual usage
-    Rs_metropolis = onp.random.normal(size=(N_coord,3))/np.mean(absmasses)  # Placeholder for actual Rs_metropolis data
+    #Rs_metropolis = onp.random.normal(size=(N_coord,3))/np.mean(absmasses)  # Placeholder for actual Rs_metropolis data
 
     for perm in full_permutations:
         S_av4p_metropolis = onp.zeros((n_walkers,) + (NI, NS) * N_coord, dtype=np.complex128)
@@ -1103,39 +1103,22 @@ if N_coord == 6:
 
 
     def f_R_braket(Rs):
-        if Rs.shape[0]==N_coord:
-            total_wvfn = np.zeros((NI, NS) * N_coord, dtype=np.complex128)
-        else:
-            total_wvfn = np.zeros((n_walkers,) + (NI, NS) * N_coord, dtype=np.complex128)
+        #if Rs.shape[0]==N_coord:
+        total_wvfn = np.zeros((NI, NS) * N_coord, dtype=np.complex128)
+        #else:
+        #    total_wvfn = np.zeros((n_walkers,) + (NI, NS) * N_coord, dtype=np.complex128)
         for ii in range(len(perms)):
             #print("perms=",perms[ii])
+            f_R_tensor = f_R(Rs, perms[ii], wavefunction=bra_wavefunction)
+            S_av4_tensor = S_av4p_metropolis_set[ii]
+            #print(Rs.shape)
+            #print(f_R_tensor.shape)
+            #print("SAv4^2=",adl.inner(S_av4p_metropolis_set[ii],S_av4p_metropolis_set[ii]))
+            #print("f_R^2=",adl.inner(f_R_tensor,f_R_tensor))
             total_wvfn +=  antisym_factors[ii]*S_av4p_metropolis_set[ii]*f_R(Rs, wavefunction=bra_wavefunction, perm=perms[ii])
         Ss=np.array([total_wvfn])
-
-        #return np.abs( f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, afac=ket_afac) )
-        #print("Rs = ",Rs)
-        #print("bra = ",bra_wavefunction)
-        #print("total wvfn inner = ",adl.inner(Ss,Ss))
-
-        if N_coord == 6:
-            if Rs.shape[0]==N_coord:
-                total_wvfn = np.zeros((NI, NS) * N_coord, dtype=np.complex128)
-            else:
-                total_wvfn = np.zeros((n_walkers,) + (NI, NS) * N_coord, dtype=np.complex128)
-            #total_wvfn = np.zeros((Rs.shape[0],)  + (NI, NS) * N_coord, dtype=np.complex128)
-            for ii in range(len(perms)):
-                #print("ii=",ii)
-                #print("perms[ii]",perms[ii])
-                #print("Rs",R)
-                #print("Rs shape",R.shape)
-                #print("fR=",f_R(R,perms[ii],wavefunction=bra_wavefunction).shape)
-                #print("S_av4=",S_av4p_metropolis_set[ii].shape)
-                #print("total_wvfn=",total_wvfn.shape)
-                test = antisym_factors[ii]*np.einsum("i,i...->i...", f_R(Rs,perms[ii],wavefunction=bra_wavefunction), S_av4p_metropolis_set[ii])
-                #print("test=",test.shape)
-                total_wvfn +=  antisym_factors[ii]*np.einsum("i,i...->i...", f_R(Rs,perms[ii],wavefunction=bra_wavefunction), S_av4p_metropolis_set[ii])
-        Ss=total_wvfn
-        return np.abs( adl.inner(Ss,Ss) )
+        #CHECK SAV4^2 =1!!
+        return np.abs( adl.inner(Ss,Ss) )/n_walkers
 
         #return np.abs( f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, afac=ket_afac)**2 )
 
@@ -1181,6 +1164,10 @@ if input_Rs_database == "":
     print("NCOORD = ", N_coord)
     print("NINNER = ", N_inner)
     print("NOUTER = ", N_outer)
+    print("f_R_braket(R0) = ", f_R_braket(R0))
+
+    #FOR PERM TEST
+    #R0 = R0[perm, :]
 
     if color == "6x6bar" or color == "SSS":
         samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0*afac/N_coord**2, masses=absmasses)
