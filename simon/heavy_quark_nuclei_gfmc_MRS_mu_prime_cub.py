@@ -701,13 +701,13 @@ def Lambda1LoopNf(f):
 
 
 def LR_4Loop_MSbar(muPrime, f):
-    return np.log(muPrime**2 / Lambda1LoopNf(f)**2)
+    return np.log(muPrime**2 / Lambda4LoopNf(f)**2)
 
 def LR_3Loop_MSbar(muPrime, f):
-    return np.log(muPrime**2 / Lambda1LoopNf(f)**2)
+    return np.log(muPrime**2 / Lambda3LoopNf(f)**2)
 
 def LR_2Loop_MSbar(muPrime, f):
-    return np.log(muPrime**2 / Lambda1LoopNf(f)**2)
+    return np.log(muPrime**2 / Lambda2LoopNf(f)**2)
 
 def LR_1Loop_MSbar(muPrime, f):
     return np.log(muPrime**2 / Lambda1LoopNf(f)**2)

@@ -975,6 +975,8 @@ elif OLO == "NNNLO":
     mQ = find_mQ(Alpha_s, alpha)
     
 print('mQ is ', mQ)
+
+print('alpha_s(0.03) = ', Alpha_sNf_LRLambda(0.03, 4))
 #######################################################################################
 
 VMRS_singulet_LO = -1 * (Nc - 1) * VB_LO(r_test) / r_test
@@ -995,6 +997,9 @@ VMRS_sym_NLO = (Nc - 1) / (Nc + 1) * VB_NLO(r_test) / r_test
 
 print('VMRS_sym_LO is ', VMRS_sym_LO)
 print('VMRS_sym_NLO is ', VMRS_sym_NLO)
+
+print('diff LO = ', VMRS_singulet_LO - V_0_r_test)
+print('diff NLO = ', VMRS_singulet_NLO - V_1_r_test)
 
 assert onp.allclose(VMRS_singulet_LO , V_0_r_test), "singulet not close enough"
 assert onp.allclose(VMRS_antisym_LO , V_0_r_test / 2), "antisymmetric not close enough"

@@ -83,5 +83,5 @@ python3 heavy_quark_nuclei_gfmc_FV_copy.py --alpha 0.22172 --log_mu_r 0.0 --OLO 
 
 TEST MRS method in python and mathematica:
 
-python3 simon/MRS_rTest.py --alpha 0.223435 --log_mu_r 0.0 --OLO "LO" --mu 0.89374 --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/EMP_meson/mu_Prime/" --wavefunction "compact" --potential "full" --n_skip 100 --r_test 0.03 --V_0_r_test -10.2294 --V_1_r_test -10.0681
+python3 simon/MRS_rTest.py --alpha 0.223435 --log_mu_r 0.0 --OLO "LO" --mu 0.89374 --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/EMP_meson/mu_Prime/" --wavefunction "compact" --potential "full" --n_skip 100 --r_test 0.03 --V_0_r_test -10.2377 --V_1_r_test -10.0763
 
