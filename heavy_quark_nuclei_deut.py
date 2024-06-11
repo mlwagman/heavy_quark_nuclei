@@ -153,8 +153,9 @@ def unique_group_permutations(masses):
 # Define masses and call function
 perms, antisym_factors = unique_group_permutations(masses)
 
-perms = [(0,1,2,3,4,5)]
-antisym_factors = [1]
+masses = [1,1,1,1,1,1]
+#perms = [(0,1,2,3,4,5),(3,1,2,0,4,5),(0,4,2,3,1,5)]
+#antisym_factors = [1,-1,-1]
 
 # Display permutations with antisymmetrization factors
 print("Unique permutations of indices and their antisymmetrization factors:")
@@ -1074,7 +1075,7 @@ def generate_wavefunction_tensor(NI, NS, N_coord, full_permutations, color):
 
                                 # Define the spin slice based on permuted indices
                                 #spin_slice = (slice(None),) + tuple(chain(*[(idx, 0) for idx in permuted_indices]))
-                                spin_slice = (slice(0, None),) + (permuted_indices[0],0,permuted_indices[1],0,permuted_indices[2],0,permuted_indices[3],0,permuted_indices[4],0,permuted_indices[5],0)
+                                spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,0,m,0,n,0)
 
                                 # Assign values based on color using explicit parameters
                                 if color == "1x1":
@@ -1170,9 +1171,9 @@ if input_Rs_database == "":
     #R0 = R0[perm, :]
 
     if color == "6x6bar" or color == "SSS":
-        samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0*afac/N_coord**2, masses=absmasses)
+        samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0*afac/N_coord**2*radial_n, masses=absmasses)
     else:
-        samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/4**2, masses=absmasses)
+        samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2*radial_n, masses=absmasses)
 
 
     fac_list = [1/2, 1.0, 2]
