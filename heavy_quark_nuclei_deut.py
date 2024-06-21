@@ -99,50 +99,47 @@ for i in range(1,N_coord):
         swapI = i
 
 
-# PERMS FUNCTIONS
 
 def count_transpositions(perm):
-    # Use an array to track visited indices
     visited = [False] * len(perm)
     transpositions = 0
 
     for i in range(len(perm)):
         if not visited[i]:
-            # Traverse a cycle
             cycle_length = 0
             x = i
             while not visited[x]:
                 visited[x] = True
-                x = perm.index(x)
+                x = perm[x]
                 cycle_length += 1
             if cycle_length > 1:
                 transpositions += cycle_length - 1
 
-    # Even count implies parity +1 (even), odd count implies -1 (odd)
     return (-1) ** transpositions
 
 def unique_group_permutations(masses):
-    # Find all indices for each unique mass
+    # Group indices by mass
     mass_dict = {}
     for idx, mass in enumerate(masses):
         if mass not in mass_dict:
             mass_dict[mass] = []
         mass_dict[mass].append(idx)
 
-    # Store unique permutations for each group of identical masses
-    perms_per_group = {mass: list(permutations(indices)) for mass, indices in mass_dict.items()}
+    # Generate permutations for each group of identical masses
+    perms_per_group = {mass: list(permutations(indices)) for mass, indices in mass_dict.items() if len(indices) > 1}
 
-    # Initialize the full set of permutations combining individual group permutations
-    # Starting with a list containing an empty tuple
-    complete_perms = [()]
+    # Start with the identity permutation
+    complete_perms = [list(range(len(masses)))]
 
-    for perm_group in perms_per_group.values():
+    # Combine permutations for each group
+    for mass, perm_group in perms_per_group.items():
         new_complete_perms = []
-        for existing_perm in complete_perms:
-            for new_perm in perm_group:
-                # Merge the new permutations into the existing ones while maintaining the original index order
-                merged_perm = list(existing_perm) + list(new_perm)
-                new_complete_perms.append(tuple(merged_perm))
+        for base_perm in complete_perms:
+            for group_perm in perm_group:
+                new_perm = base_perm.copy()
+                for i, idx in enumerate(group_perm):
+                    new_perm[mass_dict[mass][i]] = base_perm[idx]
+                new_complete_perms.append(new_perm)
         complete_perms = new_complete_perms
 
     # Calculate antisymmetrization factors for each permutation
@@ -150,12 +147,12 @@ def unique_group_permutations(masses):
 
     return complete_perms, antisym_factors
 
-# Define masses and call function
 perms, antisym_factors = unique_group_permutations(masses)
 
 masses = [1,1,1,1,1,1]
-#perms = [(0,1,2,3,4,5),(3,1,2,0,4,5),(0,4,2,3,1,5)]
-#antisym_factors = [1,-1,-1]
+antisym_factors=[1] * len(perms)
+#perms = [(0,1,2,3,4,5),(1,0,2,3,4,5)]
+#antisym_factors = [1,1]
 
 # Display permutations with antisymmetrization factors
 print("Unique permutations of indices and their antisymmetrization factors:")

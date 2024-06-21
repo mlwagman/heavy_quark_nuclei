@@ -14,7 +14,8 @@ dt=0.05
 
 # Hylleraas without spatial symmetrization
 sa=1.00033
-af=5.82843
+#af=5.82843
+af=6.82843
 g=0.0
 color="1x1"
 python3 heavy_quark_nuclei_deut.py --alpha $alpha --log_mu_r 0.0 --OLO "LO" --n_step $nstep --n_walkers $nw --dtau $dt --Nc 3 --nf 4 --N_coord 6 --outdir "data/" --wavefunction $wvfn --potential "full" --Lcut 5 --L 0 --afac $af --spoila $sa  --n_skip $nskip --masses 1 2 3 1 2 3 --g $g --color $color --verbose 
