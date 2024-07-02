@@ -13,10 +13,10 @@ import jax.scipy.special
 import pickle
 import paper_plt
 import tqdm.auto as tqdm
-import afdmc_lib_col as adl
+import afdmc_lib_deut as adl
 import os
 import pickle
-from afdmc_lib_col import NI,NS,mp_Mev,fm_Mev
+from afdmc_lib_deut import NI,NS,mp_Mev,fm_Mev
 import jax
 import jax.numpy as np
 import sys
@@ -1167,10 +1167,11 @@ if input_Rs_database == "":
     #FOR PERM TEST
     #R0 = R0[perm, :]
 
+# TODO ACTUALLY CHANNGE BACK PLEASE
     if color == "6x6bar" or color == "SSS":
-        samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0*afac/N_coord**2*radial_n, masses=absmasses)
+        samples = adl.metropolis(R0, f_R_braket, n_therm=50*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0*afac/N_coord**2*radial_n, masses=absmasses)
     else:
-        samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2*radial_n, masses=absmasses)
+        samples = adl.metropolis(R0, f_R_braket, n_therm=50*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2*radial_n, masses=absmasses)
 
 
     fac_list = [1/2, 1.0, 2]
@@ -1211,6 +1212,11 @@ deform_f = lambda x, params: x
 params = (np.zeros((n_step+1)),)
 
 
+def trial_wvfn(R):
+    psi = np.zeros((n_walkers,)  + (NI, NS) * N_coord, dtype=np.complex128)
+    for ii in range(len(perms)):
+        psi += antisym_factors[ii]*np.einsum("i,i...->i...", f_R(R,perms[ii],wavefunction=bra_wavefunction), S_av4p_metropolis_set[ii])
+    return psi
 
 print('Running GFMC evolution:')
 
@@ -1219,7 +1225,7 @@ print('Running GFMC evolution:')
 if n_step > 0:
     rand_draws = onp.random.random(size=(n_step, Rs_metropolis.shape[0]))
     gfmc = adl.gfmc_deform(
-        Rs_metropolis, S_av4p_metropolis, f_R, params,
+        Rs_metropolis, trial_wvfn, params,
         rand_draws=rand_draws, tau_iMev=tau_iMev, N=n_step, potential=Coulomb_potential,
         deform_f=deform_f, m_Mev=np.abs(np.array(masses)),
         resampling_freq=resampling)
