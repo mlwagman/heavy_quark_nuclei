@@ -1155,7 +1155,7 @@ for count, R in enumerate(gfmc_Rs):
     print(grad)
     print(mtm)
     # additional terms due to boost
-    K_term += 1.0/2*np.sum(np.sum( mtm**2, axis=1),axis=0) - 1j*np.einsum('ain,ai->n', grad, mtm) / f_R(R, wavefunction=bra_wavefunction)
+    K_term += 1.0/2*np.sum(np.sum( mtm**2, axis=1)/absmasses,axis=0) - 1j*np.einsum('ain,ai->n', grad, mtm) / f_R(R, wavefunction=bra_wavefunction)
 
     print("total energy")
     print(K_term)
