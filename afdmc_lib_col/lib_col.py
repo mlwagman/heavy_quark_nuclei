@@ -1,7 +1,7 @@
 import analysis as al
 from functools import partial
 import jax
-from jax.config import config
+from jax import config
 config.update("jax_enable_x64", True)
 import jax.numpy as np
 #import jax.experimental.optimizers

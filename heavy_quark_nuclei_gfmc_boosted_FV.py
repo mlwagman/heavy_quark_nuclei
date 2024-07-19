@@ -67,6 +67,9 @@ parser.add_argument('--color', type=str, default="1x1")
 parser.add_argument('--potential', type=str, default="full")
 parser.add_argument('--spoilaket', type=float, default=1)
 parser.add_argument('--masses', type=float, default=0., nargs='+')
+parser.add_argument('--mtm_x', type=int, default=0, nargs='+')
+parser.add_argument('--mtm_y', type=int, default=0, nargs='+')
+parser.add_argument('--mtm_z', type=int, default=0, nargs='+')
 parser.add_argument('--verbose', dest='verbose', action='store_true', default=False)
 globals().update(vars(parser.parse_args()))
 
@@ -76,6 +79,16 @@ volume = "infinite"
 if L > 1e-2:
     volume = "finite"
 
+if mtm_x == 0 and mtm_y == 0 and mtm_z == 0:
+    mtm = np.zeros((N_coord, 3))
+else:
+    if mtm_x == 0:
+        mtm_x = np.zeros((N_coord))
+    if mtm_y == 0:
+        mtm_y = np.zeros((N_coord))
+    if mtm_z == 0:
+        mtm_z = np.zeros((N_coord))
+    mtm = np.transpose(np.array([mtm_x, mtm_y, mtm_z]))
 
 if masses == 0.:
     masses = onp.ones(N_coord)
@@ -190,7 +203,7 @@ nn = np.delete(pp, Lcut*(2*Lcut+1)*(2*Lcut+1)+Lcut*(2*Lcut+1)+Lcut, axis=0)
 print(nn.shape)
 print(pp.shape)
 
-#from jax.config import config
+#from jax import config
 #config.update('jax_disable_jit', True)
 
 @partial(jax.jit)
@@ -513,6 +526,8 @@ def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
 
         #psi += g * np.exp(-r_sum_T)
         psi += g * hydrogen_wvfn(r_sum_T, radial_n)
+    phase = np.exp(1j*np.einsum('...ai,ai->...', Rs, mtm))
+    psi *= phase 
     return psi
 
 def f_R_sq(Rs):
@@ -534,11 +549,12 @@ def f_R_braket_phase(Rs):
 
 @partial(jax.jit)
 def grad_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
+    N_walkers = Rs.shape[0]
+    N_coord = Rs.shape[1]
     if radial_n > 1:
         assert N_coord == 2
-    #N_walkers = Rs.shape[0]
     #assert Rs.shape == (N_walkers, N_coord, 3)
-    grad_psi_tot = np.zeros((3, n_walkers))
+    grad_psi_tot = np.zeros((N_coord, 3, N_walkers))
     # sum over the 3-d components of gradient
     for x in range(3):
         # gradient involves particle a
@@ -592,8 +608,9 @@ def grad_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmass
                                             grad_psi = rsign * grad_psi * (ri[:,x] - rj[:,x])/(thisa0*rij_norm) * np.exp(-rij_norm/thisa0)
                                         else:
                                             grad_psi = grad_psi * np.exp(-rij_norm/thisa0)
-                            #grad_psi_tot[x] += grad_psi / np.abs(masses[a])
-                            grad_psi_tot = grad_psi_tot.at[x,:].set(grad_psi / np.abs(masses[a]))
+                            grad_psi_tot = grad_psi_tot.at[a,x,:].set(grad_psi / np.abs(masses[a]))
+    phase = np.exp(1j*np.einsum('nai,ai->n', Rs, mtm))
+    grad_psi_tot *= phase 
     return grad_psi_tot
 
 @partial(jax.jit)
@@ -715,6 +732,8 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
                                                 else:
                                                     nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0)
                                     nabla_psi_tot += nabla_psi / np.abs(masses[a])
+    phase = np.exp(1j*np.einsum('nai,ai->n', Rs, mtm))
+    nabla_psi_tot *= phase 
     return nabla_psi_tot
 
 if N_coord >= 6 and verbose:
@@ -828,6 +847,8 @@ if N_coord >= 6 and verbose:
                                                     else:
                                                         nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0)
                                         nabla_psi_tot += nabla_psi / np.abs(masses[a])
+        phase = np.exp(1j*np.einsum('nai,ai->n', Rs, mtm))
+        nabla_psi_tot *= phase 
         return nabla_psi_tot
 else:
     print("JIT Laplacian")
@@ -1116,7 +1137,7 @@ for count, R in enumerate(gfmc_Rs):
     K_term = -1/2*laplacian_f_R(R) / f_R(R, wavefunction=bra_wavefunction)
 
     # gradient laplacian test
-    K_term_test = np.array([grad_f_R(R)[x]**2 for x in range(3)])
+    grad = grad_f_R(R)
 
     print("Walkers")
     print(R)
@@ -1125,12 +1146,19 @@ for count, R in enumerate(gfmc_Rs):
     print("Laplacian")
     print(laplacian_f_R(R))
     print("gradient")
-    print(np.sum(K_term_test*K_term_test,axis=0))
-    assert( np.allclose(K_term, K_term_test) )
+    print(grad)
+    print("gradient squared")
+    print(np.sum(grad*grad,axis=1))
 
-    #TODO
+    print(grad.shape)
+    print(mtm.shape)
+    print(grad)
+    print(mtm)
     # additional terms due to boost
-    K_term += mtm[x]**2 + 2*1j*np.sum(np.array([mtm[x]*grad_f_R(R)[x]**2 for x in range(3)]), axis=0) / f_R(R, wavefunction=bra_wavefunction)
+    K_term += 1.0/2*np.sum(np.sum( mtm**2, axis=1),axis=0) - 1j*np.einsum('ain,ai->n', grad, mtm) / f_R(R, wavefunction=bra_wavefunction)
+
+    print("total energy")
+    print(K_term)
 
 
     if N_coord == 4 and abs(g) > 0:
