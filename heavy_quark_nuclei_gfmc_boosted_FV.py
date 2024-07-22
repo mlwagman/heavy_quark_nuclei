@@ -67,9 +67,9 @@ parser.add_argument('--color', type=str, default="1x1")
 parser.add_argument('--potential', type=str, default="full")
 parser.add_argument('--spoilaket', type=float, default=1)
 parser.add_argument('--masses', type=float, default=0., nargs='+')
-parser.add_argument('--mtm_x', type=int, default=0, nargs='+')
-parser.add_argument('--mtm_y', type=int, default=0, nargs='+')
-parser.add_argument('--mtm_z', type=int, default=0, nargs='+')
+parser.add_argument('--mtm_x', type=float, default=0, nargs='+')
+parser.add_argument('--mtm_y', type=float, default=0, nargs='+')
+parser.add_argument('--mtm_z', type=float, default=0, nargs='+')
 parser.add_argument('--verbose', dest='verbose', action='store_true', default=False)
 globals().update(vars(parser.parse_args()))
 
@@ -1179,36 +1179,13 @@ for count, R in enumerate(gfmc_Rs):
     V_time = time.time()
     S = gfmc_Ss[count]
     V_SI, V_SD = Coulomb_potential(R)
-    #if N_coord == 6:
-    #  print("V_SD has ", V_SD[0,0,0,1,0,2,0,0,0,1,0,2,0,0,0,1,0,2,0,0,0,1,0,2,0])
-    #  print("V_SD has ", V_SD[0,0,0,1,0,2,0,0,0,1,0,2,0,0,0,1,0,2,0,0,0,2,0,1,0])
-    #  print("V_SD has ", V_SD[0,0,0,1,0,2,0,0,0,2,0,1,0,0,0,1,0,2,0,0,0,2,0,1,0])
     V_SD_S = adl.batched_apply(V_SD, S)
-    #if N_coord == 6:
-    #  print("S(0,1,2,0,1,2) = ", S[0,0,0,1,0,2,0,0,0,1,0,2,0])
-    #  print("V_SD_S(0,1,2,0,1,2) = ", V_SD_S[0,0,0,1,0,2,0,0,0,1,0,2,0])
-    #  print("S(0,2,1,0,1,2) = ", S[0,0,0,2,0,1,0,0,0,1,0,2,0])
-    #  print("V_SD_S(0,2,1,0,1,2) = ", V_SD_S[0,0,0,2,0,1,0,0,0,1,0,2,0])
-    #  print("S(0,1,2,0,2,1) = ", S[0,0,0,1,0,2,0,0,0,2,0,1,0])
-      #print("V_SD_S(0,1,2,0,2,1) = ", V_SD_S[0,0,0,1,0,2,0,0,0,2,0,1,0])
-      #print("S(0,1,2,0,:,:) = ", S[0,0,0,1,0,2,0,0,0,:,0,:,0])
-      #print("V_SD_S(0,1,2,0,:,:) = ", V_SD_S[0,0,0,1,0,2,0,0,0,:,0,:,0])
-    #print("S_T shape is ", S_av4p_metropolis.shape)
-    #print("S shape is ", S.shape)
-    #print("V_SI shape is ", V_SI.shape)
-    #print("V_SI_S shape is ", V_SI_S.shape)
     broadcast_SI = ((slice(None),) + (np.newaxis,)*N_coord*2)
     V_SI_S = adl.batched_apply(V_SI, S)
     print("V_SD shape is ", V_SD.shape)
     print("V_SD L2 norm is ", np.sqrt(np.mean(V_SD**2)))
     print("V_SD Linfinity norm is ", np.max(np.abs(V_SD)))
-    #print("V_SD_S shape is ", V_SD_S.shape)
-    #print("V_SD_S L2 norm is ", np.sqrt(np.mean(V_SD_S**2)))
-    #print("V_SD_S Linfinity norm is ", np.max(np.abs(V_SD_S)))
     V_tot = adl.inner(S_av4p_metropolis, V_SD_S + V_SI_S) / adl.inner(S_av4p_metropolis, S)
-    #print("V_tot shape is ", V_tot.shape)
-    #print("V_tot L2 norm is ", np.sqrt(np.mean(V_tot**2)))
-    #print("V_tot Linfinity norm is ", np.max(np.abs(V_tot)))
     print(f"calculated potential in {time.time() - V_time} sec")
     Vs.append(V_tot)
 
@@ -1256,29 +1233,14 @@ if N_coord == 4:
   Z_6x6bar = np.array(Z_6x6bar)
   Z_norm = np.array(Z_norm)
 
-#if verbose:
-    #ave_Vs = np.array([al.bootstrap(V, W, Nboot=100, f=adl.rw_mean)
-    #        for V,W in zip(Vs, gfmc_Ws)])
-#    ave_Vs = np.array([al.bootstrap(Vs[0], gfmc_Ws[0], Nboot=100, f=adl.rw_mean)])
-#    print("V[tau=0] = ",ave_Vs,"\n\n")
-#    ave_Vs = np.array([al.bootstrap(Vs[-1], gfmc_Ws[-1], Nboot=100, f=adl.rw_mean)])
-#    print("V[last tau] = ",ave_Vs,"\n\n")
 
-#Ks *= fm_Mev**2
-
-#Vs = np.array([
-#    sum([
-#        AV_Coulomb[name](dRs) * adl.compute_O(adl.two_body_ops[name](dRs), S, S_av4p_metropolis)
-#        for name in AV_Coulomb
-#    ])
-#    for dRs, S in zip(map(adl.to_relative, gfmc_Rs), gfmc_Ss)])
 
 if volume == "finite":
     #tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilaket"+str(spoilaket) + "_spoilf"+str(spoilf) + "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
-    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
+    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)+"_mtm"+str(mtm_x)+str(mtm_y)+str(mtm_z)+"_color_"+color
 else:
     #tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilaket"+str(spoilaket) + "_spoilf"+str(spoilf)+ "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
-    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
+    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)+"_mtm"+str(mtm_x)+str(mtm_y)+str(mtm_z)+"_color_"+color
 
 
 with h5py.File(outdir+'Hammys_'+tag+'.h5', 'w') as f:
