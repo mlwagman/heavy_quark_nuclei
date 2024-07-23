@@ -67,9 +67,9 @@ parser.add_argument('--color', type=str, default="1x1")
 parser.add_argument('--potential', type=str, default="full")
 parser.add_argument('--spoilaket', type=float, default=1)
 parser.add_argument('--masses', type=float, default=0., nargs='+')
-parser.add_argument('--mtm_x', type=float, default=0, nargs='+')
-parser.add_argument('--mtm_y', type=float, default=0, nargs='+')
-parser.add_argument('--mtm_z', type=float, default=0, nargs='+')
+parser.add_argument('--mtm_x', type=int, default=0, nargs='+')
+parser.add_argument('--mtm_y', type=int, default=0, nargs='+')
+parser.add_argument('--mtm_z', type=int, default=0, nargs='+')
 parser.add_argument('--verbose', dest='verbose', action='store_true', default=False)
 globals().update(vars(parser.parse_args()))
 
@@ -80,7 +80,7 @@ if L > 1e-2:
     volume = "finite"
 
 if mtm_x == 0 and mtm_y == 0 and mtm_z == 0:
-    mtm = np.zeros((N_coord, 3))
+    n_mtm = np.zeros((N_coord, 3))
 else:
     if mtm_x == 0:
         mtm_x = np.zeros((N_coord))
@@ -88,7 +88,11 @@ else:
         mtm_y = np.zeros((N_coord))
     if mtm_z == 0:
         mtm_z = np.zeros((N_coord))
-    mtm = np.transpose(np.array([mtm_x, mtm_y, mtm_z]))
+    n_mtm = np.transpose(np.array([mtm_x, mtm_y, mtm_z]))
+
+mtm = n_mtm
+if volume == "finite":
+    mtm = n_mtm*(2*np.pi/L)*(2/N_coord)
 
 if masses == 0.:
     masses = onp.ones(N_coord)
@@ -527,7 +531,7 @@ def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
         #psi += g * np.exp(-r_sum_T)
         psi += g * hydrogen_wvfn(r_sum_T, radial_n)
     phase = np.exp(1j*np.einsum('...ai,ai->...', Rs, mtm))
-    psi *= phase 
+    psi *= phase
     return psi
 
 def f_R_sq(Rs):
@@ -610,7 +614,7 @@ def grad_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmass
                                             grad_psi = grad_psi * np.exp(-rij_norm/thisa0)
                             grad_psi_tot = grad_psi_tot.at[a,x,:].set(grad_psi / np.abs(masses[a]))
     phase = np.exp(1j*np.einsum('nai,ai->n', Rs, mtm))
-    grad_psi_tot *= phase 
+    grad_psi_tot *= phase
     return grad_psi_tot
 
 @partial(jax.jit)
@@ -733,7 +737,7 @@ def laplacian_f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
                                                     nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0)
                                     nabla_psi_tot += nabla_psi / np.abs(masses[a])
     phase = np.exp(1j*np.einsum('nai,ai->n', Rs, mtm))
-    nabla_psi_tot *= phase 
+    nabla_psi_tot *= phase
     return nabla_psi_tot
 
 if N_coord >= 6 and verbose:
@@ -848,7 +852,7 @@ if N_coord >= 6 and verbose:
                                                         nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0)
                                         nabla_psi_tot += nabla_psi / np.abs(masses[a])
         phase = np.exp(1j*np.einsum('nai,ai->n', Rs, mtm))
-        nabla_psi_tot *= phase 
+        nabla_psi_tot *= phase
         return nabla_psi_tot
 else:
     print("JIT Laplacian")
