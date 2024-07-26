@@ -1239,7 +1239,9 @@ else:
 
 phase_Ws = f_R_braket_phase(gfmc_Rs)
 print('phase Ws', phase_Ws)
-gfmc_Ws *= phase_Ws
+
+#gfmc_Ws *= phase_Ws
+gfmc_Ws= np.einsum('nk...,nk->nk...', gfmc_Ws, phase_Ws)
 
 print('GFMC tau=0 weights:', gfmc_Ws[0])
 if n_step > 0:

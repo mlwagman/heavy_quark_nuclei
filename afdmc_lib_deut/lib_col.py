@@ -987,6 +987,12 @@ def kinetic_step_absolute(R_fwd, R_bwd, R, R_deform, psi_T, u, params_i, psi0,
     ind_fwd_S = np.expand_dims(ind_fwd, axis=axis_tup)
     psi = np.where(ind_fwd_S, psi_fwd, psi_bwd)
     W = ((w_fwd + w_bwd) / 2)
+    #print("W shape ", W.shape)
+    #print("pc_fwd shape ", pc_fwd.shape)
+    #print("p_fwd shape ", pc_fwd.shape)
+    #Wpc_fwd = np.einsum('n...,n->n...', W, pc_fwd / p_fwd)
+    #Wpc_bwd = np.einsum('n...,n->n...', W, pc_bwd / p_bwd)
+    #W = np.where(ind_fwd, Wpc_fwd, Wpc_bwd)
     W = np.where(ind_fwd, W * pc_fwd / p_fwd, W * pc_bwd / p_bwd)
     #return R_fwd_old, R_fwd, S_fwd, w_fwd
     return R, R_deform, psi, W
@@ -999,7 +1005,8 @@ def gfmc_deform(
     params0 = tuple(param[0] for param in params)
     R0_deform = deform_f(R0, *params0)
     psi0 = psi_T(R0_deform)
-    W = psi_T(R0_deform) / psi_T(R0)
+    #W = psi_T(R0_deform) / psi_T(R0)
+    W = np.ones_like( inner(psi0, psi0) )
     walkers = (R0, R0_deform, psi0, W)
     dtau_iMev = tau_iMev/N
     history = [walkers]
@@ -1009,6 +1016,7 @@ def gfmc_deform(
         _start = time.time()
         print("step ", i)
         R, R_deform, psi, W = walkers
+        print("W shape ", W.shape)
 
         drift = np.einsum("jik,i->jk", R, m_Mev) / np.sum(m_Mev)
         print("checking drift = 0 =", np.mean(drift, axis=0))
@@ -1019,7 +1027,9 @@ def gfmc_deform(
 
         # remove previous factors (to be replaced with current factors after evolving)
         # TODO DOES THIS NEED NP.ARRAY ????
+        #W = np.einsum('n...,n->n...', W, (np.abs( inner(psi0,psi) )/psi.shape[0]))
         W = W / (np.abs( inner(psi0,psi) )/psi.shape[0])
+        print("W shape after removing previous factors ", W.shape)
 
         # exp(-dtau V/2)|R,S>
         psi = compute_VS(R_deform, psi, potential, dtau_iMev=dtau_iMev)
@@ -1036,7 +1046,9 @@ def gfmc_deform(
 
         # incorporate factors <S_T|S_i> f(R_i) and leftover fwd/bwd factors from
         # the kinetic step
+        #W = np.einsum('n...,n->n...', W, dW)
         W = W * dW
+        print("W shape after kinetic step ", W.shape)
 
         # save config for obs
         history.append((R, R_deform, psi, W))
