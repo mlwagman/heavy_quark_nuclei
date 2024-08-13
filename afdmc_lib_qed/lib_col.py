@@ -1,7 +1,7 @@
 import analysis as al
 from functools import partial
 import jax
-from jax.config import config
+from jax import config
 config.update("jax_enable_x64", True)
 import jax.numpy as np
 #import jax.experimental.optimizers
@@ -9,6 +9,7 @@ import jax.example_libraries.optimizers
 import numpy as onp
 import pickle
 import time
+import math
 import tqdm.auto as tqdm
 
 from .util import hashabledict, jax_print, norm_3vec, norm_3vec_sq, to_relative
@@ -65,24 +66,6 @@ def step_G0_symm_distinct(R, *, dtau_iMev, m_Mev):
     #dR -= onp.mean(dR, axis=1, keepdims=True)
     return R+dR, R-dR
 
-#def step_G0_symm_distinct(R, *, dtau_iMev, m_Mev):
-#    dtau_fm = dtau_iMev * fm_Mev
-#    lam_fm = np.sqrt(2/m_Mev * fm_Mev * dtau_fm)
-#    (n_walkers, n_coord, n_d) = R.shape
-#    dR = 1/onp.sqrt(2) * onp.random.normal(size=R.shape)
-#    drift = np.zeros((n_walkers, n_d))
-#    drift_vec = onp.zeros((n_walkers, n_coord, n_d))
-#    for i in range(0, n_coord):
-#        dR[:,i,:] = dR[:,i,:] * lam_fm[i]
-#        drift += dR[:,i,:] * m_Mev[i] / n_coord
-#    for i in range(0, n_coord):
-#        # WRONG!!!
-#        #drift_vec[:,i,:] = drift[:,:] / m_Mev[i]
-#        drift_vec[:,i,:] = drift[:,:] / np.mean(m_Mev)
-#    # subtract mean dR to avoid "drift" in the system
-#    #dR -= onp.mean(dR, axis=1, keepdims=True)
-#    dR -= drift_vec
-#    return R+dR, R-dR
 
 def normalize_wf(f_R, df_R, ddf_R):
     Rs = onp.linspace([0,0,0], [20,0,0], endpoint=False, num=10000)
@@ -136,7 +119,7 @@ lc_tensor = onp.zeros((NI, NI, NI))
 iso_del = 1/2 * 1/2 * (onp.einsum('ab,cd->acdb', onp.identity(NI), onp.identity(NI)) + onp.einsum('ab,cd->cadb', onp.identity(NI), onp.identity(NI)))
 
 # QQ color antisymmetric potential operator
-iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor)
+iso_eps = (NI - 1)/4 /math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor)
 
 # QQbar color singlet potential operator
 iso_sing = 1/NI * onp.einsum('ab,cd->abcd', onp.identity(NI), onp.identity(NI))
@@ -1091,8 +1074,11 @@ def gfmc_deform(
     params0 = tuple(param[0] for param in params)
     R0_deform = deform_f(R0, *params0)
     W = f_R_norm(R0_deform) / f_R_norm(R0)
+    print("f_R_norm(R0_deform) = ", f_R_norm(R0_deform))
+    print("f_R_norm(R0) = ", f_R_norm(R0))
     walkers = (R0, R0_deform, S_T, W)
     dtau_iMev = tau_iMev/N
+    print("dtau_iMev = ", dtau_iMev)
     history = [walkers]
 
     #for i in tqdm.tqdm(range(N)):
