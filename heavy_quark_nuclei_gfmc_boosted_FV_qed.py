@@ -68,6 +68,9 @@ parser.add_argument('--wavefunction', type=str, default="compact")
 parser.add_argument('--potential', type=str, default="full")
 parser.add_argument('--spoilaket', type=float, default=1)
 parser.add_argument('--masses', type=float, default=0., nargs='+')
+parser.add_argument('--mtm_x', type=int, default=0, nargs='+')
+parser.add_argument('--mtm_y', type=int, default=0, nargs='+')
+parser.add_argument('--mtm_z', type=int, default=0, nargs='+')
 parser.add_argument('--verbose', dest='verbose', action='store_true', default=False)
 globals().update(vars(parser.parse_args()))
 
@@ -104,7 +107,6 @@ if masses == 0.:
 print("masses = ", masses)
 print("spatial wavefunction = ", wavefunction)
 print("g = ", g)
-print("color wavefunction = ", color)
 
 
 #if wavefunction == "asymmetric":
@@ -307,10 +309,10 @@ def trivial_fun(R):
 print("volume = ", volume)
 
 if volume == "finite":
-    AV_Coulomb['OA'] = potential_fun_sum
-    AV_Coulomb['OS'] = symmetric_potential_fun_sum
+    #AV_Coulomb['OA'] = potential_fun_sum
+    #AV_Coulomb['OS'] = symmetric_potential_fun_sum
     AV_Coulomb['OSing'] = singlet_potential_fun_sum
-    AV_Coulomb['OO'] = octet_potential_fun_sum
+    #AV_Coulomb['OO'] = octet_potential_fun_sum
 else:
     #AV_Coulomb['OA'] = trivial_fun
     #AV_Coulomb['OS'] = trivial_fun
@@ -812,8 +814,10 @@ phase_Ws = f_R_braket_phase(gfmc_Rs)
 print('phase Ws', phase_Ws)
 gfmc_Ws *= phase_Ws
 
+
 print('GFMC tau=0 weights:', gfmc_Ws[0])
-print('GFMC tau=dtau weights:', gfmc_Ws[1])
+if n_step > 0:
+    print('GFMC tau=dtau weights:', gfmc_Ws[1])
 
 # measure H
 print('Measuring <H>...')
@@ -855,7 +859,6 @@ for count, R in enumerate(gfmc_Rs):
         K_term +=  -1/2*laplacian_f_R(R_T, k_masses=BO_absmasses) / f_R(R, wavefunction=bra_wavefunction) / 1
     else:
         K_term +=  -1/2*laplacian_f_R(R_T) / f_R(R, wavefunction=bra_wavefunction) / 1
-
 
     Ks.append(K_term)
 
@@ -924,13 +927,13 @@ print(Vs.shape)
 #    for dRs, S in zip(map(adl.to_relative, gfmc_Rs), gfmc_Ss)])
 
 if volume == "finite":
-    #tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilaket"+str(spoilaket) + "_spoilf"+str(spoilf) + "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
-    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)+"_mtm"+str(mtm_x)+str(mtm_y)+str(mtm_z)+"_color_"+color+"_g"+str(g)
+    #tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilaket"+str(spoilaket) + "_spoilf"+str(spoilf) + "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)+color+"_g"+str(g)
+    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)+"_mtm"+str(mtm_x)+str(mtm_y)+str(mtm_z)+"_g"+str(g)
 elif BO_fac > 0:
-    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_BO"+str(BO_fac)+"_masses"+str(masses)+"_mtm"+str(mtm_x)+str(mtm_y)+str(mtm_z)+"_color_"+color+"_g"+str(g)
+    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_BO"+str(BO_fac)+"_masses"+str(masses)+"_mtm"+str(mtm_x)+str(mtm_y)+str(mtm_z)+"_g"+str(g)
 else:
     #tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilaket"+str(spoilaket) + "_spoilf"+str(spoilf)+ "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
-    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)+"_mtm"+str(mtm_x)+str(mtm_y)+str(mtm_z)+"_color_"+color+"_g"+str(g)
+    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)+"_mtm"+str(mtm_x)+str(mtm_y)+str(mtm_z)+"_g"+str(g)
 
 
 with h5py.File(outdir+'Hammys_'+tag+'.h5', 'w') as f:
