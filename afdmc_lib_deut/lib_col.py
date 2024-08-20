@@ -950,11 +950,11 @@ def kinetic_step_absolute(R_fwd, R_bwd, R, R_deform, psi_T, u, params_i, psi0,
     R_fwd_old = R_fwd
     R_bwd_old = R_bwd
 
-    psi_fwd = compute_VS(R_fwd, psi_T(R_fwd), potential, dtau_iMev=dtau_iMev)
-    psi_bwd = compute_VS(R_bwd, psi_T(R_bwd), potential, dtau_iMev=dtau_iMev)
+    psi_fwd = compute_VS(R_fwd, psi, potential, dtau_iMev=dtau_iMev)
+    psi_bwd = compute_VS(R_bwd, psi, potential, dtau_iMev=dtau_iMev)
 
-    w_fwd = np.abs( inner( psi0, psi_T(R_fwd) ) )
-    w_bwd = np.abs( inner( psi0, psi_T(R_bwd) ) )
+    w_fwd = np.abs( inner( psi0, psi_fwd ) )
+    w_bwd = np.abs( inner( psi0, psi_bwd ) )
 
     # correct kinetic energy
     denom = 1/(2*dtau_iMev*fm_Mev**2/m_Mev)
@@ -1041,7 +1041,7 @@ def gfmc_deform(
         u = rand_draws[i] # np.array(onp.random.random(size=R_fwd.shape[0]))
         step_params = tuple(param[i+1] for param in params)
         R, R_deform, psi, dW = kinetic_step_absolute(
-            R_fwd, R_bwd, R, R_deform, psi_T, u, step_params, psi0,
+            R_fwd, R_bwd, R, R_deform, psi, u, step_params, psi0,
             potential, dtau_iMev=dtau_iMev, m_Mev=m_Mev)
 
         # incorporate factors <S_T|S_i> f(R_i) and leftover fwd/bwd factors from
