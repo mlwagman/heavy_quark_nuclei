@@ -943,7 +943,7 @@ def gfmc_twobody_deform(
     return history
 
 #@partial(jax.jit, static_argnums=(8,9), static_argnames=('deform_f',))
-def kinetic_step_absolute(R_fwd, R_bwd, R, R_deform, psi_T, u, params_i, psi0,
+def kinetic_step_absolute(R_fwd, R_bwd, R, R_deform, psi, u, params_i, psi0,
                  potential, *, dtau_iMev, m_Mev):
     """Step forward given two possible proposals and RNG to decide"""
     # transform manifold
