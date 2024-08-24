@@ -1,7 +1,7 @@
 import analysis as al
 from functools import partial
 import jax
-from jax.config import config
+from jax import config
 config.update("jax_enable_x64", True)
 import jax.numpy as np
 #import jax.experimental.optimizers
@@ -1028,7 +1028,7 @@ def gfmc_deform(
         # remove previous factors (to be replaced with current factors after evolving)
         # TODO DOES THIS NEED NP.ARRAY ????
         #W = np.einsum('n...,n->n...', W, (np.abs( inner(psi0,psi) )/psi.shape[0]))
-        W = W / (np.abs( inner(psi0,psi) )/psi.shape[0])
+        W = W / np.abs( inner(psi0,psi) )
         print("W shape after removing previous factors ", W.shape)
 
         # exp(-dtau V/2)|R,S>
