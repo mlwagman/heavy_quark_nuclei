@@ -775,54 +775,55 @@ def laplacian_f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0, afac=afac,
                         for n in range(N_coord):
                             if m!=n and n>=m and (m!=k or n!=l) and (a==m or a==n):
                                 # sum over the 3-d components of gradient
-                                for x in range(3):
-                                    # wvfn involves r_ij
-                                    nabla_psi = 1
-                                    for i in range(N_coord):
-                                        for j in range(N_coord):
-                                            thisa0 = a0
-                                            if i!=j and j>=i:
-                                                if wavefunction == "product":
-                                                    baryon_0 = 1
-                                                    if i < N_coord/2:
-                                                        baryon_0 = 0
-                                                    baryon_1 = 1
-                                                    if j < N_coord/2:
-                                                        baryon_1 = 0
-                                                    if baryon_0 != baryon_1:
-                                                        thisa0 *= afac
-                                                        #continue
-                                                    if masses_copy[i]*masses_copy[j] > 0:
-                                                        thisa0 *= samefac
-                                                elif wavefunction == "diquark":
-                                                    diquark_0 = 2
-                                                    if i < 2:
-                                                        diquark_0 = 0
-                                                    elif i < 4:
-                                                        diquark_0 = 1
-                                                    diquark_1 = 2
-                                                    if j < 2:
-                                                        diquark_1 = 0
-                                                    elif j < 4:
-                                                        diquark_1 = 1
-                                                    if diquark_0 != diquark_1:
-                                                        thisa0 *= afac
-                                                ri = Rs[...,i,:]
-                                                rj = Rs[...,j,:]
-                                                rij_norm = adl.norm_3vec(ri - rj)
-                                                mij = 2*masses[i]*masses[j]/(masses[i]+masses[j])
-                                                thisa0 /= mij
-                                                rsign = 0
-                                                # grad_a r_ij = rsign * (ri - rj)
-                                                if a == i:
-                                                    rsign = 1
-                                                elif a == j:
-                                                    rsign = -1
-                                                if (k == i and l == j) or (m == i and n == j):
-                                                    nabla_psi = rsign * nabla_psi * (ri[:,x] - rj[:,x])/(thisa0*rij_norm) * np.exp(-rij_norm/thisa0)
-                                                else:
-                                                    nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0)
-                                    nabla_psi_tot += nabla_psi / np.abs(masses[a])
+                                # wvfn involves r_ij
+                                nabla_psi = 1
+                                for i in range(N_coord):
+                                    for j in range(N_coord):
+                                        thisa0 = a0
+                                        if i!=j and j>=i:
+                                            if wavefunction == "product":
+                                                baryon_0 = 1
+                                                if i < N_coord/2:
+                                                    baryon_0 = 0
+                                                baryon_1 = 1
+                                                if j < N_coord/2:
+                                                    baryon_1 = 0
+                                                if baryon_0 != baryon_1:
+                                                    thisa0 *= afac
+                                                    #continue
+                                                if masses_copy[i]*masses_copy[j] > 0:
+                                                    thisa0 *= samefac
+                                            elif wavefunction == "diquark":
+                                                diquark_0 = 2
+                                                if i < 2:
+                                                    diquark_0 = 0
+                                                elif i < 4:
+                                                    diquark_0 = 1
+                                                diquark_1 = 2
+                                                if j < 2:
+                                                    diquark_1 = 0
+                                                elif j < 4:
+                                                    diquark_1 = 1
+                                                if diquark_0 != diquark_1:
+                                                    thisa0 *= afac
+                                            ri = Rs[...,i,:]
+                                            rj = Rs[...,j,:]
+                                            rij_norm = adl.norm_3vec(ri - rj)
+                                            mij = 2*masses[i]*masses[j]/(masses[i]+masses[j])
+                                            thisa0 /= mij
+                                            rsign = 0
+                                            new_shape = onp.array(ri.shape)
+                                            new_shape[-1] = 1
+                                            # grad_a r_ij = rsign * (ri - rj)
+                                            if a == i:
+                                                rsign = 1
+                                            elif a == j:
+                                                rsign = -1
+                                            if (k == i and l == j) or (m == i and n == j):
+                                                nabla_psi = rsign * nabla_psi * (ri - rj) * (np.exp(-rij_norm/thisa0)/(thisa0*rij_norm)).reshape(new_shape)
+                                            else:
+                                                nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0).reshape(new_shape)
+                                nabla_psi_tot += np.sum(nabla_psi, axis=-1) / np.abs(masses[a])
     return nabla_psi_tot
 
 
