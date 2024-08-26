@@ -224,14 +224,6 @@ def extend_sequence(seq):
         newseq.append(2*seq[i] + 1 + 1)
     return newseq
 
-def extend_sequence(seq):
-    seqlen = len(seq)
-    newseq = [0]
-    for i in range(seqlen):
-        newseq.append(2*seq[i] + 1)
-        newseq.append(2*seq[i] + 1 + 1)
-    return newseq
-
 def generate_full_sequence(AA):
     return extend_sequence( generate_sequence(AA) )
 
@@ -279,6 +271,7 @@ def make_pairwise_potential(AVcoeffs, B3coeffs, masses):
                 snk_perm = [ src_perm[l] + 2*A for l in range(len(perm)) ]
                 full_perm = [0] + src_perm + snk_perm
                 print("full perm = ",full_perm)
+                scaled_O = np.zeros_like(qq_two_body_ops["OA"])
                 for name,op in this_two_body_ops.items():
                     if name not in AVcoeffs: continue
                     print('including op', name)
@@ -286,21 +279,31 @@ def make_pairwise_potential(AVcoeffs, B3coeffs, masses):
                     vij = AVcoeffs[name](Rij)
                     broadcast_vij_inds = (slice(None),) + (np.newaxis,)*(len(Oij.shape)-1)
                     vij = vij[broadcast_vij_inds]
-                    scaled_O = vij * Oij
+                    scaled_O += vij * Oij
+
+                # tensor in identity matrices in color and spin
+                # fast path for NS == 1
+                if NS == 1:
+                    old_shape = scaled_O.shape
+                    for alpha in range(A-2):
+                        scaled_O = np.einsum('...,mn->...mn', scaled_O, onp.identity(NI))
+                        old_shape += (NI, NS, NI, NS)
+                    scaled_O = np.reshape(scaled_O, old_shape)
+                # general case (should work for any NS)
+                else:
                     for alpha in range(A-2):
                         scaled_O = np.einsum('...,mn,op->...monp', scaled_O, onp.identity(NI), onp.identity(NS))
-                    assert V_SI_Mev.shape==scaled_O.shape
-                    basic_perm = generate_sequence(2*A)
-                    print('basic_perm',basic_perm)
-                    starting_perm = generate_full_sequence(2*A)
-                    print('starting_perm',starting_perm)
-                    scaled_O = np.transpose(scaled_O, axes=starting_perm)
-                    scaled_O_perm = np.transpose(scaled_O, axes=full_perm)
-                    if name == 'O1':
-                        broadcast_inds = (slice(None),) + (0,)*(len(Oij.shape)-1)
-                        V_SI_Mev = V_SI_Mev + scaled_O[broadcast_inds]
-                    else:
-                        V_SD_Mev += scaled_O_perm
+
+                assert V_SI_Mev.shape==scaled_O.shape
+                starting_perm = generate_full_sequence(2*A)
+                print('starting_perm',starting_perm)
+                scaled_O = np.transpose(scaled_O, axes=starting_perm)
+                scaled_O_perm = np.transpose(scaled_O, axes=full_perm)
+                if name == 'O1':
+                    broadcast_inds = (slice(None),) + (0,)*(len(Oij.shape)-1)
+                    V_SI_Mev += scaled_O[broadcast_inds]
+                else:
+                    V_SD_Mev += scaled_O_perm
         end_pot = time.time()
         jax.debug.print("Time spent in pairwise_potential: " + str(end_pot - start_pot))
         return V_SI_Mev, V_SD_Mev
@@ -349,8 +352,6 @@ def make_pairwise_product_potential(AVcoeffs, B3coeffs, masses):
                     for alpha in range(A-2):
                         scaled_O = np.einsum('...,mn,op->...monp', scaled_O, onp.identity(NI), onp.identity(NS))
                     assert V_SI_Mev.shape==scaled_O.shape
-                    basic_perm = generate_sequence(2*A)
-                    print('basic_perm',basic_perm)
                     starting_perm = generate_full_sequence(2*A)
                     print('starting_perm',starting_perm)
                     scaled_O = np.transpose(scaled_O, axes=starting_perm)
@@ -401,8 +402,6 @@ def make_pairwise_product_potential(AVcoeffs, B3coeffs, masses):
 def batched_apply(M, S): # compute M|S>
     batch_size, src_sink_dims = M.shape[0], M.shape[1:]
     batch_size2, src_dims = S.shape[0], S.shape[1:]
-    #print(src_sink_dims)
-    #print(src_dims)
     assert (batch_size == batch_size2 or
             batch_size == 1 or batch_size2 == 1), 'batch size must be broadcastable'
     assert src_sink_dims == src_dims + src_dims, 'matrix dims must match vector dims'
