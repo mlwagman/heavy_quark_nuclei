@@ -116,7 +116,6 @@ iso_sing = 1/NI * onp.einsum('ab,cd->abcd', onp.identity(NI), onp.identity(NI))
 # QQbar color octet potential operator
 iso_oct = np.zeros((NI,NI,NI,NI))
 for a in range(8):
-    #iso_oct += 2*onp.einsum('ab,cd->abcd', gells[a], gells[a])
     iso_oct += 2*onp.einsum('ab,cd->bacd', gells[a], gells[a])
 
 # NOTE(gkanwar): spin and isospin pieces are identical matrices, but are
@@ -169,19 +168,19 @@ def three_body_outer(three_body_iso, three_body_spin):
     return np.einsum('zacebdf,zikmjln->zaickembjdlfn', three_body_iso, three_body_spin)
 
 qq_two_body_ops = {
-    'OA': lambda Rij: two_body_outer(
+    'OA': two_body_outer(
         two_body_pieces['iso_A'][np.newaxis],
         two_body_pieces['sp_I'][np.newaxis]),
-    'OS': lambda Rij: two_body_outer(
+    'OS': two_body_outer(
         two_body_pieces['iso_S'][np.newaxis],
         two_body_pieces['sp_I'][np.newaxis]),
 }
 
 qqbar_two_body_ops = {
-    'OSing': lambda Rij: two_body_outer(
+    'OSing': two_body_outer(
         two_body_pieces['iso_sing'][np.newaxis],
         two_body_pieces['sp_I'][np.newaxis]),
-    'OO': lambda Rij: two_body_outer(
+    'OO': two_body_outer(
         two_body_pieces['iso_oct'][np.newaxis],
         two_body_pieces['sp_I'][np.newaxis]),
 }
@@ -239,6 +238,7 @@ def generate_full_sequence(AA):
 def make_pairwise_potential(AVcoeffs, B3coeffs, masses):
     @jax.jit
     def pairwise_potential(R):
+        start_pot = time.time()
         batch_size, A = R.shape[:2]
         V_SI_Mev = np.zeros( # big-ass matrix
             (batch_size,) + # batch of walkers
@@ -255,23 +255,34 @@ def make_pairwise_potential(AVcoeffs, B3coeffs, masses):
         # two-body potentials
         for i in range(A):
             for j in range(A):
-        #for i in range(2,3):
-        #    for j in range(0,1):
-        #for i in range(1,2):
-        #    for j in range(3,4):
                 if i==j:
                     continue
                 Rij = R[:,i] - R[:,j]
-                this_two_body_ops = qqbar_two_body_ops #jax.lax.cond(masses[i]*masses[j]>0, get_qq_two_body_ops, get_qqbar_two_body_ops, qq_two_body_ops)
+                this_two_body_ops = qqbar_two_body_ops 
                 if masses[i]*masses[j]>0:
                     this_two_body_ops = qq_two_body_ops
                 elif masses[i] < masses[j]:
                     continue
                 print("i = ", i, ", j = ", j)
+                perm = [ l for l in range(2*A) ]
+                perm[0] = 2*i
+                perm[1] = 2*i+1
+                perm[2*i] = 0
+                perm[2*i+1] = 1
+                perm_copy = perm.copy()
+                j_slot = perm.index(2)
+                perm[2*j] = perm_copy[j_slot]
+                perm[2*j+1] = perm_copy[j_slot+1]
+                perm[j_slot] = perm_copy[2*j]
+                perm[j_slot+1] = perm_copy[2*j+1]
+                src_perm = [ perm[l] + 1 for l in range(len(perm)) ]
+                snk_perm = [ src_perm[l] + 2*A for l in range(len(perm)) ]
+                full_perm = [0] + src_perm + snk_perm
+                print("full perm = ",full_perm)
                 for name,op in this_two_body_ops.items():
                     if name not in AVcoeffs: continue
                     print('including op', name)
-                    Oij = op(Rij)
+                    Oij = op
                     vij = AVcoeffs[name](Rij)
                     broadcast_vij_inds = (slice(None),) + (np.newaxis,)*(len(Oij.shape)-1)
                     vij = vij[broadcast_vij_inds]
@@ -284,53 +295,14 @@ def make_pairwise_potential(AVcoeffs, B3coeffs, masses):
                     starting_perm = generate_full_sequence(2*A)
                     print('starting_perm',starting_perm)
                     scaled_O = np.transpose(scaled_O, axes=starting_perm)
-                    #print("scaled_O shape =",scaled_O.shape)
-                    #print("i = ",i," j = ", j)
-                    #perm = [ l for l in range(A) ]
-                    #perm[0] = i
-                    #perm[i] = 0
-                    #perm_copy = perm.copy()
-                    #j_slot = perm.index(j)
-                    #perm[1] = perm_copy[j_slot]
-                    #perm[j_slot] = perm_copy[1]
-                    #print(perm)
-                    perm = [ l for l in range(2*A) ]
-                    perm[0] = 2*i
-                    perm[1] = 2*i+1
-                    perm[2*i] = 0
-                    perm[2*i+1] = 1
-                    perm_copy = perm.copy()
-                    # print perm after first swap for diagnostic purposes
-                    src_perm = [ perm[l] + 1 for l in range(len(perm)) ]
-                    snk_perm = [ src_perm[l] + 2*A for l in range(len(perm)) ]
-                    full_perm = [0] + src_perm + snk_perm
-                    print("half perm = ",full_perm)
-                    # TODO -- something below is broken
-                    j_slot = perm.index(2)
-                    print("j_slot = ", j_slot)
-                    perm[2*j] = perm_copy[j_slot]
-                    perm[2*j+1] = perm_copy[j_slot+1]
-                    perm[j_slot] = perm_copy[2*j]
-                    perm[j_slot+1] = perm_copy[2*j+1]
-                    # TODO -- something above is broken
-                    src_perm = [ perm[l] + 1 for l in range(len(perm)) ]
-                    snk_perm = [ src_perm[l] + 2*A for l in range(len(perm)) ]
-                    full_perm = [0] + src_perm + snk_perm
-                    #print(perm)
-                    print("full perm = ",full_perm)
                     scaled_O_perm = np.transpose(scaled_O, axes=full_perm)
                     if name == 'O1':
                         broadcast_inds = (slice(None),) + (0,)*(len(Oij.shape)-1)
                         V_SI_Mev = V_SI_Mev + scaled_O[broadcast_inds]
-                    #    V_SI_Mev += scaled_O_perm[broadcast_inds]
                     else:
                         V_SD_Mev += scaled_O_perm
-                        #print("O ", Oij[0,0,0,1,0,0,0,1,0])
-                        #print("scaled O ", scaled_O[0,0,0,1,0,0,0,1,0,2,0,2,0])
-                        #print("scaled O perm ", scaled_O_perm[0,0,0,1,0,0,0,1,0,2,0,2,0])
-                        #print("V_SD ", V_SD_Mev[0,0,0,1,0,0,0,1,0,2,0,2,0])
-                        #print(Oij.shape)
-                        #print(scaled_O.shape)
+        end_pot = time.time()
+        jax.debug.print("Time spent in pairwise_potential: " + str(end_pot - start_pot))
         return V_SI_Mev, V_SD_Mev
     return pairwise_potential
 
@@ -369,7 +341,7 @@ def make_pairwise_product_potential(AVcoeffs, B3coeffs, masses):
                 for name,op in this_two_body_ops.items():
                     if name not in AVcoeffs: continue
                     print('including op', name)
-                    Oij = op(Rij)
+                    Oij = op
                     vij = AVcoeffs[name](Rij)
                     broadcast_vij_inds = (slice(None),) + (np.newaxis,)*(len(Oij.shape)-1)
                     vij = vij[broadcast_vij_inds]
@@ -816,6 +788,7 @@ def compute_VS_separate(R_prop, S, potential, *, dtau_iMev):
 ### Apply exp(-dtau/2 V_SI) (1 - (dtau/2) V_SD + (dtau^2/8) V_SD^2) to |S>.
 #@partial(jax.jit, static_argnums=(2,))
 def compute_VS(R_deform, psi, potential, *, dtau_iMev):
+    start_VS = time.time()
     N_coord = R_deform.shape[1]
     old_psi = psi
     V_SI, V_SD = potential(R_deform)
@@ -823,6 +796,8 @@ def compute_VS(R_deform, psi, potential, *, dtau_iMev):
     VS = batched_apply(V_SD, psi)
     VVS = batched_apply(V_SD, VS)
     psi = psi - (dtau_iMev/2) * VS + (dtau_iMev**2/8) * VVS
+    end_VS = time.time()
+    print("Time in compute_VS: " + str(end_VS - start_VS))
     return psi
 
 @partial(jax.jit, static_argnums=(8,9), static_argnames=('deform_f',))
@@ -945,6 +920,7 @@ def gfmc_twobody_deform(
 #@partial(jax.jit, static_argnums=(8,9), static_argnames=('deform_f',))
 def kinetic_step_absolute(R_fwd, R_bwd, R, R_deform, psi, u, params_i, psi0,
                  potential, *, dtau_iMev, m_Mev):
+    start_kin = time.time()
     """Step forward given two possible proposals and RNG to decide"""
     # transform manifold
     R_fwd_old = R_fwd
@@ -995,6 +971,8 @@ def kinetic_step_absolute(R_fwd, R_bwd, R, R_deform, psi, u, params_i, psi0,
     #W = np.where(ind_fwd, Wpc_fwd, Wpc_bwd)
     W = np.where(ind_fwd, W * pc_fwd / p_fwd, W * pc_bwd / p_bwd)
     #return R_fwd_old, R_fwd, S_fwd, w_fwd
+    end_kin = time.time()
+    print("Time in kinetic_step_absolute: " + str(end_kin - start_kin))
     return R, R_deform, psi, W
 
 def gfmc_deform(
