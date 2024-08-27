@@ -475,22 +475,13 @@ if volume == "finite":
     AV_Coulomb['OSing'] = singlet_potential_fun_sum
     AV_Coulomb['OO'] = octet_potential_fun_sum
 else:
-    #AV_Coulomb['OA'] = trivial_fun_A
-    #AV_Coulomb['OS'] = trivial_fun_S
-    #AV_Coulomb['OSing'] = trivial_fun_1
-    #AV_Coulomb['OO'] = trivial_fun_8
     AV_Coulomb['OA'] = potential_fun
     AV_Coulomb['OS'] = symmetric_potential_fun
     AV_Coulomb['OSing'] = singlet_potential_fun
     AV_Coulomb['OO'] = octet_potential_fun
-    #AV_Coulomb['O1'] = potential_fun
 
 
 print("AV_Coulomb = ", AV_Coulomb)
-
-#AV_Coulomb['OSing'] = trivial_fun
-#AV_Coulomb['OO'] = trivial_fun
-#AV_Coulomb['O1'] = trivial_fun
 
 if potential == "product":
     Coulomb_potential = adl.make_pairwise_product_potential(AV_Coulomb, B3_Coulomb, masses)
@@ -1166,24 +1157,22 @@ if N_coord == 6:
 
 
     def f_R_braket(Rs):
-        #if Rs.shape[0]==N_coord:
         total_wvfn = np.zeros((NI, NS) * N_coord, dtype=np.complex128)
-        #else:
-        #    total_wvfn = np.zeros((n_walkers,) + (NI, NS) * N_coord, dtype=np.complex128)
         for ii in range(len(perms)):
-            #print("perms=",perms[ii])
             f_R_tensor = f_R(Rs, perms[ii], wavefunction=bra_wavefunction)
-            S_av4_tensor = S_av4p_metropolis_set[ii]
-            #print(Rs.shape)
-            #print(f_R_tensor.shape)
-            #print("SAv4^2=",adl.inner(S_av4p_metropolis_set[ii],S_av4p_metropolis_set[ii]))
-            #print("f_R^2=",adl.inner(f_R_tensor,f_R_tensor))
-            total_wvfn +=  antisym_factors[ii]*S_av4p_metropolis_set[ii]*f_R(Rs, wavefunction=bra_wavefunction, perm=perms[ii])
+            # use the 1-walker version of tensor if Rs only has 1 walker
+            if Rs.shape[0] == N_coord:
+                S_av4_tensor = S_av4p_metropolis_set[ii][0]
+            # otherwise fall back on full version of S
+            else:
+                S_av4_tensor = S_av4p_metropolis_set[ii]
+            total_wvfn +=  antisym_factors[ii]*S_av4_tensor*f_R(Rs, wavefunction=bra_wavefunction, perm=perms[ii])
         Ss=np.array([total_wvfn])
         #CHECK SAV4^2 =1!!
-        return np.abs( adl.inner(Ss,Ss) )/n_walkers
-
-        #return np.abs( f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, afac=ket_afac)**2 )
+        result = np.abs( adl.inner(Ss,Ss) )
+        if Rs.shape[0] == N_coord:
+            result /= n_walkers
+        return result
 
     def f_R_braket_tempered(Rs, fac):
         return np.abs( f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction, a0=fac*ket_a0) )
