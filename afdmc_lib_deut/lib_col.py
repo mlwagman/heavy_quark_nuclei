@@ -232,12 +232,7 @@ def make_pairwise_potential(AVcoeffs, B3coeffs, masses):
     def pairwise_potential(R):
         start_pot = time.time()
         batch_size, A = R.shape[:2]
-        V_SI_Mev = np.zeros( # big-ass matrix
-            (batch_size,) + # batch of walkers
-            (NI,NS)*A + # source (i1, s1, i2, s2, ...)
-            (NI,NS)*A, # sink (i1', s1', i2', s2', ...)
-            dtype=np.complex128
-        )
+        V_SI_Mev = 0
         V_SD_Mev = np.zeros( # big-ass matrix
             (batch_size,) + # batch of walkers
             (NI,NS)*A + # source (i1, s1, i2, s2, ...)
@@ -294,14 +289,14 @@ def make_pairwise_potential(AVcoeffs, B3coeffs, masses):
                     for alpha in range(A-2):
                         scaled_O = np.einsum('...,mn,op->...monp', scaled_O, onp.identity(NI), onp.identity(NS))
 
-                assert V_SI_Mev.shape==scaled_O.shape
+                assert V_SD_Mev.shape==scaled_O.shape
                 starting_perm = generate_full_sequence(2*A)
                 print('starting_perm',starting_perm)
                 scaled_O = np.transpose(scaled_O, axes=starting_perm)
                 scaled_O_perm = np.transpose(scaled_O, axes=full_perm)
                 if name == 'O1':
                     broadcast_inds = (slice(None),) + (0,)*(len(Oij.shape)-1)
-                    V_SI_Mev += scaled_O[broadcast_inds]
+                    V_SD_Mev += scaled_O[broadcast_inds]
                 else:
                     V_SD_Mev += scaled_O_perm
         end_pot = time.time()
@@ -791,7 +786,6 @@ def compute_VS(R_deform, psi, potential, *, dtau_iMev):
     N_coord = R_deform.shape[1]
     old_psi = psi
     V_SI, V_SD = potential(R_deform)
-    V_SD = V_SD + V_SI
     VS = batched_apply(V_SD, psi)
     VVS = batched_apply(V_SD, VS)
     psi = psi - (dtau_iMev/2) * VS + (dtau_iMev**2/8) * VVS
