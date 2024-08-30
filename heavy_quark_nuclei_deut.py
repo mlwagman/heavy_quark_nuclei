@@ -1161,7 +1161,7 @@ if N_coord == 6:
         for ii in range(len(perms)):
             f_R_tensor = f_R(Rs, perms[ii], wavefunction=bra_wavefunction)
             # use the 1-walker version of tensor if Rs only has 1 walker
-            if Rs.shape[0] == N_coord:
+            if len(Rs.shape) == 2:
                 S_av4_tensor = S_av4p_metropolis_set[ii][0]
             # otherwise fall back on full version of S
             else:
@@ -1170,7 +1170,7 @@ if N_coord == 6:
         Ss=np.array([total_wvfn])
         #CHECK SAV4^2 =1!!
         result = np.abs( adl.inner(Ss,Ss) )
-        if Rs.shape[0] == N_coord:
+        if len(Rs.shape) != 2:
             result /= n_walkers
         return result
 
