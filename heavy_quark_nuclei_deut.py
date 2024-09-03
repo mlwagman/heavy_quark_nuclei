@@ -152,12 +152,15 @@ def unique_group_permutations(masses):
 def count_transpositions_baryons(perm, group1, group2):
     transpositions = 1  # Start with a factor of +1
 
+    print("trying permutation ", perm)
     for i in range(len(perm)):
         for j in range(i + 1, len(perm)):
             # Check if the current pair involves a within-group swap
             if (i in group1 and j in group1) or (i in group2 and j in group2):
                 if perm[i] > perm[j]:  # If out of order, it's a transposition
                     transpositions *= -1
+                    #transpositions *= 0
+                    print("add transposition minus sign for i = ", i, ", j = ", j)
             # Check if the current pair involves a between-group swap
             elif (i in group1 and j in group2) or (i in group2 and j in group1):
                 if perm[i] > perm[j]:  # If out of order, it's a transposition
@@ -197,7 +200,15 @@ def unique_group_permutations_baryons(masses):
     # Calculate antisymmetrization factors for each permutation, considering baryon groups
     antisym_factors = [count_transpositions_baryons(perm, group1, group2) for perm in complete_perms]
 
-    return complete_perms, antisym_factors
+    unique_complete_perms = []
+    unique_antisym_factors = []
+
+    for p in range(len(complete_perms)):
+        if antisym_factors[p] != 0:
+            unique_complete_perms.append(complete_perms[p])
+            unique_antisym_factors.append(antisym_factors[p])
+
+    return unique_complete_perms, unique_antisym_factors
 
 
 print("ferm_symm = ", ferm_symm)
@@ -213,7 +224,7 @@ masses = [1,1,1,1,1,1]
 if ferm_symm == "s":
     antisym_factors=[1] * len(perms)
 
-print("masses = ", masses)  
+print("masses = ", masses)
 
 #perms = [(0,1,2,3,4,5),(1,0,2,3,4,5)]
 #antisym_factors = [1,1]
