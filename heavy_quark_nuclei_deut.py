@@ -151,19 +151,23 @@ def unique_group_permutations(masses):
 
 def count_transpositions_baryons(perm, group1, group2):
     transpositions = 1  # Start with a factor of +1
+    print("trying perm = ", perm)  # Moved outside the inner loop to print only once per permutation
 
     for i in range(len(perm)):
         for j in range(i + 1, len(perm)):
-            # Check if the current pair involves a within-group swap
+            # Check if the current pair involves a within-group swap (intra-baryon swap)
             if (i in group1 and j in group1) or (i in group2 and j in group2):
                 if perm[i] > perm[j]:  # If out of order, it's a transposition
                     transpositions *= -1
-            # Check if the current pair involves a between-group swap
+                    print("add transposition minus sign for i = ", i, ", j = ", j)
+            # Check if the current pair involves a between-group swap (inter-baryon swap)
+            # We do nothing here because inter-baryon swaps do not affect the sign.
             elif (i in group1 and j in group2) or (i in group2 and j in group1):
-                if perm[i] > perm[j]:  # If out of order, it's a transposition
-                    transpositions *= 1  # Keep the factor the same (implicitly +1)
+                continue  # Inter-baryon swaps do not change the transposition sign
 
     return transpositions
+
+
 
 def unique_group_permutations_baryons(masses):
     # Group the indices by mass
@@ -223,6 +227,7 @@ print("Unique permutations of indices and their antisymmetrization factors:")
 for perm, factor in zip(perms, antisym_factors):
     print(f"Permutation: {perm}, Factor: {factor}")
 
+print("length of perms = ", len(perms))
 
 # TODO: WORKS! Gives list (0,1,2,3,4,5),...
 
