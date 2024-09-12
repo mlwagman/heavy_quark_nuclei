@@ -151,22 +151,32 @@ def unique_group_permutations(masses):
 
 def count_transpositions_baryons(perm, group1, group2):
     transpositions = 1  # Start with a factor of +1
-
-    print("trying permutation ", perm)
+    print("trying perm = ", perm)  # Moved outside the inner loop to print only once per permutation
     for i in range(len(perm)):
         for j in range(i + 1, len(perm)):
-            # Check if the current pair involves a within-group swap
+            # Check if the current pair involves a within-group swap (intra-baryon swap)
             if (i in group1 and j in group1) or (i in group2 and j in group2):
                 if perm[i] > perm[j]:  # If out of order, it's a transposition
                     transpositions *= -1
-                    #transpositions *= 0
-                    print("add transposition minus sign for i = ", i, ", j = ", j)
-            # Check if the current pair involves a between-group swap
+                    print("add transposition minus sign for i = ", i, ", j = ", j, ", perm[i] = ", perm[i], ", perm[j] = ", perm[j])
+            # Check if the current pair involves a between-group swap (inter-baryon swap)
+            # We do nothing here because inter-baryon swaps do not affect the sign.
             elif (i in group1 and j in group2) or (i in group2 and j in group1):
-                if perm[i] > perm[j]:  # If out of order, it's a transposition
-                    transpositions *= 1  # Keep the factor the same (implicitly +1)
+                continue  # Inter-baryon swaps do not change the transposition sign
 
     return transpositions
+
+def count_transpositions_baryons_no_intra_no_sign_change(perm, group1, group2):
+    print("trying perm = ", perm)  # Print the permutation once per call
+    for i in range(len(perm)):
+        for j in range(i + 1, len(perm)):
+            # Check if the current pair involves a within-group swap (intra-baryon swap)
+            if ((i in group1 and j in group1) or (i in group2 and j in group2)) and (masses[i] == masses[j]) and (perm[i] > perm[j]):
+               return 0
+#        if (masses[perm[i]] == masses[i]) and (perm[i] > i) and ((perm[i] in group1 and i in group1) or (perm[i] in group2 and i in group2)):
+#            return 0
+    return 1  # Always return +1 (no sign change)
+
 
 def unique_group_permutations_baryons(masses):
     # Group the indices by mass
@@ -176,8 +186,12 @@ def unique_group_permutations_baryons(masses):
             mass_dict[mass] = []
         mass_dict[mass].append(idx)
 
+    print("mass_dict = ", mass_dict)
+
     # Generate permutations for each group of identical masses
     perms_per_group = {mass: list(permutations(indices)) for mass, indices in mass_dict.items() if len(indices) > 1}
+
+    print("perms_per_group = ", perms_per_group)
 
     # Start with the identity permutation
     complete_perms = [list(range(len(masses)))]
@@ -197,18 +211,20 @@ def unique_group_permutations_baryons(masses):
                 new_complete_perms.append(new_perm)
         complete_perms = new_complete_perms
 
+    print("len complete_perms = ", len(complete_perms))
+
     # Calculate antisymmetrization factors for each permutation, considering baryon groups
-    antisym_factors = [count_transpositions_baryons(perm, group1, group2) for perm in complete_perms]
+    unique_factors = [count_transpositions_baryons_no_intra_no_sign_change(perm, group1, group2) for perm in complete_perms]
 
     unique_complete_perms = []
-    unique_antisym_factors = []
 
     for p in range(len(complete_perms)):
-        if antisym_factors[p] != 0:
+        if unique_factors[p] != 0:
             unique_complete_perms.append(complete_perms[p])
-            unique_antisym_factors.append(antisym_factors[p])
 
-    return unique_complete_perms, unique_antisym_factors
+    antisym_factors = [count_transpositions_baryons(perm, group1, group2) for perm in unique_complete_perms]
+
+    return unique_complete_perms, antisym_factors
 
 
 print("ferm_symm = ", ferm_symm)
@@ -234,6 +250,7 @@ print("Unique permutations of indices and their antisymmetrization factors:")
 for perm, factor in zip(perms, antisym_factors):
     print(f"Permutation: {perm}, Factor: {factor}")
 
+print("length of perms = ", len(perms))
 
 # TODO: WORKS! Gives list (0,1,2,3,4,5),...
 
@@ -1172,7 +1189,7 @@ if N_coord == 6:
         for ii in range(len(perms)):
             f_R_tensor = f_R(Rs, perms[ii], wavefunction=bra_wavefunction)
             # use the 1-walker version of tensor if Rs only has 1 walker
-            if Rs.shape[0] == N_coord:
+            if len(Rs.shape) == 2:
                 S_av4_tensor = S_av4p_metropolis_set[ii][0]
             # otherwise fall back on full version of S
             else:
@@ -1181,7 +1198,7 @@ if N_coord == 6:
         Ss=np.array([total_wvfn])
         #CHECK SAV4^2 =1!!
         result = np.abs( adl.inner(Ss,Ss) )
-        if Rs.shape[0] == N_coord:
+        if len(Rs.shape) != 2:
             result /= n_walkers
         return result
 
