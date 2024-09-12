@@ -237,22 +237,22 @@ else:
 
 # just doing interesting 2-flavor case
 if N_coord == 4:
+    # hardcoded in (q qbar) (q qbar) ordering
+    assert(swapI != 1)
     perms = [(0,1,2,3),(2,1,0,3)]
     if ferm_symm == "s":
         antisym_factors=[1,1]
     else:   
         antisym_factors=[1,-1]
 
-masses_print = masses
-
-masses = [1,1,1,1,1,1]
 if ferm_symm == "s":
     antisym_factors=[1] * len(perms)
 
+# reset all masses to +/- 1 now that we have computed perms from them
+masses_print = masses
+masses /= onp.abs(masses)
 print("masses = ", masses)
 
-#perms = [(0,1,2,3,4,5),(1,0,2,3,4,5)]
-#antisym_factors = [1,1]
 
 # Display permutations with antisymmetrization factors
 print("Unique permutations of indices and their antisymmetrization factors:")
@@ -263,10 +263,6 @@ print("length of perms = ", len(perms))
 
 # TODO: WORKS! Gives list (0,1,2,3,4,5),...
 
-#if wavefunction == "asymmetric":
-#    bra_wavefunction = "product"
-#    ket_wavefunction = "compact"
-#else:
 bra_wavefunction = wavefunction
 ket_wavefunction = wavefunction
 
@@ -1137,77 +1133,6 @@ if N_coord == 2:
 
 
 
-if N_coord == 4:
-  for i in range(NI):
-   for j in range(NI):
-    for k in range(NI):
-     for l in range(NI):
-        #if i == j and k == l:
-        spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,0)
-        if color == "1x1":
-            if swapI == 1:
-                # 1 x 1 -- Q Q Qbar Qbar
-                #print("QQ QbarQbar ordering")
-                S_av4p_metropolis[spin_slice] = kronecker_delta(i, k)*kronecker_delta(j,l)/NI
-            else:
-                # 1 x 1 -- Q Qbar Q Qbar
-                #print("QQbar QQbar ordering")
-                S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)/NI
-        elif color == "3x3bar":
-            if swapI == 1:
-                # 3bar x 3 -- Q Q Qbar Qbar
-                #print("QQ QbarQbar ordering")
-                S_av4p_metropolis[spin_slice] += kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2-2*NI)
-                S_av4p_metropolis[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(j, k)/np.sqrt(2*NI**2-2*NI)
-            else:
-                # 3bar x 3 -- Q Qbar Q Qbar
-                #print("QQbar QQbar ordering")
-                S_av4p_metropolis[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2-2*NI)
-                S_av4p_metropolis[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(k, j)/np.sqrt(2*NI**2-2*NI)
-        elif color == "3x3bar-1":
-            if swapI == 1:
-                # 3bar x 3 -- Q Q Qbar Qbar
-                #print("QQ QbarQbar ordering")
-                part3x3bar = kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2-2*NI)
-                part3x3bar -= kronecker_delta(i, l)*kronecker_delta(j, k)/np.sqrt(2*NI**2-2*NI)
-                part1x1 = kronecker_delta(i, k)*kronecker_delta(j,l)/NI
-                S_av4p_metropolis[spin_slice] = (part3x3bar - (1/np.sqrt(3))*part1x1)/np.sqrt(2/3)
-            else:
-                # 3bar x 3 -- Q Qbar Q Qbar
-                #print("QQbar QQbar ordering")
-                part3x3bar = kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2-2*NI)
-                part3x3bar -= kronecker_delta(i, l)*kronecker_delta(k, j)/np.sqrt(2*NI**2-2*NI)
-                part1x1 = kronecker_delta(i, j)*kronecker_delta(k,l)/NI
-                S_av4p_metropolis[spin_slice] = (part3x3bar - (1/np.sqrt(3))*part1x1)/np.sqrt(2/3)
-        elif color == "3x3bar-6x6bar":
-            theta_c = 1.0
-            if swapI == 1:
-                # 3bar x 3 -- Q Q Qbar Qbar
-                #print("QQ QbarQbar ordering")
-                part3x3bar = kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2-2*NI)
-                part3x3bar -= kronecker_delta(i, l)*kronecker_delta(j, k)/np.sqrt(2*NI**2-2*NI)
-                part6x6bar = kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2+2*NI)
-                part6x6bar += kronecker_delta(i, l)*kronecker_delta(j,k)/np.sqrt(2*NI**2+2*NI)
-                S_av4p_metropolis[spin_slice] = np.cos(theta_c)*part3x3bar + np.sin(theta_c)*part6x6bar
-            else:
-                # 3bar x 3 -- Q Qbar Q Qbar
-                #print("QQbar QQbar ordering")
-                part3x3bar = kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2-2*NI)
-                part3x3bar -= kronecker_delta(i, l)*kronecker_delta(k, j)/np.sqrt(2*NI**2-2*NI)
-                part6x6bar = kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2+2*NI)
-                part6x6bar += kronecker_delta(i, l)*kronecker_delta(k,j)/np.sqrt(2*NI**2+2*NI)
-                S_av4p_metropolis[spin_slice] = np.cos(theta_c)*part3x3bar + np.sin(theta_c)*part6x6bar
-        elif color == "6x6bar":
-            if swapI == 1:
-                # 6bar x 6 -- Q Q Qbar Qbar
-                #print("QQ QbarQbar ordering")
-                S_av4p_metropolis[spin_slice] += kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2+2*NI)
-                S_av4p_metropolis[spin_slice] += kronecker_delta(i, l)*kronecker_delta(j,k)/np.sqrt(2*NI**2+2*NI)
-            else:
-                # 6bar x 6 -- Q Qbar Q Qbar
-                #print("QQbar QQbar ordering")
-                S_av4p_metropolis[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2+2*NI)
-                S_av4p_metropolis[spin_slice] += kronecker_delta(i, l)*kronecker_delta(k,j)/np.sqrt(2*NI**2+2*NI)
 
 def generate_wavefunction_tensor(NI, NS, N_coord, full_permutations, color):
 
@@ -1219,36 +1144,111 @@ def generate_wavefunction_tensor(NI, NS, N_coord, full_permutations, color):
 
     for perm in full_permutations:
         S_av4p_metropolis = onp.zeros((n_walkers,) + (NI, NS) * N_coord, dtype=np.complex128)
-        original_indices = ["i", "j", "k", "l", "m", "n"]
-        permuted_indices = [original_indices[idx] for idx in perm]
-        print("original = ", original_indices)
-        print("permuted = ", permuted_indices)
+        if N_coord == 4:
+          for i_old in range(NI):
+           for j_old in range(NI):
+            for k_old in range(NI):
+             for l_old in range(NI):
+                #if i == j and k == l:
+                spin_slice = (slice(0, None),) + (i_old,0,j_old,0,k_old,0,l_old,0)
+                original_indices = [i_old, j_old, k_old, l_old]
+                permuted_indices = [original_indices[idx] for idx in perm]
+                i, j, k, l = tuple(permuted_indices)
+                if color == "1x1":
+                    if swapI == 1:
+                        # 1 x 1 -- Q Q Qbar Qbar
+                        #print("QQ QbarQbar ordering")
+                        S_av4p_metropolis[spin_slice] = kronecker_delta(i, k)*kronecker_delta(j,l)/NI
+                    else:
+                        # 1 x 1 -- Q Qbar Q Qbar
+                        #print("QQbar QQbar ordering")
+                        S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)/NI
+                elif color == "3x3bar":
+                    if swapI == 1:
+                        # 3bar x 3 -- Q Q Qbar Qbar
+                        #print("QQ QbarQbar ordering")
+                        S_av4p_metropolis[spin_slice] += kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2-2*NI)
+                        S_av4p_metropolis[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(j, k)/np.sqrt(2*NI**2-2*NI)
+                    else:
+                        # 3bar x 3 -- Q Qbar Q Qbar
+                        #print("QQbar QQbar ordering")
+                        S_av4p_metropolis[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2-2*NI)
+                        S_av4p_metropolis[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(k, j)/np.sqrt(2*NI**2-2*NI)
+                elif color == "3x3bar-1":
+                    if swapI == 1:
+                        # 3bar x 3 -- Q Q Qbar Qbar
+                        #print("QQ QbarQbar ordering")
+                        part3x3bar = kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2-2*NI)
+                        part3x3bar -= kronecker_delta(i, l)*kronecker_delta(j, k)/np.sqrt(2*NI**2-2*NI)
+                        part1x1 = kronecker_delta(i, k)*kronecker_delta(j,l)/NI
+                        S_av4p_metropolis[spin_slice] = (part3x3bar - (1/np.sqrt(3))*part1x1)/np.sqrt(2/3)
+                    else:
+                        # 3bar x 3 -- Q Qbar Q Qbar
+                        #print("QQbar QQbar ordering")
+                        part3x3bar = kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2-2*NI)
+                        part3x3bar -= kronecker_delta(i, l)*kronecker_delta(k, j)/np.sqrt(2*NI**2-2*NI)
+                        part1x1 = kronecker_delta(i, j)*kronecker_delta(k,l)/NI
+                        S_av4p_metropolis[spin_slice] = (part3x3bar - (1/np.sqrt(3))*part1x1)/np.sqrt(2/3)
+                elif color == "3x3bar-6x6bar":
+                    theta_c = 1.0
+                    if swapI == 1:
+                        # 3bar x 3 -- Q Q Qbar Qbar
+                        #print("QQ QbarQbar ordering")
+                        part3x3bar = kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2-2*NI)
+                        part3x3bar -= kronecker_delta(i, l)*kronecker_delta(j, k)/np.sqrt(2*NI**2-2*NI)
+                        part6x6bar = kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2+2*NI)
+                        part6x6bar += kronecker_delta(i, l)*kronecker_delta(j,k)/np.sqrt(2*NI**2+2*NI)
+                        S_av4p_metropolis[spin_slice] = np.cos(theta_c)*part3x3bar + np.sin(theta_c)*part6x6bar
+                    else:
+                        # 3bar x 3 -- Q Qbar Q Qbar
+                        #print("QQbar QQbar ordering")
+                        part3x3bar = kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2-2*NI)
+                        part3x3bar -= kronecker_delta(i, l)*kronecker_delta(k, j)/np.sqrt(2*NI**2-2*NI)
+                        part6x6bar = kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2+2*NI)
+                        part6x6bar += kronecker_delta(i, l)*kronecker_delta(k,j)/np.sqrt(2*NI**2+2*NI)
+                        S_av4p_metropolis[spin_slice] = np.cos(theta_c)*part3x3bar + np.sin(theta_c)*part6x6bar
+                elif color == "6x6bar":
+                    if swapI == 1:
+                        # 6bar x 6 -- Q Q Qbar Qbar
+                        #print("QQ QbarQbar ordering")
+                        S_av4p_metropolis[spin_slice] += kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2+2*NI)
+                        S_av4p_metropolis[spin_slice] += kronecker_delta(i, l)*kronecker_delta(j,k)/np.sqrt(2*NI**2+2*NI)
+                    else:
+                        # 6bar x 6 -- Q Qbar Q Qbar
+                        #print("QQbar QQbar ordering")
+                        S_av4p_metropolis[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2+2*NI)
+                        S_av4p_metropolis[spin_slice] += kronecker_delta(i, l)*kronecker_delta(k,j)/np.sqrt(2*NI**2+2*NI)
+        if N_coord == 6:
+            original_indices = ["i", "j", "k", "l", "m", "n"]
+            permuted_indices = [original_indices[idx] for idx in perm]
+            print("original = ", original_indices)
+            print("permuted = ", permuted_indices)
 
-        for i_old in range(NI):
-            for j_old in range(NI):
-                for k_old in range(NI):
-                    for l_old in range(NI):
-                        for m_old in range(NI):
-                            for n_old in range(NI):
-                                original_indices = [i_old, j_old, k_old, l_old, m_old, n_old]
-                                permuted_indices = [original_indices[idx] for idx in perm]
-                                i, j, k, l, m, n = tuple(permuted_indices)
+            for i_old in range(NI):
+                for j_old in range(NI):
+                    for k_old in range(NI):
+                        for l_old in range(NI):
+                            for m_old in range(NI):
+                                for n_old in range(NI):
+                                    original_indices = [i_old, j_old, k_old, l_old, m_old, n_old]
+                                    permuted_indices = [original_indices[idx] for idx in perm]
+                                    i, j, k, l, m, n = tuple(permuted_indices)
 
-                                spin_slice = (slice(0, None),) + (i_old,0,j_old,0,k_old,0,l_old,0,m_old,0,n_old,0)
+                                    spin_slice = (slice(0, None),) + (i_old,0,j_old,0,k_old,0,l_old,0,m_old,0,n_old,0)
 
-                                # Assign values based on color using explicit parameters
-                                if color == "1x1":
-                                    S_av4p_metropolis[spin_slice] = levi_civita(i, j, k) * levi_civita(l, m, n) / 6
-                                elif color == "AAA":
-                                    S_av4p_metropolis[spin_slice] = TAAA(i, j, k, l, m, n)
-                                elif color == "AAS":
-                                    S_av4p_metropolis[spin_slice] = TAAS(i, j, k, l, m, n)
-                                elif color == "ASA":
-                                    S_av4p_metropolis[spin_slice] = TASA(i, j, k, l, m, n)
-                                elif color == "SAA":
-                                    S_av4p_metropolis[spin_slice] = TSAA(i, j, k, l, m, n)
-                                elif color == "SSS":
-                                    S_av4p_metropolis[spin_slice] = TSSS(i, j, k, l, m, n)
+                                    # Assign values based on color using explicit parameters
+                                    if color == "1x1":
+                                        S_av4p_metropolis[spin_slice] = levi_civita(i, j, k) * levi_civita(l, m, n) / 6
+                                    elif color == "AAA":
+                                        S_av4p_metropolis[spin_slice] = TAAA(i, j, k, l, m, n)
+                                    elif color == "AAS":
+                                        S_av4p_metropolis[spin_slice] = TAAS(i, j, k, l, m, n)
+                                    elif color == "ASA":
+                                        S_av4p_metropolis[spin_slice] = TASA(i, j, k, l, m, n)
+                                    elif color == "SAA":
+                                        S_av4p_metropolis[spin_slice] = TSAA(i, j, k, l, m, n)
+                                    elif color == "SSS":
+                                        S_av4p_metropolis[spin_slice] = TSSS(i, j, k, l, m, n)
 
         S_av4p_metropolis_set.append(S_av4p_metropolis)
 
@@ -1272,6 +1272,7 @@ if N_coord == 6 or N_coord == 4:
             # otherwise fall back on full version of S
             else:
                 S_av4_tensor = S_av4p_metropolis_set[ii]
+            # TODO: Reuse f_R_tensor here!
             total_wvfn +=  antisym_factors[ii]*S_av4_tensor*f_R(Rs, wavefunction=bra_wavefunction, perm=perms[ii])
         Ss=np.array([total_wvfn])
         #CHECK SAV4^2 =1!!
@@ -1361,12 +1362,6 @@ S_av4p_metropolis_norm = adl.inner(S_av4p_metropolis_set[0], S_av4p_metropolis_s
 print("spin-flavor wavefunction normalization = ", S_av4p_metropolis_norm)
 assert (np.abs(S_av4p_metropolis_norm - 1.0) < 1e-6).all()
 
-#print("old ", f_R_old(Rs_metropolis))
-#print("new ", f_R(Rs_metropolis))
-
-#print("old laplacian ", laplacian_f_R_old(Rs_metropolis))
-#print("new laplacian ", laplacian_f_R(Rs_metropolis))
-
 # trivial contour deformation
 deform_f = lambda x, params: x
 params = (np.zeros((n_step+1)),)
@@ -1429,19 +1424,11 @@ for count, R in enumerate(gfmc_Rs):
         K_term += -1/2*laplacian_f_R(R_T, afac=afac*gfac, a0=a0/gfac) / f_R(R_T, wavefunction=bra_wavefunction) * g
         Ks.append(K_term)
 
-    if N_coord == 6:
+    if N_coord == 4 or N_coord == 6:
         total_wvfn = np.zeros((Rs_metropolis.shape[0],)  + (NI, NS) * N_coord, dtype=np.complex128)
         total_lap = np.zeros((Rs_metropolis.shape[0],)  + (NI, NS) * N_coord, dtype=np.complex128)
         for ii in range(len(perms)):
-            #print("ii=",ii)
-            #print("perms[ii]",perms[ii])
-            #print("Rs",R)
-            #print("Rs shape",R.shape)
-            #print("fR=",f_R(R,perms[ii],wavefunction=bra_wavefunction).shape)
-            #print("S_av4=",S_av4p_metropolis_set[ii].shape)
-            #print("total_wvfn=",total_wvfn.shape)
             test=antisym_factors[ii]*np.einsum("i,i...->i...", f_R(R,perms[ii],wavefunction=bra_wavefunction), S_av4p_metropolis_set[ii])
-            #print("test=",test.shape)
             total_wvfn +=  antisym_factors[ii]*np.einsum("i,i...->i...", f_R(R,perms[ii],wavefunction=bra_wavefunction), S_av4p_metropolis_set[ii])
             total_lap +=  antisym_factors[ii]*np.einsum("i,i...->i...", laplacian_f_R(R,perms[ii],wavefunction=bra_wavefunction), S_av4p_metropolis_set[ii])
         numerator = adl.inner(total_wvfn,total_lap)
@@ -1466,39 +1453,9 @@ for count, R in enumerate(gfmc_Rs):
     V_SI, V_SD = Coulomb_potential(R)
     print("shape of VSI = ",V_SI.shape)
     print("shape of VSD = ",V_SD.shape)
-#    np.einsum("i,j...->ij...", f_R(R,perms[ii],wavefunction=bra_wavefunction), S_av4p_metropolis_set[ii])
-#    np.einsum("i,j...->ij...", f_R(R,perms[ii],wavefunction=bra_wavefunction), S_av4p_metropolis_set[ii])
-    #if N_coord == 6:
-    #  print("V_SD has ", V_SD[0,0,0,1,0,2,0,0,0,1,0,2,0,0,0,1,0,2,0,0,0,1,0,2,0])
-    #  print("V_SD has ", V_SD[0,0,0,1,0,2,0,0,0,1,0,2,0,0,0,1,0,2,0,0,0,2,0,1,0])
-    #  print("V_SD has ", V_SD[0,0,0,1,0,2,0,0,0,2,0,1,0,0,0,1,0,2,0,0,0,2,0,1,0])
-
-    #V_SD_S = [adl.batched_apply(V_SD, S[ii]) for ii in range(len(S))]
-
-    #if N_coord == 6:
-    #  print("S(0,1,2,0,1,2) = ", S[0,0,0,1,0,2,0,0,0,1,0,2,0])
-    #  print("V_SD_S(0,1,2,0,1,2) = ", V_SD_S[0,0,0,1,0,2,0,0,0,1,0,2,0])
-    #  print("S(0,2,1,0,1,2) = ", S[0,0,0,2,0,1,0,0,0,1,0,2,0])
-    #  print("V_SD_S(0,2,1,0,1,2) = ", V_SD_S[0,0,0,2,0,1,0,0,0,1,0,2,0])
-    #  print("S(0,1,2,0,2,1) = ", S[0,0,0,1,0,2,0,0,0,2,0,1,0])
-      #print("V_SD_S(0,1,2,0,2,1) = ", V_SD_S[0,0,0,1,0,2,0,0,0,2,0,1,0])
-      #print("S(0,1,2,0,:,:) = ", S[0,0,0,1,0,2,0,0,0,:,0,:,0])
-      #print("V_SD_S(0,1,2,0,:,:) = ", V_SD_S[0,0,0,1,0,2,0,0,0,:,0,:,0])
-    #print("S_T shape is ", S_av4p_metropolis.shape)
-    #print("S shape is ", S.shape)
-    #print("V_SI shape is ", V_SI.shape)
-    #print("V_SI_S shape is ", V_SI_S.shape)
     broadcast_SI = ((slice(None),) + (np.newaxis,)*N_coord*2)
 
-    #V_SI_S = [adl.batched_apply(V_SI, S[ii]) for ii in range(len(S))]
-
-    #print("V_SD shape is ", V_SD.shape)
-    #print("V_SD L2 norm is ", np.sqrt(np.mean(V_SD**2)))
-    #print("V_SD Linfinity norm is ", np.max(np.abs(V_SD)))
-    #print("V_SD_S shape is ", V_SD_S.shape)
-    #print("V_SD_S L2 norm is ", np.sqrt(np.mean(V_SD_S**2)))
-    #print("V_SD_S Linfinity norm is ", np.max(np.abs(V_SD_S)))
-    if N_coord == 6:
+    if N_coord == 4 or N_coord == 6:
         total_wvfn = np.zeros((Rs_metropolis.shape[0],)  + (NI, NS) * N_coord, dtype=np.complex128)
         for ii in range(len(perms)):
             total_wvfn +=  antisym_factors[ii]*np.einsum("i,i...->i...", f_R(R,perms[ii],wavefunction=bra_wavefunction), S_av4p_metropolis_set[ii])
@@ -1508,9 +1465,6 @@ for count, R in enumerate(gfmc_Rs):
         V_tot= numerator/denominator
     else:
         V_tot = adl.inner(S_av4p_metropolis, V_SD_S + V_SI_S) / adl.inner(S_av4p_metropolis, S)
-    #print("V_tot shape is ", V_tot.shape)
-    #print("V_tot L2 norm is ", np.sqrt(np.mean(V_tot**2)))
-    #print("V_tot Linfinity norm is ", np.max(np.abs(V_tot)))
     print(f"calculated potential in {time.time() - V_time} sec")
     Vs.append(V_tot)
 
@@ -1518,80 +1472,15 @@ Vs = np.array(Vs)
 
 print(Vs.shape)
 
-if N_coord == 4:
-  S_1x1 = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
-  S_3x3bar = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
-  S_6x6bar = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
-  for i in range(NI):
-   for j in range(NI):
-    for k in range(NI):
-     for l in range(NI):
-        #if i == j and k == l:
-        spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,0)
-        if swapI == 1:
-            S_1x1[spin_slice] = kronecker_delta(i, k)*kronecker_delta(j,l)/NI
-            S_3x3bar[spin_slice] += kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2-2*NI)
-            S_3x3bar[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(j, k)/np.sqrt(2*NI**2-2*NI)
-            S_6x6bar[spin_slice] += kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2+2*NI)
-            S_6x6bar[spin_slice] += kronecker_delta(i, l)*kronecker_delta(j,k)/np.sqrt(2*NI**2+2*NI)
-        else:
-            S_1x1[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)/NI
-            S_3x3bar[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2-2*NI)
-            S_3x3bar[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(k, j)/np.sqrt(2*NI**2-2*NI)
-            S_6x6bar[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2+2*NI)
-            S_6x6bar[spin_slice] += kronecker_delta(i, l)*kronecker_delta(k,j)/np.sqrt(2*NI**2+2*NI)
-
-  Z_1x1 = []
-  Z_3x3bar = []
-  Z_6x6bar = []
-  Z_norm = []
-  for count, R in enumerate(gfmc_Rs):
-    print('Calculating potential for step ', count)
-    V_time = time.time()
-    S = gfmc_Ss[count]
-    Z_1x1.append(adl.inner(S_1x1, S) / np.sqrt(adl.inner(S, S)))
-    Z_3x3bar.append(adl.inner(S_3x3bar, S) / np.sqrt(adl.inner(S, S)))
-    Z_6x6bar.append(adl.inner(S_6x6bar, S) / np.sqrt(adl.inner(S, S)))
-    Z_norm.append(np.sqrt( adl.inner(S_6x6bar, S)**2 + adl.inner(S_3x3bar, S)**2 ) / np.sqrt(adl.inner(S, S)))
-  Z_1x1 = np.array(Z_1x1)
-  Z_3x3bar = np.array(Z_3x3bar)
-  Z_6x6bar = np.array(Z_6x6bar)
-  Z_norm = np.array(Z_norm)
-
-#if verbose:
-    #ave_Vs = np.array([al.bootstrap(V, W, Nboot=100, f=adl.rw_mean)
-    #        for V,W in zip(Vs, gfmc_Ws)])
-#    ave_Vs = np.array([al.bootstrap(Vs[0], gfmc_Ws[0], Nboot=100, f=adl.rw_mean)])
-#    print("V[tau=0] = ",ave_Vs,"\n\n")
-#    ave_Vs = np.array([al.bootstrap(Vs[-1], gfmc_Ws[-1], Nboot=100, f=adl.rw_mean)])
-#    print("V[last tau] = ",ave_Vs,"\n\n")
-
-#Ks *= fm_Mev**2
-
-#Vs = np.array([
-#    sum([
-#        AV_Coulomb[name](dRs) * adl.compute_O(adl.two_body_ops[name](dRs), S, S_av4p_metropolis)
-#        for name in AV_Coulomb
-#    ])
-#    for dRs, S in zip(map(adl.to_relative, gfmc_Rs), gfmc_Ss)])
-
 if volume == "finite":
-    #tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilaket"+str(spoilaket) + "_spoilf"+str(spoilf) + "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
     tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses_print)+"_color_"+color+"_g"+str(g)+"_ferm_symm"+str(ferm_symm)
 else:
-    #tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilaket"+str(spoilaket) + "_spoilf"+str(spoilf)+ "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
     tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses_print)+"_color_"+color+"_g"+str(g)+"_ferm_symm"+str(ferm_symm)
 
 
 with h5py.File(outdir+'Hammys_'+tag+'.h5', 'w') as f:
     dset = f.create_dataset("Hammys", data=Ks+Vs)
     dset = f.create_dataset("Ws", data=gfmc_Ws)
-
-if N_coord == 4:
-    with h5py.File(outdir+'Zs_'+tag+'.h5', 'w') as f:
-        dset = f.create_dataset("Z_1x1", data=Z_1x1)
-        dset = f.create_dataset("Z_3x3bar", data=Z_3x3bar)
-        dset = f.create_dataset("Z_6x6bar", data=Z_6x6bar)
 
 with h5py.File(outdir+'Hammys_'+tag+'.h5', 'r') as f:
     data = f['Hammys']
@@ -1679,17 +1568,3 @@ if verbose:
     print("K=",ave_Ks,"\n\n")
     print("V=",ave_Vs,"\n\n")
 
-    if N_coord == 4:
-      ave_Z_1x1 = np.array([al.bootstrap(Z, Nboot=100, f=al.rmean)
-              for Z in Z_1x1])
-      ave_Z_3x3bar = np.array([al.bootstrap(Z, Nboot=100, f=al.rmean)
-              for Z in Z_3x3bar])
-      ave_Z_6x6bar = np.array([al.bootstrap(Z, Nboot=100, f=al.rmean)
-              for Z in Z_6x6bar])
-      ave_Z_norm = np.array([al.bootstrap(Z, Nboot=100, f=al.rmean)
-              for Z in Z_norm])
-
-      print("Z_1x1=",ave_Z_1x1,"\n\n")
-      print("Z_3x3bar=",ave_Z_3x3bar,"\n\n")
-      print("Z_6x6bar=",ave_Z_6x6bar,"\n\n")
-      print("Z_norm=",ave_Z_norm,"\n\n")
