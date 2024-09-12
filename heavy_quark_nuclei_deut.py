@@ -234,6 +234,15 @@ if ferm_symm == "a" or ferm_symm == "s":
 else:
     perms, antisym_factors = unique_group_permutations_baryons(masses)
 
+
+# just doing interesting 2-flavor case
+if N_coord == 4:
+    perms = [(0,1,2,3),(2,1,0,3)]
+    if ferm_symm == "s":
+        antisym_factors=[1,1]
+    else:   
+        antisym_factors=[1,-1]
+
 masses_print = masses
 
 masses = [1,1,1,1,1,1]
@@ -620,6 +629,29 @@ def f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
     # Apply permutations if provided and N_coord is 6
     # Apply permutations if provided and N_coord is 6
 
+    if perm is not None and N_coord == 4:
+        #print("Inside f_R:")
+        #print(f"Rs shape:", Rs.shape)
+        #print(f"Rs type: {type(Rs)}")
+        print(f"Perm type: {type(perm)}")
+        print(f"Perm contents: {perm}")
+        #jax.debug.print("Rs before permutation: {}", Rs)
+
+        perm = np.array(perm)
+
+        if Rs.shape[-2] == 4:
+            # Handle both (6, 3) and (N_walkers, 6, 3) shapes
+            if Rs.ndim == 2:
+                # Shape is (6, 3)
+                Rs = Rs[perm, :]
+            elif Rs.ndim == 3:
+                # Shape is (N_walkers, 6, 3)
+                Rs = Rs[:, perm, :]
+            else:
+                raise ValueError(f"Unexpected shape for Rs: {Rs.shape}")
+
+        #jax.debug.print("Rs after permutation: {}", Rs)
+
     if perm is not None and N_coord == 6:
         #print("Inside f_R:")
         #print(f"Rs shape:", Rs.shape)
@@ -706,6 +738,29 @@ def laplacian_f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0, afac=afac,
     if radial_n > 1:
         assert N_coord == 2
     nabla_psi_tot = 0
+
+    if perm is not None and N_coord == 4:
+        print("Inside f_R:")
+        #print(f"Rs shape:", Rs.shape)
+        #print(f"Rs type: {type(Rs)}")
+        print(f"Perm type: {type(perm)}")
+        print(f"Perm contents: {perm}")
+        #print("Rs:", Rs)
+
+        perm = np.array(perm)
+
+        if Rs.shape[-2] == 4:
+            # Handle both (6, 3) and (N_walkers, 6, 3) shapes
+            if Rs.ndim == 2:
+                # Shape is (6, 3)
+                Rs = Rs[perm, :]
+            elif Rs.ndim == 3:
+                # Shape is (N_walkers, 6, 3)
+                Rs = Rs[:, perm, :]
+            else:
+                raise ValueError(f"Unexpected shape for Rs: {Rs.shape}")
+
+        #print("Rs after permutation:", Rs)
 
     if perm is not None and N_coord == 6:
         print("Inside f_R:")
@@ -852,6 +907,31 @@ if N_coord >= 6 and verbose:
         #N_walkers = Rs.shape[0]
         #assert Rs.shape == (N_walkers, N_coord, 3)
         nabla_psi_tot = 0
+
+        if perm is not None and N_coord == 4:
+            print("Inside f_R:")
+            #print(f"Rs shape:", Rs.shape)
+            #print(f"Rs type: {type(Rs)}")
+            print(f"Perm type: {type(perm)}")
+            print(f"Perm contents: {perm}")
+            #print("Rs:", Rs)
+
+            perm = np.array(perm)
+
+            if Rs.shape[-2] == 4:
+                # Handle both (6, 3) and (N_walkers, 6, 3) shapes
+                if Rs.ndim == 2:
+                    # Shape is (6, 3)
+                    Rs = Rs[perm, :]
+                elif Rs.ndim == 3:
+                    # Shape is (N_walkers, 6, 3)
+                    Rs = Rs[:, perm, :]
+                else:
+                    raise ValueError(f"Unexpected shape for Rs: {Rs.shape}")
+
+            #print("Rs after permutation:", Rs)
+
+
         if perm is not None and N_coord == 6:
             print("Inside f_R:")
             #print(f"Rs shape:", Rs.shape)
@@ -1130,6 +1210,7 @@ if N_coord == 4:
                 S_av4p_metropolis[spin_slice] += kronecker_delta(i, l)*kronecker_delta(k,j)/np.sqrt(2*NI**2+2*NI)
 
 def generate_wavefunction_tensor(NI, NS, N_coord, full_permutations, color):
+
     # Initialize base tensor to hold wavefunctions
     S_av4p_metropolis_set = []
 
@@ -1177,7 +1258,7 @@ def generate_wavefunction_tensor(NI, NS, N_coord, full_permutations, color):
     print(f"Generated {len(S_av4p_metropolis_set)} wavefunction ensembles based on permutations.")
     return S_av4p_metropolis_set
 
-if N_coord == 6:
+if N_coord == 6 or N_coord == 4:
     S_av4p_metropolis_set = generate_wavefunction_tensor(NI, NS, N_coord, perms, color)
 
     def f_R_sq(Rs):
