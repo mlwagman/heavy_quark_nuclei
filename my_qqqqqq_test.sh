@@ -42,8 +42,6 @@ if [ ! -f "$fit" ]; then
 python3 average_constant_fit.py "--database=${file}" --dtau $dt
 fi
 
-exit
-
 # deuteron
 
 masses="1.0 2.0 2.0 1.0 1.0 2.0"
