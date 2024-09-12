@@ -1143,34 +1143,31 @@ def generate_wavefunction_tensor(NI, NS, N_coord, full_permutations, color):
         print("original = ", original_indices)
         print("permuted = ", permuted_indices)
 
-        for i in range(NI):
-            for j in range(NI):
-                for k in range(NI):
-                    for l in range(NI):
-                        for m in range(NI):
-                            for n in range(NI):
-                                original_indices = [i, j, k, l, m, n]
+        for i_old in range(NI):
+            for j_old in range(NI):
+                for k_old in range(NI):
+                    for l_old in range(NI):
+                        for m_old in range(NI):
+                            for n_old in range(NI):
+                                original_indices = [i_old, j_old, k_old, l_old, m_old, n_old]
                                 permuted_indices = [original_indices[idx] for idx in perm]
+                                i, j, k, l, m, n = tuple(permuted_indices)
 
-
-
-                                # Define the spin slice based on permuted indices
-                                #spin_slice = (slice(None),) + tuple(chain(*[(idx, 0) for idx in permuted_indices]))
-                                spin_slice = (slice(0, None),) + (i,0,j,0,k,0,l,0,m,0,n,0)
+                                spin_slice = (slice(0, None),) + (i_old,0,j_old,0,k_old,0,l_old,0,m_old,0,n_old,0)
 
                                 # Assign values based on color using explicit parameters
                                 if color == "1x1":
-                                    S_av4p_metropolis[spin_slice] = levi_civita(permuted_indices[0], permuted_indices[1], permuted_indices[2]) * levi_civita(permuted_indices[3], permuted_indices[4], permuted_indices[5]) / 6
+                                    S_av4p_metropolis[spin_slice] = levi_civita(i, j, k) * levi_civita(l, m, n) / 6
                                 elif color == "AAA":
-                                    S_av4p_metropolis[spin_slice] = TAAA(permuted_indices[0], permuted_indices[1], permuted_indices[2], permuted_indices[3], permuted_indices[4], permuted_indices[5])
+                                    S_av4p_metropolis[spin_slice] = TAAA(i, j, k, l, m, n)
                                 elif color == "AAS":
-                                    S_av4p_metropolis[spin_slice] = TAAS(permuted_indices[0], permuted_indices[1], permuted_indices[2], permuted_indices[3], permuted_indices[4], permuted_indices[5])
+                                    S_av4p_metropolis[spin_slice] = TAAS(i, j, k, l, m, n)
                                 elif color == "ASA":
-                                    S_av4p_metropolis[spin_slice] = TASA(permuted_indices[0], permuted_indices[1], permuted_indices[2], permuted_indices[3], permuted_indices[4], permuted_indices[5])
+                                    S_av4p_metropolis[spin_slice] = TASA(i, j, k, l, m, n)
                                 elif color == "SAA":
-                                    S_av4p_metropolis[spin_slice] = TSAA(permuted_indices[0], permuted_indices[1], permuted_indices[2], permuted_indices[3], permuted_indices[4], permuted_indices[5])
+                                    S_av4p_metropolis[spin_slice] = TSAA(i, j, k, l, m, n)
                                 elif color == "SSS":
-                                    S_av4p_metropolis[spin_slice] = TSSS(permuted_indices[0], permuted_indices[1], permuted_indices[2], permuted_indices[3], permuted_indices[4], permuted_indices[5])
+                                    S_av4p_metropolis[spin_slice] = TSSS(i, j, k, l, m, n)
 
         S_av4p_metropolis_set.append(S_av4p_metropolis)
 
