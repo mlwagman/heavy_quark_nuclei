@@ -4,7 +4,6 @@ import jax
 from jax import config
 config.update("jax_enable_x64", True)
 import jax.numpy as np
-#import jax.experimental.optimizers
 import jax.example_libraries.optimizers
 import numpy as onp
 import pickle
@@ -20,12 +19,8 @@ mp_Mev = 1.0
 
 ### GFMC utils
 def draw_dR(shape, *, lam, axis=1, masses=1):
-    #dR = lam/onp.sqrt(2) * onp.random.normal(size=shape)
     dR = onp.transpose( lam/onp.sqrt(2) * onp.transpose( onp.random.normal(size=shape) ) )
     # subtract mean dR to avoid "drift" in the system
-    #dR -= onp.mean(dR, axis=axis, keepdims=True)
-    # WRONG!!
-    #dR -= np.transpose(np.transpose(np.mean(np.transpose(np.transpose(dR)*masses), axis=axis, keepdims=True))/masses)
     dR -= np.transpose(np.transpose(np.mean(np.transpose(np.transpose(dR)*masses), axis=axis, keepdims=True))/np.mean(masses))
     return dR
 
@@ -38,7 +33,6 @@ def step_G0(R, *, dtau_iMev, m_Mev):
 def step_G0_symm(R, *, dtau_iMev, m_Mev):
     dtau_fm = dtau_iMev * fm_Mev
     lam_fm = np.sqrt(2/m_Mev * fm_Mev * dtau_fm)
-    # print(f'lam_fm = {lam_fm}')
     dR = draw_dR(R.shape, lam=lam_fm)
     return R+dR, R-dR
 
@@ -50,10 +44,6 @@ def step_G0_symm_distinct(R, *, dtau_iMev, m_Mev):
     for i in range(0, n_coord):
         dR[:,i,:] = dR[:,i,:] * lam_fm[i]
     # subtract mean dR to avoid "drift" in the system
-    #drift = np.einsum("jik,i->jk", dR, m_Mev) / np.sum(m_Mev)
-    #for i in range(0, n_coord):
-    #    dR[:,i,:] = dR[:,i,:] - drift
-    #dR -= onp.mean(dR, axis=1, keepdims=True)
     return R+dR, R-dR
 
 def normalize_wf(f_R, df_R, ddf_R):
@@ -97,14 +87,12 @@ for a in range(8):
     for b in range(a):
         assert( np.einsum('ij,ji', gells[a], gells[b]) < 1e-6 )
 
-#define levi-cevita tensor
 # Define the Levi-Civita symbol tensor
 lc_tensor = onp.zeros((NI, NI, NI))
 lc_tensor[0, 1, 2] = lc_tensor[1, 2, 0] = lc_tensor[2, 0, 1] = 1
 lc_tensor[0, 2, 1] = lc_tensor[2, 1, 0] = lc_tensor[1, 0, 2] = -1
 
 # QQ color symmetric potential operator
-#iso_del = 1/2 * 1/2 * (onp.einsum('ab,cd->acdb', onp.identity(NI), onp.identity(NI)) + onp.einsum('ab,cd->cadb', onp.identity(NI), onp.identity(NI)))
 iso_del = 1/2 * 1/2 * (onp.einsum('ab,cd->acdb', onp.identity(NI), onp.identity(NI)) + onp.einsum('ab,cd->cadb', onp.identity(NI), onp.identity(NI)))
 
 # QQ color antisymmetric potential operator
@@ -149,10 +137,8 @@ three_body_pieces = {
 def Sij(Rij):
     batch_size, nd = Rij.shape
     assert nd == 3, 'Rij must be batched 3-vectors'
-    # pauli_Rij = np.einsum('xij,ax->aij', paulis, Rij)
     pauli_Rij = np.tensordot(Rij, paulis, axes=1) # \vec{R} . \vec{pauli}
     rij2 = norm_3vec_sq(Rij)
-    # term1 = 3*np.einsum('aij,akl,a->aikjl', pauli_Rij, pauli_Rij, 1/rij2)
     pauli_Rij_rescale = pauli_Rij / rij2[:,np.newaxis,np.newaxis]
     term1 = 3*pauli_Rij_rescale[...,np.newaxis,np.newaxis]*pauli_Rij[:,np.newaxis,np.newaxis]
     term1 = np.swapaxes(term1, axis1=2, axis2=3)
@@ -192,7 +178,6 @@ def get_qqbar_two_body_ops(x):
 
 three_body_ops = {
     'O1': lambda Rij, Rjk, Rik: three_body_outer(
-        #three_body_pieces['iso_I'][np.newaxis],
         1/6*three_body_pieces['iso_I'][np.newaxis],
         three_body_pieces['sp_I'][np.newaxis]),
     'OA': lambda Rij, Rjk, Rik: three_body_outer(
@@ -233,7 +218,7 @@ def make_pairwise_potential(AVcoeffs, B3coeffs, masses):
         start_pot = time.time()
         batch_size, A = R.shape[:2]
         V_SI_Mev = 0
-        V_SD_Mev = np.zeros( # big-ass matrix
+        V_SD_Mev = np.zeros( # big matrix
             (batch_size,) + # batch of walkers
             (NI,NS)*A + # source (i1, s1, i2, s2, ...)
             (NI,NS)*A, # sink (i1', s1', i2', s2', ...)
@@ -308,13 +293,13 @@ def make_pairwise_product_potential(AVcoeffs, B3coeffs, masses):
     @jax.jit
     def pairwise_potential(R):
         batch_size, A = R.shape[:2]
-        V_SI_Mev = np.zeros( # big-ass matrix
+        V_SI_Mev = np.zeros( # big matrix
             (batch_size,) + # batch of walkers
             (NI,NS)*A + # source (i1, s1, i2, s2, ...)
             (NI,NS)*A, # sink (i1', s1', i2', s2', ...)
             dtype=np.complex128
         )
-        V_SD_Mev = np.zeros( # big-ass matrix
+        V_SD_Mev = np.zeros( # big matrix
             (batch_size,) + # batch of walkers
             (NI,NS)*A + # source (i1, s1, i2, s2, ...)
             (NI,NS)*A, # sink (i1', s1', i2', s2', ...)
@@ -350,16 +335,6 @@ def make_pairwise_product_potential(AVcoeffs, B3coeffs, masses):
                     starting_perm = generate_full_sequence(2*A)
                     print('starting_perm',starting_perm)
                     scaled_O = np.transpose(scaled_O, axes=starting_perm)
-                    #print("scaled_O shape =",scaled_O.shape)
-                    #print("i = ",i," j = ", j)
-                    #perm = [ l for l in range(A) ]
-                    #perm[0] = i
-                    #perm[i] = 0
-                    #perm_copy = perm.copy()
-                    #j_slot = perm.index(j)
-                    #perm[1] = perm_copy[j_slot]
-                    #perm[j_slot] = perm_copy[1]
-                    #print(perm)
                     perm = [ l for l in range(2*A) ]
                     perm[0] = 2*i
                     perm[1] = 2*i+1
@@ -371,25 +346,15 @@ def make_pairwise_product_potential(AVcoeffs, B3coeffs, masses):
                     perm[3] = perm_copy[j_slot+1]
                     perm[j_slot] = perm_copy[2]
                     perm[j_slot+1] = perm_copy[3]
-                    #src_perm = [ perm[l] + 1 for l in range(len(perm)) ]
                     src_perm = [ perm[l] + 1 for l in range(len(perm)) ]
                     snk_perm = [ src_perm[l] + 2*A for l in range(len(perm)) ]
                     full_perm = [0] + src_perm + snk_perm
-                    #print(perm)
-                    #print("full perm = ",full_perm)
                     scaled_O_perm = np.transpose(scaled_O, axes=full_perm)
                     if name == 'O1':
                         broadcast_inds = (slice(None),) + (0,)*(len(Oij.shape)-1)
                         V_SI_Mev = V_SI_Mev + scaled_O[broadcast_inds]
-                    #    V_SI_Mev += scaled_O_perm[broadcast_inds]
                     else:
                         V_SD_Mev += scaled_O_perm
-                        #print("O ", Oij[0,0,0,1,0,0,0,1,0])
-                        #print("scaled O ", scaled_O[0,0,0,1,0,0,0,1,0,2,0,2,0])
-                        #print("scaled O perm ", scaled_O_perm[0,0,0,1,0,0,0,1,0,2,0,2,0])
-                        #print("V_SD ", V_SD_Mev[0,0,0,1,0,0,0,1,0,2,0,2,0])
-                        #print(Oij.shape)
-                        #print(scaled_O.shape)
         return V_SI_Mev, V_SD_Mev
     return pairwise_potential
 
@@ -403,6 +368,8 @@ def batched_apply(M, S): # compute M|S>
     inds_M = list(range(len(M.shape)))
     inds_S = [0] + list(range(len(S.shape), 2*len(S.shape)-1))
     inds_out = [0] + list(range(1, len(S.shape)))
+    #S_size = S[0].size
+    #return np.array([ (M[i].reshape((S_size,) + M.shape[len(S.shape):]).T @ S[i].reshape(S_size)).T for i in range(S.shape[0]) ])
     return np.einsum(M, inds_M, S, inds_S, inds_out)
 
 @partial(jax.jit)
@@ -527,52 +494,6 @@ def measure_eucl_density_response(R0, RN, *, q_Mev, i, j):
     return np.exp(1j * xN) * np.exp(-1j * x0)
 
 
-# evaluate <psi_T|H|psi(tau)>
-# where R,S are a batch of pointlike evaluations
-# of |psi>
-# def make_twobody_sample_mean_H(AVcoeffs):
-#     def estimate_H(R, S, Ws, S_T, f, df, ddf, *, m_Mev, verbose=False):
-#         """Estimate <psi_T|H|psi(tau)>/<psi_T|psi(tau)> given metropolis samples from psi(tau)
-
-#         `R` and `S` are samples from GFMC evolution of psi_T. `W` is the reweighting
-#         factor from q(R) to I(R), defined by \expt{I(R)} = <psi_T(R) | psi(tau,R)>.
-
-#         `f`, `df`, and `ddf` are the scalar amplitude/derivates psi_T(R) on the
-#         metropolis samples `R`.
-#         TODO: for now `R` is relative coordinates between pair of nucleons, should
-#         upgrade to absolute coordinates of A nucleons.
-#         """
-#         W, Wp = Ws # W for <V>, Wp for <K>
-#         K_Mev = np.array(compute_K(R, f, df, ddf, m_Mev=m_Mev))
-#         est_K = np.mean(np.real(K_Mev))/np.mean(np.real(W))
-#         if verbose: tqdm.tqdm.write(f'<K> = {est_K}')
-#         Os = {
-#             name: np.array(
-#                 compute_O(two_body_ops[name](R), R, S, W, S_T, AVcoeff=AVcoeffs[name](R)))
-#             for name in AVcoeffs
-#         }
-#         if verbose:
-#             for name in AVcoeffs:
-#                 boot_val = np.mean(np.real(Os[name]))/np.mean(np.real(W))
-#                 tqdm.tqdm.write(f'<{name}> = {boot_val}')
-#         V_Mev = sum(Os.values())
-#         est_V = np.mean(np.real(V_Mev))/np.mean(np.real(W))
-#         if verbose: tqdm.tqdm.write(f'<V> = {est_V}')
-#         H_Mev = K_Mev + V_Mev
-#         est_H = np.mean(np.real(H_Mev))/np.mean(np.real(W))
-#         est_H2_num = np.mean(np.real(H_Mev)**2)/np.mean(np.real(W))
-#         est_H2_den = np.mean(np.real(W)**2)/np.mean(np.real(W))
-#         if verbose: tqdm.tqdm.write(f'<H> = {est_H}')
-#         res = {
-#             'H': est_H,
-#             'K': est_K,
-#             'V': est_V,
-#             'H2_num': est_H2_num,
-#             'H2_den': est_H2_den
-#         }
-#         return res
-#     return estimate_H
-
 ### Metropolis/GFMC
 def make_wf_weight(f_R):
     def weight(R):
@@ -588,7 +509,6 @@ def parallel_tempered_metropolis(fac_list, R_list, W, *, n_therm, n_step, n_skip
     print(f"Starting parallel tempered Metropolis with {streams} streams")
     acc_list = [ 0 for s in range(0,streams) ]
     swap_acc_list = [ 0 for s in range(0,streams) ]
-    #for i in range(-n_therm, n_step*n_skip):
     (N_coord, N_d) = R_list[0].shape
     W_R_list = [ 0 for s in range(0,streams) ]
     for s in range(streams):
@@ -597,7 +517,6 @@ def parallel_tempered_metropolis(fac_list, R_list, W, *, n_therm, n_step, n_skip
         # cluster update
         for s in range(streams):
             R_flat = onp.reshape(R_list[s], (N_coord*N_d))
-            #onp.random.shuffle(R_flat)
             new_R = onp.reshape(R_flat, (N_coord,N_d))
             new_R -= onp.mean(new_R, axis=0, keepdims=True)
             new_W_R = W(new_R, fac_list[s])
@@ -605,7 +524,6 @@ def parallel_tempered_metropolis(fac_list, R_list, W, *, n_therm, n_step, n_skip
             if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R):
                 R_list[s] = new_R # accept
                 W_R_list[s] = new_W_R # accept
-                #acc_list[s] += 1
         # in-stream update
         for s in range(streams):
             dR = draw_dR(R_list[s].shape, lam=eps, axis=0)
@@ -636,7 +554,6 @@ def parallel_tempered_metropolis(fac_list, R_list, W, *, n_therm, n_step, n_skip
         # cluster update
         for s in range(streams):
             R_flat = onp.reshape(R_list[s], (N_coord*N_d))
-            #onp.random.shuffle(R_flat)
             R_new = onp.reshape(R_flat, (N_coord,N_d))
             R_new -= onp.mean(R_new, axis=0, keepdims=True)
             R_list[s] = R_new
@@ -681,18 +598,12 @@ def parallel_tempered_metropolis(fac_list, R_list, W, *, n_therm, n_step, n_skip
 def metropolis(R, W, *, n_therm, n_step, n_skip, eps, masses=1):
     samples = []
     acc = 0
-    #(N_coord, N_d) = R.shape
     print('R0=',R)
     for i in tqdm.tqdm(range(-n_therm, n_step*n_skip)):
         dR = draw_dR(R.shape, lam=eps/masses, axis=0, masses=masses)
-        #print('dR=',dR)
         new_R = R + dR
-        #print('new_R=',new_R)
         W_R = W(R)
-        #print('W_R=',W_R)
         new_W_R = W(new_R)
-        #print('new_W_R=',new_W_R)
-        #if new_W_R < 1.0 and onp.random.random() < (new_W_R / W_R):
         if onp.random.random() < (new_W_R / W_R):
             R = new_R # accept
             W_R = new_W_R
@@ -711,9 +622,6 @@ def direct_sample_inner_sphere(a0):
     y = r*onp.sin(theta)*onp.sin(phi)
     z = r*onp.cos(theta)
     R = onp.array([x, y, z])
-    #R = onp.array([Rrel/2, -Rrel/2])
-    #detJ = -(a0**3)*(onp.log(u)**2)*onp.sin(theta)/u
-    #detJ = onp.exp(-r/a0)/(onp.sin(theta)*r**2)
     detJ = onp.exp(-r/a0) /(r*onp.sqrt(x**2+y**2))
     return R, onp.abs(detJ)
 
@@ -728,10 +636,7 @@ def direct_sample_outer(N_inner, N_outer, L, *, a0):
     R = onp.zeros((N_inner*N_outer, 3))
     shift_list = onp.zeros((N_outer, 3))
     for b in range(N_outer-1):
-        #shift_list[b], q_b = direct_sample_inner(L/12)
-        #shift_list[b], q_b = direct_sample_inner(L/9)
         shift_list[b], q_b = direct_sample_inner(L/6)
-        #shift_list[b], q_b = direct_sample_inner(L/3)
         q *= q_b
     shift_list[N_outer-1] = -onp.sum(shift_list[0:(N_outer-1)])
     for b in range(N_outer):
@@ -739,8 +644,6 @@ def direct_sample_outer(N_inner, N_outer, L, *, a0):
             # works
             R[b*N_inner+a,:], q_a = direct_sample_inner(a0/2)
             # mega autocorrs
-            #R[b*N_inner+a,:], q_a = direct_sample_inner(a0/4)
-            #R[b*N_inner+a,:], q_a = direct_sample_inner(a0)
             q *= q_a
         R[b*N_inner+N_inner-1,:] = -onp.sum(R[(b*N_inner):(b*N_inner+N_inner-1),:], axis=0)
         R[(b*N_inner):((b+1)*N_inner),:] += shift_list[b]
@@ -755,8 +658,6 @@ def direct_sample_metropolis(N_inner, N_outer, W, L, *, n_therm, n_step, n_skip,
     for i in tqdm.tqdm(range(-n_therm, n_step*n_skip)):
         new_R, new_q = direct_sample_outer(N_inner, N_outer, L, a0=a0)
         new_W_R = W(new_R) / new_q
-        #W_R = 1 / q
-        #new_W_R = 1 / new_q
         if onp.random.random() < (new_W_R / W_R):
             R = new_R # accept
             W_R = new_W_R
@@ -786,6 +687,7 @@ def compute_VS(R_deform, psi, potential, *, dtau_iMev):
     N_coord = R_deform.shape[1]
     old_psi = psi
     V_SI, V_SD = potential(R_deform)
+    #print("compute_VS called with shapes " + str(psi.shape) + " and " + str(V_SD.shape))
     VS = batched_apply(V_SD, psi)
     VVS = batched_apply(V_SD, VS)
     psi = psi - (dtau_iMev/2) * VS + (dtau_iMev**2/8) * VVS
@@ -801,8 +703,6 @@ def kinetic_step(R_fwd, R_bwd, R, R_deform, S, u, params_i, _T,
     old_S = S
     R_fwd_old = R_fwd
     R_bwd_old = R_bwd
-    #R_fwd = phi_shift(R_fwd, lambda0_i)
-    #R_bwd = phi_shift(R_bwd, lambda0_i)
     R_fwd = deform_f(R_fwd, *params_i)
     R_bwd = deform_f(R_bwd, *params_i)
     S_fwd = compute_VS(R_fwd, S, potential, dtau_iMev=dtau_iMev)
@@ -837,11 +737,6 @@ def kinetic_step(R_fwd, R_bwd, R, R_deform, S, u, params_i, _T,
     ind_fwd_S = np.expand_dims(ind_fwd, axis=small_axis_tup)
     S = np.where(ind_fwd_S, S_fwd, S_bwd)
     # TODO check if new and old S parallel!!
-    #ang = inner(S, old_S) / np.sqrt( inner(S,S)*inner(S_T,S_T) )
-    #print("angle between old and new spin-color vec is ", ang)
-    #jax_print(np.mean(ang), label="angle between old and new spin-color vec is ", level=0)
-    #assert (np.abs(ang) < 1e-6).all()
-    #exit()
     W = ((w_fwd + w_bwd) / 2)
     W = np.where(ind_fwd, W * pc_fwd / p_fwd, W * pc_bwd / p_bwd)
     return R, R_deform, S, W
@@ -862,7 +757,6 @@ def gfmc_twobody_deform(
         dR_T, S_T, f_R_norm, params, *, rand_draws, tau_iMev, N, potential, m_Mev,
         deform_f, resampling_freq=None):
     R0 = np.stack((-dR_T/2, dR_T/2), axis=1)
-    # sigma, kappa_0, kappa_m, zeta_m, lambda_mn, chi_mn = params
     params0 = tuple(param[0] for param in params)
     R0_deform = deform_f(R0, *params0)
     W = f_R_norm(to_relative(R0_deform)) / f_R_norm(to_relative(R0))
@@ -932,14 +826,6 @@ def kinetic_step_absolute(R_fwd, R_bwd, R, R_deform, psi, u, params_i, psi0,
     G_ratio_fwd = np.exp(np.einsum('...i,i->...', G_ratio_fwd_num, denom))
     G_ratio_bwd_num = -np.einsum('...j,...j->...', R_bwd-R_deform, R_bwd-R_deform)+np.einsum('...j,...j->...', R_bwd_old-R, R_bwd_old-R)
     G_ratio_bwd = np.exp(np.einsum('...i,i->...', G_ratio_bwd_num, denom))
-    #G_ratio_fwd = np.exp(
-    #    (-np.einsum('...ij,...ij->...', R_fwd-R_deform, R_fwd-R_deform)
-    #     +np.einsum('...ij,...ij->...', R_fwd_old-R, R_fwd_old-R))
-    #    / (2*dtau_iMev*fm_Mev**2/m_Mev))
-    #G_ratio_bwd = np.exp(
-    #    (-np.einsum('...ij,...ij->...', R_bwd-R_deform, R_bwd-R_deform)
-    #     + np.einsum('...ij,...ij->...', R_bwd_old-R, R_bwd_old-R))
-    #    / (2*dtau_iMev*fm_Mev**2/m_Mev))
     w_fwd = w_fwd * G_ratio_fwd
     w_bwd = w_bwd * G_ratio_bwd
 
@@ -956,14 +842,7 @@ def kinetic_step_absolute(R_fwd, R_bwd, R, R_deform, psi, u, params_i, psi0,
     ind_fwd_S = np.expand_dims(ind_fwd, axis=axis_tup)
     psi = np.where(ind_fwd_S, psi_fwd, psi_bwd)
     W = ((w_fwd + w_bwd) / 2)
-    #print("W shape ", W.shape)
-    #print("pc_fwd shape ", pc_fwd.shape)
-    #print("p_fwd shape ", pc_fwd.shape)
-    #Wpc_fwd = np.einsum('n...,n->n...', W, pc_fwd / p_fwd)
-    #Wpc_bwd = np.einsum('n...,n->n...', W, pc_bwd / p_bwd)
-    #W = np.where(ind_fwd, Wpc_fwd, Wpc_bwd)
     W = np.where(ind_fwd, W * pc_fwd / p_fwd, W * pc_bwd / p_bwd)
-    #return R_fwd_old, R_fwd, S_fwd, w_fwd
     end_kin = time.time()
     print("Time in kinetic_step_absolute: " + str(end_kin - start_kin))
     return R, R_deform, psi, W
@@ -971,18 +850,14 @@ def kinetic_step_absolute(R_fwd, R_bwd, R, R_deform, psi, u, params_i, psi0,
 def gfmc_deform(
         R0, psi_T, params, *, rand_draws, tau_iMev, N, potential, m_Mev,
         deform_f, resampling_freq=None):
-    # sigma, kappa_0, kappa_m, zeta_m, lambda_mn, chi_mn = params
-    #config.update('jax_disable_jit', True)
     params0 = tuple(param[0] for param in params)
     R0_deform = deform_f(R0, *params0)
     psi0 = psi_T(R0_deform)
-    #W = psi_T(R0_deform) / psi_T(R0)
     W = np.ones_like( inner(psi0, psi0) )
     walkers = (R0, R0_deform, psi0, W)
     dtau_iMev = tau_iMev/N
     history = [walkers]
 
-    #for i in tqdm.tqdm(range(N)):
     for i in range(N):
         _start = time.time()
         print("step ", i)
@@ -994,11 +869,9 @@ def gfmc_deform(
         print("<W^2>/<W>^2 = ", np.mean(W*W)/np.mean(W))
         print("<r_first> = ", np.mean(W*np.transpose(norm_3vec(R)[:,0]))/np.mean(W))
         print("<r_last> = ", np.mean(W*np.transpose(norm_3vec(R)[:,-1]))/np.mean(W))
-        #assert( np.allclose( drift, np.zeros_like(drift) ) )
 
         # remove previous factors (to be replaced with current factors after evolving)
         # TODO DOES THIS NEED NP.ARRAY ????
-        #W = np.einsum('n...,n->n...', W, (np.abs( inner(psi0,psi) )/psi.shape[0]))
         W = W / np.abs( inner(psi0,psi) )
         print("W shape after removing previous factors ", W.shape)
 
@@ -1006,7 +879,6 @@ def gfmc_deform(
         psi = compute_VS(R_deform, psi, potential, dtau_iMev=dtau_iMev)
 
         # exp(-dtau V/2) exp(-dtau K)|R,S> using fwd/bwd heatbath
-        #R_fwd, R_bwd = step_G0_symm(onp.array(R), dtau_iMev=dtau_iMev, m_Mev=1)
         R_fwd, R_bwd = step_G0_symm_distinct(onp.array(R), dtau_iMev=dtau_iMev, m_Mev=m_Mev)
         R_fwd, R_bwd = np.array(R_fwd), np.array(R_bwd)
         u = rand_draws[i] # np.array(onp.random.random(size=R_fwd.shape[0]))
@@ -1017,7 +889,6 @@ def gfmc_deform(
 
         # incorporate factors <S_T|S_i> f(R_i) and leftover fwd/bwd factors from
         # the kinetic step
-        #W = np.einsum('n...,n->n...', W, dW)
         W = W * dW
         print("W shape after kinetic step ", W.shape)
 
@@ -1091,7 +962,6 @@ def measure_gfmc_loss(
         *, eval_local_loss, deform_f, alpha, beta, tau_iMev, N, m_Mev):
 
     potential = make_explicit_pairwise_potential(AVcoeffs)
-    #estimate_H = make_twobody_sample_mean_H(AVcoeffs)
     dtau_iMev = tau_iMev/N
 
     # for i in range(1,len(gfmc_history)):
@@ -1113,8 +983,6 @@ def measure_gfmc_loss(
         V_half_ind = (slice(0,None),) + (0,)*NI*N_coord
         # TODO
         V_slice = (slice(0,None),) + (slice(0,1,1),)*NI*N_coord + (0,)*NS*N_coord
-        #V_slice = (slice(0,None),) + (0,)*NI*N_coord + (0,)*NS*N_coord
-        #V_slice = (slice(0,None),) + (0,)*NS*NI*N_coord
         V_SI = V_SI[V_slice]
         jax_print(np.sort(np.abs(V_SI[V_half_ind]))[-10:], label='VSI', level=3)
 
@@ -1189,11 +1057,6 @@ def measure_gfmc_loss(
 
         S = S_fwd
 
-        # print('total err S', np.sum((S - test_S_next)**2))
-        # print('err S', np.sum((S - test_S_next)**2, axis=(1,2,3,4)))
-        # print('max err S', np.max(np.sum((S - test_S_next)**2, axis=(1,2,3,4))))
-        # assert np.allclose(S, test_S_next)
-
         jax_print(np.min(np.abs(inner(S, S))), label="End loop", level=3)
         jax_print(np.min(np.abs(inner(S_T, S))), level=3)
         jax_print(W_prod, label='W_prod', level=3)
@@ -1222,10 +1085,6 @@ def make_local_loss_H(f_R_norm, df_R_norm, ddf_R_norm, *, AVcoeffs, alpha, beta,
     def eval_local_loss_H(X_i, *, R0_deform, RN_deform, S_T):
         dRN_deform = to_relative(RN_deform)
         S, W = X_i
-        # jax_print(np.abs(W),label='Wc', level=3)
-        # jax_print(gfmc_Ws,label='gfmc_Ws', level=3)
-        # jax_print(np.allclose(np.abs(W), gfmc_Ws[-1]), label='Weights check', level=0)
-        # jax_print(np.min(np.abs(inner(S_T, S))), level=3)
         f = np.array(f_R_norm(dRN_deform))
         df = np.array(df_R_norm(dRN_deform))
         ddf = np.array(ddf_R_norm(dRN_deform))
@@ -1242,7 +1101,6 @@ def make_local_loss_H(f_R_norm, df_R_norm, ddf_R_norm, *, AVcoeffs, alpha, beta,
         est_H = np.real(np.mean(W * H_Mev)/np.mean(W))
 
         num_loss = np.mean(np.real(W * H_Mev)**2 + np.imag(W * H_Mev)**2)
-        #num_loss = np.mean(np.real(W * K_Mev)**2 + np.imag(W * K_Mev)**2) + np.mean(np.real(W * V_Mev)**2 + np.imag(W * V_Mev)**2)
         den_loss = np.mean(np.real(W)**2 + np.imag(W)**2)
         jax_print(est_K, label='K', level=1)
         jax_print(est_V, label='V', level=1)
@@ -1310,33 +1168,8 @@ def train_gfmc_deform(
 
     l = 10**(10)
 
-    ### TEMP: compute jaxpr to debug long JIT times
-    # rand_draws = np.array(onp.random.random(size=(N, Rs_metropolis.shape[0])))
-    # gfmc_deform = gfmc_twobody_deform(
-    #     Rs_metropolis, S_av4p_metropolis, f_R_norm, params,
-    #     rand_draws=rand_draws, tau_iMev=tau_iMev, N=N, potential=potential, m_Mev=m_Mev,
-    #     resampling_freq=None)
-    # gfmc_Rs = np.array([Rs for Rs,_,_,_, in gfmc_deform])
-    # gfmc_Ws = np.abs(np.array([Ws for _,_,_,Ws, in gfmc_deform]))
-    # gfmc_Ss = np.abs(np.array([Ss for _,_,Ss,_, in gfmc_deform]))
-    # _,_,S_T,_ = gfmc_deform[0]
-    # jaxpr = jax.make_jaxpr(measure_gfmc_loss, static_argnums=(4,5,6,7))(
-    #     params, gfmc_Rs, gfmc_Ws, S_T, AVcoeffs, f_R_norm, df_R_norm, ddf_R_norm,
-    #     alpha, beta, tau_iMev=tau_iMev, N=N, m_Mev=m_Mev)
-    # print('JIT info (fewer is better for JIT time):')
-    # print('# consts', len(jaxpr.jaxpr.constvars))
-    # print('# in vars', len(jaxpr.jaxpr.invars))
-    # print('# out vars', len(jaxpr.jaxpr.outvars))
-    # print('# eqns', len(jaxpr.jaxpr.eqns))
-    # print('== JAXPR ==') # can be really verbose
-    # print(jaxpr)
-    # print('== END JAXPR ==')
-
-    #loss_and_grad = jax.value_and_grad(measure_gfmc_log_abs_weight, argnums=0)
-    #loss_and_grad = jax.jit(loss_and_grad, static_argnums=(4,5))
     loss_and_grad = jax.value_and_grad(measure_gfmc_loss, argnums=0)
     # TODO for debugging
-    #config.update('jax_disable_jit', True)
     loss_and_grad = jax.jit(
         loss_and_grad, static_argnums=(4,5,6,7), static_argnames=('deform_f','eval_local_loss'))
     opt_init, opt_update, opt_get_params = jax.experimental.optimizers.adam(plateau_learn_rate)
@@ -1381,20 +1214,7 @@ def train_gfmc_deform(
         if _jit_time is None:
             tqdm.tqdm.write('JIT compiling loss_and_grad (this may take a while) ...')
             _jit_start = time.time()
-            # jaxpr = jax.make_jaxpr(loss_and_grad, static_argnums=(4,5))(
-            #   params, gfmc_Rs, S_T, AVcoeffs, tau_iMev=tau_iMev, N=N, m_Mev=m_Mev)
-            # jaxpr = jax.make_jaxpr(loss_and_grad, static_argnums=(4,5,6,7))(
-            #     params, gfmc_Rs, gfmc_Ws, S_T, AVcoeffs, f_R_norm, df_R_norm, ddf_R_norm, alpha, beta, tau_iMev=tau_iMev, N=N, m_Mev=m_Mev)
-            # print('JIT info (fewer is better for JIT time):')
-            # print('# consts', len(jaxpr.jaxpr.constvars))
-            # print('# in vars', len(jaxpr.jaxpr.invars))
-            # print('# out vars', len(jaxpr.jaxpr.outvars))
-            # print('# eqns', len(jaxpr.jaxpr.eqns))
-            # import sys
-            # sys.exit()
 
-        # l, g = loss_and_grad(params, gfmc_Rs, S_T, AVcoeffs, tau_iMev=tau_iMev, N=N, m_Mev=m_Mev)
-        #l, g = loss_and_grad(params, gfmc_Rs, gfmc_Ws, S_T, potential, f_R_norm, tau_iMev=tau_iMev, N=N, m_Mev=m_Mev)
         _lg_start = time.time()
 
         l, g = loss_and_grad(
@@ -1426,9 +1246,6 @@ def train_gfmc_deform(
                 np.save(f'crash_dumps/crash_gfmc_Ws_{tag}.npy', gfmc_Ws)
                 np.save(f'crash_dumps/crash_Rs_{tag}.npy', Rs_metropolis)
                 np.save(f'crash_dumps/crash_Ss_{tag}.npy', S_av4p_metropolis)
-            # tqdm.tqdm.write('Goodbye')
-            # import sys
-            # sys.exit()
 
             # HACK: make sure indexing is still consistent with dummy values
             history['loss'].append(float('nan'))
@@ -1446,19 +1263,11 @@ def train_gfmc_deform(
             opt_state = opt_update(i, g, opt_state)
             params = opt_get_params(opt_state)
 
-        # tqdm.tqdm.write(f'params = {params}') # way too noisy
         tqdm.tqdm.write(f'N = {N} iteration {i+1}, loss = {l}')
         tqdm.tqdm.write('')
         if reduces >= max_reduces:
             print("plateau learn rate converged")
             break
 
-    # set final state to be the lowest test loss
-    #best_loss = l
-    #for i in range(len(param_history)):
-    #    if history['loss'][i] < best_loss:
-    #        print("more optimal manifold at step ", i)
-    #        best_loss = history['loss'][i]
-    #        lambda0 = param_history[i]
     best_params = param_history[-1]
     return best_params, history
