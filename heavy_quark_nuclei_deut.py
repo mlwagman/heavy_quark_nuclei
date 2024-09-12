@@ -173,8 +173,6 @@ def count_transpositions_baryons_no_intra_no_sign_change(perm, group1, group2):
             # Check if the current pair involves a within-group swap (intra-baryon swap)
             if ((i in group1 and j in group1) or (i in group2 and j in group2)) and (masses[i] == masses[j]) and (perm[i] > perm[j]):
                return 0
-#        if (masses[perm[i]] == masses[i]) and (perm[i] > i) and ((perm[i] in group1 and i in group1) or (perm[i] in group2 and i in group2)):
-#            return 0
     return 1  # Always return +1 (no sign change)
 
 
@@ -266,17 +264,10 @@ print("length of perms = ", len(perms))
 bra_wavefunction = wavefunction
 ket_wavefunction = wavefunction
 
-#assert Nc == NI
-
 CF = (Nc**2 - 1)/(2*Nc)
 VB = alpha*CF/(Nc-1)
 SingC3 = -(Nc+1)/8
 
-#a0=4.514
-
-#VB=.1
-#print(VB)
-#quit()
 # imaginary time points for GFMC evolution
 tau_iMev = dtau_iMev * n_step
 xs = np.linspace(0, tau_iMev, endpoint=True, num=n_step+1)
@@ -323,8 +314,6 @@ biga0 = a0
 if wavefunction == "product":
     biga0 = a0*afac
 
-#if correlator == "asymmetric":
-#ket_a0 = a0*spoilaket
 ket_afac = afac*spoilaket
 
 print("a0 = ", a0)
@@ -349,9 +338,6 @@ nn = np.delete(pp, Lcut*(2*Lcut+1)*(2*Lcut+1)+Lcut*(2*Lcut+1)+Lcut, axis=0)
 print(nn.shape)
 print(pp.shape)
 
-#from jax.config import config
-#config.update('jax_disable_jit', True)
-
 @partial(jax.jit)
 def FV_Coulomb_with_zero_mode(R, L, nn):
     Rdotp = np.einsum('bi,ki->bk', R, pp)
@@ -359,9 +345,6 @@ def FV_Coulomb_with_zero_mode(R, L, nn):
     pdotp = np.sum( pp*pp, axis=1 )
     pmRL = np.sqrt( Rdotp*(-2.0*L) + pdotp[(np.newaxis,slice(None))]*L*L + RdotR[(slice(None),np.newaxis)] )
     sums = np.sum( 1.0/pmRL, axis=1 )
-    #assert( (np.abs(sums/(np.pi*L) - FV_Coulomb_slow(R,L,nn)) < 1e-6).all() )
-    #print(sums/(np.pi*L))
-    #print(FV_Coulomb_slow(R,L,nn))
     return sums
 
 @partial(jax.jit)
@@ -376,10 +359,6 @@ def FV_Coulomb(R, L, nn):
     pdotp = np.sum( pp*pp, axis=1 )
     pmRL = np.sqrt( Rdotp*(-2.0/L) + pdotp[(np.newaxis,slice(None))] + (1.0/L)**2*RdotR[(slice(None),np.newaxis)] )
     sums += np.sum( np.pi/pmRL*(1-jax.scipy.special.erf(np.pi*pmRL)), axis=1 )
-    #assert( (np.abs(sums/(np.pi*L) - FV_Coulomb_slow(R,L,nn)) < 1e-6).all() )
-    #print("FV Coulomb test")
-    #print(sums/(np.pi*L))
-    #print(FV_Coulomb_slow(R,L,nn))
     return sums/(np.pi*L)
 
 def FV_Coulomb_slow(R, L, nn):
@@ -389,22 +368,10 @@ def FV_Coulomb_slow(R, L, nn):
         n=nn[i]
         n_mag = adl.norm_3vec(n)
         sums += np.exp(-n_mag**2)/n_mag**2*np.exp(2*np.pi*1j*np.sum(n*R,axis=1)/L)
-        #print(n)
-        #print(R)
-        #print(n*R)
-        #print(np.sum(n*R,axis=1))
-        #sums += 1/n_mag**2*np.exp(2*np.pi*1j*np.sum(n*R,axis=1)/L)
-        #print("n = ", n)
-        #print(sums)
     for i in range(len(pp)):
         n=pp[i]
         n_mag = adl.norm_3vec(n)
         sums += np.pi/adl.norm_3vec(n - R/L)*(1-jax.scipy.special.erf(np.pi*adl.norm_3vec(n - R/L)))
-        #print("n = ", n)
-        #print(sums)
-    #print(sums/(np.pi*L))
-    #print(1/adl.norm_3vec(R))
-    #exit(1)
     return sums/(np.pi*L)
 
 if OLO == "LO":
@@ -521,10 +488,6 @@ if potential == "product":
 else:
     Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb, B3_Coulomb, masses)
 
-
-
-
-
 # build Coulomb ground-state trial wavefunction
 @partial(jax.jit, static_argnums=(1,))
 def f_R_slow(Rs, wavefunction=bra_wavefunction, a0=a0):
@@ -623,15 +586,10 @@ def hydrogen_wvfn(r, n):
 def f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
     # check permuting simply gives same and only do for one perm
     # Apply permutations if provided and N_coord is 6
-    # Apply permutations if provided and N_coord is 6
 
     if perm is not None and N_coord == 4:
-        #print("Inside f_R:")
-        #print(f"Rs shape:", Rs.shape)
-        #print(f"Rs type: {type(Rs)}")
         print(f"Perm type: {type(perm)}")
         print(f"Perm contents: {perm}")
-        #jax.debug.print("Rs before permutation: {}", Rs)
 
         perm = np.array(perm)
 
@@ -646,15 +604,9 @@ def f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
             else:
                 raise ValueError(f"Unexpected shape for Rs: {Rs.shape}")
 
-        #jax.debug.print("Rs after permutation: {}", Rs)
-
     if perm is not None and N_coord == 6:
-        #print("Inside f_R:")
-        #print(f"Rs shape:", Rs.shape)
-        #print(f"Rs type: {type(Rs)}")
         print(f"Perm type: {type(perm)}")
         print(f"Perm contents: {perm}")
-        #jax.debug.print("Rs before permutation: {}", Rs)
 
         perm = np.array(perm)
 
@@ -668,10 +620,6 @@ def f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
                 Rs = Rs[:, perm, :]
             else:
                 raise ValueError(f"Unexpected shape for Rs: {Rs.shape}")
-
-        #jax.debug.print("Rs after permutation: {}", Rs)
-
-
 
     def r_norm(pair):
         [i,j] = pair
@@ -692,11 +640,9 @@ def f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
     else:
         r_sum = np.sum( jax.lax.map(r_norm, pairs), axis=0 )/a0
 
-    #psi = np.exp(-r_sum)
     psi = hydrogen_wvfn(r_sum, radial_n)
     afac *= gfac
     a0 /= gfac
-    #jax.debug.print("PSI: {}", psi)
 
     # Additional logic for N_coord == 4
     if N_coord == 4 and abs(g) > 0:
@@ -737,11 +683,8 @@ def laplacian_f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0, afac=afac,
 
     if perm is not None and N_coord == 4:
         print("Inside f_R:")
-        #print(f"Rs shape:", Rs.shape)
-        #print(f"Rs type: {type(Rs)}")
         print(f"Perm type: {type(perm)}")
         print(f"Perm contents: {perm}")
-        #print("Rs:", Rs)
 
         perm = np.array(perm)
 
@@ -760,11 +703,8 @@ def laplacian_f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0, afac=afac,
 
     if perm is not None and N_coord == 6:
         print("Inside f_R:")
-        #print(f"Rs shape:", Rs.shape)
-        #print(f"Rs type: {type(Rs)}")
         print(f"Perm type: {type(perm)}")
         print(f"Perm contents: {perm}")
-        #print("Rs:", Rs)
 
         perm = np.array(perm)
 
@@ -778,8 +718,6 @@ def laplacian_f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0, afac=afac,
                 Rs = Rs[:, perm, :]
             else:
                 raise ValueError(f"Unexpected shape for Rs: {Rs.shape}")
-
-        #print("Rs after permutation:", Rs)
 
     #UNIT TESTED
 
@@ -827,8 +765,6 @@ def laplacian_f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0, afac=afac,
                             # nabla_k^2 r_kl = nabla_l^2 r_kl
                             # factor of two included to account for both terms appearing in laplacian
                             if k == i and l == j:
-                                #nabla_psi = nabla_psi * (2/thisa0**2 - 4/(thisa0*rij_norm)) * np.exp(-rij_norm/thisa0)
-                                #nabla_psi = nabla_psi * ((1/thisa0**2 - 2/(thisa0*rij_norm))/masses[k] + (1/thisa0**2 - 2/(thisa0*rij_norm))/masses[l]) * np.exp(-rij_norm/thisa0)
                                 nabla_psi = nabla_psi * ((1/(radial_n*thisa0)**2 - 2/(thisa0*rij_norm))/masses[k] + (1/(radial_n*thisa0)**2 - 2/(thisa0*rij_norm))/masses[l]) * hydrogen_wvfn(rij_norm/thisa0, radial_n)
                             else:
                                 nabla_psi = nabla_psi * hydrogen_wvfn(rij_norm/thisa0, radial_n)
@@ -900,17 +836,12 @@ def laplacian_f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0, afac=afac,
 if N_coord >= 6 and verbose:
     print("No JIT for Laplacian")
     def laplacian_f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
-        #N_walkers = Rs.shape[0]
-        #assert Rs.shape == (N_walkers, N_coord, 3)
         nabla_psi_tot = 0
 
         if perm is not None and N_coord == 4:
             print("Inside f_R:")
-            #print(f"Rs shape:", Rs.shape)
-            #print(f"Rs type: {type(Rs)}")
             print(f"Perm type: {type(perm)}")
             print(f"Perm contents: {perm}")
-            #print("Rs:", Rs)
 
             perm = np.array(perm)
 
@@ -925,16 +856,10 @@ if N_coord >= 6 and verbose:
                 else:
                     raise ValueError(f"Unexpected shape for Rs: {Rs.shape}")
 
-            #print("Rs after permutation:", Rs)
-
-
         if perm is not None and N_coord == 6:
             print("Inside f_R:")
-            #print(f"Rs shape:", Rs.shape)
-            #print(f"Rs type: {type(Rs)}")
             print(f"Perm type: {type(perm)}")
             print(f"Perm contents: {perm}")
-            #print("Rs:", Rs)
 
             perm = np.array(perm)
 
@@ -948,8 +873,6 @@ if N_coord >= 6 and verbose:
                     Rs = Rs[:, perm, :]
                 else:
                     raise ValueError(f"Unexpected shape for Rs: {Rs.shape}")
-
-            #print("Rs after permutation:", Rs)
 
      #UNIT TESTED
         # terms where laplacian hits one piece of wvfn
@@ -994,7 +917,6 @@ if N_coord >= 6 and verbose:
                                 # nabla_k^2 r_kl = nabla_l^2 r_kl
                                 # factor of two included to account for both terms appearing in laplacian
                                 if k == i and l == j:
-                                    #nabla_psi = nabla_psi * (2/thisa0**2 - 4/(thisa0*rij_norm)) * np.exp(-rij_norm/thisa0)
                                     nabla_psi = nabla_psi * ((1/thisa0**2 - 2/(thisa0*rij_norm))/masses[k] + (1/thisa0**2 - 2/(thisa0*rij_norm))/masses[l]) * np.exp(-rij_norm/thisa0)
                                 else:
                                     nabla_psi = nabla_psi * np.exp(-rij_norm/thisa0)
@@ -1069,20 +991,12 @@ if N_coord % 3 == 0:
 
 N_outer = N_coord//N_inner
 
-
-
 # build trial wavefunction
 
 #TODO: ADD PERMS OPTIONS AND BUILD MULTIPLE SPIN-FLAV WVFNS - DEFINE FUNCTION THAT DOES ALL THIS IF N_COORD==6
 
-
-#Rs_metropolis=onp.random.normal(size=(N_coord,3))/np.mean(absmasses)
-
-#print("Rs_metropolis=",Rs_metropolis)
-
 S_av4p_metropolis = onp.zeros(shape=(N_coord,) + (NI,NS)*N_coord).astype(np.complex128)
 print("built Metropolis wavefunction ensemble")
-
 
 # trial wavefunction spin-flavor structure is |up,u> x |up,u> x ... x |up,u>
 
@@ -1157,34 +1071,28 @@ def generate_wavefunction_tensor(NI, NS, N_coord, full_permutations, color):
                 if color == "1x1":
                     if swapI == 1:
                         # 1 x 1 -- Q Q Qbar Qbar
-                        #print("QQ QbarQbar ordering")
                         S_av4p_metropolis[spin_slice] = kronecker_delta(i, k)*kronecker_delta(j,l)/NI
                     else:
                         # 1 x 1 -- Q Qbar Q Qbar
-                        #print("QQbar QQbar ordering")
                         S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)*kronecker_delta(k,l)/NI
                 elif color == "3x3bar":
                     if swapI == 1:
                         # 3bar x 3 -- Q Q Qbar Qbar
-                        #print("QQ QbarQbar ordering")
                         S_av4p_metropolis[spin_slice] += kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2-2*NI)
                         S_av4p_metropolis[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(j, k)/np.sqrt(2*NI**2-2*NI)
                     else:
                         # 3bar x 3 -- Q Qbar Q Qbar
-                        #print("QQbar QQbar ordering")
                         S_av4p_metropolis[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2-2*NI)
                         S_av4p_metropolis[spin_slice] -= kronecker_delta(i, l)*kronecker_delta(k, j)/np.sqrt(2*NI**2-2*NI)
                 elif color == "3x3bar-1":
                     if swapI == 1:
                         # 3bar x 3 -- Q Q Qbar Qbar
-                        #print("QQ QbarQbar ordering")
                         part3x3bar = kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2-2*NI)
                         part3x3bar -= kronecker_delta(i, l)*kronecker_delta(j, k)/np.sqrt(2*NI**2-2*NI)
                         part1x1 = kronecker_delta(i, k)*kronecker_delta(j,l)/NI
                         S_av4p_metropolis[spin_slice] = (part3x3bar - (1/np.sqrt(3))*part1x1)/np.sqrt(2/3)
                     else:
                         # 3bar x 3 -- Q Qbar Q Qbar
-                        #print("QQbar QQbar ordering")
                         part3x3bar = kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2-2*NI)
                         part3x3bar -= kronecker_delta(i, l)*kronecker_delta(k, j)/np.sqrt(2*NI**2-2*NI)
                         part1x1 = kronecker_delta(i, j)*kronecker_delta(k,l)/NI
@@ -1193,7 +1101,6 @@ def generate_wavefunction_tensor(NI, NS, N_coord, full_permutations, color):
                     theta_c = 1.0
                     if swapI == 1:
                         # 3bar x 3 -- Q Q Qbar Qbar
-                        #print("QQ QbarQbar ordering")
                         part3x3bar = kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2-2*NI)
                         part3x3bar -= kronecker_delta(i, l)*kronecker_delta(j, k)/np.sqrt(2*NI**2-2*NI)
                         part6x6bar = kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2+2*NI)
@@ -1201,7 +1108,6 @@ def generate_wavefunction_tensor(NI, NS, N_coord, full_permutations, color):
                         S_av4p_metropolis[spin_slice] = np.cos(theta_c)*part3x3bar + np.sin(theta_c)*part6x6bar
                     else:
                         # 3bar x 3 -- Q Qbar Q Qbar
-                        #print("QQbar QQbar ordering")
                         part3x3bar = kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2-2*NI)
                         part3x3bar -= kronecker_delta(i, l)*kronecker_delta(k, j)/np.sqrt(2*NI**2-2*NI)
                         part6x6bar = kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2+2*NI)
@@ -1210,12 +1116,10 @@ def generate_wavefunction_tensor(NI, NS, N_coord, full_permutations, color):
                 elif color == "6x6bar":
                     if swapI == 1:
                         # 6bar x 6 -- Q Q Qbar Qbar
-                        #print("QQ QbarQbar ordering")
                         S_av4p_metropolis[spin_slice] += kronecker_delta(i, k)*kronecker_delta(j,l)/np.sqrt(2*NI**2+2*NI)
                         S_av4p_metropolis[spin_slice] += kronecker_delta(i, l)*kronecker_delta(j,k)/np.sqrt(2*NI**2+2*NI)
                     else:
                         # 6bar x 6 -- Q Qbar Q Qbar
-                        #print("QQbar QQbar ordering")
                         S_av4p_metropolis[spin_slice] += kronecker_delta(i, j)*kronecker_delta(k,l)/np.sqrt(2*NI**2+2*NI)
                         S_av4p_metropolis[spin_slice] += kronecker_delta(i, l)*kronecker_delta(k,j)/np.sqrt(2*NI**2+2*NI)
         if N_coord == 6:
@@ -1286,28 +1190,20 @@ if N_coord == 6 or N_coord == 4:
 
     def f_R_braket_phase(Rs):
         prod = f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, afac=ket_afac)
-        #prod = ( f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, afac=ket_afac) / f_R(Rs, wavefunction=bra_wavefunction) )
-        #prod = ( f_R(Rs, wavefunction=bra_wavefunction) / f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, afac=ket_afac) )**2
         return prod / np.abs( prod )
 else:
     def f_R_sq(Rs):
         return np.abs( f_R(Rs) )**2
 
     def f_R_braket(Rs):
-        #return np.abs( f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, afac=ket_afac) )
-        #print("Rs = ",Rs)
-        #print("bra = ",bra_wavefunction)
         print("total wvfn inner = ", f_R(Rs, wavefunction=bra_wavefunction)**2 )
         return np.abs( f_R(Rs, wavefunction=bra_wavefunction)**2 )
-        #return np.abs( f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, afac=ket_afac)**2 )
 
     def f_R_braket_tempered(Rs, fac):
         return np.abs( f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction, a0=fac*ket_a0) )
 
     def f_R_braket_phase(Rs):
         prod = f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, afac=ket_afac)
-        #prod = ( f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, afac=ket_afac) / f_R(Rs, wavefunction=bra_wavefunction) )
-        #prod = ( f_R(Rs, wavefunction=bra_wavefunction) / f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, afac=ket_afac) )**2
         return prod / np.abs( prod )
 
 
@@ -1316,8 +1212,6 @@ if input_Rs_database == "":
     met_time = time.time()
     R0 = onp.random.normal(size=(N_coord,3))/np.mean(absmasses)
     # set center of mass position to 0
-    #R0 -= onp.mean(R0, axis=1, keepdims=True)
-    #R0 -= onp.mean(R0*absmasses, axis=0, keepdims=True)/absmasses
     R0 -= onp.transpose(onp.transpose(onp.mean(onp.transpose(onp.transpose(R0)*absmasses), axis=0, keepdims=True))/onp.mean(absmasses))
     print("R0 = ", R0)
     print("NCOORD = ", N_coord)
@@ -1348,14 +1242,6 @@ if input_Rs_database == "":
 else:
     f = h5py.File(input_Rs_database, 'r')
     Rs_metropolis = f["Rs"][-1]
-#print(Rs_metropolis)
-
-
-
-
-
-
-#print(S_av4p_metropolis)
 
 print("spin-flavor wavefunction shape = ", S_av4p_metropolis_set[0].shape)
 S_av4p_metropolis_norm = adl.inner(S_av4p_metropolis_set[0], S_av4p_metropolis_set[0])
@@ -1498,7 +1384,6 @@ dset = Ks+Vs
 print("dset = ", dset)
 
 if verbose:
-
     last_point = n_walkers//8
     if last_point > 50:
         last_point = 50
