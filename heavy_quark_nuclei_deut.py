@@ -1190,9 +1190,7 @@ if N_coord == 6 or N_coord == 4:
             # otherwise fall back on full version of S
             else:
                 S_av4_tensor = S_av4p_metropolis_set[ii]
-            # TODO: Reuse f_R_tensor here!
-            total_wvfn +=  antisym_factors[ii]*S_av4_tensor \
-                    * f_R(Rs, wavefunction=bra_wavefunction, perm=perms[ii])
+            total_wvfn += antisym_factors[ii] * S_av4_tensor * f_R_tensor
         Ss=np.array([total_wvfn])
         #CHECK SAV4^2 =1!!
         result = np.abs( adl.inner(Ss,Ss) )
@@ -1200,22 +1198,17 @@ if N_coord == 6 or N_coord == 4:
             result /= n_walkers
         return result
 
-    def f_R_braket_phase(Rs):
-        prod = f_R(Rs, wavefunction=bra_wavefunction) \
-                * f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, 
-                      afac=ket_afac)
-        return prod / np.abs( prod )
 else:
     def f_R_braket(Rs):
         print("total wvfn inner = ", 
                f_R(Rs, wavefunction=bra_wavefunction)**2 )
         return np.abs( f_R(Rs, wavefunction=bra_wavefunction)**2 )
 
-    def f_R_braket_phase(Rs):
-        prod = f_R(Rs, wavefunction=bra_wavefunction) \
-               * f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, 
-                     afac=ket_afac)
-        return prod / np.abs( prod )
+def f_R_braket_phase(Rs):
+    prod = f_R(Rs, wavefunction=bra_wavefunction) \
+           * f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, 
+                 afac=ket_afac)
+    return prod / np.abs( prod )
 
 
 # Metropolis
