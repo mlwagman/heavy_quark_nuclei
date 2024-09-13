@@ -370,7 +370,8 @@ AV_Coulomb = {}
 B3_Coulomb = {}
 
 # Generate the nn array representing 3D shifts in a cubic grid
-pp = np.array([np.array([i, j, k]) for i in range(-Lcut, Lcut+1) for j in range(-Lcut, Lcut+1) for k in range(-Lcut, Lcut+1)])
+pp = np.array([np.array([i, j, k]) for i in range(-Lcut, Lcut+1) 
+              for j in range(-Lcut, Lcut+1) for k in range(-Lcut, Lcut+1)])
 
 print(pp.shape)
 
@@ -448,12 +449,14 @@ if OLO == "LO":
 elif OLO == "NLO":
     @partial(jax.jit)
     def potential_fun(R):
-        return -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1))
+        return -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)
+                  * (2*beta0*np.log(Rprime(R))+aa1))
     @partial(jax.jit)
     def potential_fun_sum(R):
         return calculate_sum(potential_fun, R, L, nn)
     def symmetric_potential_fun(R):
-        return (Nc - 1)/(Nc + 1)*VB*spoilS/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1))
+        return (Nc - 1)/(Nc + 1)*VB*spoilS/adl.norm_3vec(R) \
+                * (1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1))
     def symmetric_potential_fun_sum(R):
         return calculate_sum(symmetric_potential_fun, R, L, nn)
     @partial(jax.jit)
@@ -464,7 +467,8 @@ elif OLO == "NLO":
     def singlet_potential_fun_sum(R):
         return calculate_sum(potential_fun, R, L, nn)
     def octet_potential_fun(R):
-        return spoilS*(Nc - 1)/CF/(2*Nc)*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1))
+        return spoilS*(Nc - 1)/CF/(2*Nc)*VB/adl.norm_3vec(R) \
+                * (1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1))
     def octet_potential_fun_sum(R):
         return calculate_sum(symmetric_potential_fun, R, L, nn)
 elif OLO == "NNLO":
@@ -1036,7 +1040,8 @@ N_outer = N_coord//N_inner
 
 # build trial wavefunction
 
-#TODO: ADD PERMS OPTIONS AND BUILD MULTIPLE SPIN-FLAV WVFNS - DEFINE FUNCTION THAT DOES ALL THIS IF N_COORD==6
+# TODO: ADD PERMS OPTIONS AND BUILD MULTIPLE SPIN-FLAV WVFNS - 
+# DEFINE FUNCTION THAT DOES ALL THIS IF N_COORD==6
 
 S_av4p_metropolis = onp.zeros(shape=(N_coord,) + (NI,NS)*N_coord).astype(np.complex128)
 print("built Metropolis wavefunction ensemble")
@@ -1271,7 +1276,9 @@ if input_Rs_database == "":
     met_time = time.time()
     R0 = onp.random.normal(size=(N_coord,3))/np.mean(absmasses)
     # set center of mass position to 0
-    R0 -= onp.transpose(onp.transpose(onp.mean(onp.transpose(onp.transpose(R0)*absmasses), axis=0, keepdims=True))/onp.mean(absmasses))
+    R0 -= onp.transpose(onp.transpose(onp.mean(onp.transpose(
+              onp.transpose(R0)*absmasses), axis=0, keepdims=True))
+            /onp.mean(absmasses))
     print("R0 = ", R0)
     print("NCOORD = ", N_coord)
     print("NINNER = ", N_inner)
@@ -1279,9 +1286,8 @@ if input_Rs_database == "":
     print("f_R_braket(R0) = ", f_R_braket(R0))
 
     #FOR PERM TEST
-    #R0 = R0[perm, :]
 
-# TODO ACTUALLY CHANNGE BACK PLEASE
+    # TODO ACTUALLY CHANNGE BACK PLEASE
     if color == "6x6bar" or color == "SSS":
         samples = adl.metropolis(R0, f_R_braket, n_therm=50*n_skip, 
                                  n_step=n_walkers, n_skip=n_skip, 
@@ -1404,7 +1410,6 @@ for count, R in enumerate(gfmc_Rs):
 
     print(f"calculated kinetic in {time.time() - K_time} sec")
 Ks = np.array(Ks)
-
 
 #TODO: DEFINE SUM(S_av4p_metropolis_I*F_R_I) AND F_R=1
 
@@ -1541,4 +1546,3 @@ if verbose:
     print("H_opt=",Hs_opt,"\n\n")
     print("K=",ave_Ks,"\n\n")
     print("V=",ave_Vs,"\n\n")
-
