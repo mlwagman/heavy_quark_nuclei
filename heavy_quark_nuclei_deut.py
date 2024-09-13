@@ -286,43 +286,11 @@ xs = np.linspace(0, tau_iMev, endpoint=True, num=n_step+1)
 
 beta0 = 11/3*Nc - 2/3*nf
 beta1 = 34/3*Nc**2 - 20/3*Nc*nf/2 - 2*CF*nf
-beta2 = 2857/54*Nc**3 + CF**2*nf-205/9*Nc*CF*nf/2 \
-          - 1415/27*Nc**2*nf/2+44/9*CF*(nf/2)**2 + 158/27*Nc*(nf/2)**2
 aa1 = 31/9*Nc-10/9*nf
 zeta3 = scipy.special.zeta(3)
-zeta5 = scipy.special.zeta(5)
-zeta51 = 1/2 + 1/3 + 1/7 + 1/51 + 1/4284
-zeta6 = scipy.special.zeta(6)
 aa2 = ( 4343/162 + 6*np.pi**2 - np.pi**4/4 + 22/3*zeta3 )*Nc**2 \
       - ( 1798/81 + 56/3*zeta3 )*Nc*nf/2 \
       - ( 55/3 - 16*zeta3  )*CF*nf/2 + (10/9*nf)**2
-dFF = (18-Nc**2+Nc**4)/(96*Nc**2)
-dFA = Nc*(Nc**2+6)/48
-alpha4 = float(mpmath.polylog(4,1/2))*0+(-np.log(2))**4/(4*3*2*1)
-ss6 = zeta51+zeta6
-aa30 = dFA*( np.pi**2*( 7432/9-4736*alpha4+np.log(2)*(14752/3-3472*zeta3)
-                        -6616*zeta3/3)  
-             +  np.pi**4*(-156+560*np.log(2)/3+496*np.log(2)**2/3)
-             +1511*np.pi**6/45)  \
-       + Nc**3*(385645/2916 
-                + np.pi**2*( -953/54 +584/3*alpha4 +175/2*zeta3 
-                             + np.log(2)*(-922/9+217*zeta3/3) ) 
-                +584*zeta3/3 
-                + np.pi**4*( 1349/270-20*np.log(2)/9-40*np.log(2)**2/9 ) 
-                -1927/6*zeta5 -143/2*zeta3**2-4621/3024*np.pi**6+144*ss6  )
-aa31 = dFF*( np.pi**2*(1264/9-976*zeta3/3+np.log(2)*(64+672*zeta3)) 
-            + np.pi**4*(-184/3+32/3*np.log(2)-32*np.log(2)**2) 
-            +10/3*np.pi**6 ) \
-       + CF**2/2*(286/9+296/3*zeta3-160*zeta5) \
-       +Nc*CF/2*(-71281/162+264*zeta3+80*zeta5) \
-       +Nc**2/2*(-58747/486+np.pi**2*(17/27-32*alpha4
-              +np.log(2)*(-4/3-14*zeta3)-19/3*zeta3)
-          -356*zeta3+np.pi**4*(-157/54-5*np.log(2)/9+np.log(2)**2)
-          +1091*zeta5/6+57/2*zeta3**2+761*np.pi**6/2520-48*ss6)
-aa32 = Nc/4*(12541/243+368/3*zeta3+64*np.pi**4/135) \
-        +CF/4*(14002/81-416*zeta3/3)
-aa33 = -(20/9)**3*1/8
-aa3 = aa30+aa31*nf+aa32*nf**2+aa33*nf**3
 
 VB_LO = VB
 VB_NLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*log_mu_r))
@@ -993,13 +961,6 @@ if N_coord >= 6 and verbose:
 else:
     print("JIT Laplacian")
 
-
-N_inner = 2
-if N_coord % 3 == 0:
-    N_inner = 3
-
-N_outer = N_coord//N_inner
-
 # build trial wavefunction
 
 # TODO: ADD PERMS OPTIONS AND BUILD MULTIPLE SPIN-FLAV WVFNS - 
@@ -1221,8 +1182,6 @@ if input_Rs_database == "":
             /onp.mean(absmasses))
     print("R0 = ", R0)
     print("NCOORD = ", N_coord)
-    print("NINNER = ", N_inner)
-    print("NOUTER = ", N_outer)
     print("f_R_braket(R0) = ", f_R_braket(R0))
 
     #FOR PERM TEST
@@ -1295,7 +1254,6 @@ else:
 phase_Ws = f_R_braket_phase(gfmc_Rs)
 print('phase Ws', phase_Ws)
 
-#gfmc_Ws *= phase_Ws
 gfmc_Ws= np.einsum('nk...,nk->nk...', gfmc_Ws, phase_Ws)
 
 print('GFMC tau=0 weights:', gfmc_Ws[0])
