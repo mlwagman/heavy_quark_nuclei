@@ -79,7 +79,6 @@ volume = "infinite"
 if L > 1e-2:
     volume = "finite"
 
-
 if masses == 0.:
     masses = onp.ones(N_coord)
     if N_coord == 2:
@@ -91,16 +90,12 @@ if masses == 0.:
     elif N_coord == 6:
         masses = [1,1,1,1,1,1]
 
-
-
 masses_copy = masses
 
 swapI = 1
 for i in range(1,N_coord):
     if masses[1]*masses[i] > 0:
         swapI = i
-
-
 
 def count_transpositions(perm):
     visited = [False] * len(perm)
@@ -150,7 +145,6 @@ def unique_group_permutations(masses):
     antisym_factors = [count_transpositions(perm) for perm in complete_perms]
 
     return complete_perms, antisym_factors
-
 
 def count_transpositions_baryons(perm, group1, group2):
     transpositions = 1  # Start with a factor of +1
@@ -252,7 +246,6 @@ if ferm_symm == "a" or ferm_symm == "s":
 else:
     perms, antisym_factors = unique_group_permutations_baryons(masses)
 
-
 # just doing interesting 2-flavor case
 if N_coord == 4:
     # hardcoded in (q qbar) (q qbar) ordering
@@ -270,7 +263,6 @@ if ferm_symm == "s":
 masses_print = masses
 masses /= onp.abs(masses)
 print("masses = ", masses)
-
 
 # Display permutations with antisymmetrization factors
 print("Unique permutations of indices and their antisymmetrization factors:")
@@ -338,7 +330,6 @@ VB_NNLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*log_mu_r)
                 + (alpha/(4*np.pi))**2*( beta0**2*(4*log_mu_r**2 
                     + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*log_mu_r + aa2 ) )
 
-
 if OLO == "LO":
     a0=spoila*2/VB_LO
 elif OLO == "NLO":
@@ -349,9 +340,7 @@ elif OLO == "NNLO":
 if N_coord == 2 or N_coord == 4:
     a0 /= Nc-1
 
-
 ket_a0 = a0
-
 biga0 = a0
 
 if wavefunction == "product":
@@ -381,16 +370,6 @@ nn = np.delete(pp, Lcut*(2*Lcut+1)*(2*Lcut+1)+Lcut*(2*Lcut+1)+Lcut, axis=0)
 
 print(nn.shape)
 print(pp.shape)
-
-@partial(jax.jit)
-def FV_Coulomb_with_zero_mode(R, L, nn):
-    Rdotp = np.einsum('bi,ki->bk', R, pp)
-    RdotR = np.sum( R*R, axis=1 )
-    pdotp = np.sum( pp*pp, axis=1 )
-    pmRL = np.sqrt( Rdotp*(-2.0*L) + pdotp[(np.newaxis,slice(None))]*L*L 
-                      + RdotR[(slice(None),np.newaxis)] )
-    sums = np.sum( 1.0/pmRL, axis=1 )
-    return sums
 
 @partial(jax.jit)
 def FV_Coulomb(R, L, nn):
@@ -515,22 +494,6 @@ else:
     print("order not supported")
     throw(0)
 
-# TODO: Are any of these trivial functions used or can they be deleted?
-def trivial_fun(R):
-    return 0*adl.norm_3vec(R)+1
-
-def trivial_fun_1(R):
-    return 0*adl.norm_3vec(R)-4/3
-
-def trivial_fun_8(R):
-    return 0*adl.norm_3vec(R)+1/6
-
-def trivial_fun_A(R):
-    return 0*adl.norm_3vec(R)-2/3
-
-def trivial_fun_S(R):
-    return 0*adl.norm_3vec(R)+1/3
-
 print("volume = ", volume)
 
 if volume == "finite":
@@ -543,7 +506,6 @@ else:
     AV_Coulomb['OS'] = symmetric_potential_fun
     AV_Coulomb['OSing'] = singlet_potential_fun
     AV_Coulomb['OO'] = octet_potential_fun
-
 
 print("AV_Coulomb = ", AV_Coulomb)
 
@@ -1218,10 +1180,6 @@ if N_coord == 6 or N_coord == 4:
     S_av4p_metropolis_set = generate_wavefunction_tensor(NI, NS, N_coord, 
                                                          perms, color)
 
-    def f_R_sq(Rs):
-        return np.abs( f_R(Rs) )**2
-
-
     def f_R_braket(Rs):
         total_wvfn = np.zeros((NI, NS) * N_coord, dtype=np.complex128)
         for ii in range(len(perms)):
@@ -1242,27 +1200,16 @@ if N_coord == 6 or N_coord == 4:
             result /= n_walkers
         return result
 
-    def f_R_braket_tempered(Rs, fac):
-        return np.abs(f_R(Rs, wavefunction=bra_wavefunction) 
-                      * f_R(Rs, wavefunction=ket_wavefunction, a0=fac*ket_a0))
-
     def f_R_braket_phase(Rs):
         prod = f_R(Rs, wavefunction=bra_wavefunction) \
                 * f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, 
                       afac=ket_afac)
         return prod / np.abs( prod )
 else:
-    def f_R_sq(Rs):
-        return np.abs( f_R(Rs) )**2
-
     def f_R_braket(Rs):
         print("total wvfn inner = ", 
                f_R(Rs, wavefunction=bra_wavefunction)**2 )
         return np.abs( f_R(Rs, wavefunction=bra_wavefunction)**2 )
-
-    def f_R_braket_tempered(Rs, fac):
-        return np.abs(f_R(Rs, wavefunction=bra_wavefunction) 
-                      * f_R(Rs, wavefunction=ket_wavefunction, a0=fac*ket_a0))
 
     def f_R_braket_phase(Rs):
         prod = f_R(Rs, wavefunction=bra_wavefunction) \
