@@ -12,16 +12,16 @@ import tqdm.auto as tqdm
 
 from .util import hashabledict, jax_print, norm_3vec, norm_3vec_sq, to_relative
 
-#fm_Mev = 197.326
-#mp_Mev = 938
 fm_Mev = 1.0
 mp_Mev = 1.0
 
 ### GFMC utils
 def draw_dR(shape, *, lam, axis=1, masses=1):
-    dR = onp.transpose( lam/onp.sqrt(2) * onp.transpose( onp.random.normal(size=shape) ) )
+    dR = onp.transpose( lam/onp.sqrt(2) 
+                        * onp.transpose( onp.random.normal(size=shape) ) )
     # subtract mean dR to avoid "drift" in the system
-    dR -= np.transpose(np.transpose(np.mean(np.transpose(np.transpose(dR)*masses), axis=axis, keepdims=True))/np.mean(masses))
+    dR -= np.transpose(np.transpose(np.mean(np.transpose(np.transpose(dR) 
+              * masses), axis=axis, keepdims=True))/np.mean(masses))
     return dR
 
 def step_G0(R, *, dtau_iMev, m_Mev):
@@ -70,7 +70,8 @@ sigma4 = 1/2*onp.array([[0, 0, 1], [0, 0, 0], [1, 0, 0]])
 sigma5 = 1/2*onp.array([[0, 0, -1j], [0, 0, 0], [1j, 0, 0]])
 sigma6 = 1/2*onp.array([[0, 0, 0], [0, 0, 1], [0, 1, 0]])
 sigma7 = 1/2*onp.array([[0, 0, 0], [0, 0, -1j], [0, 1j, 0]])
-sigma8 = 1/2*onp.array([[1 / np.sqrt(3), 0, 0], [0, 1 / np.sqrt(3), 0], [0, 0, -2 / np.sqrt(3)]])
+sigma8 = 1/2*onp.array([[1 / np.sqrt(3), 0, 0], [0, 1 / np.sqrt(3), 0], 
+                        [0, 0, -2 / np.sqrt(3)]])
 
 # Stack the matrices along the third axis (depth)
 paulis = onp.stack([
@@ -78,7 +79,8 @@ paulis = onp.stack([
     onp.array([[0, -1j], [1j, 0]]), # Y
     onp.array([[1, 0], [0, -1]]) # Z
 ])
-gells = onp.stack([sigma1, sigma2, sigma3, sigma4, sigma5, sigma6, sigma7, sigma8])
+gells = onp.stack([sigma1, sigma2, sigma3, sigma4, 
+                   sigma5, sigma6, sigma7, sigma8])
 
 for a in range(8):
     assert( np.einsum('ij,ji', gells[a], gells[a]) - 1.0/2 < 1e-6 )
@@ -93,13 +95,17 @@ lc_tensor[0, 1, 2] = lc_tensor[1, 2, 0] = lc_tensor[2, 0, 1] = 1
 lc_tensor[0, 2, 1] = lc_tensor[2, 1, 0] = lc_tensor[1, 0, 2] = -1
 
 # QQ color symmetric potential operator
-iso_del = 1/2 * 1/2 * (onp.einsum('ab,cd->acdb', onp.identity(NI), onp.identity(NI)) + onp.einsum('ab,cd->cadb', onp.identity(NI), onp.identity(NI)))
+iso_del = 1/2 * 1/2 * (onp.einsum('ab,cd->acdb', onp.identity(NI), 
+             onp.identity(NI)) + onp.einsum('ab,cd->cadb', onp.identity(NI), 
+               onp.identity(NI)))
 
 # QQ color antisymmetric potential operator
-iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor)
+iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) \
+            * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor)
 
 # QQbar color singlet potential operator
-iso_sing = 1/NI * onp.einsum('ab,cd->abcd', onp.identity(NI), onp.identity(NI))
+iso_sing = 1/NI * onp.einsum('ab,cd->abcd', onp.identity(NI), 
+                             onp.identity(NI))
 
 # QQbar color octet potential operator
 iso_oct = np.zeros((NI,NI,NI,NI))
@@ -129,18 +135,21 @@ two_body_pieces = {
 
 three_body_pieces = {
     # 1 . 1 . 1
-    'sp_I': onp.einsum('ij,kl,mn->ikmjln', onp.identity(NS), onp.identity(NS), onp.identity(NS)),
+    'sp_I': onp.einsum('ij,kl,mn->ikmjln', onp.identity(NS), 
+                       onp.identity(NS), onp.identity(NS)),
     # 1 . 1 . 1
-    'iso_I': onp.einsum('ab,cd,ef->acebdf', onp.identity(NI), onp.identity(NI), onp.identity(NI)),
+    'iso_I': onp.einsum('ab,cd,ef->acebdf', onp.identity(NI), 
+                        onp.identity(NI), onp.identity(NI)),
 }
 @partial(jax.jit)
 def Sij(Rij):
     batch_size, nd = Rij.shape
     assert nd == 3, 'Rij must be batched 3-vectors'
-    pauli_Rij = np.tensordot(Rij, paulis, axes=1) # \vec{R} . \vec{pauli}
+    pauli_Rij = np.tensordot(Rij, paulis, axes=1)
     rij2 = norm_3vec_sq(Rij)
     pauli_Rij_rescale = pauli_Rij / rij2[:,np.newaxis,np.newaxis]
-    term1 = 3*pauli_Rij_rescale[...,np.newaxis,np.newaxis]*pauli_Rij[:,np.newaxis,np.newaxis]
+    term1 = 3 * pauli_Rij_rescale[...,np.newaxis,np.newaxis] \
+              * pauli_Rij[:,np.newaxis,np.newaxis]
     term1 = np.swapaxes(term1, axis1=2, axis2=3)
     term2 = two_body_pieces['sp_dot'][onp.newaxis,:,:,:,:]
     return term1 - term2
@@ -151,7 +160,8 @@ def two_body_outer(two_body_iso, two_body_spin):
 
 @partial(jax.jit)
 def three_body_outer(three_body_iso, three_body_spin):
-    return np.einsum('zacebdf,zikmjln->zaickembjdlfn', three_body_iso, three_body_spin)
+    return np.einsum('zacebdf,zikmjln->zaickembjdlfn', three_body_iso, 
+                     three_body_spin)
 
 qq_two_body_ops = {
     'OA': two_body_outer(
@@ -187,8 +197,6 @@ three_body_ops = {
         three_body_pieces['iso_I'][np.newaxis],
         three_body_pieces['sp_I'][np.newaxis]),
 }
-
-
 
 def generate_sequence(AA):
     sequence = [0, 1]
@@ -257,7 +265,8 @@ def make_pairwise_potential(AVcoeffs, B3coeffs, masses):
                     print('including op', name)
                     Oij = op
                     vij = AVcoeffs[name](Rij)
-                    broadcast_vij_inds = (slice(None),) + (np.newaxis,)*(len(Oij.shape)-1)
+                    broadcast_vij_inds = (slice(None),) \
+                                          + (np.newaxis,)*(len(Oij.shape)-1)
                     vij = vij[broadcast_vij_inds]
                     scaled_O += vij * Oij
 
@@ -266,13 +275,15 @@ def make_pairwise_potential(AVcoeffs, B3coeffs, masses):
                 if NS == 1:
                     old_shape = scaled_O.shape
                     for alpha in range(A-2):
-                        scaled_O = np.einsum('...,mn->...mn', scaled_O, onp.identity(NI))
+                        scaled_O = np.einsum('...,mn->...mn', scaled_O, 
+                                             onp.identity(NI))
                         old_shape += (NI, NS, NI, NS)
                     scaled_O = np.reshape(scaled_O, old_shape)
                 # general case (should work for any NS)
                 else:
                     for alpha in range(A-2):
-                        scaled_O = np.einsum('...,mn,op->...monp', scaled_O, onp.identity(NI), onp.identity(NS))
+                        scaled_O = np.einsum('...,mn,op->...monp', scaled_O, 
+                                      onp.identity(NI), onp.identity(NS))
 
                 assert V_SD_Mev.shape==scaled_O.shape
                 starting_perm = generate_full_sequence(2*A)
@@ -311,7 +322,7 @@ def make_pairwise_product_potential(AVcoeffs, B3coeffs, masses):
                 if i==j:
                     continue
                 Rij = R[:,i] - R[:,j]
-                this_two_body_ops = qqbar_two_body_ops #jax.lax.cond(masses[i]*masses[j]>0, get_qq_two_body_ops, get_qqbar_two_body_ops, qq_two_body_ops)
+                this_two_body_ops = qqbar_two_body_ops
                 if masses[i]*masses[j]>0:
                     this_two_body_ops = qq_two_body_ops
                 if i < A//2 and j >= A//2:
@@ -326,11 +337,13 @@ def make_pairwise_product_potential(AVcoeffs, B3coeffs, masses):
                     print('including op', name)
                     Oij = op
                     vij = AVcoeffs[name](Rij)
-                    broadcast_vij_inds = (slice(None),) + (np.newaxis,)*(len(Oij.shape)-1)
+                    broadcast_vij_inds = (slice(None),) \
+                                          + (np.newaxis,)*(len(Oij.shape)-1)
                     vij = vij[broadcast_vij_inds]
                     scaled_O = vij * Oij
                     for alpha in range(A-2):
-                        scaled_O = np.einsum('...,mn,op->...monp', scaled_O, onp.identity(NI), onp.identity(NS))
+                        scaled_O = np.einsum('...,mn,op->...monp', scaled_O, 
+                                          onp.identity(NI), onp.identity(NS))
                     assert V_SI_Mev.shape==scaled_O.shape
                     starting_perm = generate_full_sequence(2*A)
                     print('starting_perm',starting_perm)
@@ -351,7 +364,8 @@ def make_pairwise_product_potential(AVcoeffs, B3coeffs, masses):
                     full_perm = [0] + src_perm + snk_perm
                     scaled_O_perm = np.transpose(scaled_O, axes=full_perm)
                     if name == 'O1':
-                        broadcast_inds = (slice(None),) + (0,)*(len(Oij.shape)-1)
+                        broadcast_inds = (slice(None),) \
+                                          + (0,)*(len(Oij.shape)-1)
                         V_SI_Mev = V_SI_Mev + scaled_O[broadcast_inds]
                     else:
                         V_SD_Mev += scaled_O_perm
@@ -363,13 +377,13 @@ def batched_apply(M, S): # compute M|S>
     batch_size, src_sink_dims = M.shape[0], M.shape[1:]
     batch_size2, src_dims = S.shape[0], S.shape[1:]
     assert (batch_size == batch_size2 or
-            batch_size == 1 or batch_size2 == 1), 'batch size must be broadcastable'
-    assert src_sink_dims == src_dims + src_dims, 'matrix dims must match vector dims'
+            batch_size == 1 or batch_size2 == 1), \
+            'batch size must be broadcastable'
+    assert src_sink_dims == src_dims + src_dims, \
+            'matrix dims must match vector dims'
     inds_M = list(range(len(M.shape)))
     inds_S = [0] + list(range(len(S.shape), 2*len(S.shape)-1))
     inds_out = [0] + list(range(1, len(S.shape)))
-    #S_size = S[0].size
-    #return np.array([ (M[i].reshape((S_size,) + M.shape[len(S.shape):]).T @ S[i].reshape(S_size)).T for i in range(S.shape[0]) ])
     return np.einsum(M, inds_M, S, inds_S, inds_out)
 
 @partial(jax.jit)
@@ -377,8 +391,10 @@ def batched_apply_transpose(M, S): # compute <S|M
     batch_size, src_sink_dims = M.shape[0], M.shape[1:]
     batch_size2, sink_dims = S.shape[0], S.shape[1:]
     assert (batch_size == batch_size2 or
-            batch_size == 1 or batch_size2 == 1), 'batch size must be broadcastable'
-    assert src_sink_dims == sink_dims + sink_dims, 'matrix dims must match vector dims'
+            batch_size == 1 or batch_size2 == 1), \
+            'batch size must be broadcastable'
+    assert src_sink_dims == sink_dims + sink_dims, \
+            'matrix dims must match vector dims'
     inds_M = list(range(len(M.shape)))
     inds_S = [0] + list(range(1, len(S.shape)))
     inds_out = [0] + list(range(len(S.shape), 2*len(S.shape)-1))
@@ -461,7 +477,8 @@ def make_twobody_estimate_H(AVcoeffs):
         }
         if verbose:
             for name in AVcoeffs:
-                boot_val = al.bootstrap(Os[name], onp.array(W), Nboot=Nboot, f=rw_mean)
+                boot_val = al.bootstrap(Os[name], onp.array(W), Nboot=Nboot, 
+                                        f=rw_mean)
                 tqdm.tqdm.write(f'<{name}> = {boot_val}')
         V_Mev = sum(Os.values())
         est_V = al.bootstrap(V_Mev, W, Nboot=Nboot, f=rw_mean)
@@ -645,12 +662,14 @@ def direct_sample_outer(N_inner, N_outer, L, *, a0):
             R[b*N_inner+a,:], q_a = direct_sample_inner(a0/2)
             # mega autocorrs
             q *= q_a
-        R[b*N_inner+N_inner-1,:] = -onp.sum(R[(b*N_inner):(b*N_inner+N_inner-1),:], axis=0)
+        R[b*N_inner+N_inner-1,:] = \
+                    -onp.sum(R[(b*N_inner):(b*N_inner+N_inner-1),:], axis=0)
         R[(b*N_inner):((b+1)*N_inner),:] += shift_list[b]
     return R, q
 
 
-def direct_sample_metropolis(N_inner, N_outer, W, L, *, n_therm, n_step, n_skip, a0):
+def direct_sample_metropolis(N_inner, N_outer, W, L, *, n_therm, n_step, 
+                             n_skip, a0):
     samples = []
     acc = 0
     R, q = direct_sample_outer(N_inner, N_outer, L, a0=a0)
@@ -687,7 +706,6 @@ def compute_VS(R_deform, psi, potential, *, dtau_iMev):
     N_coord = R_deform.shape[1]
     old_psi = psi
     V_SI, V_SD = potential(R_deform)
-    #print("compute_VS called with shapes " + str(psi.shape) + " and " + str(V_SD.shape))
     VS = batched_apply(V_SD, psi)
     VVS = batched_apply(V_SD, VS)
     psi = psi - (dtau_iMev/2) * VS + (dtau_iMev**2/8) * VVS
@@ -767,7 +785,8 @@ def gfmc_twobody_deform(
     for i in tqdm.tqdm(range(N)):
         R, R_deform, S, W = walkers
 
-        # remove previous factors (to be replaced with current factors after evolving)
+        # remove previous factors (to be replaced with current factors 
+        # after evolving)
         W = W / (inner(S_T, S) * f_R_norm(to_relative(R_deform)))
 
         # exp(-dtau V/2)|R,S>
@@ -777,14 +796,14 @@ def gfmc_twobody_deform(
         _start = time.time()
         R_fwd, R_bwd = step_G0_symm(onp.array(R), dtau_iMev=dtau_iMev, m_Mev=m_Mev)
         R_fwd, R_bwd = np.array(R_fwd), np.array(R_bwd)
-        u = rand_draws[i] # np.array(onp.random.random(size=R_fwd.shape[0]))
+        u = rand_draws[i]
         step_params = tuple(param[i+1] for param in params)
         R, R_deform, S, dW = kinetic_step(
             R_fwd, R_bwd, R, R_deform, S, u, step_params, S_T,
             f_R_norm, potential, deform_f=deform_f, dtau_iMev=dtau_iMev, m_Mev=m_Mev)
 
-        # incorporate factors <S_T|S_i> f(R_i) and leftover fwd/bwd factors from
-        # the kinetic step
+        # incorporate factors <S_T|S_i> f(R_i) and leftover 
+        # fwd/bwd factors from the kinetic step
         W = W * dW
 
         # save config for obs
@@ -794,7 +813,8 @@ def gfmc_twobody_deform(
             assert len(W.shape) == 1, 'weights must be flat array'
             p = np.abs(W) / np.sum(np.abs(W))
             W = np.mean(np.abs(W), keepdims=True) * W / np.abs(W)
-            inds = onp.random.choice(onp.arange(W.shape[0]), size=W.shape[0], p=p)
+            inds = onp.random.choice(onp.arange(W.shape[0]), 
+                                     size=W.shape[0], p=p)
             R = R[inds]
             R_deform = R_deform[inds]
             S = S[inds]
@@ -822,9 +842,11 @@ def kinetic_step_absolute(R_fwd, R_bwd, R, R_deform, psi, u, params_i, psi0,
     # correct kinetic energy
     denom = 1/(2*dtau_iMev*fm_Mev**2/m_Mev)
 
-    G_ratio_fwd_num = -np.einsum('...j,...j->...', R_fwd-R_deform, R_fwd-R_deform)+np.einsum('...j,...j->...', R_fwd_old-R, R_fwd_old-R)
+    G_ratio_fwd_num = -np.einsum('...j,...j->...', R_fwd-R_deform, 
+        R_fwd-R_deform)+np.einsum('...j,...j->...', R_fwd_old-R, R_fwd_old-R)
     G_ratio_fwd = np.exp(np.einsum('...i,i->...', G_ratio_fwd_num, denom))
-    G_ratio_bwd_num = -np.einsum('...j,...j->...', R_bwd-R_deform, R_bwd-R_deform)+np.einsum('...j,...j->...', R_bwd_old-R, R_bwd_old-R)
+    G_ratio_bwd_num = -np.einsum('...j,...j->...', R_bwd-R_deform, 
+        R_bwd-R_deform)+np.einsum('...j,...j->...', R_bwd_old-R, R_bwd_old-R)
     G_ratio_bwd = np.exp(np.einsum('...i,i->...', G_ratio_bwd_num, denom))
     w_fwd = w_fwd * G_ratio_fwd
     w_bwd = w_bwd * G_ratio_bwd
@@ -867,10 +889,13 @@ def gfmc_deform(
         drift = np.einsum("jik,i->jk", R, m_Mev) / np.sum(m_Mev)
         print("checking drift = 0 =", np.mean(drift, axis=0))
         print("<W^2>/<W>^2 = ", np.mean(W*W)/np.mean(W))
-        print("<r_first> = ", np.mean(W*np.transpose(norm_3vec(R)[:,0]))/np.mean(W))
-        print("<r_last> = ", np.mean(W*np.transpose(norm_3vec(R)[:,-1]))/np.mean(W))
+        print("<r_first> = ", np.mean(W*np.transpose(norm_3vec(R)[:,0]))
+              / np.mean(W))
+        print("<r_last> = ", np.mean(W*np.transpose(norm_3vec(R)[:,-1]))
+              / np.mean(W))
 
-        # remove previous factors (to be replaced with current factors after evolving)
+        # remove previous factors (to be replaced with current factors 
+        # after evolving)
         # TODO DOES THIS NEED NP.ARRAY ????
         W = W / np.abs( inner(psi0,psi) )
         print("W shape after removing previous factors ", W.shape)
@@ -879,7 +904,8 @@ def gfmc_deform(
         psi = compute_VS(R_deform, psi, potential, dtau_iMev=dtau_iMev)
 
         # exp(-dtau V/2) exp(-dtau K)|R,S> using fwd/bwd heatbath
-        R_fwd, R_bwd = step_G0_symm_distinct(onp.array(R), dtau_iMev=dtau_iMev, m_Mev=m_Mev)
+        R_fwd, R_bwd = step_G0_symm_distinct(onp.array(R), 
+                          dtau_iMev=dtau_iMev, m_Mev=m_Mev)
         R_fwd, R_bwd = np.array(R_fwd), np.array(R_bwd)
         u = rand_draws[i] # np.array(onp.random.random(size=R_fwd.shape[0]))
         step_params = tuple(param[i+1] for param in params)
@@ -887,8 +913,8 @@ def gfmc_deform(
             R_fwd, R_bwd, R, R_deform, psi, u, step_params, psi0,
             potential, dtau_iMev=dtau_iMev, m_Mev=m_Mev)
 
-        # incorporate factors <S_T|S_i> f(R_i) and leftover fwd/bwd factors from
-        # the kinetic step
+        # incorporate factors <S_T|S_i> f(R_i) and leftover 
+        # fwd/bwd factors from the kinetic step
         W = W * dW
         print("W shape after kinetic step ", W.shape)
 
@@ -901,7 +927,8 @@ def gfmc_deform(
             assert len(W.shape) == 1, 'weights must be flat array'
             p = np.abs(W) / np.sum(np.abs(W))
             W = np.mean(np.abs(W), keepdims=True) * W / np.abs(W)
-            inds = onp.random.choice(onp.arange(W.shape[0]), size=W.shape[0], p=p)
+            inds = onp.random.choice(onp.arange(W.shape[0]), 
+                                     size=W.shape[0], p=p)
             R = R[inds]
             R_deform = R_deform[inds]
             psi = psi[inds]
@@ -916,7 +943,8 @@ def gfmc_deform(
 def history_to_onp(history):
     onp_history = []
     for R, R_deform, S, W in history:
-        onp_history.append((onp.array(R), onp.array(R_deform), onp.array(S), onp.array(W)))
+        onp_history.append((onp.array(R), onp.array(R_deform), 
+                            onp.array(S), onp.array(W)))
     return onp_history
 
 def measure_gfmc_obs_deform(
@@ -933,7 +961,8 @@ def measure_gfmc_obs_deform(
             f = onp.array(f_R_norm(dRs))
             df = onp.array(df_R_norm(dRs))
             ddf = onp.array(ddf_R_norm(dRs))
-            res = estimate_H(dRs, Ss, Ws, S_T, f, df, ddf, m_Mev=mp_Mev, Nboot=Nboot, verbose=verbose)
+            res = estimate_H(dRs, Ss, Ws, S_T, f, df, ddf, m_Mev=mp_Mev, 
+                             Nboot=Nboot, verbose=verbose)
             if verbose: tqdm.tqdm.write(f'<H> = {res["H"]}')
             Hs.append(res['H'])
             Ks.append(res['K'])
@@ -944,9 +973,12 @@ def measure_gfmc_obs_deform(
             rhoij = []
             for i in range(A):
                 for j in range(A):
-                    rhoij_vals = measure_eucl_density_response(R0_deform, Rs_deform, q_Mev=q_Mev, i=i, j=j)
-                    rhoij.append(al.bootstrap(onp.array(rhoij_vals), onp.array(Ws), Nboot=Nboot, f=rw_mean))
-            rhoij = np.transpose(np.array(rhoij).reshape((A, A, 2)), (2, 0, 1))
+                    rhoij_vals = measure_eucl_density_response(R0_deform, 
+                                    Rs_deform, q_Mev=q_Mev, i=i, j=j)
+                    rhoij.append(al.bootstrap(onp.array(rhoij_vals), 
+                                 onp.array(Ws), Nboot=Nboot, f=rw_mean))
+            rhoij = np.transpose(np.array(rhoij).reshape((A, A, 2)), 
+                                 (2, 0, 1))
             rhoijs.append(rhoij)
     res = {}
     if enable_H:
@@ -958,8 +990,9 @@ def measure_gfmc_obs_deform(
     return res
 
 def measure_gfmc_loss(
-        params, gfmc_Rs, gfmc_Ws, S_T, AVcoeffs, f_R_norm, df_R_norm, ddf_R_norm, loss_ts,
-        *, eval_local_loss, deform_f, alpha, beta, tau_iMev, N, m_Mev):
+        params, gfmc_Rs, gfmc_Ws, S_T, AVcoeffs, f_R_norm, df_R_norm, 
+        ddf_R_norm, loss_ts, *, eval_local_loss, deform_f, alpha, beta, 
+        tau_iMev, N, m_Mev):
 
     potential = make_explicit_pairwise_potential(AVcoeffs)
     dtau_iMev = tau_iMev/N
@@ -974,7 +1007,8 @@ def measure_gfmc_loss(
         params_next = array_elems[3::2]
         Rs_deform_prev = deform_f(Rs_prev, *params_prev)
         Rs_deform_next = deform_f(Rs_next, *params_next)
-        W_prod = W_prod / (inner(S_T, S) * f_R_norm(to_relative(Rs_deform_prev)))
+        W_prod = W_prod / (inner(S_T, S) \
+                  * f_R_norm(to_relative(Rs_deform_prev)))
         jax_print(W_prod, label='W_prod divided', level=3)
 
         # DEBUG: check pre-deform VSI
@@ -982,9 +1016,11 @@ def measure_gfmc_loss(
         V_ind = (slice(0,None),) + (0,)*NS*NI*N_coord
         V_half_ind = (slice(0,None),) + (0,)*NI*N_coord
         # TODO
-        V_slice = (slice(0,None),) + (slice(0,1,1),)*NI*N_coord + (0,)*NS*N_coord
+        V_slice = (slice(0,None),) + (slice(0,1,1),)*NI*N_coord \
+                  + (0,)*NS*N_coord
         V_SI = V_SI[V_slice]
-        jax_print(np.sort(np.abs(V_SI[V_half_ind]))[-10:], label='VSI', level=3)
+        jax_print(np.sort(np.abs(V_SI[V_half_ind]))[-10:], label='VSI', 
+                  level=3)
 
         # exp(-dtau V/2)|R,S>
         V_SI, V_SD = potential(Rs_deform_prev)
@@ -994,11 +1030,13 @@ def measure_gfmc_loss(
         jax_print(np.min(np.abs(inner(S, S))), label="After VSD", level=3)
         jax_print(np.min(np.abs(inner(S_T, S))), level=3)
         V_SI = V_SI[V_slice]
-        jax_print(np.sort(np.abs(V_SI[V_half_ind]))[-10:], label='VSI', level=3)
+        jax_print(np.sort(np.abs(V_SI[V_half_ind]))[-10:], label='VSI', 
+                  level=3)
         i = np.argmax(np.abs(V_SI[V_half_ind]))
         jax_print((
             norm_3vec_sq(Rs_prev[i,0]-Rs_prev[i,1]),
-            norm_3vec_sq(Rs_deform_prev[i,0]-Rs_deform_prev[i,1])), label='R max', level=3)
+            norm_3vec_sq(Rs_deform_prev[i,0]-Rs_deform_prev[i,1])), 
+            label='R max', level=3)
         S = np.exp(-dtau_iMev/2 * V_SI) * S
         jax_print(np.min(np.abs(inner(S, S))), label="After VSI", level=3)
         jax_print(np.min(np.abs(inner(S_T, S))), level=3)
@@ -1014,7 +1052,8 @@ def measure_gfmc_loss(
         Rs_deform_next_bwd = deform_f(Rs_next_bwd, *params_next)
         Delta_Rs_deform_bwd = Rs_deform_next_bwd - Rs_deform_prev
         G_ratio_bwd = np.exp(
-            (-np.einsum('...ij,...ij->...', Delta_Rs_deform_bwd, Delta_Rs_deform_bwd)
+            (-np.einsum('...ij,...ij->...', Delta_Rs_deform_bwd, 
+                        Delta_Rs_deform_bwd)
              +np.einsum('...ij,...ij->...', Delta_Rs, Delta_Rs))
             / (2*dtau_iMev*fm_Mev**2/m_Mev))
 
@@ -1023,37 +1062,48 @@ def measure_gfmc_loss(
         VS = batched_apply(V_SD, S)
         VVS = batched_apply(V_SD, VS)
         S_fwd = S - (dtau_iMev/2) * VS + (dtau_iMev**2/8) * VVS
-        jax_print(np.min(np.abs(inner(S_fwd, S_fwd))), label="After VSD 2", level=3)
+        jax_print(np.min(np.abs(inner(S_fwd, S_fwd))), label="After VSD 2", 
+                  level=3)
         jax_print(np.min(np.abs(inner(S_T, S_fwd))), level=3)
         V_SI = V_SI[V_slice]
-        jax_print(np.sort(np.abs(V_SI[V_half_ind]))[-10:], label='VSI 2', level=3)
+        jax_print(np.sort(np.abs(V_SI[V_half_ind]))[-10:], label='VSI 2', 
+                  level=3)
         i = np.argmax(np.abs(V_SI[V_half_ind]))
         jax_print((
             norm_3vec_sq(Rs_next[i,0]-Rs_next[i,1]),
-            norm_3vec_sq(Rs_deform_next[i,0]-Rs_deform_next[i,1])), label='R max', level=3)
+            norm_3vec_sq(Rs_deform_next[i,0]-Rs_deform_next[i,1])), 
+            label='R max', level=3)
         S_fwd = np.exp(-dtau_iMev/2 * V_SI) * S_fwd
-        jax_print(np.min(np.abs(inner(S_fwd, S_fwd))), label="After VSI 2", level=3)
+        jax_print(np.min(np.abs(inner(S_fwd, S_fwd))), label="After VSI 2", 
+                  level=3)
         jax_print(np.min(np.abs(inner(S_T, S_fwd))), level=3)
 
         V_SI, V_SD = potential(Rs_deform_next_bwd)
         VS = batched_apply(V_SD, S)
         VVS = batched_apply(V_SD, VS)
         S_bwd = S - (dtau_iMev/2) * VS + (dtau_iMev**2/8) * VVS
-        jax_print(np.min(np.abs(inner(S_bwd, S_bwd))), label="After VSD 2", level=3)
+        jax_print(np.min(np.abs(inner(S_bwd, S_bwd))), label="After VSD 2", 
+                  level=3)
         jax_print(np.min(np.abs(inner(S_T, S_bwd))), level=3)
         V_SI = V_SI[V_slice]
-        jax_print(np.sort(np.abs(V_SI[V_half_ind]))[-10:], label='VSI 2', level=3)
+        jax_print(np.sort(np.abs(V_SI[V_half_ind]))[-10:], label='VSI 2', 
+                  level=3)
         i = np.argmax(np.abs(V_SI[V_half_ind]))
         jax_print((
             norm_3vec_sq(Rs_next[i,0]-Rs_next[i,1]),
-            norm_3vec_sq(Rs_deform_next[i,0]-Rs_deform_next[i,1])), label='R max', level=3)
+            norm_3vec_sq(Rs_deform_next[i,0]-Rs_deform_next[i,1])), 
+            label='R max', level=3)
         S_bwd = np.exp(-dtau_iMev/2 * V_SI) * S_bwd
-        jax_print(np.min(np.abs(inner(S_bwd, S_bwd))), label="After VSI 2", level=3)
+        jax_print(np.min(np.abs(inner(S_bwd, S_bwd))), label="After VSI 2", 
+                  level=3)
         jax_print(np.min(np.abs(inner(S_T, S_bwd))), level=3)
 
-        w_fwd = inner(S_T, S_fwd) * f_R_norm(to_relative(Rs_deform_next)) * G_ratio_fwd
-        w_bwd = inner(S_T, S_bwd) * f_R_norm(to_relative(Rs_deform_next_bwd)) * G_ratio_bwd
-        W_prod = W_prod * (w_fwd / np.abs(w_fwd)) * (np.abs(w_fwd) + np.abs(w_bwd)) / 2
+        w_fwd = inner(S_T, S_fwd) * f_R_norm(to_relative(Rs_deform_next)) \
+                * G_ratio_fwd
+        w_bwd = inner(S_T, S_bwd) \
+                * f_R_norm(to_relative(Rs_deform_next_bwd)) * G_ratio_bwd
+        W_prod = W_prod * (w_fwd / np.abs(w_fwd)) \
+                * (np.abs(w_fwd) + np.abs(w_bwd)) / 2
 
         S = S_fwd
 
@@ -1076,11 +1126,14 @@ def measure_gfmc_loss(
         ((param[:-1], param[1:]) for param in params), ())
     _, all_Ss_Ws = jax.lax.scan(body, (S,W_prod), scan_input)
 
-    eval_local_loss = partial(eval_local_loss, R0_deform=R0_deform, RN_deform=RN_deform, S_T=S_T)
-    loss_pieces = jax.lax.map(eval_local_loss, (all_Ss_Ws[0][loss_ts], all_Ss_Ws[1][loss_ts]))
+    eval_local_loss = partial(eval_local_loss, R0_deform=R0_deform, 
+                              RN_deform=RN_deform, S_T=S_T)
+    loss_pieces = jax.lax.map(eval_local_loss, 
+                              (all_Ss_Ws[0][loss_ts], all_Ss_Ws[1][loss_ts]))
     return np.sum(loss_pieces)
 
-def make_local_loss_H(f_R_norm, df_R_norm, ddf_R_norm, *, AVcoeffs, alpha, beta, m_Mev):
+def make_local_loss_H(f_R_norm, df_R_norm, ddf_R_norm, *, AVcoeffs, alpha, 
+                      beta, m_Mev):
     @jax.jit
     def eval_local_loss_H(X_i, *, R0_deform, RN_deform, S_T):
         dRN_deform = to_relative(RN_deform)
@@ -1091,7 +1144,8 @@ def make_local_loss_H(f_R_norm, df_R_norm, ddf_R_norm, *, AVcoeffs, alpha, beta,
         K_Mev = np.array(compute_K(dRN_deform, f, df, ddf, m_Mev=m_Mev))
         Os = {
             name: np.array(
-                AVcoeffs[name](dRN_deform) * compute_O(two_body_ops[name](dRN_deform), S, S_T))
+                AVcoeffs[name](dRN_deform) \
+                    * compute_O(two_body_ops[name](dRN_deform), S, S_T))
             for name in AVcoeffs
         }
         V_Mev = sum(Os.values())
@@ -1112,7 +1166,8 @@ def make_local_loss_E(*, q_Mev, i, j, alpha, beta):
     @jax.jit
     def eval_local_loss_E(X_i, *, R0_deform, RN_deform, S_T):
         S, W = X_i
-        num = measure_eucl_density_response(R0_deform, RN_deform, q_Mev=q_Mev, i=i, j=j)
+        num = measure_eucl_density_response(R0_deform, RN_deform, 
+                                            q_Mev=q_Mev, i=i, j=j)
         num_loss = np.mean(np.real(num)**2 + np.imag(num)**2)
         den_loss = np.mean(np.real(W)**2 + np.imag(W)**2)
         return alpha * np.log(num_loss) + beta * np.log(den_loss)
@@ -1120,8 +1175,8 @@ def make_local_loss_E(*, q_Mev, i, j, alpha, beta):
 
 
 def train_gfmc_deform(
-        Rs_metropolis, S_av4p_metropolis, f_R_norm, df_R_norm, ddf_R_norm, params,
-        *, tau_iMev, N, AVcoeffs, deform_f, eval_local_loss,
+        Rs_metropolis, S_av4p_metropolis, f_R_norm, df_R_norm, ddf_R_norm, 
+        params, *, tau_iMev, N, AVcoeffs, deform_f, eval_local_loss,
         m_Mev, loss_t0=None, loss_tstep=1, n_iter=10000,
         mlog10step=2, patience=250, window=50, alpha=0, beta=1):
 
@@ -1171,8 +1226,10 @@ def train_gfmc_deform(
     loss_and_grad = jax.value_and_grad(measure_gfmc_loss, argnums=0)
     # TODO for debugging
     loss_and_grad = jax.jit(
-        loss_and_grad, static_argnums=(4,5,6,7), static_argnames=('deform_f','eval_local_loss'))
-    opt_init, opt_update, opt_get_params = jax.experimental.optimizers.adam(plateau_learn_rate)
+        loss_and_grad, static_argnums=(4,5,6,7), 
+        static_argnames=('deform_f','eval_local_loss'))
+    opt_init, opt_update, opt_get_params = \
+            jax.experimental.optimizers.adam(plateau_learn_rate)
     opt_state = opt_init(params)
     _jit_time = None
 
@@ -1194,10 +1251,12 @@ def train_gfmc_deform(
 
         _gen_start = time.time()
 
-        rand_draws = np.array(onp.random.random(size=(N, Rs_metropolis.shape[0])))
+        rand_draws = np.array(onp.random.random(size=(N, 
+                                 Rs_metropolis.shape[0])))
         gfmc_deform = gfmc_twobody_deform(
             Rs_metropolis, S_av4p_metropolis, f_R_norm, params,
-            rand_draws=rand_draws, tau_iMev=tau_iMev, N=N, potential=potential, m_Mev=m_Mev,
+            rand_draws=rand_draws, tau_iMev=tau_iMev, N=N, 
+            potential=potential, m_Mev=m_Mev,
             deform_f=deform_f, resampling_freq=None)
         gfmc_Rs = np.array([Rs for Rs,_,_,_, in gfmc_deform])
         gfmc_Ws = np.abs(np.array([Ws for _,_,_,Ws, in gfmc_deform]))
@@ -1218,9 +1277,10 @@ def train_gfmc_deform(
         _lg_start = time.time()
 
         l, g = loss_and_grad(
-            params, gfmc_Rs, gfmc_Ws, S_T, AVcoeffs, f_R_norm, df_R_norm, ddf_R_norm,
-            loss_ts, eval_local_loss=eval_local_loss, deform_f=deform_f,
-            alpha=alpha, beta=beta, tau_iMev=tau_iMev, N=N, m_Mev=m_Mev)
+            params, gfmc_Rs, gfmc_Ws, S_T, AVcoeffs, f_R_norm, df_R_norm, 
+            ddf_R_norm, loss_ts, eval_local_loss=eval_local_loss, 
+            deform_f=deform_f, alpha=alpha, beta=beta, tau_iMev=tau_iMev, 
+            N=N, m_Mev=m_Mev)
 
         if _jit_time is None:
             _jit_time = time.time()-_jit_start
