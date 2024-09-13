@@ -10,7 +10,7 @@ import pickle
 import time
 import tqdm.auto as tqdm
 
-from .util import hashabledict, jax_print, norm_3vec, norm_3vec_sq, to_relative
+from .util import jax_print, norm_3vec, to_relative
 
 fm_Mev = 1.0
 mp_Mev = 1.0
