@@ -587,36 +587,19 @@ def f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
     # check permuting simply gives same and only do for one perm
     # Apply permutations if provided and N_coord is 6
 
-    if perm is not None and N_coord == 4:
+    if perm is not None and (N_coord == 4 or N_coord == 6):
         print(f"Perm type: {type(perm)}")
         print(f"Perm contents: {perm}")
 
         perm = np.array(perm)
 
-        if Rs.shape[-2] == 4:
-            # Handle both (6, 3) and (N_walkers, 6, 3) shapes
+        if Rs.shape[-2] == N_coord:
+            # Handle both (N_coord, 3) and (N_walkers, N_coord, 3) shapes
             if Rs.ndim == 2:
-                # Shape is (6, 3)
+                # Shape is (N_coord, 3)
                 Rs = Rs[perm, :]
             elif Rs.ndim == 3:
-                # Shape is (N_walkers, 6, 3)
-                Rs = Rs[:, perm, :]
-            else:
-                raise ValueError(f"Unexpected shape for Rs: {Rs.shape}")
-
-    if perm is not None and N_coord == 6:
-        print(f"Perm type: {type(perm)}")
-        print(f"Perm contents: {perm}")
-
-        perm = np.array(perm)
-
-        if Rs.shape[-2] == 6:
-            # Handle both (6, 3) and (N_walkers, 6, 3) shapes
-            if Rs.ndim == 2:
-                # Shape is (6, 3)
-                Rs = Rs[perm, :]
-            elif Rs.ndim == 3:
-                # Shape is (N_walkers, 6, 3)
+                # Shape is (N_walkers, N_coord, 3)
                 Rs = Rs[:, perm, :]
             else:
                 raise ValueError(f"Unexpected shape for Rs: {Rs.shape}")
@@ -669,9 +652,6 @@ def f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=ab
         psi += g * hydrogen_wvfn(r_sum_T, radial_n)
     return psi
 
-
-
-
 #TODO: ADD PERMS OPTIONS
 
 # Ensure this matches the earlier permutation list format
@@ -681,40 +661,20 @@ def laplacian_f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0, afac=afac,
         assert N_coord == 2
     nabla_psi_tot = 0
 
-    if perm is not None and N_coord == 4:
+    if perm is not None and (N_coord == 4 or N_coord == 6):
         print("Inside f_R:")
         print(f"Perm type: {type(perm)}")
         print(f"Perm contents: {perm}")
 
         perm = np.array(perm)
 
-        if Rs.shape[-2] == 4:
-            # Handle both (6, 3) and (N_walkers, 6, 3) shapes
+        if Rs.shape[-2] == N_coord:
+            # Handle both (N_coord, 3) and (N_walkers, N_coord, 3) shapes
             if Rs.ndim == 2:
-                # Shape is (6, 3)
+                # Shape is (N_coord, 3)
                 Rs = Rs[perm, :]
             elif Rs.ndim == 3:
-                # Shape is (N_walkers, 6, 3)
-                Rs = Rs[:, perm, :]
-            else:
-                raise ValueError(f"Unexpected shape for Rs: {Rs.shape}")
-
-        #print("Rs after permutation:", Rs)
-
-    if perm is not None and N_coord == 6:
-        print("Inside f_R:")
-        print(f"Perm type: {type(perm)}")
-        print(f"Perm contents: {perm}")
-
-        perm = np.array(perm)
-
-        if Rs.shape[-2] == 6:
-            # Handle both (6, 3) and (N_walkers, 6, 3) shapes
-            if Rs.ndim == 2:
-                # Shape is (6, 3)
-                Rs = Rs[perm, :]
-            elif Rs.ndim == 3:
-                # Shape is (N_walkers, 6, 3)
+                # Shape is (N_walkers, N_coord, 3)
                 Rs = Rs[:, perm, :]
             else:
                 raise ValueError(f"Unexpected shape for Rs: {Rs.shape}")
@@ -838,43 +798,25 @@ if N_coord >= 6 and verbose:
     def laplacian_f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
         nabla_psi_tot = 0
 
-        if perm is not None and N_coord == 4:
+        if perm is not None and (N_coord == 4 or N_coord == 6):
             print("Inside f_R:")
             print(f"Perm type: {type(perm)}")
             print(f"Perm contents: {perm}")
 
             perm = np.array(perm)
 
-            if Rs.shape[-2] == 4:
-                # Handle both (6, 3) and (N_walkers, 6, 3) shapes
+            if Rs.shape[-2] == N_coord:
+                # Handle both (N_coord, 3) and (N_walkers, N_coord, 3) shapes
                 if Rs.ndim == 2:
-                    # Shape is (6, 3)
+                    # Shape is (N_coord, 3)
                     Rs = Rs[perm, :]
                 elif Rs.ndim == 3:
-                    # Shape is (N_walkers, 6, 3)
+                    # Shape is (N_walkers, N_coord, 3)
                     Rs = Rs[:, perm, :]
                 else:
                     raise ValueError(f"Unexpected shape for Rs: {Rs.shape}")
 
-        if perm is not None and N_coord == 6:
-            print("Inside f_R:")
-            print(f"Perm type: {type(perm)}")
-            print(f"Perm contents: {perm}")
-
-            perm = np.array(perm)
-
-            if Rs.shape[-2] == 6:
-                # Handle both (6, 3) and (N_walkers, 6, 3) shapes
-                if Rs.ndim == 2:
-                    # Shape is (6, 3)
-                    Rs = Rs[perm, :]
-                elif Rs.ndim == 3:
-                    # Shape is (N_walkers, 6, 3)
-                    Rs = Rs[:, perm, :]
-                else:
-                    raise ValueError(f"Unexpected shape for Rs: {Rs.shape}")
-
-     #UNIT TESTED
+        #UNIT TESTED
         # terms where laplacian hits one piece of wvfn
         # laplacian hits r_kl
         for k in range(N_coord):
