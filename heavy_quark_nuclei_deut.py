@@ -2,39 +2,25 @@
 
 import argparse
 import analysis as al
-import getpass
-import matplotlib.pyplot as plt
 import numpy as onp
 import scipy
 import scipy.interpolate
 import scipy.integrate
 import jax.scipy
 import jax.scipy.special
-import pickle
-import paper_plt
 import tqdm.auto as tqdm
 import afdmc_lib_deut as adl
 import os
-import pickle
 from afdmc_lib_deut import NI,NS,mp_Mev,fm_Mev
 import jax
 import jax.numpy as np
-import sys
-from itertools import repeat
 import time
 import h5py
-import math
-import mpmath
 from functools import partial
 
-from itertools import permutations, chain
-import torch
-import torch.nn as nn
-from collections import defaultdict
+from itertools import permutations
 
 onp.random.seed(0)
-
-paper_plt.load_latex_config()
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--ferm_symm', type=str, choices=['s', 'a', 'mas'],default='a')
