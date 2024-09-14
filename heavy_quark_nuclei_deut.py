@@ -1275,9 +1275,6 @@ for count, R in enumerate(gfmc_Rs):
         total_lap = np.zeros((Rs_metropolis.shape[0],)  + (NI, NS) * N_coord, 
                               dtype=np.complex128)
         for ii in range(len(perms)):
-            test=antisym_factors[ii]*np.einsum("i,i...->i...", 
-                  f_R(R,perms[ii],wavefunction=bra_wavefunction), 
-                  S_av4p_metropolis_set[ii])
             total_wvfn += antisym_factors[ii]*np.einsum("i,i...->i...", 
                             f_R(R,perms[ii],wavefunction=bra_wavefunction), 
                             S_av4p_metropolis_set[ii])
