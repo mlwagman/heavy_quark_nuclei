@@ -258,8 +258,8 @@ if N_coord == 4:
     # hardcoded in (q qbar) (q qbar) ordering
     assert(swapI != 1)
     #perms = [(0,1,2,3),(2,1,0,3)]
-    #perms = [(0,1,2,3)]
-    perms = [(2,1,0,3)]
+    perms = [(0,1,2,3)]
+    #perms = [(2,1,0,3)]
     if ferm_symm == "s":
         antisym_factors=[1,1]
     else:   
@@ -670,7 +670,10 @@ def f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0,
                 Rs = Rs[perm, :]
             elif Rs.ndim == 3:
                 # Shape is (N_walkers, N_coord, 3)
+                print(Rs.shape)
+                print("old Rs = ", Rs)
                 Rs = Rs[:, perm, :]
+                print("new Rs = ", Rs)
             else:
                 raise ValueError(f"Unexpected shape for Rs: {Rs.shape}")
 
@@ -1033,7 +1036,6 @@ if N_coord >= 6 and verbose:
 else:
     print("JIT Laplacian")
 
-
 N_inner = 2
 if N_coord % 3 == 0:
     N_inner = 3
@@ -1101,6 +1103,7 @@ if N_coord == 2:
                 spin_slice = (slice(0, None),) + (i,0,j,0)
                 S_av4p_metropolis[spin_slice] \
                     = kronecker_delta(i, j)/np.sqrt(NI)
+
 
 def generate_wavefunction_tensor(NI, NS, N_coord, full_permutations, color):
 
@@ -1287,6 +1290,7 @@ else:
         return prod / np.abs( prod )
 
 
+
 # Metropolis
 if input_Rs_database == "":
     met_time = time.time()
@@ -1434,25 +1438,29 @@ for count, R in enumerate(gfmc_Rs):
     print('Calculating potential for step ', count)
     V_time = time.time()
     S = gfmc_Ss[count]
-    print("R shape = ",R.shape)
-    V_SI, V_SD = Coulomb_potential(R)
-    print("shape of VSI = ",V_SI.shape)
-    print("shape of VSD = ",V_SD.shape)
     broadcast_SI = ((slice(None),) + (np.newaxis,)*N_coord*2)
 
     if N_coord == 4 or N_coord == 6:
         total_wvfn = np.zeros((Rs_metropolis.shape[0],) + (NI, NS) * N_coord, 
                       dtype=np.complex128)
+        V_total_wvfn = np.zeros((Rs_metropolis.shape[0],) + (NI, NS) * N_coord, 
+                      dtype=np.complex128)
         for ii in range(len(perms)):
+            V_SI, V_SD = Coulomb_potential(R[:,perms[ii],:])
             total_wvfn += antisym_factors[ii]*np.einsum("i,i...->i...", 
                             f_R(R,perms[ii],wavefunction=bra_wavefunction), 
                             S_av4p_metropolis_set[ii])
-        print("total wvfn = ",total_wvfn.shape)
-        numerator = adl.inner(total_wvfn,
-                        adl.batched_apply(V_SD + V_SI,total_wvfn))
-        denominator = adl.inner(total_wvfn,total_wvfn)
-        print("denom = ", denominator)
+            V_total_wvfn += adl.batched_apply(V_SD + V_SI,total_wvfn)
+        #print("total wvfn = ",total_wvfn.shape)
+        numerator = adl.inner(total_wvfn, V_total_wvfn)
+        denominator = adl.inner(total_wvfn, total_wvfn)
+        #print("num = ", numerator)
+        #print(numerator.shape)
+        #print("denom = ", denominator)
+        #print(denominator.shape)
         V_tot= numerator/denominator
+        #print("V_tot = ", V_tot)
+        #print(V_tot.shape)
     else:
         V_tot = adl.inner(S_av4p_metropolis, V_SD_S + V_SI_S) \
                   / adl.inner(S_av4p_metropolis, S)
