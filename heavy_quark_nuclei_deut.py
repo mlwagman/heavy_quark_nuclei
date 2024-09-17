@@ -257,7 +257,9 @@ else:
 if N_coord == 4:
     # hardcoded in (q qbar) (q qbar) ordering
     assert(swapI != 1)
-    perms = [(0,1,2,3),(2,1,0,3)]
+    #perms = [(0,1,2,3),(2,1,0,3)]
+    #perms = [(0,1,2,3)]
+    perms = [(2,1,0,3)]
     if ferm_symm == "s":
         antisym_factors=[1,1]
     else:   
@@ -1224,6 +1226,7 @@ if N_coord == 6 or N_coord == 4:
 
     def f_R_braket(Rs):
         total_wvfn = np.zeros((NI, NS) * N_coord, dtype=np.complex128)
+        ## THIS IS THE WRONG SIZE OUTSIDE METROPOLIS!!!
         for ii in range(len(perms)):
             f_R_tensor = f_R(Rs, perms[ii], wavefunction=bra_wavefunction)
             # use the 1-walker version of tensor if Rs only has 1 walker
@@ -1236,10 +1239,23 @@ if N_coord == 6 or N_coord == 4:
             total_wvfn +=  antisym_factors[ii]*S_av4_tensor \
                     * f_R(Rs, wavefunction=bra_wavefunction, perm=perms[ii])
         Ss=np.array([total_wvfn])
+        if len(Rs.shape) == 2:
+            #result = adl.inner(Ss,Ss)
+            result = adl.inner_no_batch(Ss, Ss)
+            #print("<psi|psi> = ", adl.inner(Ss, Ss))
+            #print("<S|S> = ", adl.inner(S_av4_tensor, S_av4_tensor))
+            #print("<S|S> = ", adl.inner(S_av4p_metropolis_set[ii][0], S_av4p_metropolis_set[ii][0]))
+            #print(Ss.shape)
+            #print(S_av4_tensor.shape)
+            #print("<psi|psi> = ", adl.inner_no_batch(Ss, Ss))
+            #print("<S|S> = ", adl.inner_no_batch(S_av4_tensor, S_av4_tensor))
+            #print("<S|S> = ", adl.inner_no_batch(S_av4p_metropolis_set[ii][0], S_av4p_metropolis_set[ii][0]))
         #CHECK SAV4^2 =1!!
-        result = np.abs( adl.inner(Ss,Ss) )
-        if len(Rs.shape) != 2:
-            result /= n_walkers
+        else:
+            result = adl.inner(Ss,Ss) / n_walkers
+            print("Does f_R_braket work with batch size?")
+            assert False
+            #result = np.abs( f_R(Rs, wavefunction=bra_wavefunction)**2 )
         return result
 
     def f_R_braket_tempered(Rs, fac):
@@ -1435,6 +1451,7 @@ for count, R in enumerate(gfmc_Rs):
         numerator = adl.inner(total_wvfn,
                         adl.batched_apply(V_SD + V_SI,total_wvfn))
         denominator = adl.inner(total_wvfn,total_wvfn)
+        print("denom = ", denominator)
         V_tot= numerator/denominator
     else:
         V_tot = adl.inner(S_av4p_metropolis, V_SD_S + V_SI_S) \
@@ -1520,6 +1537,9 @@ if verbose:
     print("theta = ",t_n[0,0])
     print("phi = ",p_n[0,0])
     print("psi(R) = ",f_R(gfmc_Rs[0])[0])
+    print("|psi(R)|^2 = ",f_R_braket(gfmc_Rs[0][0]))
+    print("|psi(R)|^2 = ",f_R(gfmc_Rs[0])[0]**2)
+    print("|psi(R)|^2 = ",np.abs( f_R(gfmc_Rs[0][0], wavefunction=bra_wavefunction)**2 ))
     print("K(R) = ",Ks[0,0])
     print("V(R) = ",Vs[0,0])
     print("H(R) = ",Ks[0,0]+Vs[0,0])
