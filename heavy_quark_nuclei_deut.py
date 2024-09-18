@@ -258,8 +258,8 @@ if N_coord == 4:
     # hardcoded in (q qbar) (q qbar) ordering
     assert(swapI != 1)
     #perms = [(0,1,2,3),(2,1,0,3)]
-    perms = [(0,1,2,3)]
-    #perms = [(2,1,0,3)]
+    #perms = [(0,1,2,3)]
+    perms = [(2,1,0,3)]
     if ferm_symm == "s":
         antisym_factors=[1,1]
     else:   
@@ -1440,19 +1440,18 @@ for count, R in enumerate(gfmc_Rs):
     S = gfmc_Ss[count]
     broadcast_SI = ((slice(None),) + (np.newaxis,)*N_coord*2)
 
+    V_SI, V_SD = Coulomb_potential(R)
+
     if N_coord == 4 or N_coord == 6:
         total_wvfn = np.zeros((Rs_metropolis.shape[0],) + (NI, NS) * N_coord, 
                       dtype=np.complex128)
-        V_total_wvfn = np.zeros((Rs_metropolis.shape[0],) + (NI, NS) * N_coord, 
-                      dtype=np.complex128)
+
         for ii in range(len(perms)):
-            V_SI, V_SD = Coulomb_potential(R[:,perms[ii],:])
             total_wvfn += antisym_factors[ii]*np.einsum("i,i...->i...", 
                             f_R(R,perms[ii],wavefunction=bra_wavefunction), 
                             S_av4p_metropolis_set[ii])
-            V_total_wvfn += adl.batched_apply(V_SD + V_SI,total_wvfn)
         #print("total wvfn = ",total_wvfn.shape)
-        numerator = adl.inner(total_wvfn, V_total_wvfn)
+        numerator = adl.inner(total_wvfn, adl.batched_apply(V_SD + V_SI,total_wvfn))
         denominator = adl.inner(total_wvfn, total_wvfn)
         #print("num = ", numerator)
         #print(numerator.shape)
