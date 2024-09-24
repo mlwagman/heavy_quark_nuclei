@@ -266,6 +266,7 @@ if N_coord == 4:
 if ferm_symm == "s":
     antisym_factors=[1] * len(perms)
 
+
 # reset all masses to +/- 1 now that we have computed perms from them
 masses_print = masses
 masses /= onp.abs(masses)
@@ -278,8 +279,7 @@ for perm, factor in zip(perms, antisym_factors):
     print(f"Permutation: {perm}, Factor: {factor}")
 
 print("length of perms = ", len(perms))
-
-# TODO: WORKS! Gives list (0,1,2,3,4,5),...
+perms = [(0,1,2,3,4,5)]
 
 bra_wavefunction = wavefunction
 ket_wavefunction = wavefunction
@@ -650,11 +650,9 @@ def hydrogen_wvfn(r, n):
 #TODO: ADD PERMS OPTIONS IF N_COORD=6
 
 @partial(jax.jit, static_argnums=(2,))
-def f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0, 
+def f_R(Rs, perm=None, wavefunction=bra_wavefunction, a0=a0, 
         afac=afac, masses=absmasses):
-    # check permuting simply gives same and only do for one perm
-    # Apply permutations if provided and N_coord is 6
-
+    # Apply permutations if provided and N_coord is 4 or 6
     if perm is not None and (N_coord == 4 or N_coord == 6):
         print(f"Perm type: {type(perm)}")
         print(f"Perm contents: {perm}")
@@ -672,34 +670,32 @@ def f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0,
             else:
                 raise ValueError(f"Unexpected shape for Rs: {Rs.shape}")
 
-    def r_norm(pair):
-        [i,j] = pair
-        rdiff = Rs[...,i,:] - Rs[...,j,:]
-        mij = 2*masses[i]*masses[j]/(masses[i]+masses[j])
-        rij_norm = np.sqrt( np.sum(rdiff*rdiff, axis=-1) )
+    # Define r_norm to accept Rs as an explicit argument
+    def r_norm(pair,Rs):
+        [i, j] = pair
+        rdiff = Rs[..., i, :] - Rs[..., j, :]
+        mij = 2 * masses[i] * masses[j] / (masses[i] + masses[j])
+        rij_norm = np.sqrt(np.sum(rdiff * rdiff, axis=-1))
         return rij_norm * mij
 
-    #UNIT TESTED
-
-    # Setup pair lists for the mappings 
-    # (these need to be predefined or passed into the function)
-
+    # Use jax.vmap to map r_norm over pairs, passing Rs explicitly
     if wavefunction == "product":
-        r_sum = np.sum( jax.lax.map(r_norm, product_pairs), axis=0 ) \
-                  *(1/a0-1/(a0*afac)) \
-                  + np.sum( jax.lax.map(r_norm, pairs), axis=0 )/(a0*afac)
-        r_sum += np.sum( jax.lax.map(r_norm, same_pairs), axis=0 ) \
-                  *(1/(a0*afac*samefac)-1/(a0*afac))
+        r_sum = np.sum(jax.vmap(r_norm, in_axes=(0, None))(product_pairs, Rs), axis=0) \
+                * (1 / a0 - 1 / (a0 * afac)) \
+              + np.sum(jax.vmap(r_norm, in_axes=(0, None))(pairs, Rs), axis=0) / (a0 * afac)
+        r_sum += np.sum(jax.vmap(r_norm, in_axes=(0, None))(same_pairs, Rs), axis=0) \
+                 * (1 / (a0 * afac * samefac) - 1 / (a0 * afac))
     elif wavefunction == "diquark":
-        r_sum = np.sum( jax.lax.map(r_norm, diquark_pairs), axis=0 ) \
-                  * (1/a0-1/(a0*afac)) \
-                  + np.sum( jax.lax.map(r_norm, pairs), axis=0 )/(a0*afac)
+        r_sum = np.sum(jax.vmap(r_norm, in_axes=(0, None))(diquark_pairs, Rs), axis=0) \
+                * (1 / a0 - 1 / (a0 * afac)) \
+              + np.sum(jax.vmap(r_norm, in_axes=(0, None))(pairs, Rs), axis=0) / (a0 * afac)
     else:
-        r_sum = np.sum( jax.lax.map(r_norm, pairs), axis=0 )/a0
+        r_sum = np.sum(jax.vmap(r_norm, in_axes=(0, None))(pairs, Rs), axis=0) / a0
 
     psi = hydrogen_wvfn(r_sum, radial_n)
     afac *= gfac
     a0 /= gfac
+
 
     # Additional logic for N_coord == 4
     if N_coord == 4 and abs(g) > 0:
@@ -1229,6 +1225,8 @@ if N_coord == 6 or N_coord == 4:
             # use the 1-walker version of tensor if Rs only has 1 walker
             if len(Rs.shape) == 2:
                 S_av4_tensor = S_av4p_metropolis_set[ii][0]
+                #CHECK SAV4^2 =1!!
+                print("S_av4^2 = ", adl.inner(S_av4_tensor, S_av4_tensor))
             # otherwise fall back on full version of S
             else:
                 S_av4_tensor = S_av4p_metropolis_set[ii]
@@ -1236,7 +1234,6 @@ if N_coord == 6 or N_coord == 4:
             total_wvfn +=  antisym_factors[ii]*S_av4_tensor \
                     * f_R(Rs, wavefunction=bra_wavefunction, perm=perms[ii])
         Ss=np.array([total_wvfn])
-        #CHECK SAV4^2 =1!!
         result = np.abs( adl.inner(Ss,Ss) )
         if len(Rs.shape) != 2:
             result /= n_walkers
@@ -1524,6 +1521,9 @@ if verbose:
     print("V(R) = ",Vs[0,0])
     print("H(R) = ",Ks[0,0]+Vs[0,0])
 
+    print("|psi(R)|^2 = ",f_R_braket(gfmc_Rs[0])[0])
+    print("|psi(R)|^2 = ",f_R(gfmc_Rs[0])[0]**2)
+
     print("\n", Ks.shape)
 
     print("\nsecond walker")
@@ -1546,3 +1546,6 @@ if verbose:
     print("H_opt=",Hs_opt,"\n\n")
     print("K=",ave_Ks,"\n\n")
     print("V=",ave_Vs,"\n\n")
+
+    print("|psi(R)|^2 = ",f_R_braket(gfmc_Rs[0])[0])
+    print("|psi(R)|^2 = ",f_R(gfmc_Rs[0])[0]**2)
