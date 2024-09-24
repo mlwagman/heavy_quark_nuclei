@@ -1241,11 +1241,7 @@ if N_coord == 6 or N_coord == 4:
             total_wvfn +=  antisym_factors[ii]*S_av4_tensor \
                     * f_R(Rs, wavefunction=bra_wavefunction, perm=perms[ii])
         Ss=np.array([total_wvfn])
-<<<<<<< HEAD
-        result = np.abs( adl.inner(Ss,Ss) )
-        if len(Rs.shape) != 2:
-            result /= n_walkers
-=======
+
         if len(Rs.shape) == 2:
             #result = adl.inner(Ss,Ss)
             result = adl.inner_no_batch(Ss, Ss)
@@ -1263,7 +1259,6 @@ if N_coord == 6 or N_coord == 4:
             print("Does f_R_braket work with batch size?")
             assert False
             #result = np.abs( f_R(Rs, wavefunction=bra_wavefunction)**2 )
->>>>>>> a92b61ce19ec96b5e9f41a94fa4cc718600946ed
         return result
 
     def f_R_braket_tempered(Rs, fac):
