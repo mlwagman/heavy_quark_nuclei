@@ -13,7 +13,7 @@ import jax.scipy.special
 import pickle
 import paper_plt
 import tqdm.auto as tqdm
-import afdmc_lib_deut as adl
+import afdmc_lib_col as adl
 import os
 import pickle
 from afdmc_lib_deut import NI,NS,mp_Mev,fm_Mev
@@ -258,7 +258,9 @@ if N_coord == 4:
     # hardcoded in (q qbar) (q qbar) ordering
     assert(swapI != 1)
     perms = [(0,1,2,3),(2,1,0,3)]
-    if ferm_symm == "s":
+    #perms = [(0,1,2,3)]
+    #perms = [(2,1,0,3)]
+    if ferm_symm == "s" or ferm_symm == "mas":
         antisym_factors=[1,1]
     else:   
         antisym_factors=[1,-1]
@@ -271,6 +273,7 @@ if ferm_symm == "s":
 masses_print = masses
 masses /= onp.abs(masses)
 print("masses = ", masses)
+print("antisym_factors = ", antisym_factors)
 
 
 # Display permutations with antisymmetrization factors
@@ -666,7 +669,10 @@ def f_R(Rs, perm=None, wavefunction=bra_wavefunction, a0=a0,
                 Rs = Rs[perm, :]
             elif Rs.ndim == 3:
                 # Shape is (N_walkers, N_coord, 3)
+                print(Rs.shape)
+                print("old Rs = ", Rs)
                 Rs = Rs[:, perm, :]
+                print("new Rs = ", Rs)
             else:
                 raise ValueError(f"Unexpected shape for Rs: {Rs.shape}")
 
@@ -1027,7 +1033,6 @@ if N_coord >= 6 and verbose:
 else:
     print("JIT Laplacian")
 
-
 N_inner = 2
 if N_coord % 3 == 0:
     N_inner = 3
@@ -1095,6 +1100,7 @@ if N_coord == 2:
                 spin_slice = (slice(0, None),) + (i,0,j,0)
                 S_av4p_metropolis[spin_slice] \
                     = kronecker_delta(i, j)/np.sqrt(NI)
+
 
 def generate_wavefunction_tensor(NI, NS, N_coord, full_permutations, color):
 
@@ -1220,6 +1226,7 @@ if N_coord == 6 or N_coord == 4:
 
     def f_R_braket(Rs):
         total_wvfn = np.zeros((NI, NS) * N_coord, dtype=np.complex128)
+        ## THIS IS THE WRONG SIZE OUTSIDE METROPOLIS!!!
         for ii in range(len(perms)):
             f_R_tensor = f_R(Rs, perms[ii], wavefunction=bra_wavefunction)
             # use the 1-walker version of tensor if Rs only has 1 walker
@@ -1234,9 +1241,29 @@ if N_coord == 6 or N_coord == 4:
             total_wvfn +=  antisym_factors[ii]*S_av4_tensor \
                     * f_R(Rs, wavefunction=bra_wavefunction, perm=perms[ii])
         Ss=np.array([total_wvfn])
+<<<<<<< HEAD
         result = np.abs( adl.inner(Ss,Ss) )
         if len(Rs.shape) != 2:
             result /= n_walkers
+=======
+        if len(Rs.shape) == 2:
+            #result = adl.inner(Ss,Ss)
+            result = adl.inner_no_batch(Ss, Ss)
+            #print("<psi|psi> = ", adl.inner(Ss, Ss))
+            #print("<S|S> = ", adl.inner(S_av4_tensor, S_av4_tensor))
+            #print("<S|S> = ", adl.inner(S_av4p_metropolis_set[ii][0], S_av4p_metropolis_set[ii][0]))
+            #print(Ss.shape)
+            #print(S_av4_tensor.shape)
+            #print("<psi|psi> = ", adl.inner_no_batch(Ss, Ss))
+            #print("<S|S> = ", adl.inner_no_batch(S_av4_tensor, S_av4_tensor))
+            #print("<S|S> = ", adl.inner_no_batch(S_av4p_metropolis_set[ii][0], S_av4p_metropolis_set[ii][0]))
+        #CHECK SAV4^2 =1!!
+        else:
+            result = adl.inner(Ss,Ss) / n_walkers
+            print("Does f_R_braket work with batch size?")
+            assert False
+            #result = np.abs( f_R(Rs, wavefunction=bra_wavefunction)**2 )
+>>>>>>> a92b61ce19ec96b5e9f41a94fa4cc718600946ed
         return result
 
     def f_R_braket_tempered(Rs, fac):
@@ -1268,6 +1295,7 @@ else:
         return prod / np.abs( prod )
 
 
+
 # Metropolis
 if input_Rs_database == "":
     met_time = time.time()
@@ -1286,12 +1314,12 @@ if input_Rs_database == "":
 
     # TODO ACTUALLY CHANNGE BACK PLEASE
     if color == "6x6bar" or color == "SSS":
-        samples = adl.metropolis(R0, f_R_braket, n_therm=50*n_skip, 
+        samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, 
                                  n_step=n_walkers, n_skip=n_skip, 
                                  eps=4*2*a0*afac/N_coord**2*radial_n, 
                                  masses=absmasses)
     else:
-        samples = adl.metropolis(R0, f_R_braket, n_therm=50*n_skip, 
+        samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, 
                                  n_step=n_walkers, n_skip=n_skip, 
                                  eps=4*2*a0/N_coord**2*radial_n, 
                                  masses=absmasses)
@@ -1321,127 +1349,124 @@ deform_f = lambda x, params: x
 params = (np.zeros((n_step+1)),)
 
 
-def trial_wvfn(R):
-    psi = np.zeros((n_walkers,)  + (NI, NS) * N_coord, dtype=np.complex128)
-    for ii in range(len(perms)):
-        psi += antisym_factors[ii]*np.einsum("i,i...->i...", 
-                  f_R(R,perms[ii],wavefunction=bra_wavefunction), 
-                  S_av4p_metropolis_set[ii])
-    return psi
+Ks = np.zeros((n_step+1,n_walkers))
+Vs = np.zeros((n_step+1,n_walkers))
+Ws = np.zeros((n_step+1,n_walkers))
 
 print('Running GFMC evolution:')
 
 #TODO: DEFINE SUM(S_av4p_metropolis_I*F_R_I) AND F_R=1
 #WE WANT SUM_perms(S[perm]*f_R[perm])
-if n_step > 0:
-    rand_draws = onp.random.random(size=(n_step, Rs_metropolis.shape[0]))
-    gfmc = adl.gfmc_deform(
-        Rs_metropolis, trial_wvfn, params,
-        rand_draws=rand_draws, tau_iMev=tau_iMev, 
-        N=n_step, potential=Coulomb_potential,
-        deform_f=deform_f, m_Mev=np.abs(np.array(masses)),
-        resampling_freq=resampling)
-    gfmc_Rs = np.array([Rs for Rs,_,_,_, in gfmc])
-    gfmc_Ws = np.array([Ws for _,_,_,Ws, in gfmc])
-    gfmc_Ss = np.array([Ss for _,_,Ss,_, in gfmc])
-else:
-    gfmc_Rs = np.array([Rs_metropolis])
-    gfmc_Ws = np.array([0*Rs_metropolis[:,1,1]+1])
-    gfmc_Ss = np.array([S_av4p_metropolis_set])
+rand_draws = onp.random.random(size=(n_step, Rs_metropolis.shape[0]))
+for pi in range(len(perms)):
 
-phase_Ws = f_R_braket_phase(gfmc_Rs)
-print('phase Ws', phase_Ws)
-
-#gfmc_Ws *= phase_Ws
-gfmc_Ws= np.einsum('nk...,nk->nk...', gfmc_Ws, phase_Ws)
-
-print('GFMC tau=0 weights:', gfmc_Ws[0])
-if n_step > 0:
-    print('GFMC tau=dtau weights:', gfmc_Ws[1])
-
-# measure H
-print('Measuring <H>...')
-
-#TODO: DEFINE SUM(S_av4p_metropolis_I*LAPLACIAN_F_R_I) AND F_R=1
-
-Ks = []
-#for R in tqdm.tqdm(gfmc_Rs):
-for count, R in enumerate(gfmc_Rs):
-    K_time = time.time()
-    if N_coord != 6:
-       print('Calculating Laplacian for step ', count)
-       K_time = time.time()
-       K_term = -1/2*laplacian_f_R(R) / f_R(R, wavefunction=bra_wavefunction)
-
-    if N_coord == 4 and abs(g) > 0:
-        R_T = R
-        R_T = R_T.at[...,1,:].set(R[...,swapI,:])
-        R_T = R_T.at[...,swapI,:].set(R[...,1,:])
-
-        K_term += -1/2*laplacian_f_R(R_T, afac=afac*gfac, a0=a0/gfac) \
-                  / f_R(R_T, wavefunction=bra_wavefunction) * g
-        Ks.append(K_term)
-
-    if N_coord == 4 or N_coord == 6:
-        total_wvfn = np.zeros((Rs_metropolis.shape[0],) + (NI, NS) * N_coord, 
-                              dtype=np.complex128)
-        total_lap = np.zeros((Rs_metropolis.shape[0],)  + (NI, NS) * N_coord, 
-                              dtype=np.complex128)
-        for ii in range(len(perms)):
-            test=antisym_factors[ii]*np.einsum("i,i...->i...", 
-                  f_R(R,perms[ii],wavefunction=bra_wavefunction), 
-                  S_av4p_metropolis_set[ii])
-            total_wvfn += antisym_factors[ii]*np.einsum("i,i...->i...", 
-                            f_R(R,perms[ii],wavefunction=bra_wavefunction), 
-                            S_av4p_metropolis_set[ii])
-            total_lap += antisym_factors[ii]*np.einsum("i,i...->i...", 
-                            laplacian_f_R(R,perms[ii],
-                              wavefunction=bra_wavefunction), 
-                            S_av4p_metropolis_set[ii])
-        numerator = adl.inner(total_wvfn,total_lap)
-        denominator = adl.inner(total_wvfn,total_wvfn)
-        K_term = -1/2*numerator/denominator
-        norm = adl.inner(total_wvfn,total_wvfn)
-        print("NORM=",norm)
-        Ks.append(K_term)
-
-    print(f"calculated kinetic in {time.time() - K_time} sec")
-Ks = np.array(Ks)
-
-#TODO: DEFINE SUM(S_av4p_metropolis_I*F_R_I) AND F_R=1
-
-Vs = []
-for count, R in enumerate(gfmc_Rs):
-    print('Calculating potential for step ', count)
-    V_time = time.time()
-    S = gfmc_Ss[count]
-    print("R shape = ",R.shape)
-    V_SI, V_SD = Coulomb_potential(R)
-    print("shape of VSI = ",V_SI.shape)
-    print("shape of VSD = ",V_SD.shape)
-    broadcast_SI = ((slice(None),) + (np.newaxis,)*N_coord*2)
-
-    if N_coord == 4 or N_coord == 6:
-        total_wvfn = np.zeros((Rs_metropolis.shape[0],) + (NI, NS) * N_coord, 
-                      dtype=np.complex128)
-        for ii in range(len(perms)):
-            total_wvfn += antisym_factors[ii]*np.einsum("i,i...->i...", 
-                            f_R(R,perms[ii],wavefunction=bra_wavefunction), 
-                            S_av4p_metropolis_set[ii])
-        print("total wvfn = ",total_wvfn.shape)
-        numerator = adl.inner(total_wvfn,
-                        adl.batched_apply(V_SD + V_SI,total_wvfn))
-        denominator = adl.inner(total_wvfn,total_wvfn)
-        V_tot= numerator/denominator
+    def trial_wvfn(R):
+        return antisym_factors[pi]*f_R(R,perms[pi],wavefunction=bra_wavefunction)
+    
+    if n_step > 0:
+        gfmc = adl.gfmc_deform(
+            Rs_metropolis[:,perms[pi],:], S_av4p_metropolis_set[pi], trial_wvfn, params,
+            rand_draws=rand_draws, tau_iMev=tau_iMev, 
+            N=n_step, potential=Coulomb_potential,
+            deform_f=deform_f, m_Mev=np.abs(np.array(masses)),
+            resampling_freq=resampling)
+        gfmc_Rs = np.array([Rs for Rs,_,_,_, in gfmc])
+        gfmc_Ws = np.array([Ws for _,_,_,Ws, in gfmc])
+        gfmc_Ss = np.array([Ss for _,_,Ss,_, in gfmc])
     else:
-        V_tot = adl.inner(S_av4p_metropolis, V_SD_S + V_SI_S) \
-                  / adl.inner(S_av4p_metropolis, S)
-    print(f"calculated potential in {time.time() - V_time} sec")
-    Vs.append(V_tot)
+        gfmc_Rs = np.array([Rs_metropolis[:,perms[pi],:]])
+        gfmc_Ws = np.array([0*Rs_metropolis[:,1,1]+1])
+        gfmc_Ss = np.array([S_av4p_metropolis_set])
+    
+    phase_Ws = f_R_braket_phase(gfmc_Rs)
+    print('phase Ws', phase_Ws)
+    
+    gfmc_Ws *= phase_Ws
+    #gfmc_Ws= np.einsum('nk...,nk->nk...', gfmc_Ws, phase_Ws)
+    
+    print('GFMC tau=0 weights:', gfmc_Ws[0])
+    if n_step > 0:
+        print('GFMC tau=dtau weights:', gfmc_Ws[1])
 
-Vs = np.array(Vs)
+    Ws += gfmc_Ws / len(perms)
+    
+    # measure H
+    print('Measuring <H>...')
+    
+    #TODO: DEFINE SUM(S_av4p_metropolis_I*LAPLACIAN_F_R_I) AND F_R=1
+    
+    #for R in tqdm.tqdm(gfmc_Rs):
+    for count, R in enumerate(gfmc_Rs):
+        print(count)
+        K_time = time.time()
+        S = gfmc_Ss[count]
+        if N_coord != 6:
+           print('Calculating Laplacian for step ', count)
+           K_time = time.time()
+           K_term = -1/2*laplacian_f_R(R) / f_R(R, wavefunction=bra_wavefunction)
+    
+        if N_coord == 4 and abs(g) > 0:
+            R_T = R
+            R_T = R_T.at[...,1,:].set(R[...,swapI,:])
+            R_T = R_T.at[...,swapI,:].set(R[...,1,:])
+    
+            K_term += -1/2*laplacian_f_R(R_T, afac=afac*gfac, a0=a0/gfac) \
+                      / f_R(R_T, wavefunction=bra_wavefunction) * g
+            Ks.append(K_term)
+    
+        if N_coord == 4 or N_coord == 6:
+            total_wvfn = np.zeros((Rs_metropolis.shape[0],) + (NI, NS) * N_coord, 
+                                  dtype=np.complex128)
+            total_lap = np.zeros((Rs_metropolis.shape[0],)  + (NI, NS) * N_coord, 
+                                  dtype=np.complex128)
+            for ii in range(len(perms)):
+                test=antisym_factors[ii]*np.einsum("i,i...->i...", 
+                      f_R(R,perms[ii],wavefunction=bra_wavefunction), 
+                      S_av4p_metropolis_set[ii])
+                total_wvfn += antisym_factors[ii]*np.einsum("i,i...->i...", 
+                                f_R(R,perms[ii],wavefunction=bra_wavefunction), 
+                                S_av4p_metropolis_set[ii])
+                total_lap += antisym_factors[ii]*np.einsum("i,i...->i...", 
+                                laplacian_f_R(R,perms[ii],
+                                  wavefunction=bra_wavefunction), 
+                                S_av4p_metropolis_set[ii])
+            numerator = adl.inner(S,total_lap)
+            denominator = adl.inner(S,total_wvfn)
+            K_term = -1/2*numerator/denominator
+            Ks = Ks.at[count,:].set(Ks[count,:] + K_term * gfmc_Ws[count,:] / len(perms))
+    
+        print(f"calculated kinetic in {time.time() - K_time} sec")
+    
+    #TODO: DEFINE SUM(S_av4p_metropolis_I*F_R_I) AND F_R=1
+    
+    for count, R in enumerate(gfmc_Rs):
+        print('Calculating potential for step ', count)
+        V_time = time.time()
+        S = gfmc_Ss[count]
+        broadcast_SI = ((slice(None),) + (np.newaxis,)*N_coord*2)
+    
+        if N_coord == 4 or N_coord == 6:
+            total_wvfn = np.zeros((Rs_metropolis.shape[0],) + (NI, NS) * N_coord, 
+                          dtype=np.complex128)
 
-print(Vs.shape)
+            V_SI, V_SD = Coulomb_potential(R)
+
+            for ii in range(len(perms)):
+                total_wvfn += antisym_factors[ii]*np.einsum("i,i...->i...", 
+                                f_R(R,perm=perms[ii],wavefunction=bra_wavefunction), 
+                                S_av4p_metropolis_set[ii])
+
+            V_S = adl.batched_apply(V_SI + V_SD, S)
+            numerator = antisym_factors[pi]*adl.inner(total_wvfn, V_S)
+            denominator = adl.inner(total_wvfn, S)
+            V_tot= numerator/denominator
+        else:
+            V_SD_S = adl.batched_apply(V_SD, S)
+            V_SI_S = adl.batched_apply(V_SI, S)
+            V_tot = adl.inner(S_av4p_metropolis, V_SD_S + V_SI_S) \
+                      / adl.inner(S_av4p_metropolis, S)
+        Vs = Vs.at[count,:].set(Vs[count,:] + V_tot * gfmc_Ws[count,:] / len(perms))
+        print(f"calculated potential in {time.time() - V_time} sec")
 
 volume_string = ""
 if volume == "finite":
@@ -1456,19 +1481,11 @@ tag = str(OLO) + "_dtau" + str(dtau_iMev) + "_Nstep"+str(n_step) \
       +"_color_"+color+"_g"+str(g)+"_ferm_symm"+str(ferm_symm)
 
 with h5py.File(outdir+'Hammys_'+tag+'.h5', 'w') as f:
-    dset = f.create_dataset("Hammys", data=Ks+Vs)
-    dset = f.create_dataset("Ws", data=gfmc_Ws)
+    dset = f.create_dataset("Hammys", data=(Ks+Vs)/Ws)
+    dset = f.create_dataset("Ws", data=Ws)
 
 with h5py.File(outdir+'Hammys_'+tag+'.h5', 'r') as f:
     data = f['Hammys']
-    print(data)
-
-with h5py.File(outdir+'Rs_'+tag+'.h5', 'w') as f:
-    dset = f.create_dataset("Rs", data=gfmc_Rs)
-    dset = f.create_dataset("Ws", data=gfmc_Ws)
-
-with h5py.File(outdir+'Rs_'+tag+'.h5', 'r') as f:
-    data = f['Rs']
     print(data)
 
 dset = Ks+Vs
@@ -1493,15 +1510,15 @@ if verbose:
     print("tau = ", tau_ac)
     print("integrated autocorrelation time = ", tauint(last_point, littlec))
 
-    Hs = np.array([al.bootstrap(K + V, W, Nboot=100, f=adl.rw_mean)
+    Hs = np.array([al.bootstrap((K + V)/W, W, Nboot=100, f=adl.rw_mean)
             for K,V,W in zip(Ks, Vs, gfmc_Ws)])
 
-    Hs_opt = np.array([al.bootstrap(-V**2/(4*K), W, Nboot=100, f=adl.rw_mean)
+    Hs_opt = np.array([al.bootstrap(-V**2/(4*K)/W, W, Nboot=100, f=adl.rw_mean)
             for K,V,W in zip(Ks, Vs, gfmc_Ws)])
 
-    ave_Ks = np.array([al.bootstrap(K, W, Nboot=100, f=adl.rw_mean)
+    ave_Ks = np.array([al.bootstrap(K/W, W, Nboot=100, f=adl.rw_mean)
             for K,V,W in zip(Ks, Vs, gfmc_Ws)])
-    ave_Vs = np.array([al.bootstrap(V, W, Nboot=100, f=adl.rw_mean)
+    ave_Vs = np.array([al.bootstrap(V/W, W, Nboot=100, f=adl.rw_mean)
             for K,V,W in zip(Ks, Vs, gfmc_Ws)])
 
     print("first walker")
@@ -1517,6 +1534,9 @@ if verbose:
     print("theta = ",t_n[0,0])
     print("phi = ",p_n[0,0])
     print("psi(R) = ",f_R(gfmc_Rs[0])[0])
+    print("|psi(R)|^2 = ",f_R_braket(gfmc_Rs[0][0]))
+    print("|psi(R)|^2 = ",f_R(gfmc_Rs[0])[0]**2)
+    print("|psi(R)|^2 = ",np.abs( f_R(gfmc_Rs[0][0], wavefunction=bra_wavefunction)**2 ))
     print("K(R) = ",Ks[0,0])
     print("V(R) = ",Vs[0,0])
     print("H(R) = ",Ks[0,0]+Vs[0,0])
