@@ -13,7 +13,7 @@ import jax.scipy.special
 import pickle
 import paper_plt
 import tqdm.auto as tqdm
-import afdmc_lib_deut as adl
+import afdmc_lib_col as adl
 import os
 import pickle
 from afdmc_lib_deut import NI,NS,mp_Mev,fm_Mev
@@ -69,7 +69,7 @@ parser.add_argument('--color', type=str, default="1x1")
 parser.add_argument('--potential', type=str, default="full")
 parser.add_argument('--spoilaket', type=float, default=1)
 parser.add_argument('--masses', type=float, default=0., nargs='+')
-parser.add_argument('--verbose', dest='verbose', action='store_true', 
+parser.add_argument('--verbose', dest='verbose', action='store_true',
                     default=False)
 globals().update(vars(parser.parse_args()))
 
@@ -128,8 +128,8 @@ def unique_group_permutations(masses):
         mass_dict[mass].append(idx)
 
     # Generate permutations for each group of identical masses
-    perms_per_group = {mass: list(permutations(indices)) 
-                        for mass, indices in mass_dict.items() 
+    perms_per_group = {mass: list(permutations(indices))
+                        for mass, indices in mass_dict.items()
                         if len(indices) > 1}
 
     # Start with the identity permutation
@@ -158,33 +158,33 @@ def count_transpositions_baryons(perm, group1, group2):
     print("trying perm = ", perm)
     for i in range(len(perm)):
         for j in range(i + 1, len(perm)):
-            # Check if the current pair involves a within-group swap 
+            # Check if the current pair involves a within-group swap
             # (intra-baryon swap)
             if (i in group1 and j in group1) or (i in group2 and j in group2):
                 if perm[i] > perm[j]:  # If out of order, it's a transposition
                     transpositions *= -1
-                    print("add transposition minus sign for i = ", i, 
-                          ", j = ", j, ", perm[i] = ", perm[i], 
+                    print("add transposition minus sign for i = ", i,
+                          ", j = ", j, ", perm[i] = ", perm[i],
                           ", perm[j] = ", perm[j])
-            # Check if the current pair involves a between-group swap 
+            # Check if the current pair involves a between-group swap
             # (inter-baryon swap)
-            # We do nothing here because inter-baryon swaps 
+            # We do nothing here because inter-baryon swaps
             # do not affect the sign.
             elif (i in group1 and j in group2) \
                    or (i in group2 and j in group1):
                 # Inter-baryon swaps do not change the transposition sign
-                continue  
+                continue
 
     return transpositions
 
-def count_transpositions_baryons_no_intra_no_sign_change(perm, group1, 
+def count_transpositions_baryons_no_intra_no_sign_change(perm, group1,
                                                          group2):
     print("trying perm = ", perm)  # Print the permutation once per call
     for i in range(len(perm)):
         for j in range(i + 1, len(perm)):
-            # Check if the current pair involves a within-group swap 
+            # Check if the current pair involves a within-group swap
             # (intra-baryon swap)
-            if ((i in group1 and j in group1) 
+            if ((i in group1 and j in group1)
                     or (i in group2 and j in group2)) \
                     and (masses[i] == masses[j]) and (perm[i] > perm[j]):
                 return 0
@@ -201,8 +201,8 @@ def unique_group_permutations_baryons(masses):
     print("mass_dict = ", mass_dict)
 
     # Generate permutations for each group of identical masses
-    perms_per_group = {mass: list(permutations(indices)) 
-                       for mass, indices in mass_dict.items() 
+    perms_per_group = {mass: list(permutations(indices))
+                       for mass, indices in mass_dict.items()
                        if len(indices) > 1}
 
     print("perms_per_group = ", perms_per_group)
@@ -227,10 +227,10 @@ def unique_group_permutations_baryons(masses):
 
     print("len complete_perms = ", len(complete_perms))
 
-    # Calculate antisymmetrization factors for each permutation, 
+    # Calculate antisymmetrization factors for each permutation,
     # considering baryon groups
     unique_factors = \
-      [count_transpositions_baryons_no_intra_no_sign_change(perm, 
+      [count_transpositions_baryons_no_intra_no_sign_change(perm,
             group1, group2) for perm in complete_perms]
 
     unique_complete_perms = []
@@ -239,7 +239,7 @@ def unique_group_permutations_baryons(masses):
         if unique_factors[p] != 0:
             unique_complete_perms.append(complete_perms[p])
 
-    antisym_factors = [count_transpositions_baryons(perm, group1, group2) 
+    antisym_factors = [count_transpositions_baryons(perm, group1, group2)
                          for perm in unique_complete_perms]
 
     return unique_complete_perms, antisym_factors
@@ -258,19 +258,21 @@ if N_coord == 4:
     # hardcoded in (q qbar) (q qbar) ordering
     assert(swapI != 1)
     perms = [(0,1,2,3),(2,1,0,3)]
-    if ferm_symm == "s":
+    #perms = [(0,1,2,3)]
+    #perms = [(2,1,0,3)]
+    if ferm_symm == "s" or ferm_symm == "mas":
         antisym_factors=[1,1]
-    else:   
+    else:
         antisym_factors=[1,-1]
 
 if ferm_symm == "s":
     antisym_factors=[1] * len(perms)
 
-
 # reset all masses to +/- 1 now that we have computed perms from them
 masses_print = masses
 masses /= onp.abs(masses)
 print("masses = ", masses)
+print("antisym_factors = ", antisym_factors)
 
 
 # Display permutations with antisymmetrization factors
@@ -279,7 +281,8 @@ for perm, factor in zip(perms, antisym_factors):
     print(f"Permutation: {perm}, Factor: {factor}")
 
 print("length of perms = ", len(perms))
-perms = [(0,1,2,3,4,5)]
+
+# TODO: WORKS! Gives list (0,1,2,3,4,5),...
 
 bra_wavefunction = wavefunction
 ket_wavefunction = wavefunction
@@ -309,17 +312,17 @@ dFA = Nc*(Nc**2+6)/48
 alpha4 = float(mpmath.polylog(4,1/2))*0+(-np.log(2))**4/(4*3*2*1)
 ss6 = zeta51+zeta6
 aa30 = dFA*( np.pi**2*( 7432/9-4736*alpha4+np.log(2)*(14752/3-3472*zeta3)
-                        -6616*zeta3/3)  
+                        -6616*zeta3/3)
              +  np.pi**4*(-156+560*np.log(2)/3+496*np.log(2)**2/3)
              +1511*np.pi**6/45)  \
-       + Nc**3*(385645/2916 
-                + np.pi**2*( -953/54 +584/3*alpha4 +175/2*zeta3 
-                             + np.log(2)*(-922/9+217*zeta3/3) ) 
-                +584*zeta3/3 
-                + np.pi**4*( 1349/270-20*np.log(2)/9-40*np.log(2)**2/9 ) 
+       + Nc**3*(385645/2916
+                + np.pi**2*( -953/54 +584/3*alpha4 +175/2*zeta3
+                             + np.log(2)*(-922/9+217*zeta3/3) )
+                +584*zeta3/3
+                + np.pi**4*( 1349/270-20*np.log(2)/9-40*np.log(2)**2/9 )
                 -1927/6*zeta5 -143/2*zeta3**2-4621/3024*np.pi**6+144*ss6  )
-aa31 = dFF*( np.pi**2*(1264/9-976*zeta3/3+np.log(2)*(64+672*zeta3)) 
-            + np.pi**4*(-184/3+32/3*np.log(2)-32*np.log(2)**2) 
+aa31 = dFF*( np.pi**2*(1264/9-976*zeta3/3+np.log(2)*(64+672*zeta3))
+            + np.pi**4*(-184/3+32/3*np.log(2)-32*np.log(2)**2)
             +10/3*np.pi**6 ) \
        + CF**2/2*(286/9+296/3*zeta3-160*zeta5) \
        +Nc*CF/2*(-71281/162+264*zeta3+80*zeta5) \
@@ -334,8 +337,8 @@ aa3 = aa30+aa31*nf+aa32*nf**2+aa33*nf**3
 
 VB_LO = VB
 VB_NLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*log_mu_r))
-VB_NNLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*log_mu_r) 
-                + (alpha/(4*np.pi))**2*( beta0**2*(4*log_mu_r**2 
+VB_NNLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*log_mu_r)
+                + (alpha/(4*np.pi))**2*( beta0**2*(4*log_mu_r**2
                     + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*log_mu_r + aa2 ) )
 
 
@@ -370,7 +373,7 @@ AV_Coulomb = {}
 B3_Coulomb = {}
 
 # Generate the nn array representing 3D shifts in a cubic grid
-pp = np.array([np.array([i, j, k]) for i in range(-Lcut, Lcut+1) 
+pp = np.array([np.array([i, j, k]) for i in range(-Lcut, Lcut+1)
               for j in range(-Lcut, Lcut+1) for k in range(-Lcut, Lcut+1)])
 
 print(pp.shape)
@@ -387,7 +390,7 @@ def FV_Coulomb_with_zero_mode(R, L, nn):
     Rdotp = np.einsum('bi,ki->bk', R, pp)
     RdotR = np.sum( R*R, axis=1 )
     pdotp = np.sum( pp*pp, axis=1 )
-    pmRL = np.sqrt( Rdotp*(-2.0*L) + pdotp[(np.newaxis,slice(None))]*L*L 
+    pmRL = np.sqrt( Rdotp*(-2.0*L) + pdotp[(np.newaxis,slice(None))]*L*L
                       + RdotR[(slice(None),np.newaxis)] )
     sums = np.sum( 1.0/pmRL, axis=1 )
     return sums
@@ -403,7 +406,7 @@ def FV_Coulomb(R, L, nn):
     Rdotp = np.einsum('bi,ki->bk', R, pp)
     RdotR = np.sum( R*R, axis=1 )
     pdotp = np.sum( pp*pp, axis=1 )
-    pmRL = np.sqrt( Rdotp*(-2.0/L) + pdotp[(np.newaxis,slice(None))] 
+    pmRL = np.sqrt( Rdotp*(-2.0/L) + pdotp[(np.newaxis,slice(None))]
                     + (1.0/L)**2*RdotR[(slice(None),np.newaxis)] )
     sums += np.sum( np.pi/pmRL*(1-jax.scipy.special.erf(np.pi*pmRL)), axis=1 )
     return sums/(np.pi*L)
@@ -475,9 +478,9 @@ elif OLO == "NNLO":
     @partial(jax.jit)
     def potential_fun(R):
         return -1*spoilS*VB/adl.norm_3vec(R) \
-                * (1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) 
+                * (1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1)
                     + (alpha/(4*np.pi))**2*( beta0**2
-                        * (4*np.log(Rprime(R))**2 + np.pi**2/3) 
+                        * (4*np.log(Rprime(R))**2 + np.pi**2/3)
                         + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))
                         + aa2 + Nc*(Nc-2)/2*((np.pi)**4-12*(np.pi)**2) ) )
     @partial(jax.jit)
@@ -485,9 +488,9 @@ elif OLO == "NNLO":
         return calculate_sum(potential_fun, R, L, nn)
     def symmetric_potential_fun(R):
         return spoilS*(Nc - 1)/(Nc + 1)*VB/adl.norm_3vec(R) \
-                * (1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) 
+                * (1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1)
                     + (alpha/(4*np.pi))**2*( beta0**2
-                        * (4*np.log(Rprime(R))**2 + np.pi**2/3) 
+                        * (4*np.log(Rprime(R))**2 + np.pi**2/3)
                         + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))
                         + aa2 + Nc*(Nc+2)/2*((np.pi)**4-12*(np.pi)**2) ) )
     def symmetric_potential_fun_sum(R):
@@ -495,18 +498,18 @@ elif OLO == "NNLO":
     @partial(jax.jit)
     def singlet_potential_fun(R):
         return -1*(Nc - 1)*VB/adl.norm_3vec(R) \
-                * (1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) 
+                * (1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1)
                     + (alpha/(4*np.pi))**2*( beta0**2
-                       * (4*np.log(Rprime(R))**2 + np.pi**2/3) 
+                       * (4*np.log(Rprime(R))**2 + np.pi**2/3)
                        + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R)) + aa2 ) )
     @partial(jax.jit)
     def singlet_potential_fun_sum(R):
         return calculate_sum(potential_fun, R, L, nn)
     def octet_potential_fun(R):
         return spoilS*(Nc - 1)/CF/(2*Nc)*VB/adl.norm_3vec(R) \
-                * (1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) 
+                * (1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1)
                     + (alpha/(4*np.pi))**2*( beta0**2
-                        * (4*np.log(Rprime(R))**2 + np.pi**2/3) 
+                        * (4*np.log(Rprime(R))**2 + np.pi**2/3)
                         + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))
                         + aa2 + (Nc**2)*((np.pi)**4-12*(np.pi)**2) ) )
     def octet_potential_fun_sum(R):
@@ -548,10 +551,10 @@ else:
 print("AV_Coulomb = ", AV_Coulomb)
 
 if potential == "product":
-    Coulomb_potential = adl.make_pairwise_product_potential(AV_Coulomb, 
+    Coulomb_potential = adl.make_pairwise_product_potential(AV_Coulomb,
                               B3_Coulomb, masses)
 else:
-    Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb, 
+    Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb,
                               B3_Coulomb, masses)
 
 # build Coulomb ground-state trial wavefunction
@@ -577,7 +580,7 @@ def f_R_slow(Rs, wavefunction=bra_wavefunction, a0=a0):
                 psi = psi*np.exp(-rij_norm/thisa0)
     return psi
 
-pairs = np.array([np.array([j, i]) for i in range(0,N_coord) 
+pairs = np.array([np.array([j, i]) for i in range(0,N_coord)
                     for j in range(0, i)])
 print("pairs = ", pairs)
 
@@ -640,17 +643,46 @@ def hydrogen_wvfn(r, n):
     if n == 5:
         return psi*(9375 - 7500*r + 1500*r**2 - 100*r**3 + 2*r**4)
     if n == 6:
-        return psi*(174960 - 145800*r + 32400*r**2 - 2700*r**3 
+        return psi*(174960 - 145800*r + 32400*r**2 - 2700*r**3
                     + 90*r**4 - r**5)
     if n == 7:
-        return psi*(37059435 - 31765230*r + 7563150*r**2 - 720300*r**3 
+        return psi*(37059435 - 31765230*r + 7563150*r**2 - 720300*r**3
                     + 30870*r**4 - 588*r**5 + 4*r**6)
+
+#@partial(jax.jit, static_argnums=(2,))
+#def f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0,
+#        afac=afac, masses=absmasses):
+#
+#    if perm is None:
+#        perm = (0,1,2,3)
+#
+#    if perm is not None and (N_coord == 4 or N_coord == 6):
+#        print(f"Perm type: {type(perm)}")
+#        print(f"Perm contents: {perm}")
+#
+#        perm = np.array(perm)
+#
+#        if Rs.shape[-2] == N_coord:
+#            # Handle both (N_coord, 3) and (N_walkers, N_coord, 3) shapes
+#            if Rs.ndim == 2:
+#                # Shape is (N_coord, 3)
+#                return f_R_slow(Rs[perm, :], wavefunction=bra_wavefunction, a0=a0)
+#                #return f_R_slow(Rs, wavefunction=bra_wavefunction, a0=a0)
+#            elif Rs.ndim == 3:
+#                # Shape is (N_walkers, N_coord, 3)
+#                print(Rs.shape)
+#                print("old Rs = ", Rs)
+#                #return f_R_slow(Rs, wavefunction=bra_wavefunction, a0=a0)
+#                return f_R_slow(Rs[:,perm,:], wavefunction=bra_wavefunction, a0=a0)
+#                print("new Rs = ", Rs)
+#            else:
+#                raise ValueError(f"Unexpected shape for Rs: {Rs.shape}")
 
 
 #TODO: ADD PERMS OPTIONS IF N_COORD=6
 
 @partial(jax.jit, static_argnums=(2,))
-def f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0, 
+def f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0,
         afac=afac, masses=absmasses):
     # check permuting simply gives same and only do for one perm
     # Apply permutations if provided and N_coord is 6
@@ -668,11 +700,14 @@ def f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0,
                 Rs = Rs[perm, :]
             elif Rs.ndim == 3:
                 # Shape is (N_walkers, N_coord, 3)
+                print(Rs.shape)
+                print("old Rs = ", Rs)
                 Rs = Rs[:, perm, :]
+                print("new Rs = ", Rs)
             else:
                 raise ValueError(f"Unexpected shape for Rs: {Rs.shape}")
 
-    def r_norm(pair,Rs):
+    def r_norm(pair):
         [i,j] = pair
         rdiff = Rs[...,i,:] - Rs[...,j,:]
         mij = 2*masses[i]*masses[j]/(masses[i]+masses[j])
@@ -681,7 +716,7 @@ def f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0,
 
     #UNIT TESTED
 
-    # Setup pair lists for the mappings 
+    # Setup pair lists for the mappings
     # (these need to be predefined or passed into the function)
 
     if wavefunction == "product":
@@ -734,7 +769,7 @@ def f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0,
 
 # Ensure this matches the earlier permutation list format
 @partial(jax.jit, static_argnums=(2,))
-def laplacian_f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0, 
+def laplacian_f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0,
                   afac=afac, masses=absmasses):
     if radial_n > 1:
         assert N_coord == 2
@@ -802,13 +837,13 @@ def laplacian_f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0,
                             mij = 2*masses[i]*masses[j]/(masses[i]+masses[j])
                             thisa0 /= mij
                             # nabla_k^2 r_kl = nabla_l^2 r_kl
-                            # factor of two included to account for both 
+                            # factor of two included to account for both
                             # terms appearing in laplacian
                             if k == i and l == j:
                                 nabla_psi = nabla_psi \
-                                    * ((1/(radial_n*thisa0)**2 
-                                        - 2/(thisa0*rij_norm))/masses[k] 
-                                      + (1/(radial_n*thisa0)**2 
+                                    * ((1/(radial_n*thisa0)**2
+                                        - 2/(thisa0*rij_norm))/masses[k]
+                                      + (1/(radial_n*thisa0)**2
                                         - 2/(thisa0*rij_norm))/masses[l]) \
                                     * hydrogen_wvfn(rij_norm/thisa0, radial_n)
                             else:
@@ -825,7 +860,7 @@ def laplacian_f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0,
                     # second gradient involves r_mn
                     for m in range(N_coord):
                         for n in range(N_coord):
-                            if (m!=n and n>=m and (m!=k or n!=l) 
+                            if (m!=n and n>=m and (m!=k or n!=l)
                                     and (a==m or a==n)):
                                 # sum over the 3-d components of gradient
                                 # wvfn involves r_ij
@@ -874,11 +909,11 @@ def laplacian_f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0,
                                                 rsign = 1
                                             elif a == j:
                                                 rsign = -1
-                                            if ((k == i and l == j) 
+                                            if ((k == i and l == j)
                                                     or (m == i and n == j)):
                                                 nabla_psi = rsign \
                                                   * nabla_psi * (ri - rj) \
-                                                  * (np.exp(-rij_norm/thisa0) 
+                                                  * (np.exp(-rij_norm/thisa0)
                                                       / (thisa0*rij_norm)).reshape(new_shape)
                                             else:
                                                 nabla_psi = nabla_psi \
@@ -890,7 +925,7 @@ def laplacian_f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0,
 
 if N_coord >= 6 and verbose:
     print("No JIT for Laplacian")
-    def laplacian_f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0, 
+    def laplacian_f_R(Rs,perm=None, wavefunction=bra_wavefunction, a0=a0,
                       afac=afac, masses=absmasses):
         nabla_psi_tot = 0
 
@@ -954,13 +989,13 @@ if N_coord >= 6 and verbose:
                                       / (masses[i]+masses[j])
                                 thisa0 /= mij
                                 # nabla_k^2 r_kl = nabla_l^2 r_kl
-                                # factor of two included to account for 
+                                # factor of two included to account for
                                 # both terms appearing in laplacian
                                 if k == i and l == j:
                                     nabla_psi = nabla_psi \
-                                        * ((1/thisa0**2 
-                                            - 2/(thisa0*rij_norm))/masses[k] 
-                                          + (1/thisa0**2 
+                                        * ((1/thisa0**2
+                                            - 2/(thisa0*rij_norm))/masses[k]
+                                          + (1/thisa0**2
                                             - 2/(thisa0*rij_norm))
                                           /masses[l]) \
                                         * np.exp(-rij_norm/thisa0)
@@ -978,7 +1013,7 @@ if N_coord >= 6 and verbose:
                         # second gradient involves r_mn
                         for m in range(N_coord):
                             for n in range(N_coord):
-                                if (m!=n and n>=m and (m!=k or n!=l) 
+                                if (m!=n and n>=m and (m!=k or n!=l)
                                         and (a==m or a==n)):
                                     # sum over the 3-d components of gradient
                                     for x in range(3):
@@ -1031,7 +1066,6 @@ if N_coord >= 6 and verbose:
 else:
     print("JIT Laplacian")
 
-
 N_inner = 2
 if N_coord % 3 == 0:
     N_inner = 3
@@ -1040,7 +1074,7 @@ N_outer = N_coord//N_inner
 
 # build trial wavefunction
 
-# TODO: ADD PERMS OPTIONS AND BUILD MULTIPLE SPIN-FLAV WVFNS - 
+# TODO: ADD PERMS OPTIONS AND BUILD MULTIPLE SPIN-FLAV WVFNS -
 # DEFINE FUNCTION THAT DOES ALL THIS IF N_COORD==6
 
 S_av4p_metropolis = onp.zeros(shape=(N_coord,) + (NI,NS)*N_coord).astype(np.complex128)
@@ -1057,25 +1091,25 @@ def levi_civita(i, j, k):
         return -1
 
 def TAAA(i, j, k, l, m, n):
-    return (levi_civita(i,j,m)*levi_civita(k,l,n) 
+    return (levi_civita(i,j,m)*levi_civita(k,l,n)
               - levi_civita(i,j,n)*levi_civita(k,l,m))/(4*np.sqrt(3))
 
 def TAAS(i, j, k, l, m, n):
-    return (levi_civita(i,j,m)*levi_civita(k,l,n) 
+    return (levi_civita(i,j,m)*levi_civita(k,l,n)
               + levi_civita(i,j,n)*levi_civita(k,l,m))/(4*np.sqrt(6))
 
 def TASA(i, j, k, l, m, n):
-    return (levi_civita(i,j,k)*levi_civita(m,n,l) 
+    return (levi_civita(i,j,k)*levi_civita(m,n,l)
               + levi_civita(i,j,l)*levi_civita(m,n,k))/(4*np.sqrt(6))
 
 def TSAA(i, j, k, l, m, n):
-    return (levi_civita(m,n,i)*levi_civita(k,l,j) 
+    return (levi_civita(m,n,i)*levi_civita(k,l,j)
               + levi_civita(m,n,j)*levi_civita(k,l,i))/(4*np.sqrt(6))
 
 def TSSS(i, j, k, l, m, n):
-    return (levi_civita(i,k,m)*levi_civita(j,l,n) 
-              + levi_civita(i,k,n)*levi_civita(j,l,m) 
-              + levi_civita(j,k,m)*levi_civita(i,l,n) 
+    return (levi_civita(i,k,m)*levi_civita(j,l,n)
+              + levi_civita(i,k,n)*levi_civita(j,l,m)
+              + levi_civita(j,k,m)*levi_civita(i,l,n)
               + levi_civita(j,k,n)*levi_civita(i,l,m))/(12*np.sqrt(2))
 
 def kronecker_delta(i, j):
@@ -1100,17 +1134,18 @@ if N_coord == 2:
                 S_av4p_metropolis[spin_slice] \
                     = kronecker_delta(i, j)/np.sqrt(NI)
 
+
 def generate_wavefunction_tensor(NI, NS, N_coord, full_permutations, color):
 
     # Initialize base tensor to hold wavefunctions
     S_av4p_metropolis_set = []
 
     # Example shape for Rs_metropolis, ensure this matches your actual usage
-    #Rs_metropolis = onp.random.normal(size=(N_coord,3))/np.mean(absmasses)  
+    #Rs_metropolis = onp.random.normal(size=(N_coord,3))/np.mean(absmasses)
     # Placeholder for actual Rs_metropolis data
 
     for perm in full_permutations:
-        S_av4p_metropolis = onp.zeros((n_walkers,) + (NI, NS) * N_coord, 
+        S_av4p_metropolis = onp.zeros((n_walkers,) + (NI, NS) * N_coord,
                               dtype=np.complex128)
         if N_coord == 4:
             for i_old in range(NI):
@@ -1120,7 +1155,7 @@ def generate_wavefunction_tensor(NI, NS, N_coord, full_permutations, color):
                             spin_slice = (slice(0, None),) \
                                   + (i_old,0,j_old,0,k_old,0,l_old,0)
                             original_indices = [i_old, j_old, k_old, l_old]
-                            permuted_indices = [original_indices[idx] 
+                            permuted_indices = [original_indices[idx]
                                                 for idx in perm]
                             i, j, k, l = tuple(permuted_indices)
                             if color == "1x1":
@@ -1215,7 +1250,7 @@ def generate_wavefunction_tensor(NI, NS, N_coord, full_permutations, color):
     return S_av4p_metropolis_set
 
 if N_coord == 6 or N_coord == 4:
-    S_av4p_metropolis_set = generate_wavefunction_tensor(NI, NS, N_coord, 
+    S_av4p_metropolis_set = generate_wavefunction_tensor(NI, NS, N_coord,
                                                          perms, color)
 
     def f_R_sq(Rs):
@@ -1224,13 +1259,12 @@ if N_coord == 6 or N_coord == 4:
 
     def f_R_braket(Rs):
         total_wvfn = np.zeros((NI, NS) * N_coord, dtype=np.complex128)
+        ## THIS IS THE WRONG SIZE OUTSIDE METROPOLIS!!!
         for ii in range(len(perms)):
             f_R_tensor = f_R(Rs, perms[ii], wavefunction=bra_wavefunction)
             # use the 1-walker version of tensor if Rs only has 1 walker
             if len(Rs.shape) == 2:
                 S_av4_tensor = S_av4p_metropolis_set[ii][0]
-                #CHECK SAV4^2 =1!!
-                print("S_av4^2 = ", adl.inner(S_av4_tensor, S_av4_tensor))
             # otherwise fall back on full version of S
             else:
                 S_av4_tensor = S_av4p_metropolis_set[ii]
@@ -1238,18 +1272,32 @@ if N_coord == 6 or N_coord == 4:
             total_wvfn +=  antisym_factors[ii]*S_av4_tensor \
                     * f_R(Rs, wavefunction=bra_wavefunction, perm=perms[ii])
         Ss=np.array([total_wvfn])
-        result = np.abs( adl.inner(Ss,Ss) )
-        if len(Rs.shape) != 2:
-            result /= n_walkers
+        if len(Rs.shape) == 2:
+            #result = adl.inner(Ss,Ss)
+            result = adl.inner_no_batch(Ss, Ss)
+            #print("<psi|psi> = ", adl.inner(Ss, Ss))
+            #print("<S|S> = ", adl.inner(S_av4_tensor, S_av4_tensor))
+            #print("<S|S> = ", adl.inner(S_av4p_metropolis_set[ii][0], S_av4p_metropolis_set[ii][0]))
+            #print(Ss.shape)
+            #print(S_av4_tensor.shape)
+            #print("<psi|psi> = ", adl.inner_no_batch(Ss, Ss))
+            #print("<S|S> = ", adl.inner_no_batch(S_av4_tensor, S_av4_tensor))
+            #print("<S|S> = ", adl.inner_no_batch(S_av4p_metropolis_set[ii][0], S_av4p_metropolis_set[ii][0]))
+        #CHECK SAV4^2 =1!!
+        else:
+            result = adl.inner(Ss,Ss) / n_walkers
+            print("Does f_R_braket work with batch size?")
+            assert False
+            #result = np.abs( f_R(Rs, wavefunction=bra_wavefunction)**2 )
         return result
 
     def f_R_braket_tempered(Rs, fac):
-        return np.abs(f_R(Rs, wavefunction=bra_wavefunction) 
+        return np.abs(f_R(Rs, wavefunction=bra_wavefunction)
                       * f_R(Rs, wavefunction=ket_wavefunction, a0=fac*ket_a0))
 
     def f_R_braket_phase(Rs):
         prod = f_R(Rs, wavefunction=bra_wavefunction) \
-                * f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, 
+                * f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0,
                       afac=ket_afac)
         return prod / np.abs( prod )
 else:
@@ -1257,19 +1305,20 @@ else:
         return np.abs( f_R(Rs) )**2
 
     def f_R_braket(Rs):
-        print("total wvfn inner = ", 
+        print("total wvfn inner = ",
                f_R(Rs, wavefunction=bra_wavefunction)**2 )
         return np.abs( f_R(Rs, wavefunction=bra_wavefunction)**2 )
 
     def f_R_braket_tempered(Rs, fac):
-        return np.abs(f_R(Rs, wavefunction=bra_wavefunction) 
+        return np.abs(f_R(Rs, wavefunction=bra_wavefunction)
                       * f_R(Rs, wavefunction=ket_wavefunction, a0=fac*ket_a0))
 
     def f_R_braket_phase(Rs):
         prod = f_R(Rs, wavefunction=bra_wavefunction) \
-               * f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, 
+               * f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0,
                      afac=ket_afac)
         return prod / np.abs( prod )
+
 
 
 # Metropolis
@@ -1290,14 +1339,14 @@ if input_Rs_database == "":
 
     # TODO ACTUALLY CHANNGE BACK PLEASE
     if color == "6x6bar" or color == "SSS":
-        samples = adl.metropolis(R0, f_R_braket, n_therm=50*n_skip, 
-                                 n_step=n_walkers, n_skip=n_skip, 
-                                 eps=4*2*a0*afac/N_coord**2*radial_n, 
+        samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip,
+                                 n_step=n_walkers, n_skip=n_skip,
+                                 eps=4*2*a0*afac/N_coord**2*radial_n,
                                  masses=absmasses)
     else:
-        samples = adl.metropolis(R0, f_R_braket, n_therm=50*n_skip, 
-                                 n_step=n_walkers, n_skip=n_skip, 
-                                 eps=4*2*a0/N_coord**2*radial_n, 
+        samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip,
+                                 n_step=n_walkers, n_skip=n_skip,
+                                 eps=4*2*a0/N_coord**2*radial_n,
                                  masses=absmasses)
 
 
@@ -1325,23 +1374,28 @@ deform_f = lambda x, params: x
 params = (np.zeros((n_step+1)),)
 
 
-def trial_wvfn(R):
-    psi = np.zeros((n_walkers,)  + (NI, NS) * N_coord, dtype=np.complex128)
-    for ii in range(len(perms)):
-        psi += antisym_factors[ii]*np.einsum("i,i...->i...", 
-                  f_R(R,perms[ii],wavefunction=bra_wavefunction), 
-                  S_av4p_metropolis_set[ii])
-    return psi
+Ks = np.zeros((n_step+1,n_walkers))
+Vs = np.zeros((n_step+1,n_walkers))
+Ws = np.zeros((n_step+1,n_walkers))
 
 print('Running GFMC evolution:')
 
 #TODO: DEFINE SUM(S_av4p_metropolis_I*F_R_I) AND F_R=1
 #WE WANT SUM_perms(S[perm]*f_R[perm])
+rand_draws = onp.random.random(size=(n_step, Rs_metropolis.shape[0]))
+#for pi in range(len(perms)):
+
+pi = 0
+
+print("STARTING GFMC WALK FOR PERM ", pi)
+
+def trial_wvfn(R):
+    return antisym_factors[pi]*f_R(R,perms[pi],wavefunction=bra_wavefunction)
+
 if n_step > 0:
-    rand_draws = onp.random.random(size=(n_step, Rs_metropolis.shape[0]))
     gfmc = adl.gfmc_deform(
-        Rs_metropolis, trial_wvfn, params,
-        rand_draws=rand_draws, tau_iMev=tau_iMev, 
+        Rs_metropolis[:,perms[pi],:], S_av4p_metropolis_set[pi], trial_wvfn, params,
+        rand_draws=rand_draws, tau_iMev=tau_iMev,
         N=n_step, potential=Coulomb_potential,
         deform_f=deform_f, m_Mev=np.abs(np.array(masses)),
         resampling_freq=resampling)
@@ -1349,30 +1403,33 @@ if n_step > 0:
     gfmc_Ws = np.array([Ws for _,_,_,Ws, in gfmc])
     gfmc_Ss = np.array([Ss for _,_,Ss,_, in gfmc])
 else:
-    gfmc_Rs = np.array([Rs_metropolis])
+    gfmc_Rs = np.array([Rs_metropolis[:,perms[pi],:]])
     gfmc_Ws = np.array([0*Rs_metropolis[:,1,1]+1])
     gfmc_Ss = np.array([S_av4p_metropolis_set])
 
 phase_Ws = f_R_braket_phase(gfmc_Rs)
-print('phase Ws', phase_Ws)
+#print('phase Ws', phase_Ws)
 
-#gfmc_Ws *= phase_Ws
-gfmc_Ws= np.einsum('nk...,nk->nk...', gfmc_Ws, phase_Ws)
+gfmc_Ws *= phase_Ws
+#gfmc_Ws= np.einsum('nk...,nk->nk...', gfmc_Ws, phase_Ws)
 
 print('GFMC tau=0 weights:', gfmc_Ws[0])
 if n_step > 0:
     print('GFMC tau=dtau weights:', gfmc_Ws[1])
+
+Ws += gfmc_Ws # / len(perms)
 
 # measure H
 print('Measuring <H>...')
 
 #TODO: DEFINE SUM(S_av4p_metropolis_I*LAPLACIAN_F_R_I) AND F_R=1
 
-Ks = []
 #for R in tqdm.tqdm(gfmc_Rs):
 for count, R in enumerate(gfmc_Rs):
+    print(count)
     K_time = time.time()
-    if N_coord != 6:
+    S = gfmc_Ss[count]
+    if N_coord != 6 and N_coord != 4:
        print('Calculating Laplacian for step ', count)
        K_time = time.time()
        K_term = -1/2*laplacian_f_R(R) / f_R(R, wavefunction=bra_wavefunction)
@@ -1387,65 +1444,60 @@ for count, R in enumerate(gfmc_Rs):
         Ks.append(K_term)
 
     if N_coord == 4 or N_coord == 6:
-        total_wvfn = np.zeros((Rs_metropolis.shape[0],) + (NI, NS) * N_coord, 
+        total_wvfn = np.zeros((Rs_metropolis.shape[0],) + (NI, NS) * N_coord,
                               dtype=np.complex128)
-        total_lap = np.zeros((Rs_metropolis.shape[0],)  + (NI, NS) * N_coord, 
+        total_lap = np.zeros((Rs_metropolis.shape[0],)  + (NI, NS) * N_coord,
                               dtype=np.complex128)
         for ii in range(len(perms)):
-            test=antisym_factors[ii]*np.einsum("i,i...->i...", 
-                  f_R(R,perms[ii],wavefunction=bra_wavefunction), 
+            test=antisym_factors[ii]*np.einsum("i,i...->i...",
+                  f_R(R,perms[ii],wavefunction=bra_wavefunction),
                   S_av4p_metropolis_set[ii])
-            total_wvfn += antisym_factors[ii]*np.einsum("i,i...->i...", 
-                            f_R(R,perms[ii],wavefunction=bra_wavefunction), 
+            total_wvfn += antisym_factors[ii]*np.einsum("i,i...->i...",
+                            f_R(R,perms[ii],wavefunction=bra_wavefunction),
                             S_av4p_metropolis_set[ii])
-            total_lap += antisym_factors[ii]*np.einsum("i,i...->i...", 
+            total_lap += antisym_factors[ii]*np.einsum("i,i...->i...",
                             laplacian_f_R(R,perms[ii],
-                              wavefunction=bra_wavefunction), 
+                              wavefunction=bra_wavefunction),
                             S_av4p_metropolis_set[ii])
-        numerator = adl.inner(total_wvfn,total_lap)
-        denominator = adl.inner(total_wvfn,total_wvfn)
+        numerator = adl.inner(S,total_lap)
+        denominator = adl.inner(S,total_wvfn)
         K_term = -1/2*numerator/denominator
-        norm = adl.inner(total_wvfn,total_wvfn)
-        print("NORM=",norm)
-        Ks.append(K_term)
+        #Ks = Ks.at[count,:].set(Ks[count,:] + K_term * gfmc_Ws[count,:] / len(perms))
+        Ks = Ks.at[count,:].set(Ks[count,:] + K_term)
 
     print(f"calculated kinetic in {time.time() - K_time} sec")
-Ks = np.array(Ks)
 
 #TODO: DEFINE SUM(S_av4p_metropolis_I*F_R_I) AND F_R=1
 
-Vs = []
 for count, R in enumerate(gfmc_Rs):
     print('Calculating potential for step ', count)
     V_time = time.time()
     S = gfmc_Ss[count]
-    print("R shape = ",R.shape)
-    V_SI, V_SD = Coulomb_potential(R)
-    print("shape of VSI = ",V_SI.shape)
-    print("shape of VSD = ",V_SD.shape)
     broadcast_SI = ((slice(None),) + (np.newaxis,)*N_coord*2)
 
     if N_coord == 4 or N_coord == 6:
-        total_wvfn = np.zeros((Rs_metropolis.shape[0],) + (NI, NS) * N_coord, 
+        total_wvfn = np.zeros((Rs_metropolis.shape[0],) + (NI, NS) * N_coord,
                       dtype=np.complex128)
+
+        V_SI, V_SD = Coulomb_potential(R)
+
         for ii in range(len(perms)):
-            total_wvfn += antisym_factors[ii]*np.einsum("i,i...->i...", 
-                            f_R(R,perms[ii],wavefunction=bra_wavefunction), 
+            total_wvfn += antisym_factors[ii]*np.einsum("i,i...->i...",
+                            f_R(R,perms[ii],wavefunction=bra_wavefunction),
                             S_av4p_metropolis_set[ii])
-        print("total wvfn = ",total_wvfn.shape)
-        numerator = adl.inner(total_wvfn,
-                        adl.batched_apply(V_SD + V_SI,total_wvfn))
-        denominator = adl.inner(total_wvfn,total_wvfn)
+
+        V_S = adl.batched_apply(V_SI + V_SD, S)
+        numerator = antisym_factors[pi]*adl.inner(total_wvfn, V_S)
+        denominator = adl.inner(total_wvfn, S)
         V_tot= numerator/denominator
     else:
+        V_SD_S = adl.batched_apply(V_SD, S)
+        V_SI_S = adl.batched_apply(V_SI, S)
         V_tot = adl.inner(S_av4p_metropolis, V_SD_S + V_SI_S) \
                   / adl.inner(S_av4p_metropolis, S)
+    #Vs = Vs.at[count,:].set(Vs[count,:] + V_tot * gfmc_Ws[count,:] / len(perms))
+    Vs = Vs.at[count,:].set(Vs[count,:] + V_tot)
     print(f"calculated potential in {time.time() - V_time} sec")
-    Vs.append(V_tot)
-
-Vs = np.array(Vs)
-
-print(Vs.shape)
 
 volume_string = ""
 if volume == "finite":
@@ -1460,19 +1512,11 @@ tag = str(OLO) + "_dtau" + str(dtau_iMev) + "_Nstep"+str(n_step) \
       +"_color_"+color+"_g"+str(g)+"_ferm_symm"+str(ferm_symm)
 
 with h5py.File(outdir+'Hammys_'+tag+'.h5', 'w') as f:
-    dset = f.create_dataset("Hammys", data=Ks+Vs)
-    dset = f.create_dataset("Ws", data=gfmc_Ws)
+    dset = f.create_dataset("Hammys", data=(Ks+Vs))
+    dset = f.create_dataset("Ws", data=Ws)
 
 with h5py.File(outdir+'Hammys_'+tag+'.h5', 'r') as f:
     data = f['Hammys']
-    print(data)
-
-with h5py.File(outdir+'Rs_'+tag+'.h5', 'w') as f:
-    dset = f.create_dataset("Rs", data=gfmc_Rs)
-    dset = f.create_dataset("Ws", data=gfmc_Ws)
-
-with h5py.File(outdir+'Rs_'+tag+'.h5', 'r') as f:
-    data = f['Rs']
     print(data)
 
 dset = Ks+Vs
@@ -1497,7 +1541,7 @@ if verbose:
     print("tau = ", tau_ac)
     print("integrated autocorrelation time = ", tauint(last_point, littlec))
 
-    Hs = np.array([al.bootstrap(K + V, W, Nboot=100, f=adl.rw_mean)
+    Hs = np.array([al.bootstrap((K + V), W, Nboot=100, f=adl.rw_mean)
             for K,V,W in zip(Ks, Vs, gfmc_Ws)])
 
     Hs_opt = np.array([al.bootstrap(-V**2/(4*K), W, Nboot=100, f=adl.rw_mean)
@@ -1521,12 +1565,12 @@ if verbose:
     print("theta = ",t_n[0,0])
     print("phi = ",p_n[0,0])
     print("psi(R) = ",f_R(gfmc_Rs[0])[0])
+    print("|psi(R)|^2 = ",f_R_braket(gfmc_Rs[0][0]))
+    print("|psi(R)|^2 = ",f_R(gfmc_Rs[0])[0]**2)
+    print("|psi(R)|^2 = ",np.abs( f_R(gfmc_Rs[0][0], wavefunction=bra_wavefunction)**2 ))
     print("K(R) = ",Ks[0,0])
     print("V(R) = ",Vs[0,0])
     print("H(R) = ",Ks[0,0]+Vs[0,0])
-
-    print("|psi(R)|^2 = ",f_R_braket(gfmc_Rs[0])[0])
-    print("|psi(R)|^2 = ",f_R(gfmc_Rs[0])[0]**2)
 
     print("\n", Ks.shape)
 
@@ -1550,6 +1594,3 @@ if verbose:
     print("H_opt=",Hs_opt,"\n\n")
     print("K=",ave_Ks,"\n\n")
     print("V=",ave_Vs,"\n\n")
-
-    print("|psi(R)|^2 = ",f_R_braket(gfmc_Rs[0])[0])
-    print("|psi(R)|^2 = ",f_R(gfmc_Rs[0])[0]**2)

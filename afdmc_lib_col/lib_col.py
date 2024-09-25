@@ -458,6 +458,12 @@ def inner(S, Sp):
     return np.sum(np.conjugate(S) * Sp, axis=spin_iso_axes)
 
 @partial(jax.jit)
+def inner_no_batch(S, Sp):
+    assert Sp.shape == S.shape
+    spin_iso_axes = tuple(range(0, len(S.shape)))
+    return np.sum(np.conjugate(S) * Sp, axis=spin_iso_axes)
+
+@partial(jax.jit)
 def batched_vev(M, S): # compute <S|M|S>
     Sp = batched_apply(M, S)
     return np.real(inner(S, Sp))
