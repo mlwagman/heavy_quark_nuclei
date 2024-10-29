@@ -1027,7 +1027,6 @@ def kinetic_step_absolute(R_fwd, R_bwd, R, R_deform, S, u, params_i, S_T,
     #print("bwd angle between old and new spin-color vec is ", ang_bwd)
     w_fwd = f_R_norm(R_fwd) * inner(S_T, S_fwd)
     w_bwd = f_R_norm(R_bwd) * inner(S_T, S_bwd)
-    print("w_fwd W[0] = ", w_fwd[0])
 
     # correct kinetic energy
     denom = 1/(2*dtau_iMev*fm_Mev**2/m_Mev)
@@ -1065,7 +1064,6 @@ def kinetic_step_absolute(R_fwd, R_bwd, R, R_deform, S, u, params_i, S_T,
     #print("angle between old and new spin-color vec is ", ang)
     #assert (np.abs(ang) < 1e-6).all()
     W = ((w_fwd + w_bwd) / 2)
-    print("w_ave W[0] = ", w_fwd[0])
     W = np.where(ind_fwd, W * pc_fwd / p_fwd, W * pc_bwd / p_bwd)
     return R, R_deform, S, W
 
@@ -1083,6 +1081,7 @@ def gfmc_deform(
     dtau_iMev = tau_iMev/N
     print("dtau_iMev = ", dtau_iMev)
     history = [walkers]
+    print("S_T[0] = ", S_T[0])
 
     #for i in tqdm.tqdm(range(N)):
     for i in range(N):
@@ -1097,13 +1096,10 @@ def gfmc_deform(
         print("<r_first> = ", np.mean(W*np.transpose(norm_3vec(R)[:,0]))/np.mean(W))
         print("<r_last> = ", np.mean(W*np.transpose(norm_3vec(R)[:,-1]))/np.mean(W))
         print("W[0] = ", W[0])
-        if i > 0:
-            throw(17)
         #assert( np.allclose( drift, np.zeros_like(drift) ) )
 
         # remove previous factors (to be replaced with current factors after evolving)
         W = W / (inner(S_T, S) * f_R_norm(R_deform))
-        print("AFTER POTENTIAL W[0] = ", W[0])
 
         # exp(-dtau V/2)|R,S>
         S = compute_VS(R_deform, S, potential, dtau_iMev=dtau_iMev)
@@ -1121,7 +1117,6 @@ def gfmc_deform(
         # incorporate factors <S_T|S_i> f(R_i) and leftover fwd/bwd factors from
         # the kinetic step
         W = W * dW
-        print("AFTER KINETIC W[0] = ", W[0])
 
         # save config for obs
         history.append((R, R_deform, S, W))
@@ -1139,7 +1134,6 @@ def gfmc_deform(
             W = W[inds]
 
         walkers = (R, R_deform, S, W)
-        print("AFTER END OF STEP W[0] = ", W[0])
         _step_time = time.time()-_start
         print(f'computed step in {_step_time:.1f}s')
 

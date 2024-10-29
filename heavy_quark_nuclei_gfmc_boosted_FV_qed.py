@@ -150,10 +150,9 @@ aa32 = Nc/4*(12541/243+368/3*zeta3+64*np.pi**4/135)+CF/4*(14002/81-416*zeta3/3)
 aa33 = -(20/9)**3*1/8
 aa3 = aa30+aa31*nf+aa32*nf**2+aa33*nf**3
 
-L = log_mu_r
 VB_LO = VB
 VB_NLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*log_mu_r))
-VB_NNLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*L) + (alpha/(4*np.pi))**2*( beta0**2*(4*L**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*L + aa2 ) )
+VB_NNLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*log_mu_r) + (alpha/(4*np.pi))**2*( beta0**2*(4*log_mu_r**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*log_mu_r + aa2 ) )
 
 
 if OLO == "LO":
@@ -200,7 +199,7 @@ nn = np.delete(pp, Lcut*(2*Lcut+1)*(2*Lcut+1)+Lcut*(2*Lcut+1)+Lcut, axis=0)
 print(nn.shape)
 print(pp.shape)
 
-#from jax.config import config
+#from jax import config
 #config.update('jax_disable_jit', True)
 
 @partial(jax.jit)
@@ -823,19 +822,16 @@ for count, R in enumerate(gfmc_Rs):
     grad = grad_f_R(R)
 
     print("Walkers")
-    print(R)
+    print(np.mean(R,axis=0))
     print("psi")
-    print(f_R(R))
+    print(np.mean(f_R(R),axis=0))
     print("Laplacian")
-    print(laplacian_f_R(R))
+    print(np.mean(laplacian_f_R(R),axis=0))
     print("gradient")
-    print(grad)
+    print(np.mean(grad,axis=0))
     print("gradient squared")
-    print(np.sum(grad*grad,axis=1))
-
-    print(grad.shape)
-    print(mtm.shape)
-    print(grad)
+    print(np.mean(np.sum(grad*grad,axis=1),axis=0))
+    print("mtm")
     print(mtm)
     if BO_fac > 0:
         K_term = -1/2*laplacian_f_R(R, k_masses=BO_absmasses) / f_R(R, wavefunction=bra_wavefunction) / 1
