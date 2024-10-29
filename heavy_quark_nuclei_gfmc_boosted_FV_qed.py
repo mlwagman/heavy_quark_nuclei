@@ -309,22 +309,13 @@ def trivial_fun(R):
 print("volume = ", volume)
 
 if volume == "finite":
-    #AV_Coulomb['OA'] = potential_fun_sum
-    #AV_Coulomb['OS'] = symmetric_potential_fun_sum
     AV_Coulomb['OSing'] = singlet_potential_fun_sum
-    #AV_Coulomb['OO'] = octet_potential_fun_sum
+    AV_Coulomb['OSingp'] = singlet_potential_fun_p_sum
 else:
-    #AV_Coulomb['OA'] = trivial_fun
-    #AV_Coulomb['OS'] = trivial_fun
     #AV_Coulomb['OSing'] = trivial_fun
     #AV_Coulomb['OSingp'] = trivial_fun
-    #AV_Coulomb['OO'] = trivial_fun
-    #AV_Coulomb['OA'] = potential_fun
-    #AV_Coulomb['OS'] = symmetric_potential_fun
     AV_Coulomb['OSing'] = singlet_potential_fun
     AV_Coulomb['OSingp'] = singlet_potential_fun_p
-    #AV_Coulomb['OO'] = octet_potential_fun
-    #AV_Coulomb['O1'] = potential_fun
 
 print("AV_Coulomb = ", AV_Coulomb)
 
