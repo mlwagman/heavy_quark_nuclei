@@ -336,10 +336,10 @@ if OLO == "LO":
         return V0 * np.exp(-delta * r) / (1 - np.exp(-delta * r))
     @partial(jax.jit)
     def singlet_potential_fun_sum(R):
-            return -FV_Hulthen(R, L, nn)
+            return -FV_Hulthen(R, L, pp)
     @partial(jax.jit)
     def singlet_potential_fun_p_sum(R):
-            return FV_Hulthen(R, L, nn)
+            return FV_Hulthen(R, L, pp)
 else:
     print("Order not supported")
     throw(0)
