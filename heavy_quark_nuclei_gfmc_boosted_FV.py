@@ -67,9 +67,10 @@ parser.add_argument('--color', type=str, default="1x1")
 parser.add_argument('--potential', type=str, default="full")
 parser.add_argument('--spoilaket', type=float, default=1)
 parser.add_argument('--masses', type=float, default=0., nargs='+')
-parser.add_argument('--mtm_x', type=int, default=0, nargs='+')
-parser.add_argument('--mtm_y', type=int, default=0, nargs='+')
-parser.add_argument('--mtm_z', type=int, default=0, nargs='+')
+parser.add_argument('--mtm_x', type=float, default=0, nargs='+')
+parser.add_argument('--mtm_y', type=float, default=0, nargs='+')
+parser.add_argument('--mtm_z', type=float, default=0, nargs='+')
+parser.add_argument('--Q', type=float, default=0.01)
 parser.add_argument('--verbose', dest='verbose', action='store_true', default=False)
 globals().update(vars(parser.parse_args()))
 
@@ -93,6 +94,8 @@ else:
 mtm = n_mtm
 if volume == "finite":
     mtm = n_mtm*(2*np.pi/L)*(2/N_coord)
+else:
+    mtm = n_mtm*Q
 
 if masses == 0.:
     masses = onp.ones(N_coord)
@@ -239,6 +242,20 @@ def FV_Coulomb(R, L, nn):
     #print(sums/(np.pi*L))
     #print(FV_Coulomb_slow(R,L,nn))
     return sums/(np.pi*L)
+
+@partial(jax.jit)
+def compute_phase_sum(Rs, mtm):
+
+    #Computes sum_{a=1}^{N_coord} e^{i mtm_a . R_{n,a}} for each walker.
+
+    # Compute mtm_a . R_{n,a} for all walkers and particles
+    dots = np.einsum('nai,ai->na', Rs, mtm)
+    # Compute e^{i mtm_a . R_{n,a}} for all walkers and particles
+    phases = np.exp(1j * dots)
+    # Sum over particles a for each walker n
+    S = np.sum(phases, axis=1)
+    return S
+
 
 def FV_Coulomb_slow(R, L, nn):
     sums = np.zeros(n_walkers)
@@ -964,21 +981,6 @@ if N_coord == 2:
           spin_slice = (slice(0, None),) + (i,0,j,0)
           S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)/np.sqrt(NI)
 
-# adjoint
-#S_av4p_metropolis = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
-#spin_slice = (slice(0,None),) + (0,0,1,0)
-#S_av4p_metropolis[spin_slice] = 1/np.sqrt(2)
-#spin_slice = (slice(0,None),) + (1,0,0,0)
-#S_av4p_metropolis[spin_slice] = 1/np.sqrt(2)
-
-# adjoint again
-#S_av4p_metropolis = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
-#spin_slice = (slice(0,None),) + (0,0,0,0)
-#S_av4p_metropolis[spin_slice] = 1/np.sqrt(6)
-#spin_slice = (slice(0,None),) + (1,0,1,0)
-#S_av4p_metropolis[spin_slice] = 1/np.sqrt(6)
-#spin_slice = (slice(0,None),) + (2,0,2,0)
-#S_av4p_metropolis[spin_slice] = -2/np.sqrt(6)
 
 if N_coord == 4:
   for i in range(NI):
@@ -1197,6 +1199,19 @@ Vs = np.array(Vs)
 
 print(Vs.shape)
 
+# Compute the expectation value of sum_{a=1}^Ncoord e^{i mtm . R_a}
+phase_sums = []
+for count, R in enumerate(gfmc_Rs):
+    print('Calculating phase sum for step ', count)
+    S_time = time.time()
+    S = compute_phase_sum(R, mtm)
+    print(f"Calculated phase sum in {time.time() - S_time} sec")
+    phase_sums.append(S)
+
+phase_sums = np.array(phase_sums)
+
+print("phase sums shape = ", phase_sums.shape)
+
 if N_coord == 4:
   S_1x1 = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
   S_3x3bar = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
@@ -1302,6 +1317,10 @@ if verbose:
             for K,V,W in zip(Ks, Vs, gfmc_Ws)])
     ave_Vs = np.array([al.bootstrap(V, W, Nboot=100, f=adl.rw_mean)
             for K,V,W in zip(Ks, Vs, gfmc_Ws)])
+    
+    # Compute the expectation values at each time step
+    ave_phase = np.array([al.bootstrap(S.real, W, Nboot=100, f=adl.rw_mean) for S, W in zip(phase_sums, gfmc_Ws)])
+
 
     print("first walker")
     print(gfmc_Rs.shape)
@@ -1318,6 +1337,7 @@ if verbose:
     print("psi(R) = ",f_R(gfmc_Rs[0])[0])
     print("K(R) = ",Ks[0,0])
     print("V(R) = ",Vs[0,0])
+    print("phase(R) = ",phase_sums[0,0])
     print("H(R) = ",Ks[0,0]+Vs[0,0])
 
     print("\n", Ks.shape)
@@ -1337,11 +1357,12 @@ if verbose:
     print("K(R) = ",Ks[0,1])
     print("V(R) = ",Vs[0,1])
     print("H(R) = ",Ks[0,1]+Vs[0,1])
-
+    print("phase(R) = ",phase_sums[0,0])
     print("H=",Hs,"\n\n")
     print("H_opt=",Hs_opt,"\n\n")
     print("K=",ave_Ks,"\n\n")
     print("V=",ave_Vs,"\n\n")
+    print("phase=",ave_phase,"\n\n")
 
     if N_coord == 4:
       ave_Z_1x1 = np.array([al.bootstrap(Z, Nboot=100, f=al.rmean)
