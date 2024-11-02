@@ -232,58 +232,9 @@ delta = 0.1  # Adjust this value as needed
 V0 = VB * delta  # Adjust this value as needed
 
 
-@partial(jax.jit)
-def FV_Hulthen(R, L, nn):
-
-    # Define G_values over which to compute V_tilde_G
-    G_values = onp.linspace(0, 100, num=100)  # G_max and NG to be defined appropriately
-
-    # Compute V_tilde_G numerically
-    V_tilde_G = compute_Vtilde_G(G_values, delta, V0)
-
-    # Compute G vectors
-    G = (2 * np.pi / L) * nn  # Shape: (Nn, 3)
-    G_magnitudes = np.linalg.norm(G, axis=1)  # Shape: (Nn,)
-    G_magnitudes = np.where(G_magnitudes > 1e-8, G_magnitudes, 1e-8)  # Avoid division by zero
-
-    # Interpolate V_tilde_G for the given G_magnitudes
-    V_tilde_interpolated = np.interp(G_magnitudes, G_values, V_tilde_G)
-
-    # Compute e^{i G \cdot R}
-    G_dot_R = np.einsum('ki,bi->bk', G, R)  # Shape: (n_walkers, Nn)
-    exp_iGdotR = np.exp(1j * G_dot_R)
-
-    # Reciprocal-space sum
-    reciprocal_sum = np.sum(V_tilde_interpolated[np.newaxis, :] * exp_iGdotR, axis=1)
-
-    # Real-space sum over periodic images (excluding the origin)
-    R_shifted = R[:, np.newaxis, :] + L * pp[np.newaxis, :, :]  # Shape: (n_walkers, Np, 3)
-    r_shifted_norm = adl.norm_3vec(R_shifted)  # Shape: (n_walkers, Np)
-
-    # Exclude the origin to avoid singularity
-    mask = r_shifted_norm > 1e-8
-
-    # Compute the Hulthén potential for shifted positions
-    delta_r = delta * r_shifted_norm
-    expm1_delta_r = np.expm1(delta_r)
-    safe_expm1 = np.where(expm1_delta_r != 0, expm1_delta_r, 1e-10)
-    V_r = -V0 / safe_expm1
-    V_r = np.where(mask, V_r, 0.0)
-
-    # Sum over all periodic images
-    real_space_sum = np.sum(V_r, axis=1)
-
-    # Total potential
-    total_potential = real_space_sum + np.real(reciprocal_sum)
-
-    return total_potential
-
-
 
 @partial(jax.jit)
 def FV_Hulthen(R, L, nn):
-    # R: (n_walkers, 3)
-    # nn: (Nn, 3)
     # Shift R by all periodic images
     R_shifted = R[:, np.newaxis, :] + L * nn[np.newaxis, :, :]
     r_shifted_norm = adl.norm_3vec(R_shifted)  # Shape (n_walkers, Nn)
@@ -336,10 +287,10 @@ if OLO == "LO":
         return V0 * np.exp(-delta * r) / (1 - np.exp(-delta * r))
     @partial(jax.jit)
     def singlet_potential_fun_sum(R):
-            return -FV_Hulthen(R, L, pp)
+            return FV_Hulthen(R, L, pp)
     @partial(jax.jit)
     def singlet_potential_fun_p_sum(R):
-            return FV_Hulthen(R, L, pp)
+            return -FV_Hulthen(R, L, pp)
 else:
     print("Order not supported")
     throw(0)

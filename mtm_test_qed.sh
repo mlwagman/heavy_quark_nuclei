@@ -1,7 +1,7 @@
 # run GFMC and fit wavefunction based on Hyleraas trial state
 nw=100
-nstep=3
-nskip=10
+nstep=5
+nskip=100
 
 # Function to calculate pi using bc
 calculate_pi() {
@@ -14,9 +14,9 @@ pi=$(calculate_pi)
 # Print the value of pi
 echo "The value of pi is: $pi"
 
-alpha=0.01
+alpha=1.0
 mu=1.0
-dt=0.02
+dt=0.2
 
 
 sa=1.0
@@ -34,7 +34,7 @@ af=1
 n1_values="(0,0,0) (0,0,1) (0,1,1) (1,1,1) (0,0,2) (0,1,2) (0,2,2)"
 
 # Loop over the Lattice size
-for L in 50 100 200 400 800; do
+for L in 10000000; do
     # Loop over the n1 tuples
     for n1 in $n1_values; do
         # Parse the n1 tuple into its components
@@ -50,7 +50,12 @@ for L in 50 100 200 400 800; do
         mtm_z_2=-$n_z
 
         # Run the Python script with the current parameters
-        python3 heavy_quark_nuclei_gfmc_boosted_FV_qed.py --alpha $alpha --log_mu_r 0.0 --mu $mu --OLO "LO" --n_step $nstep --n_walkers $nw --dtau $dt --Nc 1 --nf 0 --N_coord 2 --outdir "mtm_data_qed/" --wavefunction $wvfn --potential "full" --Lcut 5 --L $L --spoila $sa --n_skip $nskip --masses $m1 -$m2 --g $g --mtm_x $mtm_x_1 $mtm_x_2 --mtm_y $mtm_y_1 $mtm_y_2 --mtm_z $mtm_z_1 $mtm_z_2 #--verbose
+        #python heavy_quark_nuclei_boosted_FV_hulthen.py --alpha $alpha --log_mu_r 0.0 --mu $mu --OLO "LO" --n_step $nstep --n_walkers $nw --dtau $dt --Nc 1 --nf 0 --N_coord 2 --outdir "mtm_data_qed/" --wavefunction $wvfn --potential "full" --Lcut 5 --L $L --spoila $sa --n_skip $nskip --masses $m1 -$m2 --g $g --mtm_x $mtm_x_1 $mtm_x_2 --mtm_y $mtm_y_1 $mtm_y_2 --mtm_z $mtm_z_1 $mtm_z_2 --verbose
+        #python heavy_quark_nuclei_gfmc_boosted_FV_qed.py --alpha $alpha --log_mu_r 0.0 --mu $mu --OLO "LO" --n_step $nstep --n_walkers $nw --dtau $dt --Nc 1 --nf 0 --N_coord 2 --outdir "mtm_data_qed/" --wavefunction $wvfn --potential "full" --Lcut 5 --L $L --spoila $sa --n_skip $nskip --masses $m1 -$m2 --g $g --mtm_x $mtm_x_1 $mtm_x_2 --mtm_y $mtm_y_1 $mtm_y_2 --mtm_z $mtm_z_1 $mtm_z_2 --verbose
+        #python heavy_quark_nuclei_gfmc_boosted_FV_qed.py --alpha $alpha --log_mu_r 0.0 --mu $mu --OLO "LO" --n_step $nstep --n_walkers $nw --dtau $dt --Nc 1 --nf 0 --N_coord 2 --outdir "mtm_data_qed/" --wavefunction $wvfn --potential "full" --Lcut 5 --L 0 --spoila $sa --n_skip $nskip --masses $m1 -$m2 --g $g --mtm_x $mtm_x_1 $mtm_x_2 --mtm_y $mtm_y_1 $mtm_y_2 --mtm_z $mtm_z_1 $mtm_z_2 --verbose
+        python heavy_quark_nuclei_boosted_FV_hulthen.py --alpha $alpha --log_mu_r 0.0 --mu $mu --OLO "LO" --n_step $nstep --n_walkers $nw --dtau $dt --Nc 1 --nf 0 --N_coord 2 --outdir "mtm_data_qed/" --wavefunction $wvfn --potential "full" --Lcut 5 --L 0 --spoila $sa --n_skip $nskip --masses $m1 -$m2 --g $g --mtm_x $mtm_x_1 $mtm_x_2 --mtm_y $mtm_y_1 $mtm_y_2 --mtm_z $mtm_z_1 $mtm_z_2 --verbose
+        python heavy_quark_nuclei_boosted_FV_hulthen.py --alpha $alpha --log_mu_r 0.0 --mu $mu --OLO "LO" --n_step $nstep --n_walkers $nw --dtau $dt --Nc 1 --nf 0 --N_coord 2 --outdir "mtm_data_qed/" --wavefunction $wvfn --potential "full" --Lcut 5 --L $L --spoila $sa --n_skip $nskip --masses $m1 -$m2 --g $g --mtm_x $mtm_x_1 $mtm_x_2 --mtm_y $mtm_y_1 $mtm_y_2 --mtm_z $mtm_z_1 $mtm_z_2 --verbose
+
     done
 done
 
