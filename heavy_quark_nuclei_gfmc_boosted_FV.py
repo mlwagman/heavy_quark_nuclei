@@ -95,6 +95,7 @@ mtm = n_mtm
 if volume == "finite":
     mtm = n_mtm*(2*np.pi/L)*(2/N_coord)
 else:
+    #here is where Q comes
     mtm = n_mtm*Q
 
 if masses == 0.:
@@ -255,6 +256,73 @@ def compute_phase_sum(Rs, mtm):
     # Sum over particles a for each walker n
     S = np.sum(phases, axis=1)
     return S
+
+@partial(jax.jit)
+def compute_J_S(Rs, mtm, q):
+    # Computes sum_{a=1}^{N_coord} e^{i x_k.q} (1 + 1/4 * nabla_i^2 + q . nabla_i) for each walker.
+
+    #Base phase term e^{i mtm_a . R_{n,a}}
+    dots = np.einsum('nai,ai->na', Rs, mtm)
+    phases = np.exp(1j * dots)
+    S_base = np.sum(phases, axis=1)
+    
+    #Gradient term q . ∇_i
+    grad_terms = grad_f_R(Rs)
+    grad_phase_term = np.einsum('ain,ai->n', grad_terms, q)  # sum q . ∇_i term
+    S_grad = 1j * S_base * (grad_phase_term)
+
+    #Laplacian term 1/4 * ∇_i^2
+    laplacian_terms = laplacian_f_R(Rs)
+    S_laplacian = S_base * (1/4 * laplacian_terms)
+    
+    # Combine all terms
+    S_total = S_base + S_grad + S_laplacian
+    return S_total
+
+@partial(jax.jit)
+def compute_J_V_0(Rs, mtm, q):
+    # Computes sum_{a=1}^{N_coord} e^{i x_k.q} (1 + 1/4 * nabla_i^2 + q . nabla_i) for each walker.
+
+    #Base phase term e^{i mtm_a . R_{n,a}}
+    dots = np.einsum('nai,ai->na', Rs, mtm)
+    phases = np.exp(1j * dots)
+    S_base = np.sum(phases, axis=1)
+    
+    #Gradient term q . ∇_i
+    grad_terms = grad_f_R(Rs)
+    grad_phase_term = np.einsum('ain,ai->n', grad_terms, q)  # sum q . ∇_i term
+    S_grad = 1j* S_base * (grad_phase_term)
+
+    #Laplacian term 1/4 * ∇_i^2
+    laplacian_terms = laplacian_f_R(Rs)
+    S_laplacian = S_base * (1/4 * laplacian_terms)
+    
+    # Combine all terms
+    S_total = S_base - S_grad - S_laplacian
+    return S_total
+
+@partial(jax.jit)
+def compute_J_V_0(Rs, mtm, q):
+    # Computes sum_{a=1}^{N_coord} e^{i x_k.q} (1 + 1/4 * nabla_i^2 + q . nabla_i) for each walker.
+
+    # Step 1: Base phase term e^{i mtm_a . R_{n,a}}
+    dots = np.einsum('nai,ai->na', Rs, mtm)
+    phases = np.exp(1j * dots)
+    S_base = np.sum(phases, axis=1)
+    
+    # Step 2: Gradient term q . ∇_i
+    grad_terms = grad_f_R(Rs)
+    grad_phase_term = np.einsum('ain,ai->n', grad_terms, q)  # sum q . ∇_i term
+    S_grad = S_base * (grad_phase_term)
+
+    # Step 3: Laplacian term 1/4 * ∇_i^2
+    laplacian_terms = laplacian_f_R(Rs)
+    S_laplacian = S_base * (1/4 * laplacian_terms)
+    
+    # Combine all terms
+    S_total = S_base - S_grad - S_laplacian
+    return S_total
+
 
 
 def FV_Coulomb_slow(R, L, nn):
@@ -1210,6 +1278,18 @@ for count, R in enumerate(gfmc_Rs):
 
 phase_sums = np.array(phase_sums)
 
+
+# Compute the expectation value of sum_{a=1}^Ncoord e^{i mtm . R_a}
+J_S_sums = []
+for count, R in enumerate(gfmc_Rs):
+    print('Calculating phase sum for step ', count)
+    S_time = time.time()
+    S = compute_J_S(R, mtm)
+    print(f"Calculated phase sum in {time.time() - S_time} sec")
+    phase_sums.append(S)
+
+phase_sums = np.array(phase_sums)
+
 print("phase sums shape = ", phase_sums.shape)
 
 if N_coord == 4:
@@ -1320,6 +1400,7 @@ if verbose:
     
     # Compute the expectation values at each time step
     ave_phase = np.array([al.bootstrap(S.real, W, Nboot=100, f=adl.rw_mean) for S, W in zip(phase_sums, gfmc_Ws)])
+    
 
 
     print("first walker")

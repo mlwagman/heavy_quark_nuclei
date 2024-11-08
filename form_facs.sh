@@ -35,7 +35,7 @@ n_x=0
 n_y=0
 n_z=1
 
-n1_values="(1,0,0) (0,0,1) (0,1,1) (1,1,1) (0,0,2) (0,1,2) (0,2,2)"
+n1_values="(1,0,0) (0 1 0) (0,0,1) (0,1,1) (1 1 0) (1,1,1)"
 #change the L/change alpha small
 # Loop over the Lattice size
 for Q in 0.0 0.01 0.1 1.0 10.0; do
