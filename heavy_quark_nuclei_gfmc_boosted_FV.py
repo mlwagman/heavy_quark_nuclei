@@ -258,71 +258,57 @@ def compute_phase_sum(Rs, mtm):
     return S
 
 @partial(jax.jit)
-def compute_J_S(Rs, mtm, q):
-    # Computes sum_{a=1}^{N_coord} e^{i x_k.q} (1 + 1/4 * nabla_i^2 + q . nabla_i) for each walker.
+def compute_J_S(Rs, mtm):
+    # Computes sum_{a=1}^{N_coord} e^{i x_k.q} (1 + 1/4 * nabla_i^2 + i/4 * q . nabla_i) for each walker.
 
     #Base phase term e^{i mtm_a . R_{n,a}}
-    dots = np.einsum('nai,ai->na', Rs, mtm)
-    phases = np.exp(1j * dots)
-    S_base = np.sum(phases, axis=1)
-    
-    #Gradient term q . ∇_i
+    S_base = compute_phase_sum(Rs, mtm)
+
+    #Gradient term i/4 * q . ∇_i
     grad_terms = grad_f_R(Rs)
-    grad_phase_term = np.einsum('ain,ai->n', grad_terms, q)  # sum q . ∇_i term
-    S_grad = 1j * S_base * (grad_phase_term)
+    grad_phase_term = np.einsum('ain,ai->n', grad_terms, mtm)  # sum q . ∇_i term
+    S_grad = 1j * S_base * (1/4 * grad_phase_term / f_R(Rs))
 
     #Laplacian term 1/4 * ∇_i^2
     laplacian_terms = laplacian_f_R(Rs)
-    S_laplacian = S_base * (1/4 * laplacian_terms)
-    
+    S_laplacian = S_base * (1/4 * laplacian_terms / f_R(Rs))
+
     # Combine all terms
     S_total = S_base + S_grad + S_laplacian
     return S_total
 
 @partial(jax.jit)
-def compute_J_V_0(Rs, mtm, q):
-    # Computes sum_{a=1}^{N_coord} e^{i x_k.q} (1 + 1/4 * nabla_i^2 + q . nabla_i) for each walker.
+def compute_J_V_0(Rs, mtm):
+    # Computes sum_{a=1}^{N_coord} e^{i x_k.q} (1 + 1/4 * nabla_i^2 - i/4 * q . nabla_i) for each walker.
 
     #Base phase term e^{i mtm_a . R_{n,a}}
-    dots = np.einsum('nai,ai->na', Rs, mtm)
-    phases = np.exp(1j * dots)
-    S_base = np.sum(phases, axis=1)
-    
-    #Gradient term q . ∇_i
-    grad_terms = grad_f_R(Rs)
-    grad_phase_term = np.einsum('ain,ai->n', grad_terms, q)  # sum q . ∇_i term
-    S_grad = 1j* S_base * (grad_phase_term)
+    S_base = compute_phase_sum(Rs, mtm)
 
-    #Laplacian term 1/4 * ∇_i^2
+    #Gradient term -i/4 * q . ∇_i
+    grad_terms = grad_f_R(Rs)
+    grad_phase_term = np.einsum('ain,ai->n', grad_terms, mtm)  # sum q . ∇_i term
+    S_grad = 1j * S_base * (-1/4 * grad_phase_term / f_R(Rs))
+
+    #Laplacian term -1/4 * ∇_i^2
     laplacian_terms = laplacian_f_R(Rs)
-    S_laplacian = S_base * (1/4 * laplacian_terms)
-    
+    S_laplacian = S_base * (-1/4 * laplacian_terms / f_R(Rs))
+
     # Combine all terms
-    S_total = S_base - S_grad - S_laplacian
+    S_total = S_base + S_grad + S_laplacian
     return S_total
 
 @partial(jax.jit)
-def compute_J_V_0(Rs, mtm, q):
-    # Computes sum_{a=1}^{N_coord} e^{i x_k.q} (1 + 1/4 * nabla_i^2 + q . nabla_i) for each walker.
+def compute_J_V_k(Rs, mtm, k):
+    # Computes sum_{a=1}^{N_coord} e^{i x_k.q} (i nabla_k - 1/2 * q_k) for each walker.
 
-    # Step 1: Base phase term e^{i mtm_a . R_{n,a}}
-    dots = np.einsum('nai,ai->na', Rs, mtm)
-    phases = np.exp(1j * dots)
-    S_base = np.sum(phases, axis=1)
-    
-    # Step 2: Gradient term q . ∇_i
+    #Base phase term e^{i mtm_a . R_{n,a}}
+    S_base = compute_phase_sum(Rs, mtm)
+
+    #Gradient term -i/4 * q . ∇_i
     grad_terms = grad_f_R(Rs)
-    grad_phase_term = np.einsum('ain,ai->n', grad_terms, q)  # sum q . ∇_i term
-    S_grad = S_base * (grad_phase_term)
+    S_grad = S_base * (1j * np.sum(grad_terms[:,k], axis=0) - 1/2*np.sum(mtm[:,k], axis=0))
 
-    # Step 3: Laplacian term 1/4 * ∇_i^2
-    laplacian_terms = laplacian_f_R(Rs)
-    S_laplacian = S_base * (1/4 * laplacian_terms)
-    
-    # Combine all terms
-    S_total = S_base - S_grad - S_laplacian
-    return S_total
-
+    return S_grad
 
 
 def FV_Coulomb_slow(R, L, nn):
@@ -1278,19 +1264,35 @@ for count, R in enumerate(gfmc_Rs):
 
 phase_sums = np.array(phase_sums)
 
+print("phase sums shape = ", phase_sums.shape)
+
 
 # Compute the expectation value of sum_{a=1}^Ncoord e^{i mtm . R_a}
 J_S_sums = []
+J_V_0_sums = []
+J_V_1_sums = []
+J_V_2_sums = []
+J_V_3_sums = []
 for count, R in enumerate(gfmc_Rs):
-    print('Calculating phase sum for step ', count)
+    print('Calculating all J for step ', count)
     S_time = time.time()
-    S = compute_J_S(R, mtm)
-    print(f"Calculated phase sum in {time.time() - S_time} sec")
-    phase_sums.append(S)
+    J_S = compute_J_S(R, mtm)
+    J_V_0 = compute_J_V_0(R, mtm)
+    J_V_1 = compute_J_V_k(R, mtm, 0)
+    J_V_2 = compute_J_V_k(R, mtm, 1)
+    J_V_3 = compute_J_V_k(R, mtm, 2)
+    print(f"Calculated J_S sum in {time.time() - S_time} sec")
+    J_S_sums.append(J_S)
+    J_V_0_sums.append(J_V_0)
+    J_V_1_sums.append(J_V_1)
+    J_V_2_sums.append(J_V_2)
+    J_V_3_sums.append(J_V_3)
 
-phase_sums = np.array(phase_sums)
-
-print("phase sums shape = ", phase_sums.shape)
+J_S_sums = np.array(J_S_sums)
+J_V_0_sums = np.array(J_V_0_sums)
+J_V_1_sums = np.array(J_V_1_sums)
+J_V_2_sums = np.array(J_V_2_sums)
+J_V_3_sums = np.array(J_V_3_sums)
 
 if N_coord == 4:
   S_1x1 = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
@@ -1397,10 +1399,15 @@ if verbose:
             for K,V,W in zip(Ks, Vs, gfmc_Ws)])
     ave_Vs = np.array([al.bootstrap(V, W, Nboot=100, f=adl.rw_mean)
             for K,V,W in zip(Ks, Vs, gfmc_Ws)])
-    
+
     # Compute the expectation values at each time step
     ave_phase = np.array([al.bootstrap(S.real, W, Nboot=100, f=adl.rw_mean) for S, W in zip(phase_sums, gfmc_Ws)])
-    
+    ave_J_S = np.array([al.bootstrap(S.real, W, Nboot=100, f=adl.rw_mean) for S, W in zip(J_S_sums, gfmc_Ws)])
+    ave_J_V_0 = np.array([al.bootstrap(S.real, W, Nboot=100, f=adl.rw_mean) for S, W in zip(J_V_0_sums, gfmc_Ws)])
+    ave_J_V_1 = np.array([al.bootstrap(S.real, W, Nboot=100, f=adl.rw_mean) for S, W in zip(J_V_1_sums, gfmc_Ws)])
+    ave_J_V_2 = np.array([al.bootstrap(S.real, W, Nboot=100, f=adl.rw_mean) for S, W in zip(J_V_2_sums, gfmc_Ws)])
+    ave_J_V_3 = np.array([al.bootstrap(S.real, W, Nboot=100, f=adl.rw_mean) for S, W in zip(J_V_3_sums, gfmc_Ws)])
+
 
 
     print("first walker")
@@ -1444,6 +1451,11 @@ if verbose:
     print("K=",ave_Ks,"\n\n")
     print("V=",ave_Vs,"\n\n")
     print("phase=",ave_phase,"\n\n")
+    print("J_S=",ave_J_S,"\n\n")
+    print("J_V_0=",ave_J_V_0,"\n\n")
+    print("J_V_1=",ave_J_V_1,"\n\n")
+    print("J_V_2=",ave_J_V_2,"\n\n")
+    print("J_V_3=",ave_J_V_3,"\n\n")
 
     if N_coord == 4:
       ave_Z_1x1 = np.array([al.bootstrap(Z, Nboot=100, f=al.rmean)

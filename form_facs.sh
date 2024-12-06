@@ -35,7 +35,8 @@ n_x=0
 n_y=0
 n_z=1
 
-n1_values="(1,0,0) (0 1 0) (0,0,1) (0,1,1) (1 1 0) (1,1,1)"
+#n1_values="(1,0,0) (0 1 0) (0,0,1) (0,1,1) (1 1 0) (1,1,1)"
+n1_values="(1,0,0)"
 #change the L/change alpha small
 # Loop over the Lattice size
 for Q in 0.0 0.01 0.1 1.0 10.0; do
@@ -53,7 +54,9 @@ for Q in 0.0 0.01 0.1 1.0 10.0; do
         mtm_z_1=$n_z
         #mtm_z_2=-$n_z
 
-        python heavy_quark_nuclei_gfmc_boosted_FV.py --Q $Q --alpha $alpha --log_mu_r 0.0 --mu $mu --OLO "LO" --n_step $nstep --n_walkers $nw --dtau $dt --Nc 3 --nf 4 --N_coord 3 --outdir "mtm_data/" --wavefunction $wvfn --potential "full" --Lcut 5 --L 0 --spoila $sa --n_skip $nskip --masses $m1 $m2 $m3 --g $g --color $color --mtm_x $mtm_x_1 --mtm_y $mtm_y_1 --mtm_z $mtm_z_1 --verbose
+        #python heavy_quark_nuclei_gfmc_boosted_FV.py --Q $Q --alpha $alpha --log_mu_r 0.0 --mu $mu --OLO "LO" --n_step $nstep --n_walkers $nw --dtau $dt --Nc 3 --nf 4 --N_coord 3 --outdir "mtm_data/" --wavefunction $wvfn --potential "full" --Lcut 5 --L 0 --spoila $sa --n_skip $nskip --masses $m1 $m2 $m3 --g $g --color $color --mtm_x $mtm_x_1 --mtm_y $mtm_y_1 --mtm_z $mtm_z_1 --verbose
+        #
+        python heavy_quark_nuclei_gfmc_boosted_FV.py --Q $Q --alpha $alpha --log_mu_r 0.0 --mu $mu --OLO "LO" --n_step $nstep --n_walkers $nw --dtau $dt --Nc 3 --nf 4 --N_coord 2 --outdir "mtm_data/" --wavefunction $wvfn --potential "full" --Lcut 5 --L 0 --spoila $sa --n_skip $nskip --masses $m1 -$m2 --g $g --color $color --mtm_x $mtm_x_1 --mtm_y $mtm_y_1 --mtm_z $mtm_z_1 --verbose
     done
 done
 
