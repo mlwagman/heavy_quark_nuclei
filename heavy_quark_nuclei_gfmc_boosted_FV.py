@@ -310,6 +310,67 @@ def compute_J_V_k(Rs, mtm, k):
 
     return S_grad
 
+@partial(jax.jit)
+def compute_J_A_0(Rs, mtm):
+    # From the given formula: J^0_A(q) = 0
+    return np.zeros(Rs.shape[0], dtype=complex)
+
+@partial(jax.jit)
+def compute_J_A_i(Rs, mtm, i):
+    # J^i_A(q)|ψ> = ∑_k e^{i q·x_k} [ (1/(4*m^2)) (q × ∇_{x_k})^i ] |ψ>
+    # Here we assume a single mass scale m for demonstration. If needed, adjust using your mass array.
+    m = 1.0
+    factor = 1/(4*m**2)
+
+    # Gradient of the wavefunction
+    grad_terms = grad_f_R(Rs)  # shape (N_coord, 3, N_walkers)
+
+    # phase_per_particle: e^{i q.x_k} per particle k
+    phase_per_particle = np.exp(1j * np.einsum('ai,nai->na', mtm, Rs))
+
+    N_coord = Rs.shape[1]
+    sum_terms = 0
+    for k in range(N_coord):
+        cross_q_grad = np.cross(mtm[k], grad_terms[k], axis=0)  # shape (3, N_walkers)
+        # multiply by e^{i q.x_k}
+        cross_q_grad *= phase_per_particle[:,k]
+        # sum over k
+        sum_terms += cross_q_grad[i]
+
+    sum_terms *= factor
+    return sum_terms
+
+
+@partial(jax.jit)
+def compute_J_T_0i(Rs, mtm, i):
+    m = 1.0
+    factor = 1/(2*m)
+    S_base = compute_phase_sum(Rs, mtm)  # sum_k e^{i q.x_k}
+    return factor * mtm[0, i] * S_base
+
+@partial(jax.jit)
+def compute_J_T_i0(Rs, mtm, i):
+    return -compute_J_T_0i(Rs, mtm, i)
+
+@partial(jax.jit)
+def compute_J_T_ij(Rs, mtm, i, j):
+    m = 1.0
+    factor = 1/(4*m**2)
+
+    grad_terms = grad_f_R(Rs)   # shape (N_coord, 3, N_walkers)
+    phase_per_particle = np.exp(1j * np.einsum('ai,nai->na', mtm, Rs))
+
+    N_coord = Rs.shape[1]
+    sum_terms = 0
+    for k in range(N_coord):
+        term_k = (mtm[0,j]*grad_terms[k,i] - mtm[0,i]*grad_terms[k,j])
+        # multiply by e^{i q.x_k} and
+        term_k = phase_per_particle[:,k] * 1j * term_k
+        sum_terms += term_k
+    sum_terms *= factor
+    return sum_terms
+
+
 
 def FV_Coulomb_slow(R, L, nn):
     sums = np.zeros(n_walkers)
@@ -1294,6 +1355,47 @@ J_V_1_sums = np.array(J_V_1_sums)
 J_V_2_sums = np.array(J_V_2_sums)
 J_V_3_sums = np.array(J_V_3_sums)
 
+
+# Compute J_A^0, J_A^i for i=1,2,3
+J_A_0_sums = []
+J_A_1_sums = []
+J_A_2_sums = []
+J_A_3_sums = []
+for count, R in enumerate(gfmc_Rs):
+    J_A_0_sums.append(compute_J_A_0(R, mtm))
+    J_A_1_sums.append(compute_J_A_i(R, mtm, 0))
+    J_A_2_sums.append(compute_J_A_i(R, mtm, 1))
+    J_A_3_sums.append(compute_J_A_i(R, mtm, 2))
+
+J_A_0_sums = np.array(J_A_0_sums)
+J_A_1_sums = np.array(J_A_1_sums)
+J_A_2_sums = np.array(J_A_2_sums)
+J_A_3_sums = np.array(J_A_3_sums)
+
+
+# Compute J_T^{0i}, J_T^{i0}, and J_T^{ij}
+J_T_0i_sums = []
+J_T_i0_sums = []
+# For J_T^{ij}, we have i,j = 1,2,3 (or 0,1,2 in 0-based indexing)
+J_T_ij_sums = {}  # store in a dict keyed by (i,j)
+for count, R in enumerate(gfmc_Rs):
+    # example for i=0,1,2 (which correspond to x,y,z)
+    J_T_0i_sums.append([compute_J_T_0i(R, mtm, ix) for ix in range(3)])
+    J_T_i0_sums.append([compute_J_T_i0(R, mtm, ix) for ix in range(3)])
+    for ix in range(3):
+        for jx in range(3):
+            key = (ix,jx)
+            val = compute_J_T_ij(R, mtm, ix, jx)
+            if key not in J_T_ij_sums:
+                J_T_ij_sums[key] = []
+            J_T_ij_sums[key].append(val)
+
+J_T_0i_sums = np.array(J_T_0i_sums)
+J_T_i0_sums = np.array(J_T_i0_sums)
+for key in J_T_ij_sums:
+    J_T_ij_sums[key] = np.array(J_T_ij_sums[key])
+
+
 if N_coord == 4:
   S_1x1 = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
   S_3x3bar = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
@@ -1408,6 +1510,34 @@ if verbose:
     ave_J_V_2 = np.array([al.bootstrap(S.real, W, Nboot=100, f=adl.rw_mean) for S, W in zip(J_V_2_sums, gfmc_Ws)])
     ave_J_V_3 = np.array([al.bootstrap(S.real, W, Nboot=100, f=adl.rw_mean) for S, W in zip(J_V_3_sums, gfmc_Ws)])
 
+    # For axial-vector current J_A
+    ave_J_A_0 = np.array([al.bootstrap(S.real, W, Nboot=100, f=adl.rw_mean) for S, W in zip(J_A_0_sums, gfmc_Ws)])
+    ave_J_A_1 = np.array([al.bootstrap(S.real, W, Nboot=100, f=adl.rw_mean) for S, W in zip(J_A_1_sums, gfmc_Ws)])
+    ave_J_A_2 = np.array([al.bootstrap(S.real, W, Nboot=100, f=adl.rw_mean) for S, W in zip(J_A_2_sums, gfmc_Ws)])
+    ave_J_A_3 = np.array([al.bootstrap(S.real, W, Nboot=100, f=adl.rw_mean) for S, W in zip(J_A_3_sums, gfmc_Ws)])
+
+    # For tensor current J_T, remembering we have multiple components:
+    # J_T^{0i} and J_T^{i0} are vectors (i runs from 0 to 2 for 3 spatial components)
+    ave_J_T_0i = []
+    for i in range(3):
+        data_i = np.array([X[i] for X in J_T_0i_sums])  # Extract component i for each step
+        ave_J_T_0i.append(np.array([al.bootstrap(x.real, W, Nboot=100, f=adl.rw_mean) 
+                                    for x, W in zip(data_i, gfmc_Ws)]))
+    ave_J_T_0i = np.array(ave_J_T_0i)  # shape (3, N_steps)
+
+    ave_J_T_i0 = []
+    for i in range(3):
+        data_i = np.array([X[i] for X in J_T_i0_sums])
+        ave_J_T_i0.append(np.array([al.bootstrap(x.real, W, Nboot=100, f=adl.rw_mean) 
+                                    for x, W in zip(data_i, gfmc_Ws)]))
+    ave_J_T_i0 = np.array(ave_J_T_i0)  # shape (3, N_steps)
+
+    # For J_T^{ij}, we have a dictionary keyed by (i,j)
+    ave_J_T_ij = {}
+    for (i,j), arr in J_T_ij_sums.items():
+        ave_J_T_ij[(i,j)] = np.array([al.bootstrap(x.real, W, Nboot=100, f=adl.rw_mean)
+                                    for x, W in zip(arr, gfmc_Ws)])
+
 
 
     print("first walker")
@@ -1456,6 +1586,22 @@ if verbose:
     print("J_V_1=",ave_J_V_1,"\n\n")
     print("J_V_2=",ave_J_V_2,"\n\n")
     print("J_V_3=",ave_J_V_3,"\n\n")
+
+    # If you'd like, you can print them:
+    print("Average J_A:")
+    print("J_A^0:", ave_J_A_0)
+    print("J_A^1:", ave_J_A_1)
+    print("J_A^2:", ave_J_A_2)
+    print("J_A^3:", ave_J_A_3)
+
+    print("Average J_T:")
+    for i in range(3):
+        print(f"J_T^0{i}:", ave_J_T_0i[i])
+    for i in range(3):
+        print(f"J_T^{i}0:", ave_J_T_i0[i])
+    for i in range(3):
+        for j in range(3):
+            print(f"J_T^{i}{j}:", ave_J_T_ij[(i,j)])
 
     if N_coord == 4:
       ave_Z_1x1 = np.array([al.bootstrap(Z, Nboot=100, f=al.rmean)
