@@ -1339,9 +1339,9 @@ for count, R in enumerate(gfmc_Rs):
     S_time = time.time()
     J_S = compute_J_S(R, mtm)
     J_V_0 = compute_J_V_0(R, mtm)
-    J_V_1 = compute_J_V_k(R, mtm, 0)
-    J_V_2 = compute_J_V_k(R, mtm, 1)
-    J_V_3 = compute_J_V_k(R, mtm, 2)
+    J_V_1 = compute_J_V_k(R, mtm, 1)
+    J_V_2 = compute_J_V_k(R, mtm, 2)
+    J_V_3 = compute_J_V_k(R, mtm, 3)
     print(f"Calculated J_S sum in {time.time() - S_time} sec")
     J_S_sums.append(J_S)
     J_V_0_sums.append(J_V_0)
@@ -1363,9 +1363,9 @@ J_A_2_sums = []
 J_A_3_sums = []
 for count, R in enumerate(gfmc_Rs):
     J_A_0_sums.append(compute_J_A_0(R, mtm))
-    J_A_1_sums.append(compute_J_A_i(R, mtm, 0))
-    J_A_2_sums.append(compute_J_A_i(R, mtm, 1))
-    J_A_3_sums.append(compute_J_A_i(R, mtm, 2))
+    J_A_1_sums.append(compute_J_A_i(R, mtm, 1))
+    J_A_2_sums.append(compute_J_A_i(R, mtm, 2))
+    J_A_3_sums.append(compute_J_A_i(R, mtm, 3))
 
 J_A_0_sums = np.array(J_A_0_sums)
 J_A_1_sums = np.array(J_A_1_sums)
@@ -1382,8 +1382,8 @@ for count, R in enumerate(gfmc_Rs):
     # example for i=0,1,2 (which correspond to x,y,z)
     J_T_0i_sums.append([compute_J_T_0i(R, mtm, ix) for ix in range(3)])
     J_T_i0_sums.append([compute_J_T_i0(R, mtm, ix) for ix in range(3)])
-    for ix in range(3):
-        for jx in range(3):
+    for ix in range(1,3):
+        for jx in range(1,3):
             key = (ix,jx)
             val = compute_J_T_ij(R, mtm, ix, jx)
             if key not in J_T_ij_sums:
@@ -1519,14 +1519,14 @@ if verbose:
     # For tensor current J_T, remembering we have multiple components:
     # J_T^{0i} and J_T^{i0} are vectors (i runs from 0 to 2 for 3 spatial components)
     ave_J_T_0i = []
-    for i in range(3):
+    for i in range(1,3):
         data_i = np.array([X[i] for X in J_T_0i_sums])  # Extract component i for each step
         ave_J_T_0i.append(np.array([al.bootstrap(x.real, W, Nboot=100, f=adl.rw_mean) 
                                     for x, W in zip(data_i, gfmc_Ws)]))
     ave_J_T_0i = np.array(ave_J_T_0i)  # shape (3, N_steps)
 
     ave_J_T_i0 = []
-    for i in range(3):
+    for i in range(1,3):
         data_i = np.array([X[i] for X in J_T_i0_sums])
         ave_J_T_i0.append(np.array([al.bootstrap(x.real, W, Nboot=100, f=adl.rw_mean) 
                                     for x, W in zip(data_i, gfmc_Ws)]))
@@ -1595,12 +1595,12 @@ if verbose:
     print("J_A^3:", ave_J_A_3)
 
     print("Average J_T:")
-    for i in range(3):
+    for i in range(1,3):
         print(f"J_T^0{i}:", ave_J_T_0i[i])
-    for i in range(3):
+    for i in range(1,3):
         print(f"J_T^{i}0:", ave_J_T_i0[i])
-    for i in range(3):
-        for j in range(3):
+    for i in range(1,3):
+        for j in range(1,3):
             print(f"J_T^{i}{j}:", ave_J_T_ij[(i,j)])
 
     if N_coord == 4:
@@ -1617,3 +1617,69 @@ if verbose:
       print("Z_3x3bar=",ave_Z_3x3bar,"\n\n")
       print("Z_6x6bar=",ave_Z_6x6bar,"\n\n")
       print("Z_norm=",ave_Z_norm,"\n\n")
+
+import csv
+import os
+import numpy as onp
+
+# Construct filename with both Q and N_coord in the name
+csv_filename = os.path.join(outdir, f"currents_Q={Q}_Ncoord={N_coord}.csv")
+
+with open(csv_filename, 'w', newline='') as csvfile:
+    writer = csv.writer(csvfile)
+    
+    # Write a header row listing mean & error for each current
+    writer.writerow([
+        "time_step",
+
+        "ave_J_S_mean",    "ave_J_S_err",
+        "ave_J_V_0_mean",  "ave_J_V_0_err",
+        "ave_J_V_1_mean",  "ave_J_V_1_err",
+        "ave_J_V_2_mean",  "ave_J_V_2_err",
+        "ave_J_V_3_mean",  "ave_J_V_3_err",
+
+        "ave_J_A_0_mean",  "ave_J_A_0_err",
+        "ave_J_A_1_mean",  "ave_J_A_1_err",
+        "ave_J_A_2_mean",  "ave_J_A_2_err",
+        "ave_J_A_3_mean",  "ave_J_A_3_err",
+
+        "ave_J_T_0i0_mean","ave_J_T_0i0_err",
+        "ave_J_T_0i1_mean","ave_J_T_0i1_err",
+        "ave_J_T_0i2_mean","ave_J_T_0i2_err",
+
+        "ave_J_T_i00_mean","ave_J_T_i00_err",
+        "ave_J_T_i01_mean","ave_J_T_i01_err",
+        "ave_J_T_i02_mean","ave_J_T_i02_err",
+    ])
+
+    n_times = len(ave_J_S)  # Typically n_step+1
+    for t in range(n_times):
+        # Each ave_J_*[t] is shape (2,) = [mean, error].
+        # We convert them to floats and store them in the row.
+
+        row = [
+            t,
+
+            float(ave_J_S[t][0]),     float(ave_J_S[t][1]),
+            float(ave_J_V_0[t][0]),   float(ave_J_V_0[t][1]),
+            float(ave_J_V_1[t][0]),   float(ave_J_V_1[t][1]),
+            float(ave_J_V_2[t][0]),   float(ave_J_V_2[t][1]),
+            float(ave_J_V_3[t][0]),   float(ave_J_V_3[t][1]),
+
+            float(ave_J_A_0[t][0]),   float(ave_J_A_0[t][1]),
+            float(ave_J_A_1[t][0]),   float(ave_J_A_1[t][1]),
+            float(ave_J_A_2[t][0]),   float(ave_J_A_2[t][1]),
+            float(ave_J_A_3[t][0]),   float(ave_J_A_3[t][1]),
+
+            float(ave_J_T_0i[0][t][0]), float(ave_J_T_0i[0][t][1]),
+            float(ave_J_T_0i[1][t][0]), float(ave_J_T_0i[1][t][1]),
+            float(ave_J_T_0i[2][t][0]), float(ave_J_T_0i[2][t][1]),
+
+            float(ave_J_T_i0[0][t][0]), float(ave_J_T_i0[0][t][1]),
+            float(ave_J_T_i0[1][t][0]), float(ave_J_T_i0[1][t][1]),
+            float(ave_J_T_i0[2][t][0]), float(ave_J_T_i0[2][t][1]),
+        ]
+
+        writer.writerow(row)
+
+print(f"\nWrote current means & errors to {csv_filename}\n")

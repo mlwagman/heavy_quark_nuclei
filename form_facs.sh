@@ -1,6 +1,6 @@
 # run GFMC and fit wavefunction based on Hyleraas trial state
 nw=1000
-nstep=3
+nstep=5
 nskip=10
 
 # Function to calculate pi using bc
@@ -39,7 +39,7 @@ n_z=1
 n1_values="(1,0,0)"
 #change the L/change alpha small
 # Loop over the Lattice size
-for Q in 0.0 0.01 0.1 1.0 10.0; do
+for Q in 0.0 0.0025 0.005 0.0075 0.01 0.0125 0.015 0.0175 0.02; do
 
     for n1 in $n1_values; do
         # Parse the n1 tuple into its components
