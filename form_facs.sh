@@ -39,7 +39,7 @@ n_z=1
 n1_values="(1,0,0)"
 #change the L/change alpha small
 # Loop over the Lattice size
-for Q in 0.0 0.0025 0.005 0.0075 0.01 0.0125 0.015 0.0175 0.02; do
+for Q in 0.0 0.001 0.002 0.003 0.004 0.005 0.006 0.007 0.008 0.009 0.01; do
 
     for n1 in $n1_values; do
         # Parse the n1 tuple into its components
