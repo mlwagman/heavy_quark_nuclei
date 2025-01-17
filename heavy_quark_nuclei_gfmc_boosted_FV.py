@@ -95,8 +95,8 @@ mtm = n_mtm
 if volume == "finite":
     mtm = n_mtm*(2*np.pi/L)*(2/N_coord)
 else:
-    #here is where Q comes
-    mtm = n_mtm*Q
+    #here is where Q comes, include 1/Ncoord as total momentum transfer to system is what we want to input
+    mtm = n_mtm*Q/N_coord
 
 if masses == 0.:
     masses = onp.ones(N_coord)
@@ -1440,10 +1440,10 @@ if N_coord == 4:
 
 if volume == "finite":
     #tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilaket"+str(spoilaket) + "_spoilf"+str(spoilf) + "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
-    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)+"_mtm"+str(mtm_x)+str(mtm_y)+str(mtm_z)+"_color_"+color
+    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)+"_mtm"+str(mtm_x)+str(mtm_y)+str(mtm_z)+"_color_"+color+"_Q"+str(Q)
 else:
     #tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilaket"+str(spoilaket) + "_spoilf"+str(spoilf)+ "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
-    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)+"_mtm"+str(mtm_x)+str(mtm_y)+str(mtm_z)+"_color_"+color
+    tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)+"_mtm"+str(mtm_x)+str(mtm_y)+str(mtm_z)+"_color_"+color+"_Q"+str(Q)
 
 
 with h5py.File(outdir+'Hammys_'+tag+'.h5', 'w') as f:
@@ -1467,6 +1467,46 @@ with h5py.File(outdir+'Rs_'+tag+'.h5', 'w') as f:
 with h5py.File(outdir+'Rs_'+tag+'.h5', 'r') as f:
     data = f['Rs']
     print(data)
+
+import h5py
+
+# Define a filename for storing current sums
+filename = outdir + 'currents_' + tag + '.h5'
+
+with h5py.File(filename, 'w') as f:
+    # Store current-related sums
+    f.create_dataset("phase", data=phase_sums)
+    f.create_dataset("J_S", data=J_S_sums)
+    f.create_dataset("J_V_0", data=J_V_0_sums)
+    f.create_dataset("J_V_1", data=J_V_1_sums)
+    f.create_dataset("J_V_2", data=J_V_2_sums)
+    f.create_dataset("J_V_3", data=J_V_3_sums)
+
+    f.create_dataset("J_A_0", data=J_A_0_sums)
+    f.create_dataset("J_A_1", data=J_A_1_sums)
+    f.create_dataset("J_A_2", data=J_A_2_sums)
+    f.create_dataset("J_A_3", data=J_A_3_sums)
+
+    # Store tensor current components for 0i components
+    for i in range(1, 4):  # spatial indices 1, 2, 3
+        dataset_name = f"J_T_0{i}"
+        # Adjust indexing according to how J_T_0i_sums is structured
+        data_component = J_T_0i_sums[i-1]  
+        f.create_dataset(dataset_name, data=data_component)
+
+    # Store tensor current components for i0 components
+    for i in range(1, 4):
+        dataset_name = f"J_T_{i}0"
+        # Adjust indexing according to how J_T_i0_sums is structured
+        data_component = J_T_i0_sums[i-1]  
+        f.create_dataset(dataset_name, data=data_component)
+
+    # Store tensor current components for all (i,j) pairs present
+    for (i, j), data_component in J_T_ij_sums.items():
+        dataset_name = f"J_T_{i}{j}"
+        f.create_dataset(dataset_name, data=data_component)
+    f.create_dataset("Ws", data=gfmc_Ws)
+
 
 dset = Ks+Vs
 print("dset = ", dset)
@@ -1618,68 +1658,4 @@ if verbose:
       print("Z_6x6bar=",ave_Z_6x6bar,"\n\n")
       print("Z_norm=",ave_Z_norm,"\n\n")
 
-import csv
-import os
-import numpy as onp
 
-# Construct filename with both Q and N_coord in the name
-csv_filename = os.path.join(outdir, f"currents_Q={Q}_Ncoord={N_coord}.csv")
-
-with open(csv_filename, 'w', newline='') as csvfile:
-    writer = csv.writer(csvfile)
-    
-    # Write a header row listing mean & error for each current
-    writer.writerow([
-        "time_step",
-
-        "ave_J_S_mean",    "ave_J_S_err",
-        "ave_J_V_0_mean",  "ave_J_V_0_err",
-        "ave_J_V_1_mean",  "ave_J_V_1_err",
-        "ave_J_V_2_mean",  "ave_J_V_2_err",
-        "ave_J_V_3_mean",  "ave_J_V_3_err",
-
-        "ave_J_A_0_mean",  "ave_J_A_0_err",
-        "ave_J_A_1_mean",  "ave_J_A_1_err",
-        "ave_J_A_2_mean",  "ave_J_A_2_err",
-        "ave_J_A_3_mean",  "ave_J_A_3_err",
-
-        "ave_J_T_0i0_mean","ave_J_T_0i0_err",
-        "ave_J_T_0i1_mean","ave_J_T_0i1_err",
-        "ave_J_T_0i2_mean","ave_J_T_0i2_err",
-
-        "ave_J_T_i00_mean","ave_J_T_i00_err",
-        "ave_J_T_i01_mean","ave_J_T_i01_err",
-        "ave_J_T_i02_mean","ave_J_T_i02_err",
-    ])
-
-    n_times = len(ave_J_S)  # Typically n_step+1
-    for t in range(n_times):
-        # Each ave_J_*[t] is shape (2,) = [mean, error].
-        # We convert them to floats and store them in the row.
-
-        row = [
-            t,
-
-            float(ave_J_S[t][0]),     float(ave_J_S[t][1]),
-            float(ave_J_V_0[t][0]),   float(ave_J_V_0[t][1]),
-            float(ave_J_V_1[t][0]),   float(ave_J_V_1[t][1]),
-            float(ave_J_V_2[t][0]),   float(ave_J_V_2[t][1]),
-            float(ave_J_V_3[t][0]),   float(ave_J_V_3[t][1]),
-
-            float(ave_J_A_0[t][0]),   float(ave_J_A_0[t][1]),
-            float(ave_J_A_1[t][0]),   float(ave_J_A_1[t][1]),
-            float(ave_J_A_2[t][0]),   float(ave_J_A_2[t][1]),
-            float(ave_J_A_3[t][0]),   float(ave_J_A_3[t][1]),
-
-            float(ave_J_T_0i[0][t][0]), float(ave_J_T_0i[0][t][1]),
-            float(ave_J_T_0i[1][t][0]), float(ave_J_T_0i[1][t][1]),
-            float(ave_J_T_0i[2][t][0]), float(ave_J_T_0i[2][t][1]),
-
-            float(ave_J_T_i0[0][t][0]), float(ave_J_T_i0[0][t][1]),
-            float(ave_J_T_i0[1][t][0]), float(ave_J_T_i0[1][t][1]),
-            float(ave_J_T_i0[2][t][0]), float(ave_J_T_i0[2][t][1]),
-        ]
-
-        writer.writerow(row)
-
-print(f"\nWrote current means & errors to {csv_filename}\n")

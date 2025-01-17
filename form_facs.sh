@@ -1,6 +1,6 @@
 # run GFMC and fit wavefunction based on Hyleraas trial state
 nw=1000
-nstep=5
+nstep=400
 nskip=10
 
 # Function to calculate pi using bc
