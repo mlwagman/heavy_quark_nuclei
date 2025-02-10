@@ -1,22 +1,11 @@
 # run GFMC and fit wavefunction based on Hyleraas trial state
-nw=1000
-nstep=400
+nw=5000
+nstep=1000
 nskip=10
-
-# Function to calculate pi using bc
-calculate_pi() {
-    echo "scale=10; 4*a(1)" | bc -l
-}
-
-# Store the value of pi in a variable
-pi=$(calculate_pi)
-
-# Print the value of pi
-echo "The value of pi is: $pi"
 
 alpha=0.75
 mu=1.0
-dt=0.3
+dt=0.1
 
 
 sa=1.0
@@ -39,8 +28,7 @@ n_z=1
 n1_values="(1,0,0)"
 #change the L/change alpha small
 # Loop over the Lattice size
-for Q in 0.0 0.001 0.002 0.003 0.004 0.005 0.006 0.007 0.008 0.009 0.01; do
-
+for Q in 0.0 0.002 0.004 0.006 0.008 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1; do
     for n1 in $n1_values; do
         # Parse the n1 tuple into its components
         n_x=$(echo $n1 | cut -d',' -f1 | tr -d '()')
@@ -56,9 +44,28 @@ for Q in 0.0 0.001 0.002 0.003 0.004 0.005 0.006 0.007 0.008 0.009 0.01; do
 
         #python heavy_quark_nuclei_gfmc_boosted_FV.py --Q $Q --alpha $alpha --log_mu_r 0.0 --mu $mu --OLO "LO" --n_step $nstep --n_walkers $nw --dtau $dt --Nc 3 --nf 4 --N_coord 3 --outdir "mtm_data/" --wavefunction $wvfn --potential "full" --Lcut 5 --L 0 --spoila $sa --n_skip $nskip --masses $m1 $m2 $m3 --g $g --color $color --mtm_x $mtm_x_1 --mtm_y $mtm_y_1 --mtm_z $mtm_z_1 --verbose
         #
-        python heavy_quark_nuclei_gfmc_boosted_FV.py --Q $Q --alpha $alpha --log_mu_r 0.0 --mu $mu --OLO "LO" --n_step $nstep --n_walkers $nw --dtau $dt --Nc 3 --nf 4 --N_coord 2 --outdir "mtm_data/" --wavefunction $wvfn --potential "full" --Lcut 5 --L 0 --spoila $sa --n_skip $nskip --masses $m1 -$m2 --g $g --color $color --mtm_x $mtm_x_1 --mtm_y $mtm_y_1 --mtm_z $mtm_z_1 --verbose
+        python heavy_quark_nuclei_gfmc_boosted_FV.py --Q $Q --alpha $alpha --log_mu_r 0.0 --mu $mu --OLO "LO" --n_step $nstep --n_walkers $nw --dtau $dt --Nc 3 --nf 4 --N_coord 2 --outdir "mtm_data/" --wavefunction $wvfn --potential "full" --Lcut 5 --L 0 --spoila $sa --n_skip $nskip --masses $m1 -$m2 --g $g --color $color --mtm_x $mtm_x_1 --mtm_y $mtm_y_1 --mtm_z $mtm_z_1 #--verbose
+        
     done
 done
+
+#!/bin/bash
+# Loop over all files whose names begin with "currents" (adjust the path if needed)
+#!/bin/bash
+# Loop over all files whose names begin with "currents" (adjust the path if needed)
+for file in mtm_data/currents*.h5; do
+    echo "Processing file: $file"
+    # Use h5ls with -d to list only datasets.
+    # Then, use grep to only keep lines that start with a letter (dataset names),
+    # and awk to extract the first token.
+    datasets=$(h5ls -d "$file" | grep -E '^[A-Za-z]' | awk '{print $1}')
+    for ds in $datasets; do
+        echo "   Running average_constant_fit.py for dataset: $ds"
+        python average_constant_fit.py --database "$file" --dataset "$ds"
+    done
+done
+
+
 
 
 

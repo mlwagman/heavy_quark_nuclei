@@ -1488,18 +1488,19 @@ with h5py.File(filename, 'w') as f:
     f.create_dataset("J_A_3", data=J_A_3_sums)
 
     # Store tensor current components for 0i components
-    for i in range(1, 4):  # spatial indices 1, 2, 3
-        dataset_name = f"J_T_0{i}"
-        # Adjust indexing according to how J_T_0i_sums is structured
-        data_component = J_T_0i_sums[i-1]  
+    for i in range(3):  # i = 0, 1, 2 for the three spatial components
+        dataset_name = f"J_T_0{i+1}"  # naming as J_T_01, J_T_02, J_T_03
+        # Extract all time steps (first axis) for the i-th spatial component (second axis)
+        data_component = J_T_0i_sums[:, i, :]  # shape becomes (501, 1000)
         f.create_dataset(dataset_name, data=data_component)
 
+
     # Store tensor current components for i0 components
-    for i in range(1, 4):
-        dataset_name = f"J_T_{i}0"
-        # Adjust indexing according to how J_T_i0_sums is structured
-        data_component = J_T_i0_sums[i-1]  
+    for i in range(3):
+        dataset_name = f"J_T_{i+1}0"  # naming as J_T_10, J_T_20, J_T_30
+        data_component = J_T_i0_sums[:, i, :]  # shape (501, 1000)
         f.create_dataset(dataset_name, data=data_component)
+
 
     # Store tensor current components for all (i,j) pairs present
     for (i, j), data_component in J_T_ij_sums.items():
