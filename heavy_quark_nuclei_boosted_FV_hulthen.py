@@ -228,7 +228,7 @@ def FV_Coulomb_with_zero_mode(R, L, nn):
     return sums
 
 
-delta = 0.1  # Adjust this value as needed
+delta = 0.5  # Adjust this value as needed
 V0 = VB * delta  # Adjust this value as needed
 
 
@@ -460,6 +460,9 @@ def f_R(Rs, wavefunction=bra_wavefunction, a0=a0, afac=afac, masses=absmasses):
         r_sum_T = np.sum( jax.lax.map(r_norm_T, pairs), axis=0 )/a0
 
     psi += np.exp(-r_sum_T)
+
+    phase = np.exp(1j*np.einsum('...ai,ai->...', Rs, mtm))
+    psi *= phase
     return psi
 
 def f_R_sq(Rs):
