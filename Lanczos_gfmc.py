@@ -4,10 +4,10 @@ import sys
 import argparse
 import csv
 
-sys.path.insert(0, '/Users/mwagman/Dropbox/physics/projects/Lanczos/67057a048792e0540e534911/korr_dev')
+sys.path.insert(0, './korr_dev')
 from korr.drivers.korrelator import korrelator
 from korr.bootstrap import make_bs_tensor, make_nbs_tensor
-from korr.outlier import get_boot_err
+from korr.outlier import batched_median, make_boot_ci
 
 # fitting parameters
 parser = argparse.ArgumentParser()
@@ -15,9 +15,10 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--database', type=str, required=True)
 parser.add_argument('--dataset', type=str, default="Hammys")
 parser.add_argument('--n_block', type=int, default=5)
-parser.add_argument('--n_skip', type=int, default=1)
+parser.add_argument('--n_skip', type=int, default=10)
 parser.add_argument('--n_boot', type=int, default=50)
 parser.add_argument('--dtau', type=float, default=0.4)
+parser.add_argument('--thresh', type=float, default=0.05)
 globals().update(vars(parser.parse_args()))
 
 def bin_data(data, N_bin):
@@ -86,7 +87,7 @@ y = [tauint(i, littlec) for i in range(1, last_point)]
 tauint0 = tauint(last_point, littlec)
 print("integrated autocorrelation time = ", tauint0)
 
-korr = korrelator(np.real(Ct), N_outer=N_outer, N_inner=N_inner, store_P=True, eps_ZCW=0.)
+korr = korrelator(np.real(Ct), N_outer=N_outer, N_inner=N_inner, store_P=True, thresh=thresh)
 
 Et = dset
 Et = bin_data(Et[:,:-1:n_skip], n_block)
@@ -110,21 +111,14 @@ med_H = np.zeros((Nt//2))
 med_H_err = np.zeros((Nt//2))
 
 for m in range(1,Nt//2+1):
-    bs_P = np.zeros( (N_inner, m), dtype=complex)
-    nbs_P = np.zeros( (N_outer, N_inner, m), dtype=complex )
-    for b in range(N_inner):
-        if len(korr.filtered_outer_P[m][b]) > 0:
-            bs_P[b,:] = korr.filtered_outer_P[m][b][0,:,0]
-    for b in range(N_outer):
-        for ib in range(N_inner):
-            if len(korr.filtered_inner_P[m][b][ib]) > 0:
-                nbs_P[b,ib,:] = korr.filtered_inner_P[m][b][ib][0,:,0]
+    bs_P = korr.bs_Pl[m][:,0,:,0] # ~ bs, k, t, a
+    nbs_P = korr.nbs_Pl[m][:,:,0,:,0] # ~ nbs, bs, k, t, a
 
     bs_H = np.real(np.einsum('bst,bs,bt->b', bs_C3pt[:,:m,:m], bs_P, np.conj(bs_P)))
-    med_H[m-1] = np.median(bs_H)
+    med_H[m-1] = batched_median(bs_H, thresh=thresh)
 
     nbs_H = np.real(np.einsum('bist,bis,bit->bi', nbs_C3pt[:,:,:m,:m], nbs_P, np.conj(nbs_P)))
-    med_H_err[m-1] = get_boot_err(np.median(nbs_H, axis=1))
+    med_H_err[m-1] = make_boot_ci(np.median(nbs_H, axis=1))
 
 print("H = ", med_H)
 print("H_err = ", med_H_err)
