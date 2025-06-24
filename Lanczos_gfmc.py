@@ -7,7 +7,7 @@ import csv
 sys.path.insert(0, './korr_dev')
 from korr.drivers.korrelator import korrelator
 from korr.bootstrap import make_bs_tensor, make_nbs_tensor
-from korr.outlier import batched_median, make_boot_ci
+from korr.outlier import batched_median, inner_median, make_boot_ci
 
 # fitting parameters
 parser = argparse.ArgumentParser()
@@ -118,7 +118,7 @@ for m in range(1,Nt//2+1):
     med_H[m-1] = batched_median(bs_H, thresh=thresh)
 
     nbs_H = np.real(np.einsum('bist,bis,bit->bi', nbs_C3pt[:,:,:m,:m], nbs_P, np.conj(nbs_P)))
-    med_H_err[m-1] = make_boot_ci(np.median(nbs_H, axis=1))
+    med_H_err[m-1] = make_boot_ci(inner_median(nbs_H, thresh=thresh))
 
 print("H = ", med_H)
 print("H_err = ", med_H_err)
