@@ -678,7 +678,7 @@ def f_R_braket_tempered(Rs, fac):
     return np.abs( f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction, a0=fac*ket_a0) )
 
 def f_R_braket_phase(Rs):
-    prod = f_R(Rs, wavefunction=bra_wavefunction) * f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, afac=ket_afac)
+    prod = f_R(Rs, wavefunction=bra_wavefunction) * np.conj(f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, afac=ket_afac))
     #prod = ( f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, afac=ket_afac) / f_R(Rs, wavefunction=bra_wavefunction) )
     #prod = ( f_R(Rs, wavefunction=bra_wavefunction) / f_R(Rs, wavefunction=ket_wavefunction, a0=ket_a0, afac=ket_afac) )**2
     return prod / np.abs( prod )
@@ -1242,6 +1242,7 @@ phase_Ws = f_R_braket_phase(gfmc_Rs)
 print('phase Ws', phase_Ws)
 gfmc_Ws *= phase_Ws
 
+
 print('GFMC tau=0 weights:', gfmc_Ws[0])
 if n_step > 0:
     print('GFMC tau=dtau weights:', gfmc_Ws[1])
@@ -1313,87 +1314,6 @@ for count, R in enumerate(gfmc_Rs):
 Vs = np.array(Vs)
 
 print(Vs.shape)
-
-# Compute the expectation value of sum_{a=1}^Ncoord e^{i mtm . R_a}
-phase_sums = []
-for count, R in enumerate(gfmc_Rs):
-    print('Calculating phase sum for step ', count)
-    S_time = time.time()
-    S = compute_phase_sum(R, mtm)
-    print(f"Calculated phase sum in {time.time() - S_time} sec")
-    phase_sums.append(S)
-
-phase_sums = np.array(phase_sums)
-
-print("phase sums shape = ", phase_sums.shape)
-
-
-# Compute the expectation value of sum_{a=1}^Ncoord e^{i mtm . R_a}
-J_S_sums = []
-J_V_0_sums = []
-J_V_1_sums = []
-J_V_2_sums = []
-J_V_3_sums = []
-for count, R in enumerate(gfmc_Rs):
-    print('Calculating all J for step ', count)
-    S_time = time.time()
-    J_S = compute_J_S(R, mtm)
-    J_V_0 = compute_J_V_0(R, mtm)
-    J_V_1 = compute_J_V_k(R, mtm, 1)
-    J_V_2 = compute_J_V_k(R, mtm, 2)
-    J_V_3 = compute_J_V_k(R, mtm, 3)
-    print(f"Calculated J_S sum in {time.time() - S_time} sec")
-    J_S_sums.append(J_S)
-    J_V_0_sums.append(J_V_0)
-    J_V_1_sums.append(J_V_1)
-    J_V_2_sums.append(J_V_2)
-    J_V_3_sums.append(J_V_3)
-
-J_S_sums = np.array(J_S_sums)
-J_V_0_sums = np.array(J_V_0_sums)
-J_V_1_sums = np.array(J_V_1_sums)
-J_V_2_sums = np.array(J_V_2_sums)
-J_V_3_sums = np.array(J_V_3_sums)
-
-
-# Compute J_A^0, J_A^i for i=1,2,3
-J_A_0_sums = []
-J_A_1_sums = []
-J_A_2_sums = []
-J_A_3_sums = []
-for count, R in enumerate(gfmc_Rs):
-    J_A_0_sums.append(compute_J_A_0(R, mtm))
-    J_A_1_sums.append(compute_J_A_i(R, mtm, 1))
-    J_A_2_sums.append(compute_J_A_i(R, mtm, 2))
-    J_A_3_sums.append(compute_J_A_i(R, mtm, 3))
-
-J_A_0_sums = np.array(J_A_0_sums)
-J_A_1_sums = np.array(J_A_1_sums)
-J_A_2_sums = np.array(J_A_2_sums)
-J_A_3_sums = np.array(J_A_3_sums)
-
-
-# Compute J_T^{0i}, J_T^{i0}, and J_T^{ij}
-J_T_0i_sums = []
-J_T_i0_sums = []
-# For J_T^{ij}, we have i,j = 1,2,3 (or 0,1,2 in 0-based indexing)
-J_T_ij_sums = {}  # store in a dict keyed by (i,j)
-for count, R in enumerate(gfmc_Rs):
-    # example for i=0,1,2 (which correspond to x,y,z)
-    J_T_0i_sums.append([compute_J_T_0i(R, mtm, ix) for ix in range(3)])
-    J_T_i0_sums.append([compute_J_T_i0(R, mtm, ix) for ix in range(3)])
-    for ix in range(1,3):
-        for jx in range(1,3):
-            key = (ix,jx)
-            val = compute_J_T_ij(R, mtm, ix, jx)
-            if key not in J_T_ij_sums:
-                J_T_ij_sums[key] = []
-            J_T_ij_sums[key].append(val)
-
-J_T_0i_sums = np.array(J_T_0i_sums)
-J_T_i0_sums = np.array(J_T_i0_sums)
-for key in J_T_ij_sums:
-    J_T_ij_sums[key] = np.array(J_T_ij_sums[key])
 
 
 if N_coord == 4:
@@ -1467,6 +1387,99 @@ with h5py.File(outdir+'Rs_'+tag+'.h5', 'w') as f:
 with h5py.File(outdir+'Rs_'+tag+'.h5', 'r') as f:
     data = f['Rs']
     print(data)
+
+# Compute the expectation value of sum_{a=1}^Ncoord e^{i mtm . R_a}
+phase_sums = []
+for count, R in enumerate(gfmc_Rs):
+    print('Calculating phase sum for step ', count)
+    S_time = time.time()
+    S = compute_phase_sum(R, mtm)
+    print(f"Calculated phase sum in {time.time() - S_time} sec")
+    phase_sums.append(S)
+
+phase_sums = np.array(phase_sums)
+
+print("phase sums shape = ", phase_sums.shape)
+
+
+# Compute the expectation value of sum_{a=1}^Ncoord e^{i mtm . R_a}
+J_S_sums = []
+J_V_0_sums = []
+J_V_1_sums = []
+J_V_2_sums = []
+J_V_3_sums = []
+for count, R in enumerate(gfmc_Rs):
+    print('Calculating all J for step ', count)
+    S_time = time.time()
+    J_S = compute_J_S(R, mtm)
+    J_V_0 = compute_J_V_0(R, mtm)
+    J_V_1 = compute_J_V_k(R, mtm, 1)
+    J_V_2 = compute_J_V_k(R, mtm, 2)
+    J_V_3 = compute_J_V_k(R, mtm, 3)
+    print(f"Calculated J_S sum in {time.time() - S_time} sec")
+    J_S_sums.append(J_S)
+    J_V_0_sums.append(J_V_0)
+    J_V_1_sums.append(J_V_1)
+    J_V_2_sums.append(J_V_2)
+    J_V_3_sums.append(J_V_3)
+
+
+    gfmc_again = adl.gfmc_deform(
+            R, gfmc_Ss[count], f_R, params, initial_Ws=(J_S*gfmc_Ws[count]),
+        rand_draws=new_rand_draws, tau_iMev=tau_iMev, N=n_step, potential=Coulomb_potential,
+        deform_f=deform_f, m_Mev=np.abs(np.array(masses)),
+        resampling_freq=resampling)
+
+    gfmc_again_Rs = np.array([Rs for Rs,_,_,_, in gfmc_again])
+    gfmc_again_Ws = np.array([Ws for _,_,_,Ws, in gfmc_again])
+    gfmc_again_Ss = np.array([Ss for _,_,Ss,_, in gfmc_again])
+
+J_S_sums = np.array(J_S_sums)
+J_V_0_sums = np.array(J_V_0_sums)
+J_V_1_sums = np.array(J_V_1_sums)
+J_V_2_sums = np.array(J_V_2_sums)
+J_V_3_sums = np.array(J_V_3_sums)
+
+
+
+# Compute J_A^0, J_A^i for i=1,2,3
+J_A_0_sums = []
+J_A_1_sums = []
+J_A_2_sums = []
+J_A_3_sums = []
+for count, R in enumerate(gfmc_Rs):
+    J_A_0_sums.append(compute_J_A_0(R, mtm))
+    J_A_1_sums.append(compute_J_A_i(R, mtm, 1))
+    J_A_2_sums.append(compute_J_A_i(R, mtm, 2))
+    J_A_3_sums.append(compute_J_A_i(R, mtm, 3))
+
+J_A_0_sums = np.array(J_A_0_sums)
+J_A_1_sums = np.array(J_A_1_sums)
+J_A_2_sums = np.array(J_A_2_sums)
+J_A_3_sums = np.array(J_A_3_sums)
+
+
+# Compute J_T^{0i}, J_T^{i0}, and J_T^{ij}
+J_T_0i_sums = []
+J_T_i0_sums = []
+# For J_T^{ij}, we have i,j = 1,2,3 (or 0,1,2 in 0-based indexing)
+J_T_ij_sums = {}  # store in a dict keyed by (i,j)
+for count, R in enumerate(gfmc_Rs):
+    # example for i=0,1,2 (which correspond to x,y,z)
+    J_T_0i_sums.append([compute_J_T_0i(R, mtm, ix) for ix in range(3)])
+    J_T_i0_sums.append([compute_J_T_i0(R, mtm, ix) for ix in range(3)])
+    for ix in range(1,3):
+        for jx in range(1,3):
+            key = (ix,jx)
+            val = compute_J_T_ij(R, mtm, ix, jx)
+            if key not in J_T_ij_sums:
+                J_T_ij_sums[key] = []
+            J_T_ij_sums[key].append(val)
+
+J_T_0i_sums = np.array(J_T_0i_sums)
+J_T_i0_sums = np.array(J_T_i0_sums)
+for key in J_T_ij_sums:
+    J_T_ij_sums[key] = np.array(J_T_ij_sums[key])
 
 import h5py
 
