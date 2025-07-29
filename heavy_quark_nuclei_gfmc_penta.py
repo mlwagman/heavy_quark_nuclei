@@ -130,6 +130,10 @@ colour_coeffs = {
              (2,4): -1/3,
             #  (2,3): +1/12, (2,4): +1/12,
              (1,3): -2/3 },
+    "8b8b": { (0,4): -7/6, (0,1): -1/6, (0,3): -1/6,
+              (1,2): -7/12, (2,3): -7/12,
+              (2,4): -1/3,
+              (1,3): -2/3 }
 }
 
 
@@ -166,33 +170,7 @@ scale_prefactors = list(scale_prefactors)
 
 
 
-def pair_a0(i, j):
-    """
-    Return the Bohr radius *including*:
-      • Coulomb |C_ij|   • η_k (scale_prefactors)
-      • afac for inter-cluster pairs (1×1 pentaquark only)
-      • samefac for like-flavour pairs
-    """
-    i, j = min(i, j), max(i, j)                        # order the pair
-    # 1) base Coulomb radius  (or global a0 if no C_ij defined)
-    if color in colour_coeffs and (i, j) in colour_coeffs[color]:
-        Cabs = abs(colour_coeffs[color][(i, j)])
-        bucket = pair_bucket[(i, j)]
-        eta    = scale_prefactors[bucket] if bucket < len(scale_prefactors) else 1.0
-        thisa0 = eta * 2.0 / (alpha * Cabs)
-    else:
-        thisa0 = a0
 
-    # 2) Hylleraas inter-cluster stretch  (singlet pentaquark only)
-    if (wavefunction == "product" and N_coord == 5 #and color == "1x1"
-            and cluster_id(i) != cluster_id(j)):
-        thisa0 *= afac
-
-    # 3) same-flavour correction
-    if masses_copy[i] * masses_copy[j] > 0:
-        thisa0 *= samefac
-
-    return thisa0
 
 
 
@@ -269,6 +247,40 @@ biga0 = a0
 
 if wavefunction == "product":
     biga0 = a0*afac
+
+
+def pair_a0(i, j):
+    """
+    Return the Bohr radius *including*:
+      • Coulomb |C_ij|   • η_k (scale_prefactors)
+      • afac for inter-cluster pairs (1×1 pentaquark only)
+      • samefac for like-flavour pairs
+    """
+    i, j = min(i, j), max(i, j)                        # order the pair
+    # 1) base Coulomb radius  (or global a0 if no C_ij defined)
+    if color in colour_coeffs and (i, j) in colour_coeffs[color]:
+        Cabs = abs(colour_coeffs[color][(i, j)])
+        bucket = pair_bucket[(i, j)]
+        eta    = scale_prefactors[bucket] if bucket < len(scale_prefactors) else 1.0
+        if OLO == "LO":
+            thisa0 = eta * 2.0 / ((alpha * Cabs) * spoila)
+        elif OLO == "NLO":
+            thisa0 = eta * 2.0 / ((alpha * Cabs) * spoila * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*log_mu_r)))
+        elif OLO == "NNLO":
+            thisa0 = eta * 2.0 / ((alpha * Cabs) * spoila * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*log_mu_r) + (alpha/(4*np.pi))**2*( beta0**2*(4*log_mu_r**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*log_mu_r + aa2 )))
+    else:
+        thisa0 = a0
+
+    # 2) Hylleraas inter-cluster stretch  (singlet pentaquark only)
+    if (wavefunction == "product" and N_coord == 5 #and color == "1x1"
+            and cluster_id(i) != cluster_id(j)):
+        thisa0 *= afac
+
+    # 3) same-flavour correction
+    if masses_copy[i] * masses_copy[j] > 0:
+        thisa0 *= samefac
+
+    return thisa0
 
 #if correlator == "asymmetric":
 #ket_a0 = a0*spoilaket
