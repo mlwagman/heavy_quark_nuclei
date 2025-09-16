@@ -1669,7 +1669,23 @@ C2_0_tau = np.array([np.sum(W.real) for W in gfmc_Ws])  # shape (n_step+1,)
 C2_q_tau_list = []  # we will fill this when we do the leg-2 evolution
 
 
+# TODO -- loops over current
+
+# TODO -- make 3pt array for each current, e.g.
+Ncount_3 = count // count_skip
+C3pt = np.zero((n_walkers, Ncount_3, Ncount_3))
+
 for count, R in enumerate(gfmc_Rs):
+    # TODO -- skip counts at some rate, e.g.
+    if count % count_skip != 0:
+        continue
+    # TODO
+    #....hit with current, do the second gfmc...
+    for count_2,(_,_,_,Ws) if enumerate(gf2):
+        if count_2 % count_skip != 0:
+            continue
+        C3pt[:, count//count_skip, count_2//count_skip] = Ws[:]
+
     print('GFMC leg-2 for step ', count)
     # weights from leg-1 at t1:
     W1 = gfmc_Ws[count]  # shape (Nw,)
@@ -1842,14 +1858,14 @@ if verbose:
     ave_J_T_0i = []
     for i in range(1,3):
         data_i = np.array([X[i] for X in J_T_0i_sums])  # Extract component i for each step
-        ave_J_T_0i.append(np.array([al.bootstrap(x.real, W, Nboot=100, f=adl.rw_mean) 
+        ave_J_T_0i.append(np.array([al.bootstrap(x.real, W, Nboot=100, f=adl.rw_mean)
                                     for x, W in zip(data_i, gfmc_Ws)]))
     ave_J_T_0i = np.array(ave_J_T_0i)  # shape (3, N_steps)
 
     ave_J_T_i0 = []
     for i in range(1,3):
         data_i = np.array([X[i] for X in J_T_i0_sums])
-        ave_J_T_i0.append(np.array([al.bootstrap(x.real, W, Nboot=100, f=adl.rw_mean) 
+        ave_J_T_i0.append(np.array([al.bootstrap(x.real, W, Nboot=100, f=adl.rw_mean)
                                     for x, W in zip(data_i, gfmc_Ws)]))
     ave_J_T_i0 = np.array(ave_J_T_i0)  # shape (3, N_steps)
 
@@ -1858,7 +1874,7 @@ if verbose:
     for (i,j), arr in J_T_ij_sums.items():
         ave_J_T_ij[(i,j)] = np.array([al.bootstrap(x.real, W, Nboot=100, f=adl.rw_mean)
                                     for x, W in zip(arr, gfmc_Ws)])
-        
+
         # --- Averages per τ (bootstrap over walkers) ---
     ave_H  = np.array([al.bootstrap((K+V).real, W, Nboot=100, f=adl.rw_mean)
                     for K, V, W in zip(Ks, Vs, gfmc_Ws)])
