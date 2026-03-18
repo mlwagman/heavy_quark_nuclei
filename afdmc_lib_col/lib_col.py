@@ -4,6 +4,7 @@ import jax
 from jax import config
 config.update("jax_enable_x64", True)
 import jax.numpy as np
+import math
 #import jax.experimental.optimizers
 import jax.example_libraries.optimizers
 import numpy as onp
@@ -108,7 +109,7 @@ lc_tensor[0, 2, 1] = lc_tensor[2, 1, 0] = lc_tensor[1, 0, 2] = -1
 iso_del = 1/2 * 1/2 * (onp.einsum('ab,cd->acdb', onp.identity(NI), onp.identity(NI)) + onp.einsum('ab,cd->cadb', onp.identity(NI), onp.identity(NI)))
 
 # QQ color antisymmetric potential operator
-iso_eps = (NI - 1)/4 /onp.math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor)
+iso_eps = (NI - 1)/4 /math.factorial(NI-1) * onp.einsum('abo,cdo->abcd', lc_tensor, lc_tensor)
 
 # QQbar color singlet potential operator
 iso_sing = 1/NI * onp.einsum('ab,cd->abcd', onp.identity(NI), onp.identity(NI))

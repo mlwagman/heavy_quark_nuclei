@@ -30,6 +30,8 @@ from itertools import permutations
 import torch
 import torch.nn as nn
 
+from simon/mrs_potential import VB_MRS_definition
+
 onp.random.seed(0)
 
 paper_plt.load_latex_config()
@@ -59,13 +61,13 @@ globals().update(vars(parser.parse_args()))
 #######################################################################################
 
 CF = (Nc**2 - 1)/(2*Nc)
-VB = alpha*CF
-if N_coord > 2:
-    if log_mu_r == 1:
-       log_mu_r = 0.5
-    VB = alpha*CF/(Nc-1)
+#VB = alpha*CF
+#if N_coord > 2:
+#    if log_mu_r == 1:
+#       log_mu_r = 0.5
+#    VB = alpha*CF/(Nc-1)
 SingC3 = -(Nc+1)/8
-a0 = spoila*2/VB;
+#a0 = spoila*2/VB;
 
 if log_mu_r == 1:
    log_mu_r = 0.0
@@ -78,43 +80,60 @@ if log_mu_r == 1:
 tau_iMev = dtau_iMev * n_step
 xs = np.linspace(0, tau_iMev, endpoint=True, num=n_step+1)
 
-beta0 = 11/3*Nc - 2/3*nf
-beta1 = 34/3*Nc**2 - 20/3*Nc*nf/2 - 2*CF*nf
-beta2 = 2857/54*Nc**3 + CF**2*nf-205/9*Nc*CF*nf/2-1415/27*Nc**2*nf/2+44/9*CF*(nf/2)**2+158/27*Nc*(nf/2)**2
-aa1 = 31/9*Nc-10/9*nf
-zeta3 = scipy.special.zeta(3)
-zeta5 = scipy.special.zeta(5)
-zeta51 = 1/2 + 1/3 + 1/7 + 1/51 + 1/4284
-zeta6 = scipy.special.zeta(6)
-aa2 = ( 4343/162 + 6*np.pi**2 - np.pi**4/4 + 22/3*zeta3 )*Nc**2 - ( 1798/81 + 56/3*zeta3 )*Nc*nf/2 - ( 55/3 - 16*zeta3  )*CF*nf/2 + (10/9*nf)**2
-dFF = (18-Nc**2+Nc**4)/(96*Nc**2)
-dFA = Nc*(Nc**2+6)/48
-alpha4 = float(mpmath.polylog(4,1/2))*0+(-np.log(2))**4/(4*3*2*1)
-ss6 = zeta51+zeta6
-aa30 = dFA*( np.pi**2*( 7432/9-4736*alpha4+np.log(2)*(14752/3-3472*zeta3)-6616*zeta3/3)  +  np.pi**4*(-156+560*np.log(2)/3+496*np.log(2)**2/3)+1511*np.pi**6/45)  + Nc**3*(385645/2916 + np.pi**2*( -953/54 +584/3*alpha4 +175/2*zeta3 + np.log(2)*(-922/9+217*zeta3/3) ) +584*zeta3/3 + np.pi**4*( 1349/270-20*np.log(2)/9-40*np.log(2)**2/9 ) -1927/6*zeta5 -143/2*zeta3**2-4621/3024*np.pi**6+144*ss6  )
-aa31 = dFF*( np.pi**2*(1264/9-976*zeta3/3+np.log(2)*(64+672*zeta3)) + np.pi**4*(-184/3+32/3*np.log(2)-32*np.log(2)**2) +10/3*np.pi**6 ) + CF**2/2*(286/9+296/3*zeta3-160*zeta5)+Nc*CF/2*(-71281/162+264*zeta3+80*zeta5)+Nc**2/2*(-58747/486+np.pi**2*(17/27-32*alpha4+np.log(2)*(-4/3-14*zeta3)-19/3*zeta3)-356*zeta3+np.pi**4*(-157/54-5*np.log(2)/9+np.log(2)**2)+1091*zeta5/6+57/2*zeta3**2+761*np.pi**6/2520-48*ss6)
-aa32 = Nc/4*(12541/243+368/3*zeta3+64*np.pi**4/135)+CF/4*(14002/81-416*zeta3/3)
-aa33 = -(20/9)**3*1/8
-aa3 = aa30+aa31*nf+aa32*nf**2+aa33*nf**3
+#######################################################################################
+#Rprime = lambda R: adl.norm_3vec(R)*np.exp(np.euler_gamma)*mu
 
-L = log_mu_r
-VB_LO = VB
+VB_LO = lambda R: CF * VB_MRS_definition(Alpha_s1Loop(R), 'LO', 1) / (Nc - 1)
 
-VB_NLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*L))
+#VB_NLO(R) = Alpha_s2Loop(R)*CF/(Nc-1) * (1 + Alpha_s2Loop(R)/(4*np.pi)*(aa1 + 2*beta0*log_mu_r))
+#VB_NNLO(R) = Alpha_s3Loop(R)*CF/(Nc-1) * (1 + Alpha_s3Loop(R)/(4*np.pi)*(aa1 + 2*beta0*L) + (Alpha_s3Loop(R)/(4*np.pi))**2*( beta0**2*(4*L**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*L + aa2 ) )
 
-VB_NNLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*L) + (alpha/(4*np.pi))**2*( beta0**2*(4*L**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*L + aa2 ) )
-if N_coord > 2:
-   VB_NNLO = VB * (1 + alpha/(4*np.pi)*(aa1 + 2*beta0*L) + (alpha/(4*np.pi))**2*( beta0**2*(4*L**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*L + aa2 + Nc*(Nc-2)/2*((np.pi)**4-12*(np.pi)**2)  ) )
+VB_NLO = lambda R: CF * VB_MRS_definition(Alpha_s2Loop(R), 'NLO', 1) / (Nc - 1)
+VB_NNLO = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 'NNLO', 1) / (Nc - 1)
+VB_NNNLO = lambda R: CF * VB_MRS_definition(Alpha_s(R), 'NNNLO', 1) / (Nc - 1) ############ NEW
 
+#ANTISYMMETRIC AND SYMMETRIC:
+
+VB_NNLO_antisym = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 'NNLO', 1, 'antisymmetric') / (Nc - 1)
+VB_NNLO_sym = lambda R: CF * VB_MRS_definition(Alpha_s3Loop(R), 'NNLO', 1, 'symmetric') / (Nc - 1)
+
+
+#OCTET :
+
+VB_NNLO_octet = lambda R: (CA/2 - CF) * VB_MRS_definition(Alpha_s3Loop(R), 'NNLO', 1, 'octet') 
+
+#######################################################################################
+#Can only have a guess of the mass, so we take the mass of the quark at MS bar:
+if mQ == 0:
+    if nf == 3:
+        mQ = Mc
+    elif nf == 4:
+        mQ = Mb
+    elif nf == 5:
+        mQ = Mt
+    else: None 
+else: None
+#NEED TO BE CONFIRMED THAT IT MAKE SENSE OR NOT
+print('mQ is ', mQ)
+#######################################################################################
+
+print('VB_LO Rstar is ', VB_LO(Rstar))
+print('VB_NNLO Rstar is ', VB_NNLO(Rstar))
+print('VB_NNNLO Rstar is ', VB_NNNLO(Rstar))
+
+
+
+#r0 = 2/alpha ? <--- initial guess, no need to be precise
 
 if OLO == "LO":
-    a0=spoila*2/VB_LO
+    a0=spoila*2/VB_LO(Rstar) ##### ? NEW
 elif OLO == "NLO":
-    a0=spoila*2/VB_NLO
-elif OLO == "mNLO":
-    a0=spoila*2/VB_NLO
+    a0=spoila*2/VB_NLO(Rstar) ##### ? NEW
 elif OLO == "NNLO":
-    a0=spoila*2/VB_NNLO
+    a0=spoila*2/VB_NNLO(Rstar) ##### ? NEW
+
+if N_coord == 2 or N_coord == 4:
+    a0 /= Nc-1
 
 @partial(jax.jit)
 def V3(r1, r2):
@@ -154,20 +173,32 @@ B3_Coulomb = {}
 if OLO == "LO":
     @partial(jax.jit)
     def potential_fun(R):
-	    return -1*VB/adl.norm_3vec(R)
+	    #return -1*VB/adl.norm_3vec(R)
+        norm_R = adl.norm_3vec(R)
+        potential_result = -1 * VB_LO(norm_R/(mufac*mQ)) / norm_R
+        return potential_result
 elif OLO == "NLO":
     @partial(jax.jit)
     def potential_fun(R):
-        return -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1))
+        #return -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1))
+        norm_R = adl.norm_3vec(R)
+        potential_result = -1 * VB_NLO(norm_R/(mufac*mQ)) / norm_R #* (1 + alpha_s2loop / (4 * np.pi) * aa1) # No more mu dependence but 1/R
+        return potential_result
 elif OLO == "NNLO":
     if N_coord > 2:
         @partial(jax.jit)
         def potential_fun(R):
-            return -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 + Nc*(Nc-2)/2*((np.pi)**4-12*(np.pi)**2) ) )
+        #    return -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 + Nc*(Nc-2)/2*((np.pi)**4-12*(np.pi)**2) ) )
+        norm_R = adl.norm_3vec(R)
+        potential_result = -1 * spoilS * VB_NNLO_antisym(norm_R/(mufac*mQ)) / norm_R  #* (1 + Alpha_s3Loop(norm_R) / (4 * np.pi) * aa1 + (Alpha_s3Loop(norm_R) / (4 * np.pi))**2 * (beta0**2 * np.pi**2 / 3 + aa2 + Nc * (Nc - 2) / 2 * ((np.pi)**4 - 12 * (np.pi)**2)))
+        return potential_result
     else:
         @partial(jax.jit)
         def potential_fun(R):
-            return -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 ) )
+        #     return -1*VB/adl.norm_3vec(R)*(1 + alpha/(4*np.pi)*(2*beta0*np.log(Rprime(R))+aa1) + (alpha/(4*np.pi))**2*( beta0**2*(4*np.log(Rprime(R))**2 + np.pi**2/3) + 2*( beta1+2*beta0*aa1 )*np.log(Rprime(R))+ aa2 ) )
+            norm_R = adl.norm_3vec(R)
+            potential_result = -1 * (Nc - 1) * VB_NNLO(norm_R/(mufac*mQ)) / norm_R #* (1 + Alpha_s3Loop(norm_R) / (4 * np.pi) * aa1 + (Alpha_s3Loop(norm_R) / (4 * np.pi))**2 * (beta0**2 * np.pi**2 / 3 + aa2))
+            return potential_result
     B3_Coulomb['O1'] = lambda Rij, Rjk, Rik: SingC3*alpha*(alpha/(4*np.pi))**2*(V3(Rij, Rjk) + V3(Rjk, Rik) + V3(Rik, Rij))
 elif OLO == "N3LO":
     if N_coord > 2:
