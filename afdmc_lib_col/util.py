@@ -29,13 +29,19 @@ class hashabledict(dict):
   def __eq__(self, other):
     return self.__key() == other.__key()
 
-import jax.experimental.host_callback
+try:
+    import jax.experimental.host_callback
+    _has_host_callback = True
+except ImportError:
+    _has_host_callback = False
 debug = True
 print_level = 1
 def jax_print(x, *, level=0, **kwargs):
-    # filter prints by debug flag and verbosity level
     if debug and level <= print_level:
-        jax.experimental.host_callback.id_print(x, **kwargs)
+        if _has_host_callback:
+            jax.experimental.host_callback.id_print(x, **kwargs)
+        else:
+            jax.debug.print("{x}", x=x)
 
 # NON-HOLOMORPHIC
 @partial(jax.jit)

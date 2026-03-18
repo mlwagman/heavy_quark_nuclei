@@ -11,6 +11,7 @@ import numpy as onp
 import pickle
 import time
 import tqdm.auto as tqdm
+import math
 
 from .util import hashabledict, jax_print, norm_3vec, norm_3vec_sq, to_relative
 
@@ -241,6 +242,7 @@ def make_pairwise_potential(AVcoeffs, B3coeffs, masses):
     @jax.jit
     def pairwise_potential(R):
         batch_size, A = R.shape[:2]
+        assert A in (2, 3), "MB-only build: N_coord must be 2 or 3"
         V_SI_Mev = np.zeros( # big-ass matrix
             (batch_size,) + # batch of walkers
             (NI,NS)*A + # source (i1, s1, i2, s2, ...)
@@ -339,6 +341,7 @@ def make_pairwise_product_potential(AVcoeffs, B3coeffs, masses):
     @jax.jit
     def pairwise_potential(R):
         batch_size, A = R.shape[:2]
+        assert A in (2, 3), "MB-only build: N_coord must be 2 or 3"
         V_SI_Mev = np.zeros( # big-ass matrix
             (batch_size,) + # batch of walkers
             (NI,NS)*A + # source (i1, s1, i2, s2, ...)
@@ -1027,13 +1030,20 @@ def kinetic_step_absolute(R_fwd, R_bwd, R, R_deform, S, u, params_i, S_T,
 
 def gfmc_deform(
         R0, S_T, f_R_norm, params, *, rand_draws, tau_iMev, N, potential, m_Mev,
-        deform_f, resampling_freq=None):
+        deform_f, resampling_freq=None, Ws=None):  # Add Ws parameter
     # sigma, kappa_0, kappa_m, zeta_m, lambda_mn, chi_mn = params
     #config.update('jax_disable_jit', True)
     params0 = tuple(param[0] for param in params)
     R0_deform = deform_f(R0, *params0)
-    W = f_R_norm(R0_deform) / f_R_norm(R0)
+    
+    # Use provided Ws if available, otherwise compute from scratch
+    if Ws is not None:
+        W = Ws
+    else:
+        W = f_R_norm(R0_deform) / f_R_norm(R0)
+    
     walkers = (R0, R0_deform, S_T, W)
+
     dtau_iMev = tau_iMev/N
     history = [walkers]
 
@@ -1073,17 +1083,26 @@ def gfmc_deform(
         # save config for obs
         history.append((R, R_deform, S, W))
 
-        gfmc_Rs = np.array([Rs for Rs,_,_,_, in history])
+        # gfmc_Rs = np.array([Rs for Rs,_,_,_, in history])
 
         if resampling_freq is not None and (i+1) % resampling_freq == 0:
             assert len(W.shape) == 1, 'weights must be flat array'
-            p = np.abs(W) / np.sum(np.abs(W))
-            W = np.mean(np.abs(W), keepdims=True) * W / np.abs(W)
-            inds = onp.random.choice(onp.arange(W.shape[0]), size=W.shape[0], p=p)
-            R = R[inds]
-            R_deform = R_deform[inds]
-            S = S[inds]
-            W = W[inds]
+            W_abs = np.abs(W)
+            W_sum = np.sum(W_abs)
+            if onp.isnan(W_sum) or W_sum < 1e-30:
+                print(f'  WARNING: resampling skipped at step {i+1}: W_sum={W_sum}')
+            else:
+                p = W_abs / W_sum
+                p_np = onp.array(p)
+                if onp.any(onp.isnan(p_np)):
+                    print(f'  WARNING: resampling skipped at step {i+1}: NaN in probabilities')
+                else:
+                    W = np.mean(W_abs, keepdims=True) * W / (W_abs + 1e-30)
+                    inds = onp.random.choice(onp.arange(W.shape[0]), size=W.shape[0], p=p_np)
+                    R = R[inds]
+                    R_deform = R_deform[inds]
+                    S = S[inds]
+                    W = W[inds]
 
         walkers = (R, R_deform, S, W)
         _step_time = time.time()-_start
