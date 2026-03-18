@@ -30,7 +30,7 @@ from itertools import permutations
 import torch
 import torch.nn as nn
 
-from simon/mrs_potential import VB_MRS_definition
+from simon/mrs_potential import VB_MRS_definition, Alpha_s1Loop, Alpha_s2Loop, Alpha_s3Loop, Alpha_s
 
 onp.random.seed(0)
 
