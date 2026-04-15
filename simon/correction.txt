@@ -50,18 +50,43 @@ python3 average_constant_fit.py --database "simon/test/"
 echo "mq * machin" | bc
 
 
+Search of alpha_s in meson top (theoratical):
+
+python3 heavy_quark_nuclei_gfmc_FV.py --alpha 0.12013 --log_mu_r 0.0 --OLO "NNLO" --mu 0.48052 --n_step 500 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 5 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 heavy_quark_nuclei_gfmc_FV.py --alpha 0.1201294 --log_mu_r 0.0 --OLO "NLO" --mu 0.480518 --n_step 500 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 5 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 heavy_quark_nuclei_gfmc_FV.py --alpha 0.12005735 --log_mu_r 0.0 --OLO "LO" --mu 0.480229 --n_step 50 --n_walkers 100 --dtau 0.4 --Nc 3 --nf 5 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 constant_fit.py --database "simon/test/"
+
 
 Calculation bottom baryon in NNLO:
 
-python3 heavy_quark_nuclei_gfmc_FV.py --alpha 0.221400 --log_mu_r 0.5 --OLO "NNLO" --mu 0.885600 --n_step 500 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+python3 heavy_quark_nuclei_gfmc_FV.py --alpha 0.221700 --log_mu_r 0.5 --OLO "NNLO" --mu 0.8868 --n_step 500 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 heavy_quark_nuclei_gfmc_FV.py --alpha 0.221400 --log_mu_r 0.5 --OLO "NNLO" --mu 0.885600 --n_step 500 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
 
 python3 average_constant_fit.py --database "simon/test/"
 
 
+ccb FV:
+python3 heavy_quark_nuclei_gfmc_FV.py --alpha 0.26461 --log_mu_r 0.5 --OLO "LO" --mu 1.05844 --n_step 500 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 heavy_quark_nuclei_gfmc_FV.py --alpha 0.28357 --log_mu_r 0.5 --OLO "NLO" --mu 1.13428 --n_step 500 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 heavy_quark_nuclei_gfmc_FV.py --alpha 0.270415 --log_mu_r 0.5 --OLO "NNLO" --mu 1.08166 --n_step 500 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+cbb FV:
+python3 heavy_quark_nuclei_gfmc_FV.py --alpha 0.242854 --log_mu_r 0.5 --OLO "LO" --mu 0.971416 --n_step 500 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 heavy_quark_nuclei_gfmc_FV.py --alpha 0.256705 --log_mu_r 0.5 --OLO "NLO" --mu 1.02682 --n_step 500 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 heavy_quark_nuclei_gfmc_FV.py --alpha 0.248 --log_mu_r 0.5 --OLO "NNLO" --mu 0.992 --n_step 500 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
 
 
 
-python3 average_constant_fit.py --database "simon/test/"
+python3 constant_fit.py --database "simon/test/"
 
 entries baryon bbb with MRS and the Rc with corected mathematica code:
 
@@ -155,10 +180,6 @@ python3 heavy_quark_nuclei_gfmc_FV_copy.py --alpha 0.22172 --log_mu_r 0.5 --OLO 
 
 
 
-
-
-
-
 python3 average_constant_fit.py --database "simon/test/"
 
 python3 simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimension_issue.py --log_mu_r 0.0 --OLO "NNLO" --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 --Rc 1 &
@@ -174,3 +195,221 @@ python3 simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py --log_
 
 python3 simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc_dimensional_normRmQ.py --log_mu_r 0.0 --OLO "LO" --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 --Rc 1 &
 
+
+
+
+
+python3 average_constant_fit.py --database "simon/test/"
+
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "LO" --mQ 2.017082753  --mu 1 --n_step 10 --n_walkers 500 --dtau 0.4 --Nc 3 --nf 3 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+
+
+
+python3 average_constant_fit.py --database "simon/plot/ttbar/"
+python3 average_constant_fit.py --database "simon/plot/ct/"
+python3 average_constant_fit.py --database "simon/plot/bt/"
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "LO" --mQ 172.52  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 5 --N_coord 2 --outdir "simon/plot/ttbar/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "LO" --mQ 3.09797  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 2 --outdir "simon/plot/ct/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "LO" --mQ 9.36686  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/plot/bt/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+
+
+
+
+
+\begin{table*}[tb]
+\centering
+\begin{tabular}{| c | c | c | c | c | c | c | c |} 
+ \hline
+ $1S$ mesons & Order & $\alpha_s(\mu)$  & $m_Q$ [GeV]  &   $M_{Q\bar{Q}}$ [GeV] & $m_Q$ (MRS) [GeV]  &   $M_{Q\bar{Q}}$ (MRS) [GeV] & Measured $M_{Q\bar{Q}}$ [GeV]~\cite{ParticleDataGroup:2022pth, maltoni2024quantumdetectionnewphysics} \\ [0.5ex]
+ \hline\hline
+  $(J/\psi,\eta_c)$ & LO  & 0.283 & 1.562 & 3.0686 & 1.563 & 3.06869(2) & 3.06865(10)   \\
+$(J/\psi,\eta_c)$ & NLO & 0.307 & 1.656  & 3.0686(7) & 1.552 & 3.06871(13) & 3.06865(10) \\
+$(J/\psi,\eta_c)$ & NNLO & 0.288 & 1.777  & 3.0681(6) & 1.546 & 3.06871(16) & 3.06865(10) \\
+  $(\Upsilon,\eta_b)$ & LO & 0.215 & 4.772 & 9.4452 & 4.814  &  9.44498(11) & 9.44498(60)   \\
+ $(\Upsilon,\eta_b)$ & NLO & 0.224 & 4.863 & 9.4448(5) & 4.803 &  9.44498(9) & 9.44498(60) \\
+ $(\Upsilon,\eta_b)$ & NNLO  & 0.222 & 4.967 & 9.4448(13)  & 4.780 & 9.44499(8) & 9.44498(60) \\
+ $(\eta_t)$ & LO &  0.12005735  &  172.52  &  343.9348  & 172.52  &  342.489(51) & $\approx$ 343 (theory) \\
+ $(\eta_t)$ & NLO &  0.1201294  &  172.52  &  343.1117(26)  & 172.52 & 342.492(81) & $\approx$ 343 (theory) \\
+ $(\eta_t)$ & NNLO &  0.12013  &  172.52  &  342.6279(56)  & 172.52 & 342.381(62) & $\approx$ 343 (theory) \\
+ \hline
+\end{tabular}
+
+
+bc LO  6.28967(3)   reduced mass: 2.35973028069
+mufac 0.5: 6.29098960959357950
+mufac 2: 6.28996577944255963
+
+bc NLO 6.29352(8) reduced mass: 2.345869394
+mufac 0.5: 6.304526719630809801
+mufac 2: 6.2800674264920131
+
+
+bc NNLO 6.28648(17) reduced mass: 2.336073348
+mufac 0.5: 6.294319584107206207
+mufac 2: 6.272530909509787286
+
+
+tc LO  173.96806(4)  reduced mass: 3.0979302
+mufac 0.5: 173.969361249333578511
+mufac 2: 173.97023014537310590
+
+tc NLO 173.98409(6) reduced mass: 3.0763247
+mufac 0.5: 174.00115392978875136
+mufac 2: 173.96902837278258869
+
+
+tc NNLO 174.00777(11) reduced mass: 3.0645329
+mufac 0.5: 174.021439176977629959
+mufac 2: 173.988349471445721542
+
+
+tb LO 176.99873(40)  reduced mass: 9.3666302
+mufac 0.5: 176.976956067938265300
+mufac 2: 177.03984400984835306
+
+tb NLO 176.99469(32) reduced mass: 9.3458096
+mufac 0.5: 177.01075624335696940
+mufac 2: 177.02349657354338749
+
+
+tb NNLO 177.03044(20) reduced mass: 9.3022560
+mufac 0.5: 177.077119026583190926
+mufac 2: 177.023703189512670334
+
+
+
+ccc LO: reduced mass: 1.563 
+mufac 0.5: 4.628835524207969791
+mufac 2: 4.627026941467007202
+
+ccc NLO: reduced mass: 1.552 
+mufac 0.5: 4.624838542118722569
+mufac 2: 4.613783972783149318
+
+ccc NNLO: reduced mass: 1.546 
+mufac 0.5: 4.61539406524690335
+mufac 2: 4.608115727113539011
+
+bcc LO: reduced mass:  2.01697792
+mufac 0.5: 7.86207697062655954
+mufac 2: 7.859663647181686214
+
+bcc NLO: reduced mass:  2.00412260
+mufac 0.5: 7.865583918752241430
+mufac 2: 7.847496532489539635
+
+bcc NNLO: reduced mass:  1.99612821
+mufac 0.5: 
+mufac 2: 
+
+bbc LO: reduced mass: 2.8428211  
+mufac 0.5: 11.080447114339300644
+mufac 2: 11.07773131069166773
+
+bbc NLO: reduced mass:  2.8281269
+mufac 0.5: 11.096266449655359772
+mufac 2: 11.064529419545013342
+
+bbc NNLO: reduced mass:  2.8159298
+mufac 0.5: 
+mufac 2: 
+
+
+bbb LO: reduced mass: 4.814
+mufac 0.5: 14.244194241433385682
+mufac 2: 14.2491124962615540
+
+bbb NLO: reduced mass: 4.803
+mufac 0.5: 14.280900320793857230
+mufac 2: 14.22680470892450092
+
+bbb NNLO: reduced mass: 4.780
+mufac 0.5: 
+mufac 2: 
+
+
+tcc LO: reduced mass:  2.3339209
+mufac 0.5: 175.55560027707576665
+mufac 2: 175.5529253890793488
+
+tcc NLO: reduced mass:  2.3175751
+mufac 0.5: 175.57509585692476461
+mufac 2: 175.55181564201830970
+
+tcc NNLO: reduced mass: 2.3086477 
+mufac 0.5: 
+mufac 2: 
+
+
+tbc LO: reduced mass:  3.5156845
+mufac 0.5: 178.75960537067697171
+mufac 2: 178.757586731147689493
+
+tbc NLO: reduced mass:  3.4951604
+mufac 0.5: 178.795070842858222659
+mufac 2: 178.75337819220831428
+
+tbc NNLO: reduced mass:  3.4809555
+mufac 0.5: 
+mufac 2: 
+
+
+tbb LO: reduced mass:  7.1216364
+mufac 0.5: 181.85341860507364320
+mufac 2: 181.87590837681449480
+
+tbb NLO: reduced mass:  7.1055845
+mufac 0.5: 181.910593951057654009
+mufac 2: 181.85595541100373608
+
+tbb NNLO: reduced mass:  7.0719798
+mufac 0.5: 
+mufac 2: 
+
+
+
+ttc LO: reduced mass:  4.6055361
+mufac 0.5: 346.421763770662816980
+mufac 2: 346.42276109927567028
+
+ttc NLO: reduced mass:  4.5737086
+mufac 0.5: 346.479371850936540856
+mufac 2: 346.425544127316196206
+
+ttc NNLO: reduced mass:  4.5563230
+mufac 0.5: 
+mufac 2: 
+
+
+ttb LO: reduced mass:  13.6786184
+mufac 0.5: 349.293157468763502484
+mufac 2: 349.39514143934887061
+
+ttb NLO: reduced mass:  13.6490067
+mufac 0.5: 349.34775673792409602
+mufac 2: 349.373230898062010036
+
+ttb NNLO: reduced mass:  13.5869947
+mufac 0.5: 
+mufac 2: 
+
+
+
+
+ttt LO: reduced mass:  172.52
+mufac 0.5: 513.590065181473675099
+mufac 2: 515.165417683771591282
+
+ttt NLO: reduced mass:  172.52
+mufac 0.5: 513.503491479470880928
+mufac 2: 515.236605383051194141
+
+ttt NNLO: reduced mass:  172.52
+mufac 0.5: 
+mufac 2: 

@@ -85,3 +85,173 @@ TEST MRS method in python and mathematica:
 
 python3 simon/MRS_rTest.py --alpha 0.223435 --log_mu_r 0.0 --OLO "LO" --mu 0.89374 --n_step 100 --n_walkers 4000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/EMP_meson/mu_Prime/" --wavefunction "compact" --potential "full" --n_skip 100 --r_test 0.03 --V_0_r_test -10.2377 --V_1_r_test -10.0763
 
+
+
+
+
+
+Get MRS quark mass:
+
+mixed meson syst error:
+
+python3 average_constant_fit.py --database "simon/test/"
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "NNLO" --mQ 1.546 --mu 1 --mufac 0.5 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+
+
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "NLO" --mQ 172.52 --mu 1 --mufac 0.5 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 5 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "LO" --mQ 172.52 --mu 1 --mufac 0.5 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 5 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+
+
+
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py --OLO "NNLO" --mQ 1.54394 --Rc 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py --OLO "NLO" --mQ 1.54885 --Rc 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_alpha_Rc.py --OLO "LO" --mQ 1.56226 --Rc 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+
+
+
+python3 average_constant_fit.py --database "simon/test/"
+python3 average_constant_fit.py --database "simon/plot/b_cbb/"
+
+Bottom:
+python3 simon/heavy_quark_nuclei_gfmc_FV.py --alpha 0.221698 --log_mu_r 0.0 --OLO "NNLO" --mu 0.886792 --n_step 100 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+
+python3 simon/heavy_quark_nuclei_gfmc_FV.py --alpha 0.2243094 --log_mu_r 0.0 --OLO "NLO" --mu 0.897238 --n_step 100 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+
+python3 simon/heavy_quark_nuclei_gfmc_FV.py --alpha 0.21511 --log_mu_r 0.0 --OLO "LO" --mu 0.860440 --n_step 100 --n_walkers 1000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+
+
+Charm:
+python3 simon/heavy_quark_nuclei_gfmc_FV.py --alpha 0.287718 --log_mu_r 0.0 --OLO "NNLO" --mu 1.15087 --n_step 100 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+
+python3 simon/heavy_quark_nuclei_gfmc_FV.py --alpha 0.3074475 --log_mu_r 0.0 --OLO "NLO" --mu 1.22979 --n_step 100 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+
+python3 simon/heavy_quark_nuclei_gfmc_FV.py --alpha 0.2831156 --log_mu_r 0.0 --OLO "LO" --mu 1.13246 --n_step 1 --n_walkers 500 --dtau 0.4 --Nc 3 --nf 3 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 --masses 1562.13 -1562.13 --verbose &
+
+
+
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "NNLO" --mQ 1.54562 --mu 1 --n_step 1 --n_walkers 500 --dtau 0.4 --Nc 3 --nf 3 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 --masses 1.54562 -1.54562 --verbose &
+
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "NNLO" --mQ 1.54562 --mu 1 --n_step 1 --n_walkers 500 --dtau 0.4 --Nc 3 --nf 3 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 --masses 1545.62 -1545.62 --verbose &
+
+python3 simon/heavy_quark_nuclei_gfmc_FV.py --alpha 0.2831156 --log_mu_r 0.0 --OLO "LO" --mu 1132.46 --n_step 100 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 --masses 1562.13 -1562.13 &
+
+python3 simon/heavy_quark_nuclei_gfmc_FV.py --alpha 0.3074475 --log_mu_r 0.0 --OLO "NLO" --mu 1229.79 --n_step 1 --n_walkers 500 --dtau 0.4 --Nc 3 --nf 3 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 --masses 1654.13 -1654.13 --verbose &
+
+python3 simon/heavy_quark_nuclei_gfmc_FV.py --alpha 0.287718 --log_mu_r 0.0 --OLO "NNLO" --mu 1150.872 --n_step 1 --n_walkers 500 --dtau 0.4 --Nc 3 --nf 3 --N_coord 2 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 --masses 1771.59 -1771.59 --verbose &
+
+
+
+python3 average_constant_fit.py --database "simon/tabular/meson/bc/LO/muPrime/"
+
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "LO" --mQ 2.35986  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 2 --outdir "simon/tabular/meson/bc/LO/muPrime/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+
+
+python3 average_constant_fit.py --database "simon/tabular/baryon/cbb/LO/muPrime/"
+python3 average_constant_fit.py --database "simon/tabular/baryon/cbb/NLO/muPrime/"
+
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "LO" --mQ 2.017082753  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 3 --outdir "simon/tabular/baryon/cbb/LO/muPrime/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "NLO" --mQ 2.004498562  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 3 --outdir "simon/tabular/baryon/cbb/NLO/muPrime/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+
+cbb:
+python3 average_constant_fit.py --database "simon/test/"
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "LO" --mQ 2.8428211586  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "NLO" --mQ 2.8281269760971291  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "NNLO" --mQ 2.8161839430894308  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+ccb:
+python3 average_constant_fit.py --database "simon/test/"
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "LO" --mQ 2.0169779286  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "NLO" --mQ 2.0041226026169564  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "NNLO" --mQ 1.9961282189807311  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+
+tcc:
+python3 average_constant_fit.py --database "simon/test/"
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "LO" --mQ 2.3339267115402  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "NLO" --mQ 2.3175751315667  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "NNLO" --mQ 2.3086535520765  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+
+tbb:
+python3 average_constant_fit.py --database "simon/test/"
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "LO" --mQ 7.1216364540636  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "NLO" --mQ 7.1055873634744  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "NNLO" --mQ 7.0720256131724  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+
+tcb:
+python3 average_constant_fit.py --database "simon/test/"
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "LO" --mQ 3.5155554432089 --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "NLO" --mQ 3.4950435669648  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "NNLO" --mQ 3.4808632362805  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+
+ttc:
+python3 average_constant_fit.py --database "simon/test/"
+
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "LO" --mQ 4.6055475217198  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "NLO" --mQ 4.5737086047465  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "NNLO" --mQ 4.5563344190602  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 3 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+
+ttb:
+python3 average_constant_fit.py --database "simon/test/"
+
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "LO" --mQ 13.6786184860662  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "NLO" --mQ 13.6490122223076  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "NNLO" --mQ 13.5870826010544  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 4 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+
+ttt:
+python3 average_constant_fit.py --database "simon/test/"
+
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "LO" --mQ 172.52  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 5 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "NLO" --mQ 172.52  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 5 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+python3 simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py --OLO "NNLO" --mQ 172.52  --mu 1 --n_step 400 --n_walkers 5000 --dtau 0.4 --Nc 3 --nf 5 --N_coord 3 --outdir "simon/test/" --wavefunction "compact" --potential "full" --n_skip 100 &
+
+

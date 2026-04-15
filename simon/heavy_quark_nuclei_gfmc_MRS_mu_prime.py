@@ -44,7 +44,7 @@ parser.add_argument('--n_step', type=int, required=True)
 parser.add_argument('--n_skip', type=int, default=100)
 parser.add_argument('--resampling', type=int, default=None)
 #parser.add_argument('--alpha', type=float, default=1)
-parser.add_argument('--mu', type=float, default=2.0) # or default=1.0
+parser.add_argument('--mu', type=float, default=1.0) # or default=2.0
 parser.add_argument('--mufac', type=float, default=1.0)
 parser.add_argument('--Nc', type=int, default=3)
 parser.add_argument('--N_coord', type=int, default=3)
@@ -59,7 +59,7 @@ parser.add_argument('--samefac', type=float, default=1)
 parser.add_argument('--spoilf', type=str, default="hwf")
 parser.add_argument('--outdir', type=str, required=True)
 parser.add_argument('--input_Rs_database', type=str, default="")
-parser.add_argument('--log_mu_r', type=float, default=1)
+#parser.add_argument('--log_mu_r', type=float, default=1)
 parser.add_argument('--cutoff', type=float, default=0.0)
 parser.add_argument('--L', type=float, default=0.0)
 parser.add_argument('--Lcut', type=int, default=5)
@@ -91,17 +91,18 @@ def Zeta(s):
 beta0 = 11/3*Nc - 2/3*nf
 beta1 = 34/3*Nc**2 - 20/3*Nc*nf/2 - 2*CF*nf
 beta2 = 2857/54*Nc**3 + CF**2*nf-205/9*Nc*CF*nf/2-1415/27*Nc**2*nf/2+44/9*CF*(nf/2)**2+158/27*Nc*(nf/2)**2
-aa1 = 31/9*Nc-10/9*nf
 zeta3 = scipy.special.zeta(3)
+aa1 = 31/9*Nc-10/9*nf
 zeta5 = scipy.special.zeta(5)
 zeta51 = 1/2 + 1/3 + 1/7 + 1/51 + 1/4284
 zeta6 = scipy.special.zeta(6)
 aa2 = ( 4343/162 + 6*np.pi**2 - np.pi**4/4 + 22/3*zeta3 )*Nc**2 - ( 1798/81 + 56/3*zeta3 )*Nc*nf/2 - ( 55/3 - 16*zeta3  )*CF*nf/2 + (10/9*nf)**2
 dFF = (18-Nc**2+Nc**4)/(96*Nc**2)
 dFA = Nc*(Nc**2+6)/48
-dAA = Nc**2 * (Nc**2 + 36) / 24 ############################### NEW
-alpha4 = float(mpmath.polylog(4,1/2))+(-np.log(2))**4/(4*3*2*1) ############################ NEW, we remove the "*0" at the end of the first term
-ss6 = zeta51+zeta6 ############ different from Andreas' orginal code (mistake from Andreas ??)
+dAA = Nc**2 * (Nc**2 + 36) / 24 
+#beta3 = Nc*CF*nf**2/4*(17152/243+448/9*zeta3)+Nc*CF**2*nf/2*(-4204/27+352/9*zeta3)+424/243*Nc*nf**3/8+Nc**2*CF*nf/2*(7073/243-656/9*zeta3)+Nc**2*nf**2/4*(7930/81+224/9*zeta3)+1232/243*CF*nf**3/8+Nc**3*nf/2*(-39143/81+136/3*zeta3)+Nc**4*(150653/486-44/9*zeta3)+CF**2*nf**2/4*(1352/27-704/9*zeta3)+46*CF**3*nf/2+nf*dFA*(512/9-1664/3*zeta3)+nf**2*dFF(-704/9+512/3*zeta3)+dAA*(-80/9+704/3*zeta3)
+alpha4 = float(mpmath.polylog(4,1/2))+(-np.log(2))**4/(4*3*2*1) 
+ss6 = zeta51+zeta6 
 aa30 = dFA*( np.pi**2*( 7432/9-4736*alpha4+np.log(2)*(14752/3-3472*zeta3)-6616*zeta3/3)  +  np.pi**4*(-156+560*np.log(2)/3+496*np.log(2)**2/3)+1511*np.pi**6/45)  + Nc**3*(385645/2916 + np.pi**2*( -953/54 +584/3*alpha4 +175/2*zeta3 + np.log(2)*(-922/9+217*zeta3/3) ) +584*zeta3/3 + np.pi**4*( 1349/270-20*np.log(2)/9-40*np.log(2)**2/9 ) -1927/6*zeta5 -143/2*zeta3**2-4621/3024*np.pi**6+144*ss6  )
 aa31 = dFF*( np.pi**2*(1264/9-976*zeta3/3+np.log(2)*(64+672*zeta3)) + np.pi**4*(-184/3+32/3*np.log(2)-32*np.log(2)**2) +10/3*np.pi**6 ) + CF**2/2*(286/9+296/3*zeta3-160*zeta5)+Nc*CF/2*(-71281/162+264*zeta3+80*zeta5)+Nc**2/2*(-58747/486+np.pi**2*(17/27-32*alpha4+np.log(2)*(-4/3-14*zeta3)-19/3*zeta3)-356*zeta3+np.pi**4*(-157/54-5*np.log(2)/9+np.log(2)**2)+1091*zeta5/6+57/2*zeta3**2+761*np.pi**6/2520-48*ss6)
 aa32 = Nc/4*(12541/243+368/3*zeta3+64*np.pi**4/135)+CF/4*(14002/81-416*zeta3/3)
@@ -1059,7 +1060,6 @@ if OLO == "LO":
     def potential_fun(R):
         norm_R = adl.norm_3vec(R)
         potential_result = -1 * VB_LO(norm_R/(mufac*mQ)) / norm_R
-        #potential_result = -1 * VB_LO(norm_R/(mufac*mQ)) / norm_R # ?????????????????????????????????
         return potential_result
 
     @partial(jax.jit)
@@ -1072,7 +1072,6 @@ if OLO == "LO":
     def singlet_potential_fun(R):
         norm_R = adl.norm_3vec(R)
         potential_result = -1 * (Nc - 1) * VB_LO(norm_R/(mufac*mQ)) / norm_R
-        #potential_result = -1 * (Nc - 1) * VB_LO(norm_R/mQ) / norm_R # ?
         return potential_result
 
     @partial(jax.jit)
@@ -1110,7 +1109,7 @@ elif OLO == "NLO":
     @partial(jax.jit)
     def potential_fun(R):
         norm_R = adl.norm_3vec(R)
-        potential_result = -1 * VB_NLO(norm_R/(mufac*mQ)) / norm_R #* (1 + alpha_s2loop / (4 * np.pi) * aa1) # No more mu dependence but 1/R
+        potential_result = -1 * VB_NLO(norm_R/(mufac*mQ)) / norm_R 
         return potential_result
 
     @partial(jax.jit)
@@ -1119,7 +1118,7 @@ elif OLO == "NLO":
     def symmetric_potential_fun(R):
         norm_R = adl.norm_3vec(R)
         VB_NLO_val = VB_NLO(norm_R/(mufac*mQ))
-        potential_result = (Nc - 1) / (Nc + 1) * VB_NLO_val * spoilS / norm_R #* (1 + alpha_s2loop / (4 * np.pi) * aa1)
+        potential_result = (Nc - 1) / (Nc + 1) * VB_NLO_val * spoilS / norm_R 
         return potential_result
 
     def symmetric_potential_fun_sum(R):
@@ -1128,7 +1127,7 @@ elif OLO == "NLO":
     def singlet_potential_fun(R):
         norm_R = adl.norm_3vec(R)
         VB_NLO_val = VB_NLO(norm_R/(mufac*mQ))  
-        potential_result = -1 * (Nc - 1) * VB_NLO_val / norm_R #* (1 + alpha_s2loop / (4 * np.pi) * aa1)
+        potential_result = -1 * (Nc - 1) * VB_NLO_val / norm_R
         return potential_result
 
     @partial(jax.jit)
@@ -1139,7 +1138,7 @@ elif OLO == "NLO":
     def octet_potential_fun(R):
         norm_R = adl.norm_3vec(R)
         VB_NLO_val = VB_NLO(norm_R/(mufac*mQ))
-        potential_result = spoilS * (Nc - 1) / CF / (2 * Nc) * VB_NLO_val / norm_R #* (1 + alpha_s2loop / (4 * np.pi) * aa1)
+        potential_result = spoilS * (Nc - 1) / CF / (2 * Nc) * VB_NLO_val / norm_R
         return potential_result
 
     def octet_potential_fun_sum(R):
@@ -1271,8 +1270,6 @@ if potential == "product":
     Coulomb_potential = adl.make_pairwise_product_potential(AV_Coulomb, B3_Coulomb, masses)
 else:
     Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb, B3_Coulomb, masses)
-
-
 
 
 
@@ -2063,10 +2060,10 @@ if N_coord == 4:
 
 if volume == "finite":
     #tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilaket"+str(spoilaket) + "_spoilf"+str(spoilf) + "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
-    tag = "muPrime_" + str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_radial_n"+str(radial_n) + "_mQ"+str(mQ) + "_mu"+str(mu) + "_mufac"+str(mufac) + "_Rstar" + str(Rstar) + "_spoila"+str(spoila) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
+    tag = "muPrime_" + str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_radial_n"+str(radial_n) + "_mQ"+str(mQ) + "_mu"+str(mu) + "_mufac"+str(mufac) + "_Rstar" + str(Rstar) + "_spoila"+str(spoila) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_L"+str(L)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
 else:
     #tag = str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_alpha"+str(alpha) + "_spoila"+str(spoila) + "_spoilaket"+str(spoilaket) + "_spoilf"+str(spoilf)+ "_spoilS"+str(spoilS) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
-    tag = "muPrime_" + str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_radial_n"+str(radial_n) + "_mQ"+str(mQ) + "_mu"+str(mu) + "_mufac"+str(mufac) + "_Rstar" + str(Rstar) + "_spoila"+str(spoila) + "_log_mu_r"+str(log_mu_r) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
+    tag = "muPrime_" + str(OLO) + "_dtau"+str(dtau_iMev) + "_Nstep"+str(n_step) + "_Nwalkers"+str(n_walkers) + "_Ncoord"+str(N_coord) + "_Nc"+str(Nc) + "_nskip" + str(n_skip) + "_Nf"+str(nf) + "_radial_n"+str(radial_n) + "_mQ"+str(mQ) + "_mu"+str(mu) + "_mufac"+str(mufac) + "_Rstar" + str(Rstar) + "_spoila"+str(spoila) + "_wavefunction_"+str(wavefunction) + "_potential_"+str(potential)+"_afac"+str(afac)+"_masses"+str(masses)+"_color_"+color+"_g"+str(g)
 
 
 with h5py.File(outdir+'Hammys_'+tag+'.h5', 'w') as f:
