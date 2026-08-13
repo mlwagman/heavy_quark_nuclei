@@ -1,5 +1,7 @@
 import argparse
 import analysis as al
+import matplotlib
+matplotlib.use('Agg')  # headless: never pop GUI windows
 import matplotlib.pyplot as plt
 import numpy as onp
 import scipy
@@ -743,6 +745,31 @@ with h5py.File(outdir+'Rs_'+tag+'.h5', 'w') as f:
     f.create_dataset("Rs", data=gfmc_Rs)
     f.create_dataset("Ws_leg1", data=gfmc_Ws)
 
+###
+# Single-leg current measurements J(t)*Ws(t) at every step (for Lanczos)
+###
+print('\nMeasuring all currents on leg-1 grid (for Lanczos)...')
+JWs_all = {k: [] for k in ['S', 'V0', 'N', 'Vi', 'Ai', 'T0i', 'Tij']}
+for count, R in enumerate(gfmc_Rs):
+    W = gfmc_Ws[count]
+    currents_t = compute_all_currents(R, q_total, absmasses)
+    for k in JWs_all:
+        Jk = currents_t[k]
+        if Jk.ndim > 1:
+            JWs_all[k].append(Jk * W[:, None])
+        else:
+            JWs_all[k].append(Jk * W)
+for k in JWs_all:
+    JWs_all[k] = np.array(JWs_all[k])
+print(f'JWs_S shape: {JWs_all["S"].shape}, JWs_Vi shape: {JWs_all["Vi"].shape}')
+
+with h5py.File(outdir+'Hammys_'+tag+'.h5', 'a') as f:
+    for k, v in JWs_all.items():
+        key = f"JWs_{k}"
+        if key in f:
+            del f[key]
+        f.create_dataset(key, data=v)
+print('Saved all JWs to Hammys h5 file')
 
 ###
 # 3-point correlators with all currents
@@ -775,6 +802,10 @@ print(f"Computing ALL current operators: N, S, V0, Vi(x,y,z), Ai(x,y,z), T0i(x,y
 # storage for 2-point correlators (only need one set since norm is the same)
 C2_2tau = onp.zeros(N_tau)
 Ws2_all = onp.zeros((N_tau, n_walkers), dtype=onp.complex128)
+
+# storage for off-diagonal two-leg C3_N(t1,t2) and metric <tau_i|tau_j> (for two-sided GEVP)
+C3_N_od = onp.zeros((N_tau, N_tau, n_walkers), dtype=onp.complex128)
+Ws2_od  = onp.zeros((N_tau, N_tau, n_walkers), dtype=onp.complex128)
 
 # storage for 3-point correlators
 C3_N = onp.zeros((n_walkers, N_tau), dtype=onp.complex128)
@@ -810,9 +841,16 @@ for i_t, t in enumerate(t_indices):
     Ws2 = onp.array(ws_seq_C2[t])
     Ws2_all[i_t] = Ws2
     C2_2tau[i_t] = onp.sum(Ws2.real)
+
+    # off-diagonal metric <tau_i|tau_j> = <psiT| e^{-H(t1+t2)} |psiT>: leg-2 norm at all t2 on grid
+    Ws2_od[i_t, :, :] = onp.array([ws_seq_C2[t2] for t2 in t_indices])
     
     # wavefunction ratio for leg-2: psi_q / psi_0
-    r01 = f_R_q(R, q_vec) / f_R_0(R)
+    # sink-side boosted-bra reweighting needs the CONJUGATE CM phase e^{-iq.R_cm}:
+    # J = Sum_k e^{iq.x_k} = e^{+iq.R_cm} * (relative part), so conj(r01) cancels the
+    # CM phase and the junction operator is the rest-frame relative current.
+    # (unconjugated r01 doubles the phase -> exact spurious decay e^{-(2q)^2 tau1/(2M)})
+    r01 = np.conj(f_R_q(R, q_vec)) / f_R_0(R)
     
     r01_arr = onp.array(r01)
     print(f"  r01 (wfn ratio): min={r01_arr.real.min():.6f}, max={r01_arr.real.max():.6f}, should be 1.0 at q=0")
@@ -864,6 +902,8 @@ for i_t, t in enumerate(t_indices):
     onp.random.seed(rng_seed)
     ws_seq_N = _run_leg2_Ws_sequence(R, S, Ws_seed_N, rand2_shared)
     C3_N[:, i_t] = onp.array(ws_seq_N[t])
+    # off-diagonal C3_N(t1=i_t, t2): current at junction, independent leg-2 times
+    C3_N_od[i_t, :, :] = onp.array([ws_seq_N[t2] for t2 in t_indices])
     
     # per-walker check (should be exactly N_coord at q=0)
     C3_N_t = onp.array(ws_seq_N[t])
@@ -1101,7 +1141,11 @@ with h5py.File(filename, 'w') as f:
     
     f.create_dataset("C2_2tau", data=C2_2tau)
     f.create_dataset("Ws2_all", data=Ws2_all)
-    
+
+    # off-diagonal two-leg objects for the correct two-sided GEVP (number current)
+    f.create_dataset("C3_N_offdiag", data=C3_N_od)
+    f.create_dataset("Ws2_offdiag",  data=Ws2_od)
+
     f.create_dataset("C3_N", data=C3_N)
     f.create_dataset("C3_S", data=C3_S)
     f.create_dataset("C3_V0", data=C3_V0)
@@ -1209,7 +1253,7 @@ plot_filename = outdir + 'form_factors_all_' + tag + '.png'
 plt.savefig(plot_filename, dpi=150, bbox_inches='tight')
 print(f"Saved plot to {plot_filename}")
 
-plt.show()
+plt.close('all')
 
 print("\nDone.")
 
@@ -1428,7 +1472,7 @@ plot_filename2 = outdir + 'form_factors_plateau_' + tag + '.png'
 plt.savefig(plot_filename2, dpi=150, bbox_inches='tight')
 print(f"Saved plateau plot to {plot_filename2}")
 
-plt.show()
+plt.close('all')
 
 
 ###
