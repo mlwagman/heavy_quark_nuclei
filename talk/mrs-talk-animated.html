@@ -212,8 +212,8 @@ scenes.push({el:s,orb:0,beats:[
  {d:20,f(p){rv(T,seg(p,0,.3));rv(A,seg(p,.25,.5));rv(F,seg(p,.45,.65));rv(X,seg(p,.6,.85));rv(QR,seg(p,.7,.95));}},
  {d:24,f(p){rv(t1,seg(p,0,.3));rv(t2,seg(p,.35,.6));rv(t3,seg(p,.65,.95));}},
 ],notes:[
- '<b>Title.</b> I am Simon Vaiva — renormalon-subtracted nonrelativistic QCD for heavy-hadron systems. With Benoît Assi, Andreas Kronfeld and Michael Wagman (Fermilab / CPT Marseille / Cincinnati). Paper July 2026, arXiv 2607.08817.',
- '<b>Thesis.</b> The short version: a well-known obstruction has limited perturbative predictions for heavy hadrons for decades. We remove it — and once removed, a whole family of previously out-of-reach states becomes predictable.',
+ '<b>b1.</b> Thank you. I am Simon Vaiva, and this talk is about renormalon-subtracted nonrelativistic QCD for heavy-hadron systems. It is work with Benoit Assi, Andreas Kronfeld, and Michael Wagman, between Fermilab, the Centre de Physique Theorique in Marseille, and the University of Cincinnati. The paper appeared in July on the arXiv as 2607.08817.',
+ '<b>b2.</b> The short version is this. A well-known infrared obstruction has limited perturbative predictions for heavy hadrons for decades. We remove it. And once it is removed, a whole family of states that was out of reach becomes predictable. That is the thesis of this talk.',
 ]});
 })();
 
@@ -275,15 +275,15 @@ scenes.push({el:s,beats:[
  {d:13,f(p){rv(h,seg(p,0,.2));hier.forEach((r,i)=>{r.bar.style.width=(r.w*eo(seg(p,.15+i*.22,.5+i*.22)))+'px';});}},
  {d:13,f(p){rv(tri,seg(p,0,.2));te.forEach((e,i)=>ds(e,seg(p,.15+i*.18,.5+i*.18)));op(tlab,seg(p,.75,1));}},
  {d:18,f(p){rv(tim,seg(p,0,.25));bump.setAttribute('d',bumpD(eo(seg(p,.45,.9))));}},
- {d:17,f(p){rv(ob,seg(p,0,.2));const w=380*eo(seg(p,.2,.65));rb.style.width=w+'px';
-   rbl.textContent='~'+Math.round(100*eo(seg(p,.2,.65)))+' MeV';
+ {d:17,f(p){rv(ob,seg(p,0,.2));const w=300*eo(seg(p,.2,.65));rb.style.width=w+'px';
+   const v=Math.round(100*eo(seg(p,.2,.65)));rbl.innerHTML='~'+v+' MeV'+(v>=100?' (quarkonium)<br>~700 MeV (baryons)':'');
    rv(obb,seg(p,.75,1));}},
 ],notes:[
- '<b>Gallery.</b> Why should you care about hadrons made only of heavy quarks? They are the cleanest bound states QCD offers: charmonium, bottomonium, the triply charmed Omega, the all-heavy tetraquarks.',
- '<b>Hierarchy.</b> In every one of them <span class="mx">m<sub>Q</sub></span> ≫ <span class="mx">m<sub>Q</sub>v</span> ≫ <span class="mx">m<sub>Q</sub>v<sup>2</sup></span>. That clean separation of scales lets us write controlled expansions in the coupling and the velocity.',
- '<b>Precision lab.</b> A place where EFT, lattice QCD and experiment can all be compared at the ~10 MeV level.',
- '<b>Timely.</b> Lattice triply-heavy baryons now quote ±10 MeV. And CMS 2025 / ATLAS 2026 report a &gt;5σ excess at the t <span class="ov">t</span> threshold — toponium-like.',
- '<b>Obstacle.</b> Fixed-order pNRQCD carries ~100 MeV scale dependence — as large as the signal we are chasing. This talk is about removing that obstacle.',
+ '<b>b1.</b> Why should you care about hadrons made only of heavy quarks? Because they are the cleanest bound states QCD offers: charmonium, bottomonium, the triply charmed Omega, and the all-heavy tetraquarks.',
+ '<b>b2.</b> In every one of them the quark mass is much larger than the momentum, which is much larger than the binding energy. That separation of scales gives controlled expansions in the coupling and in the velocity.',
+ '<b>b3.</b> So they are a precision laboratory: a place where effective field theory, lattice QCD, and experiment can all be compared at the ten MeV level.',
+ '<b>b4.</b> And the timing is right. Lattice calculations of triply heavy baryons now quote 10 MeV errors. And CMS in 2025, then ATLAS in 2026, report a five sigma excess at the top anti-top threshold, toponium-like.',
+ '<b>b5.</b> Here is the obstacle. Fixed-order potential N R Q C D carries a scale dependence of order 100 MeV in binding energies, and for the triply heavy baryons far more. That is as large as the signal we are chasing. This talk is about removing that obstacle.',
 ]});
 })();
 
@@ -318,10 +318,10 @@ scenes.push({el:s,beats:[
  {d:17,f(p){rv(mt,p);}},
  {d:14,f(p){rv(st,p);}},
 ],notes:[
- '<b>Tower.</b> Start from full QCD at the heavy-quark mass, integrate out hard modes → NRQCD, integrate out soft modes → pNRQCD at the binding-energy scale. What remains is quantum mechanics.',
- '<b>Hamiltonian.</b> Kinetic terms plus a potential between each pair of quarks. Those potentials are not modelled — they are matched to QCD order by order.',
- '<b>Matching.</b> Known to NNLO. Colour factors differ by channel: 4/3 for a quark–antiquark singlet, half that for a quark pair in a baryon. Three-body forces enter at NNLO and we include them.',
- '<b>Static limit.</b> Spin effects are suppressed by v² — about 5% for bottom, 10% for charm — dropped here.',
+ '<b>b1.</b> First, the framework. Start from QCD at the heavy-quark mass. Integrate out the hard modes: nonrelativistic QCD. Integrate out the soft modes: potential N R Q C D, at the binding-energy scale. What remains is quantum mechanics.',
+ '<b>b2.</b> The Hamiltonian is a kinetic term for each quark plus a potential between each pair. Those potentials are not modelled. They are matched to QCD, order by order in the coupling.',
+ '<b>b3.</b> The matching is known to next-to-next-to-leading order. The colour factors differ by channel: four thirds for a quark-antiquark singlet, and half of that for a quark pair inside a baryon. Three-body forces enter at that order, and we include them.',
+ '<b>b4.</b> We work in the static limit. Spin-dependent effects are suppressed by the velocity squared, about 5 percent for bottom and 10 percent for charm, and they are dropped here.',
 ]});
 })();
 
@@ -360,10 +360,10 @@ scenes.push({el:s,beats:[
  {d:13,f(p){rv(e3,p);}},
  {d:20,f(p){rv(e4,seg(p,0,.25));bnds.forEach((bb,i)=>{bb.r.setAttribute('width',bb.w*eo(seg(p,.15+i*.2,.45+i*.2)));op(bb.t,seg(p,.3+i*.2,.5+i*.2));});op(gap,seg(p,.85,1));}},
 ],notes:[
- '<b>Series.</b> Write the potential as a series in <span class="mx">α<sub>s</sub></span>. The coefficients do not stay bounded — they grow factorially. Asymptotic, not convergent.',
- '<b>The picture.</b> Terms shrink for a while, reach a minimum, then blow up. No matter where you truncate, you cannot beat an error of order <span class="mx">Λ<sub>QCD</sub></span>.',
- '<b>Origin.</b> Infrared gluons with momenta ~<span class="mx">Λ<sub>QCD</sub></span> contaminate the perturbative potential. Same renormalon as the pole mass.',
- '<b>Symptom.</b> Doubling μ moves a triply-heavy baryon mass by ~700 MeV at NNLO (Table III), and the LO/NLO/NNLO bands do not overlap at all. You cannot quote a meaningful uncertainty.',
+ '<b>b1.</b> Now the problem. Write the potential as a series in the strong coupling. The coefficients do not stay bounded: they grow factorially with the order. The series is asymptotic, not convergent. This is the renormalon problem.',
+ '<b>b2.</b> Here is the picture. The terms shrink for a while, reach a minimum, and then blow up. No matter where you truncate, you cannot beat an error of order lambda QCD.',
+ '<b>b3.</b> The origin is infrared. Gluons with momenta near lambda QCD contaminate the perturbative potential and leave an irreducible ambiguity in it. It is the same renormalon that afflicts the pole mass.',
+ '<b>b4.</b> And here is the symptom. Doubling the scale mu moves a triply heavy baryon mass by about 700 MeV at next-to-next-to-leading order, and the bands at successive orders do not overlap at all. You cannot quote a meaningful uncertainty.',
 ]});
 })();
 
@@ -395,11 +395,11 @@ scenes.push({el:s,beats:[
  {d:15,f(p){rv(v0,p);}},
  {d:24,f(p){rv(mn,seg(p,0,.45));rv(nw,seg(p,.5,.95));}},
 ],notes:[
- '<b>Idea.</b> Instead of ignoring the factorial growth: isolate it, resum it in closed form, push the entire remaining ambiguity into one explicit constant.',
- '<b>Three pieces.</b> (1) the truncated series with the renormalon part <span class="mx">V<sub>l</sub></span> subtracted order by order — the leading factorial growth is gone. (2) the Borel-resummed renormalon series — summed to infinity in closed form via the incomplete gamma: smooth, unambiguous. (3) <span class="mx">Λ<sub>R</sub></span>: a single power correction, free of the leading ambiguity.',
- '<b><span class="mx">Λ<sub>R</sub></span> — the key.</b> <span class="mx">Λ<sub>R</sub></span> comes out free of the leading-renormalon ambiguity. For the singlet it is absorbed into <span class="mx">m<sub>Q</sub></span> and fixed to the spin-averaged 1S states; for non-singlet channels it is neglected — a scheme choice, left to future work.',
- '<b><span class="mx">V<sub>0</sub></span>.</b> The renormalon normalization is well determined: 0.771 at NNLO, 0.772 at the next order. It has converged.',
- '<b>Minimal + new.</b> Same MS-bar inputs; re-expanding reproduces the fixed-order result exactly — a property from Komijani 2017 and Kronfeld 2023. Proven for quark masses, all flavours except top, by TUMQCD — first time used inside a bound-state problem.',
+ '<b>b1.</b> Here is the idea. Instead of ignoring the factorial growth, isolate it, resum it in closed form, and push the entire remaining ambiguity into one explicit constant.',
+ '<b>b2.</b> The potential becomes three pieces. First, the truncated series with the renormalon part subtracted term by term, so the leading factorial growth is gone. Second, the renormalon series itself, summed from the first term to infinity in closed form: smooth and unambiguous. Third, lambda R, a single power correction.',
+ '<b>b3.</b> Lambda R is the key. It is free of the leading renormalon ambiguity. For the colour singlet it is absorbed into the quark mass, which is then fixed to the spin-averaged one S states. For the non-singlet channels, the baryons and the tetraquarks, it is neglected: extending M R S there is a scheme choice, left to future work.',
+ '<b>b4.</b> The normalization of the renormalon is well determined: 0.771 at next-to-next-to-leading order, and 0.772 at the next order. It has converged.',
+ '<b>b5.</b> And minimal matters. With the same M S bar inputs, re-expanding reproduces the fixed-order result exactly, as shown by Komijani in 2017 and Kronfeld in 2023. It is proven for quark masses, all flavours except top. This is its first use inside a bound-state problem.',
 ]});
 })();
 
@@ -445,10 +445,10 @@ scenes.push({el:s,beats:[
     op(g2,seg(p,.55,.75));op(g2T,seg(p,.65,.85));rv(k3,seg(p,.7,1));}},
  {d:19,f(p){op(bandC,seg(p,.1,.4));op(lamT,seg(p,.3,.55));rv(k4,seg(p,.5,.9));}},
 ],notes:[
- '<b>Difficulty.</b> A wavefunction samples all separations. Set μ = 1/r and at large distance you leave the perturbative regime.',
- '<b>Interpolation.</b> μ′(r): 1/r at short distances, smoothly saturating at a 1 GeV cutoff. Smooth ⇒ no kinks in the force ⇒ the Monte Carlo stays stable.',
- '<b>Cutoff value.</b> 1 GeV keeps the subtraction active exactly where the bound states live. Push it to 2 GeV and the scheme collapses back to fixed order.',
- '<b>Knobs.</b> Residual scale dependence probed by λ over ½, 1, 2 — the analogue of the usual factor-of-two variation. n_f = 3/4/5 set by the lightest valence quark.',
+ '<b>b1.</b> Inside a bound-state solver there is a difficulty. A wavefunction samples all separations. Set the scale to one over r and at large distance you walk out of the perturbative regime.',
+ '<b>b2.</b> So we use a smooth interpolating scale: lambda over r at short distance, saturating at 1 GeV at long distance. Smooth means no kinks in the force, and no kinks means the Monte Carlo stays stable.',
+ '<b>b3.</b> The cutoff matters. At 1 GeV the subtraction stays active exactly where the bound states live. Push it to 2 GeV and the scheme collapses back to fixed order.',
+ '<b>b4.</b> What we vary: lambda over one half, one, and two, the analogue of the usual factor-of-two scale variation. And the number of light flavours, 3, 4 or 5, is set by the lightest valence quark: charm, bottom or top.',
 ]});
 })();
 
@@ -488,10 +488,10 @@ scenes.push({el:s,beats:[
  {d:18,f(p){rv(w1,p);}},
  {d:12,f(p){rv(w2,p);}},
 ],notes:[
- '<b>VMC.</b> Minimize ⟨H⟩ over the trial-wavefunction parameters — an upper bound and, more importantly, a good starting point.',
- '<b>GFMC.</b> Project onto the ground state by evolving in imaginary time. The energy estimate descends monotonically from above onto the true ground-state energy.',
- '<b>Trials.</b> Mesons: Coulombic exponential. Baryons: product of pair Coulomb factors. Tetraquarks: Hylleraas forms — both 3⊗<span class="ov">3</span> and 6⊗<span class="ov">6</span> colour configurations.',
- '<b>Errors.</b> Bootstrap, typically 1–10 MeV; τ and <span class="mx">δτ</span> systematics tracked.',
+ '<b>b1.</b> We solve the few-body problem with quantum Monte Carlo. Variational Monte Carlo first: minimize the energy over the parameters of a trial wavefunction. That gives an upper bound and a good starting point.',
+ '<b>b2.</b> Then Green\'s function Monte Carlo: evolve in imaginary time to project onto the ground state. The energy estimate descends monotonically from above onto the true ground-state energy.',
+ '<b>b3.</b> The trial wavefunctions are built per channel. Mesons: a Coulombic exponential. Baryons: a product of pair Coulomb factors. Tetraquarks: Hylleraas forms, explicit functions of all the pair distances, in both the triplet-antitriplet and the sextet-antisextet colour configurations.',
+ '<b>b4.</b> Statistical errors come from bootstrap, typically 1 to 10 MeV, and the imaginary-time extent and step size are tracked as systematics, so that what we quote is a converged ground-state energy.',
 ]});
 })();
 
@@ -530,10 +530,10 @@ scenes.push({el:s,beats:[
  {d:16,f(p){rv(res,seg(p,0,.25));mc.textContent=p>0.2?(1.555*eo(seg(p,.2,.6))).toFixed(3):'—';mb.textContent=p>0.25?(4.802*eo(seg(p,.25,.65))).toFixed(3):'—';
    if(p>0.62){mc.textContent='1.555';mb.textContent='4.802';}rv(pred,seg(p,.7,1));}},
 ],notes:[
- '<b>Fixed order.</b> Binding energy vs quark mass, log-log. The shaded scale-variation bands are broad — and worse, they do not overlap between orders. The fingerprint of renormalon contamination.',
- '<b>MRS.</b> Bands 2–3× narrower at NLO and NNLO, and the orders sit on top of each other. That is what improved convergence looks like.',
- '<b>Tuning.</b> Tune <span class="mx">m<sub>c</sub></span>, <span class="mx">m<sub>b</sub></span> to the spin-averaged 1S states. Fixed order: the extracted mass drifts 4–11% with order. MRS: below 1%.',
- '<b>Values.</b> <span class="mx">m<sub>c</sub></span> = 1.555 GeV, <span class="mx">m<sub>b</sub></span> = 4.802 GeV. Everything after this slide is a prediction from those two numbers plus the top mass.',
+ '<b>b1.</b> Now the results: the binding energy against the quark mass in fixed-order perturbation theory, at leading, next-to-leading, and next-to-next-to-leading order. The shaded bands are the scale variation, and two things are wrong with them. They are broad, and the bands from different orders do not even overlap. That is the fingerprint of the renormalon.',
+ '<b>b2.</b> Now the same plot with minimal renormalon subtraction. The bands are two to three times narrower at next-to-leading and next-to-next-to-leading order, and the orders sit on top of one another. That is what improved convergence looks like.',
+ '<b>b3.</b> We tune the charm and bottom masses to the spin-averaged one S quarkonium states. In fixed order the extracted mass drifts by 4 to 11 percent as we go up in order. With M R S the drift is below 1 percent.',
+ '<b>b4.</b> The tuned values are a charm mass of 1.555 GeV and a bottom mass of 4.802 GeV. These are effective masses. Everything that follows is a prediction from these two numbers, plus the top mass as an input.',
 ]});
 })();
 
@@ -569,10 +569,10 @@ scenes.push({el:s,beats:[
  {d:13,f(p){rv(rows[2],seg(p,0,.35));rv(rows[3],seg(p,.2,.55));rv(c3,seg(p,.5,.9));}},
  {d:14,f(p){rv(leg,p);}},
 ],notes:[
- '<b><span class="mx">η<sub>t</sub></span>.</b> The toponium pseudoscalar: 342.47 GeV against roughly 343 from nonrelativistic threshold treatments — directly relevant to the LHC excess.',
- '<b><span class="mx">B<sub>c</sub></span>.</b> Genuinely parameter-free. We land ~25 MeV below the combined experimental+lattice value — comparable to, though outside, the scale-variation range.',
- '<b>t <span class="ov">c</span>, t <span class="ov">b</span>.</b> Mixed top mesons — no comparison values exist yet.',
- '<b>Legend.</b> First parenthesis: Monte Carlo statistics. Second: scale variation. <span class="mx">m<sub>t</sub></span> = 172.52 GeV input.',
+ '<b>b1.</b> Toponium first. The pseudoscalar comes out at 342.47 GeV, with an uncertainty of 77 in the last digits, against roughly 343 from nonrelativistic threshold treatments. This is the zero-width limit, ignoring the decay of the top. That is directly relevant to the LHC excess.',
+ '<b>b2.</b> The B c meson is parameter-free: once the charm and bottom masses are fixed there is nothing left to adjust. We find 6.29121 GeV, with an uncertainty of 731 in the last digits, about 25 MeV below the combined experimental and lattice value of 6.316, comparable to, though outside, our scale-variation range.',
+ '<b>b3.</b> The mixed top mesons, top-charm and top-bottom, are benchmarks rather than observables: no comparison values exist, and the top decays before it can hadronize.',
+ '<b>b4.</b> To read the numbers: first parenthesis, Monte Carlo statistics; second, the scale variation over lambda; and the top mass is an input at 172.52 GeV.',
 ]});
 })();
 
@@ -617,11 +617,11 @@ scenes.push({el:s,beats:[
    gb.r.setAttribute('height',u*gb.g*26);gb.r.setAttribute('y',130-u*gb.g*26);op(gb.t,seg(p,.3+i*.14,.5+i*.14));});}},
  {d:12,f(p){rv(top,p);}},
 ],notes:[
- '<b>Our row.</b> Four states, Ω_ccc up to Ω_bbb — NNLO MRS values.',
- '<b>Lattice row.</b> We undershoot the lattice by 125–175 MeV — and that undershoot is now unambiguous rather than buried in scheme uncertainty. Fixed order actually sits closer in central value (80–110 MeV below) — the MRS advantage is the band, not the centre.',
- '<b>Band collapse.</b> Our scale band is ~10 MeV. At fixed order it was ~700 MeV. Nearly two orders of magnitude — this is what makes the comparison meaningful.',
- '<b>Pattern.</b> As a fraction of the mass the gap falls 3.8% → 1.0% from ccc to bbb. A 1/<span class="mx">m<sub>Q</sub></span> trend — exactly what you expect if what is missing is 1/<span class="mx">m<sub>Q</sub></span> corrections and spin-dependent potentials.',
- '<b>Top benchmarks.</b> Up to the triply-top Omega at 514.46 GeV.',
+ '<b>b1.</b> Triply heavy baryons, where we meet lattice QCD. The first row is ours: next-to-next-to-leading order with minimal renormalon subtraction, from triply charm to triply bottom, each with its statistical and its scale uncertainty.',
+ '<b>b2.</b> The second row is lattice QCD. We undershoot the lattice by 125 to 175 MeV. Note that fixed order actually sits closer, 80 to 110 MeV below the lattice. The advantage of M R S is not in the central value. It is in what comes next.',
+ '<b>b3.</b> Here is the scale band for the triply bottom Omega at next-to-next-to-leading order. Fixed order: about 700 MeV. M R S: about 10 MeV. Nearly two orders of magnitude, and that is what makes the comparison with the lattice meaningful.',
+ '<b>b4.</b> And the undershoot is a pattern, not noise. As a fraction of the mass, the gap falls from 3.8 percent for triply charm to 1.0 percent for triply bottom. A one over the heavy quark mass trend: exactly what you expect if what is missing are the one over m Q corrections and the spin-dependent terms.',
+ '<b>b5.</b> The same machinery gives benchmarks with top quarks, up to the triply top Omega at 514.46 GeV, with an uncertainty of 94 in the last digits.',
 ]});
 })();
 
@@ -650,10 +650,10 @@ scenes.push({el:s,beats:[
  {d:20,f(p){rv(k3,p);}},
  {d:19,f(p){rv(PF,seg(p,0,.4));rv(k4,seg(p,.5,.9));}},
 ],notes:[
- '<b>Ratio.</b> Plot baryon over meson mass — the leading renormalon is universal and partially cancels.',
- '<b>MRS collapse.</b> All three orders collapse into 1.502–1.508. The dashed line is the Detmold bound, 3/2 — our states essentially saturate it.',
- '<b>Lattice.</b> Red points at 1.52–1.57, drifting down toward our band as the quark mass grows. The 1/<span class="mx">m<sub>Q</sub></span> pattern a second time, in an independent observable.',
- '<b>Caution.</b> Fixed order looks consistent with the lattice — but only via its enormous scale bands. Once the bands shrink, the small genuine difference becomes visible.',
+ '<b>b1.</b> Now a ratio: the baryon mass over the meson mass. The leading renormalon is universal, so it partially cancels here. The dashed line is the Detmold bound: a triply heavy baryon cannot be lighter than three halves of the quarkonium.',
+ '<b>b2.</b> With M R S, all three orders collapse into a narrow band between 1.502 and 1.508, just above the bound, essentially saturating it. The three orders sit on top of each other.',
+ '<b>b3.</b> The lattice points, in red, sit at 1.52 to 1.57 and drift down toward our band as the quark mass grows. That is the one over the heavy quark mass pattern a second time, in an independent observable.',
+ '<b>b4.</b> A caution about fixed order. It looks consistent with the lattice, but only through its enormous scale bands. Better agreement with a bigger error bar is not better physics.',
 ]});
 })();
 
@@ -689,10 +689,10 @@ scenes.push({el:s,beats:[
    uchips.forEach((c,i)=>rv(c,seg(p,.65+i*.15,.85+i*.15)));}},
  {d:18,f(p){rv(col,seg(p,0,.25));cb1.style.width=(220*eo(seg(p,.25,.55)))+'px';cb2.style.width=(150*eo(seg(p,.45,.75)))+'px';}},
 ],notes:[
- '<b>Question.</b> Which combinations actually bind? R positive ⇔ bound below the quarkonium threshold.',
- '<b>Critical ratio.</b> Binding requires a mass hierarchy. Critical ratio 0.085 at NLO against about 0.125 in fixed order — MRS requires a smaller mass ratio, so the binding window tightens; the verdicts are the same in both schemes. These tetraquark results are at LO and NLO only.',
- '<b>Verdicts.</b> Bound: bb <span class="ov">t</span><span class="ov">t</span>, bc <span class="ov">t</span><span class="ov">t</span>, cc <span class="ov">t</span><span class="ov">t</span> with binding energies of 509 to 742 MeV. Unbound: bb <span class="ov">b</span><span class="ov">b</span> and cc <span class="ov">b</span><span class="ov">b</span>, where the mass ratio (≈0.3 with our tuned masses) sits far above the threshold.',
- '<b>Colour.</b> Triplet–antitriplet beats sextet–antisextet by 50–150 MeV: consistent with a diquark–antidiquark structure — colour-angle convergence in GFMC warrants further study.',
+ '<b>b1.</b> Finally, the all-heavy tetraquarks. Which combinations bind? The ratio R compares the tetraquark binding energy with twice that of the mixed quarkonium: positive means bound below threshold.',
+ '<b>b2.</b> Binding needs a mass hierarchy. The critical ratio of the lighter to the heavier quark mass is 0.085, with an uncertainty of 5 in the last digit, at next-to-leading order, against about 0.125 in fixed order. M R S requires a smaller ratio: the window tightens by about 30 percent, with the same verdicts. These results stop at next-to-leading order; the four-quark potentials are not known beyond that.',
+ '<b>b3.</b> The verdicts. Bound: b b anti-t anti-t, b c anti-t anti-t, and c c anti-t anti-t, from 509 to 742 MeV, though with scale ranges of several hundred MeV at this order. No binding found, within our variational space, for b b anti-b anti-b and c c anti-b anti-b. Their mass ratios, 1 and 0.324, sit far above the threshold.',
+ '<b>b4.</b> In colour, triplet-antitriplet beats sextet-antisextet by 50 to 150 MeV, consistent with a diquark-antidiquark structure, although the colour-angle convergence deserves further study.',
 ]});
 })();
 
@@ -703,7 +703,7 @@ b.style.flexDirection='column';
 const tb=D('div','card',b,'<table class="tbl" style="width:100%"><tr><th>diagnostic</th><th>fixed order</th><th></th><th>MRS</th></tr></table><div class="small" style="margin-top:6px">λ-bands are a scheme-stability diagnostic, not a truncation-error estimate — order-by-order shifts gauge the truncation.</div>');
 const T=tb.querySelector('table');
 const rows=[['scale band, Ω<sub>bbb</sub> at NNLO','~700 MeV','~10 MeV'],
-            ['order-by-order shifts (baryons, NNLO−NLO)','33–55 MeV','4–18 MeV'],
+            ['order-by-order shifts (baryons, |NNLO−NLO|)','33–55 MeV','4–18 MeV'],
             ['tuned m<sub>c</sub>, m<sub>b</sub> drift','4–11%','&lt; 1%'],
             ['LO / NLO / NNLO bands','disjoint','overlapping (partial)']].map(r=>{
   /* λ-band disclaimer added after the table below */
@@ -734,9 +734,9 @@ scenes.push({el:s,beats:[
  {d:22,f(p){rv(h2,seg(p,0,.25));const u=eo(seg(p,.2,.5));gh.setAttribute('width',300*(1-u)+0*u);gh.setAttribute('x',130+150*u);
    gpt.setAttribute('r',7*back(seg(p,.45,.65))>0?7*back(seg(p,.45,.65)):0);op(gband,seg(p,.5,.7));op(lpt,seg(p,.6,.75));op(glab,seg(p,.75,.95));}},
 ],notes:[
- '<b>Diagnostics.</b> Scale band 700 → 10 MeV. Order-by-order shifts 33–55 → 4–18 MeV (Table III). Tuned-mass drift 4–11% → below 1%. Bands disjoint → overlapping.',
- '<b>Hallmarks.</b> Every one is a hallmark of improved convergence — the series is still asymptotic, but the leading renormalon really was the obstruction.',
- '<b>Payoff.</b> Because the band is 10 MeV rather than 700, the 125–175 MeV lattice gap becomes interpretable: missing 1/<span class="mx">m<sub>Q</sub></span> physics — no longer noise we cannot discuss.',
+ '<b>b1.</b> So what did renormalon subtraction buy us? Four diagnostics that all move the same way. The scale band for the triply bottom Omega: from about 700 MeV to about 10. The order-by-order shifts of the baryon masses: from 33 to 55 MeV down to 4 to 18. The drift of the tuned masses: from 4 to 11 percent to below 1. And bands that were disjoint now overlap.',
+ '<b>b2.</b> Together these are hallmarks of improved convergence. The series is still asymptotic, only the leading renormalon is gone, but every diagnostic says it was the obstruction, not one problem among several. And the lambda bands diagnose scheme stability; they are not a truncation-error estimate.',
+ '<b>b3.</b> The payoff: because the band is 10 MeV rather than 700, the remaining gap of 125 to 175 MeV to the lattice becomes interpretable. It is missing one over m Q physics, not perturbative noise.',
 ]});
 })();
 
@@ -758,10 +758,10 @@ scenes.push({el:s,beats:[
  {d:18,f(p){rv(c3,seg(p,0,.2));chips.forEach((c,i)=>rv(c,seg(p,.15+i*.15,.35+i*.15)));}},
  {d:20,f(p){rv(c4,seg(p,0,.4));rv(ty,seg(p,.6,.95));}},
 ],notes:[
- '<b>Summary 1.</b> First application of minimal renormalon subtraction inside a bound-state pNRQCD calculation — NNLO static potentials with variational and Green’s-function Monte Carlo.',
- '<b>Summary 2.</b> Scale sensitivity comes down by up to two orders of magnitude; stable order by order.',
- '<b>Family.</b> Parameter-free predictions: <span class="mx">B<sub>c</sub></span>, toponium, the triply-heavy baryons, top-quark baryons, and the bound all-heavy tetraquarks.',
- '<b>Next.</b> 1/<span class="mx">m<sub>Q</sub></span> and spin-dependent potentials, MRS for non-singlet and 3-body channels, excited states, the t <span class="ov">t</span> threshold, dark sectors. Thank you.',
+ '<b>b1.</b> To conclude. This is the first use of minimal renormalon subtraction inside a bound-state potential N R Q C D calculation, with next-to-next-to-leading order static potentials and quantum Monte Carlo.',
+ '<b>b2.</b> The scale sensitivity comes down by up to two orders of magnitude, and the results are stable order by order, across every channel we looked at.',
+ '<b>b3.</b> The result is a family of parameter-free predictions. The B c meson and toponium. The triply heavy baryons from triply charm to triply bottom, and baryons with top quarks up to the triply top Omega. And the bound all-heavy tetraquarks.',
+ '<b>b4.</b> What comes next. The one over m Q and spin-dependent potentials, where the gap points. An M R S derivation for the non-singlet and three-body channels. Tetraquarks at the next order, and excited states. The top anti-top threshold against the new LHC data. Thank you, and I am happy to take questions.',
 ]});
 })();
 
@@ -773,7 +773,7 @@ w.style.cssText='display:flex;gap:48px;font:14px/1.75 var(--sans);color:var(--mu
 D('div','',w,'<b style="color:var(--ink)">This work & predecessors</b><br>Assi, Kronfeld, Vaiva, Wagman — arXiv:2607.08817 · FERMILAB-PUB-26-0061-T (2026)<br>Assi, Wagman — PRD 108, 096004 (2023) · PRD 110, 094001 (2024)<br>Assi, Grebe, Wagman — PRD 113, 016013 (2026)<br><br><b style="color:var(--ink)">MRS</b><br>Komijani — JHEP 08 (2017) 062<br>Brambilla, Komijani, Kronfeld, Vairo (TUMQCD) — PRD 97, 034503 (2018)<br>Kronfeld — JHEP 12 (2023) 108<br>Bazavov et al. (FNAL/MILC/TUMQCD) — PRD 98, 054517 (2018)<br><br><b style="color:var(--ink)">pNRQCD / renormalons</b><br>Brambilla, Pineda, Soto, Vairo — RMP 77, 1423 (2005)<br>Beneke — Phys. Rept. 317, 1 (1999)');
 D('div','',w,'<b style="color:var(--ink)">Lattice QCD comparisons</b><br>Meinel — PRD 82, 114514 (2010)<br>Brown, Detmold, Meinel, Orginos — PRD 90, 094507 (2014)<br>Mathur, Padmanath, Mondal — PRL 121, 202002 (2018)<br>Mathur, Padmanath, Chakraborty — PRL 130, 111901 (2023)<br>Gregory et al. — PRL 104, 022001 (2010)<br><br><b style="color:var(--ink)">Bounds, tetraquarks, toponium</b><br>Detmold — PRL 114, 222001 (2015)<br>Czarnecki, Leng, Voloshin — PLB 778, 233 (2018)<br>CMS — Rept. Prog. Phys. 88, 087801 (2025)<br>ATLAS — arXiv:2601.11780<br>Maltoni, Severi, Tentori, Vryonidou — arXiv:2401.08751<br>PDG — PRD 110, 030001 (2024)');
 scenes.push({el:s,beats:[{d:14,f(p){rv(w,p);}}],notes:[
- '<b>References.</b> Earlier MRS work, the lattice calculations we compare against, and the experimental results at the t <span class="ov">t</span> threshold.',
+ '<b>b1.</b> These are the key references: the earlier M R S work, the lattice calculations we compare against, and the experimental results at the top anti-top threshold. The paper is arXiv 2607.08817.',
 ]});
 })();
 
@@ -801,7 +801,7 @@ function ui(){
 function fitNotes(){const dk=$('deck');dk.style.transform='';if(!notesOn)return;
   const nr=notesEl.getBoundingClientRect(),dr=dk.getBoundingClientRect();
   dk.style.transformOrigin='top center';
-  dk.style.transform=`scale(${Math.min(1,(nr.top-dr.top-8)/dr.height).toFixed(3)})`;}
+  dk.style.transform=`scale(${Math.max(0.5,Math.min(1,(nr.top-dr.top-8)/dr.height)).toFixed(3)})`;}
 function beatF(b){(b.F||(()=>b.f(1)))();}
 function beatZ(b){(b.z||(()=>b.f(0)))();}
 function applyUpTo(n){
