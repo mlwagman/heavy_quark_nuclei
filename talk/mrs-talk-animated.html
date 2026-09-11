@@ -204,7 +204,7 @@ const TH=D('div','',b);
 const t1=D('span','rv',TH,'A decades-old infrared obstruction — the leading renormalon&nbsp; ');
 const t2=D('span','rv',TH,'→&nbsp; removed.&nbsp; ');
 const t3=D('span','rv rc',TH,'→&nbsp; a whole family of states becomes predictable.');
-TH.style.cssText='font:italic 25px/1.4 var(--serif);margin-top:10px';
+TH.style.cssText='font:italic 25px/1.4 var(--serif);margin-top:10px;max-width:1000px'; /* wraps clear of the QR block (animation review 2026-09-11) */
 const QR=D('div','rv',s);
 QR.style.cssText='position:absolute;right:56px;bottom:18px;display:flex;flex-direction:column;align-items:center;gap:7px';
 QR.innerHTML='<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQgAAAEIAQAAAACLjVdSAAABD0lEQVR42u1ZQQ7DMAiz9v8/e1PB4Oyy+5y0ahuUkwW2oeCvhXsi+wRqse5PBB7lC7/WP52AQNsn+tn7QDye7FDCQPuORuPx7Kt04vEQf9z8KKYoIBQJ5g/py3nF6ourbwWOaB4eZ6YIDiBZb0WoegXzaVHniOywR+dJIn9MnowNEcGm8qnog0MhaJgS60U9nPsQ+bNMPzZEYtTK2HoxlZ1S6eY/0Z/Sxh4cLFL1ZSDwEYiGQqF+TE6d2I/W3kw83JKZzoTWi5XLupDGKba/tU7faTV3/qGhB9esM3s+xu1sg/Nj56U7N91qysWDnH5mKSQ6P3byEawvONTF0iTVf8BNKfFl4JPn6/f//j1xrjc12h/NyBX/qgAAAABJRU5ErkJggg==" alt="arXiv" style="width:200px;display:block;border-radius:6px"><span style="font:500 15px/1 var(--mono);letter-spacing:.1em;color:var(--muted)">arxiv.org/abs/2607.08817</span>';
@@ -332,7 +332,7 @@ const L=D('div','col',b);L.style.width='620px';
 const e1=D('div','card rv',L,'<h2>The series</h2><div class="m" style="display:flex;align-items:center;flex-wrap:wrap;column-gap:6px"><span><i>V<sub>R</sub></i>(<i>r</i>) = −</span><span class="frac"><span><i>C<sub>R</sub></i></span><span class="den"><i>r</i></span></span><span class="sum"><span class="sg">Σ</span><span class="lim"><i>l</i></span></span><span><i>v<sub>l</sub></i> <i>α<sub>s</sub></i><sup>l+1</sup>(<i>μ</i>)</span></div>');
 const e2=D('div','card rv',L,'<h2 class="rc">Factorial growth</h2><div class="m" style="display:flex;align-items:center;flex-wrap:wrap;column-gap:6px"><span><i>v<sub>l</sub></i> ~ <i>V</i><sub>0</sub> (2<i>β</i><sub>0</sub>)<sup>l</sup></span><span class="frac"><span>Γ(<i>l</i>+1+<i>b</i>)</span><span class="den">Γ(1+<i>b</i>)</span></span></div><div class="small" style="margin-top:6px">the series is <b>asymptotic</b>, not convergent</div>');
 const e3=D('div','card rv',L,'<h2>Origin — infrared</h2><div class="big">Gluons with <i class="m">k ~ Λ</i><sub>QCD</sub> contaminate the potential ⇒ irreducible ambiguity <i class="m">δV ~ Λ</i><sub>QCD</sub></div><div class="small" style="margin-top:6px">the same renormalon as the pole mass</div>');
-const e4=D('div','card rv',L,'<h2 class="rc">Symptom</h2><div class="big"><i class="m">μ</i> → 2<i class="m">μ</i> moves a baryon binding energy by <span class="rc num">~100 MeV</span>; LO / NLO / NNLO bands do not overlap</div>');
+const e4=D('div','card rv',L,'<h2 class="rc">Symptom</h2><div class="big"><i class="m">μ</i> → 2<i class="m">μ</i> moves a triply-heavy baryon mass by <span class="rc num">~700 MeV</span> at NNLO; LO / NLO / NNLO bands do not overlap</div>');
 const R=D('div','col',b);R.style.flex='1';
 const psv=E('svg',{viewBox:'0 0 760 330',width:760,height:330},D('div','card',R,'<h2>|term| vs order</h2>'));
 axes(psv,60,290,730,20);
@@ -363,7 +363,7 @@ scenes.push({el:s,beats:[
  '<b>Series.</b> Write the potential as a series in <span class="mx">α<sub>s</sub></span>. The coefficients do not stay bounded — they grow factorially. Asymptotic, not convergent.',
  '<b>The picture.</b> Terms shrink for a while, reach a minimum, then blow up. No matter where you truncate, you cannot beat an error of order <span class="mx">Λ<sub>QCD</sub></span>.',
  '<b>Origin.</b> Infrared gluons with momenta ~<span class="mx">Λ<sub>QCD</sub></span> contaminate the perturbative potential. Same renormalon as the pole mass.',
- '<b>Symptom.</b> Doubling μ moves a baryon binding energy by ~100 MeV, and the LO/NLO/NNLO bands do not overlap at all. You cannot quote a meaningful uncertainty.',
+ '<b>Symptom.</b> Doubling μ moves a triply-heavy baryon mass by ~700 MeV at NNLO (Table III), and the LO/NLO/NNLO bands do not overlap at all. You cannot quote a meaningful uncertainty.',
 ]});
 })();
 
@@ -531,7 +531,7 @@ scenes.push({el:s,beats:[
    if(p>0.62){mc.textContent='1.555';mb.textContent='4.802';}rv(pred,seg(p,.7,1));}},
 ],notes:[
  '<b>Fixed order.</b> Binding energy vs quark mass, log-log. The shaded scale-variation bands are broad — and worse, they do not overlap between orders. The fingerprint of renormalon contamination.',
- '<b>MRS.</b> Bands 2–3× narrower, and the orders sit on top of each other. That is what a convergent series looks like.',
+ '<b>MRS.</b> Bands 2–3× narrower at NLO and NNLO, and the orders sit on top of each other. That is what improved convergence looks like.',
  '<b>Tuning.</b> Tune <span class="mx">m<sub>c</sub></span>, <span class="mx">m<sub>b</sub></span> to the spin-averaged 1S states. Fixed order: the extracted mass drifts 4–11% with order. MRS: below 1%.',
  '<b>Values.</b> <span class="mx">m<sub>c</sub></span> = 1.555 GeV, <span class="mx">m<sub>b</sub></span> = 4.802 GeV. Everything after this slide is a prediction from those two numbers plus the top mass.',
 ]});
@@ -703,7 +703,7 @@ b.style.flexDirection='column';
 const tb=D('div','card',b,'<table class="tbl" style="width:100%"><tr><th>diagnostic</th><th>fixed order</th><th></th><th>MRS</th></tr></table><div class="small" style="margin-top:6px">λ-bands are a scheme-stability diagnostic, not a truncation-error estimate — order-by-order shifts gauge the truncation.</div>');
 const T=tb.querySelector('table');
 const rows=[['scale band, Ω<sub>bbb</sub> at NNLO','~700 MeV','~10 MeV'],
-            ['order-by-order shifts (baryons)','50–80 MeV','10–30 MeV'],
+            ['order-by-order shifts (baryons, NNLO−NLO)','33–55 MeV','4–18 MeV'],
             ['tuned m<sub>c</sub>, m<sub>b</sub> drift','4–11%','&lt; 1%'],
             ['LO / NLO / NNLO bands','disjoint','overlapping (partial)']].map(r=>{
   /* λ-band disclaimer added after the table below */
@@ -714,7 +714,7 @@ const rows=[['scale band, Ω<sub>bbb</sub> at NNLO','~700 MeV','~10 MeV'],
   const c=D('td','rv tc num',tr,r[2]);
   return {a,ar,c};});
 const row2=D('div','',b);row2.style.cssText='display:flex;gap:16px;margin-top:16px';
-const h1=D('div','card rv',row2,'<h2>Hallmarks of convergence</h2><div class="big">Every diagnostic moves the same way. Taken together they say the leading renormalon <i>was</i> the obstruction — not one problem among several.</div>');
+const h1=D('div','card rv',row2,'<h2>Hallmarks of improved convergence</h2><div class="big">Every diagnostic moves the same way. Taken together they say the leading renormalon <i>was</i> the obstruction — not one problem among several.</div>');
 h1.style.flex='1';
 const h2=D('div','card rv',row2,'<h2 class="tc">The payoff</h2><div class="big">A <span class="num">10 MeV</span> band makes the remaining <span class="num">125–175 MeV</span> gap <i>interpretable</i>: missing 1/<i class="m">m<sub>Q</sub></i> physics, <b>not perturbative noise</b>.</div><svg viewBox="0 0 560 90" width="560" height="90" id="pv"></svg>');
 h2.style.flex='1';
@@ -734,8 +734,8 @@ scenes.push({el:s,beats:[
  {d:22,f(p){rv(h2,seg(p,0,.25));const u=eo(seg(p,.2,.5));gh.setAttribute('width',300*(1-u)+0*u);gh.setAttribute('x',130+150*u);
    gpt.setAttribute('r',7*back(seg(p,.45,.65))>0?7*back(seg(p,.45,.65)):0);op(gband,seg(p,.5,.7));op(lpt,seg(p,.6,.75));op(glab,seg(p,.75,.95));}},
 ],notes:[
- '<b>Diagnostics.</b> Scale band 700 → 10 MeV. Order-by-order shifts 50–80 → 10–30 MeV. Tuned-mass drift 4–11% → below 1%. Bands disjoint → overlapping.',
- '<b>Hallmarks.</b> Every one is a hallmark of a convergent series. The leading renormalon really was the obstruction.',
+ '<b>Diagnostics.</b> Scale band 700 → 10 MeV. Order-by-order shifts 33–55 → 4–18 MeV (Table III). Tuned-mass drift 4–11% → below 1%. Bands disjoint → overlapping.',
+ '<b>Hallmarks.</b> Every one is a hallmark of improved convergence — the series is still asymptotic, but the leading renormalon really was the obstruction.',
  '<b>Payoff.</b> Because the band is 10 MeV rather than 700, the 125–175 MeV lattice gap becomes interpretable: missing 1/<span class="mx">m<sub>Q</sub></span> physics — no longer noise we cannot discuss.',
 ]});
 })();
@@ -795,7 +795,13 @@ function ui(){
   if(notesOn){const N=scenes[si].notes||[];const i=run?run.i:Math.max(0,done-1);
     notesEl.innerHTML=(N[i]||'')+(done===0&&!run&&N[0]?'':'');
     if(done===0&&!run)notesEl.innerHTML=N[0]||'';}
+  fitNotes();
 }
+/* notes rail (N): shrink the deck so the rail never covers content (REVIEW.md 2026-08-07, TIER 2) */
+function fitNotes(){const dk=$('deck');dk.style.transform='';if(!notesOn)return;
+  const nr=notesEl.getBoundingClientRect(),dr=dk.getBoundingClientRect();
+  dk.style.transformOrigin='top center';
+  dk.style.transform=`scale(${Math.min(1,(nr.top-dr.top-8)/dr.height).toFixed(3)})`;}
 function beatF(b){(b.F||(()=>b.f(1)))();}
 function beatZ(b){(b.z||(()=>b.f(0)))();}
 function applyUpTo(n){
