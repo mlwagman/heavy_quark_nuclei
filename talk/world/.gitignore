@@ -1,0 +1,5 @@
+# 6.7 MB, regenerable: python3 talk/world/tools/extract_deck.py --only assets/narration.mp3
+assets/narration.mp3
+__pycache__/
+.pytest_cache/
+.ruff_cache/
