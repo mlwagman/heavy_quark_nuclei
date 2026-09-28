@@ -12,7 +12,7 @@ function fpanel(title,tok,cap,col){
   const cp=D('div','small rv',c,cap);cp.style.cssText='margin-top:8px;color:'+col;
   return {c,cp};}
 const P1=fpanel('Fixed order','assets/s08-fixed-order.png','broad bands — LO does not even overlap the higher orders','var(--red)');
-const P2=fpanel('MRS','assets/s08-mrs.png','2–3× narrower (Fig. 1 caption) — orders sit on top of each other','var(--teal)');
+const P2=fpanel('MRS','assets/s08-mrs.png','2–3× narrower at <i>m<sub>b</sub></i> (Fig. 1 caption) — orders now partly overlap','var(--teal)');
 const row2=D('div','',b);row2.style.cssText='display:flex;gap:16px;margin-top:14px';
 const dft=D('div','card rv',row2,'<h2>Tuned to spin-averaged 1S — mass drift by order</h2><div id="dr"></div>');
 const dr=dft.querySelector('#dr');
@@ -35,7 +35,7 @@ scenes.push({el:s,beats:[
    if(p>0.62){mc.textContent='1.555';mb.textContent='4.802';}rv(pred,seg(p,.7,1));}},
 ],notes:[
  '<b>b1.</b> Now the results: the binding energy against the quark mass in fixed-order perturbation theory, at leading, next-to-leading, and next-to-next-to-leading order. The shaded bands are the scale variation, and two things are wrong with them. They are broad, and leading order does not even overlap the higher orders. That is the fingerprint of the renormalon.',
- '<b>b2.</b> Now the same plot with minimal renormalon subtraction. The bands are two to three times narrower at next-to-leading and next-to-next-to-leading order, and the orders sit on top of one another. That is what improved convergence looks like.',
+ '<b>b2.</b> Now the same plot with minimal renormalon subtraction. At the bottom mass the bands are two to three times narrower, and the orders now partly overlap. That is what improved convergence looks like.',
  '<b>b3.</b> We tune the charm and bottom masses to the spin-averaged one S quarkonium states. In fixed order the extracted mass drifts by 4 to 11 percent as we go up in order. With M R S the drift is below 1 percent.',
  '<b>b4.</b> The tuned values are a charm mass of 1.555 GeV and a bottom mass of 4.802 GeV. These are effective masses. Everything that follows is a prediction from these two numbers, plus the top mass as an input.',
 ]});

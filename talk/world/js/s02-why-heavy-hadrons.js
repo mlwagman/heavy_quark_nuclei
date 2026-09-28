@@ -36,13 +36,13 @@ tn.forEach(n=>{E('circle',{cx:n[0],cy:n[1],r:5,fill:'var(--teal)'},tsv);
   E('text',{x:n[0],y:n[1]+(n[1]>60?24:-14),'text-anchor':'middle','font-size':'17'},tsv).textContent=n[2];});
 const tlab=E('text',{x:210,y:95,'text-anchor':'middle','font-size':'19','font-style':'italic','font-family':'var(--serif)',fill:'var(--amber)',opacity:0},tsv);
 tlab.textContent='compare at ~10 MeV';
-const tim=D('div','card rv',R,'<h2>Timely</h2><div style="display:flex;flex-wrap:wrap;gap:4px 0"><span class="chip">lattice Ω<sub>QQQ</sub> at ±10–20 MeV</span><span class="chip rc">CMS 2025: &gt;5σ at t <span class="ov">t</span> threshold</span><span class="chip">ATLAS 2026 — same excess</span></div><svg viewBox="0 0 420 84" width="420" height="72" id="bsv"></svg>');
+const tim=D('div','card rv',R,'<h2>Timely</h2><div style="display:flex;flex-wrap:wrap;gap:4px 0"><span class="chip">lattice Ω<sub>QQQ</sub> at ±10–20 MeV</span><span class="chip rc">CMS 2025: &gt;5σ at t <span class="ov">t</span> threshold (§I)</span><span class="chip">ATLAS 2026 — same excess</span></div><svg viewBox="0 0 420 84" width="420" height="72" id="bsv"></svg>');
 const bsv=tim.querySelector('#bsv');
 E('line',{x1:16,y1:66,x2:404,y2:66,stroke:'var(--muted)','stroke-width':1.5},bsv);
 const bump=E('path',{d:'',fill:'var(--rose)','fill-opacity':.3,stroke:'var(--rose)','stroke-width':2},bsv);
 E('text',{x:212,y:80,'text-anchor':'middle','font-size':'15',class:'axl'},bsv).textContent='√s → 2m_t — toponium-like excess';
 function bumpD(a){let d='M16 66 ';for(let x=16;x<=404;x+=4){const y=66-a*46*Math.exp(-Math.pow((x-210)/34,2));d+=`L${x} ${y.toFixed(1)} `;}return d;}
-const ob=D('div','card rv',R,'<h2 class="rc">The obstacle</h2><div id="obr"></div><div class="banner rv" id="obb" style="font-size:20px;margin-top:8px">This talk: remove it.</div>');
+const ob=D('div','card rv',R,'<h2 class="rc">The obstacle</h2><div id="obr"></div><div class="banner rv" id="obb" style="font-size:20px;margin-top:8px">This talk: remove the leading renormalon.</div>');
 const obr=ob.querySelector('#obr'), obb=ob.querySelector('#obb');
 const or1=D('div','',obr);or1.style.cssText='display:flex;align-items:center;gap:12px;margin:4px 0';
 D('div','small',or1,'target precision').style.width='170px';
@@ -58,14 +58,14 @@ scenes.push({el:s,beats:[
  {d:13,f(p){rv(tri,seg(p,0,.2));te.forEach((e,i)=>ds(e,seg(p,.15+i*.18,.5+i*.18)));op(tlab,seg(p,.75,1));}},
  {d:18,f(p){rv(tim,seg(p,0,.25));bump.setAttribute('d',bumpD(eo(seg(p,.45,.9))));}},
  {d:17,f(p){rv(ob,seg(p,0,.2));const w=300*eo(seg(p,.2,.65));rb.style.width=w+'px';
-   const v=Math.round(100*eo(seg(p,.2,.65)));rbl.innerHTML='~'+v+' MeV'+(v>=100?' (quarkonium) (§III A)<br>~700–850 MeV (baryons)':'');
+   const v=Math.round(100*eo(seg(p,.2,.65)));rbl.innerHTML='~'+v+' MeV'+(v>=100?' (quarkonium) (§III A)<br>~700–850 MeV (Ω masses, Tab. III)':'');
    rv(obb,seg(p,.75,1));}},
 ],notes:[
  '<b>b1.</b> Why should you care about hadrons made only of heavy quarks? Because they are the cleanest bound states QCD offers: charmonium, bottomonium, the triply charmed Omega, and the all-heavy tetraquarks.',
  '<b>b2.</b> In every one of them the quark mass is much larger than the momentum, which is much larger than the binding energy. That separation of scales gives controlled expansions in the coupling and in the velocity.',
  '<b>b3.</b> So they are a precision laboratory: a place where effective field theory, lattice QCD, and experiment can all be compared at the ten MeV level.',
  '<b>b4.</b> And the timing is right. Lattice calculations of triply heavy baryons now quote 10 to 20 MeV errors. And CMS in 2025, then ATLAS in 2026, report a five sigma excess at the top anti-top threshold, toponium-like.',
- '<b>b5.</b> Here is the obstacle. Fixed-order potential N R Q C D carries a scale dependence of order 100 MeV in binding energies, and for the triply heavy baryons far more. That is as large as the signal we are chasing. This talk is about removing that obstacle.',
+ '<b>b5.</b> Here is the obstacle. Fixed-order potential N R Q C D carries a scale dependence of order 100 MeV in binding energies, and 700 to 850 MeV in the triply heavy baryon masses. That is as large as the signal we are chasing. This talk is about removing that obstacle.',
 ]});
 })();
 

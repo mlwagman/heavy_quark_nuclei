@@ -17,7 +17,7 @@ const brect=E('rect',{x:30,y:45,width:460,height:60,rx:5,fill:'var(--red)','fill
 E('text',{x:30,y:32,'font-size':'16',class:'axl'},bs).textContent='fixed order ~700 MeV';
 const blab=E('text',{x:30,y:132,'font-size':'16',fill:'var(--teal)',opacity:0},bs);
 blab.textContent='MRS ~10 MeV';
-const gapC=D('div','card rv',row2,'<h2>The undershoot is a pattern</h2><svg viewBox="0 0 520 160" width="520" height="160" id="gs"></svg><div class="big">fractional gap ∼ 1/<i class="m">m<sub>Q</sub></i> ⇒ missing <span class="rc">𝒪(1/m<sub>Q</sub>) + spin</span> — not noise</div>');
+const gapC=D('div','card rv',row2,'<h2>The undershoot is a pattern</h2><svg viewBox="0 0 520 160" width="520" height="160" id="gs"></svg><div class="big">fractional gap ∼ 1/<i class="m">m<sub>Q</sub></i> — not noise; consistent with missing <span class="rc">𝒪(1/m<sub>Q</sub>) + spin</span> <span class="small">(§VI)</span></div>');
 gapC.style.flex='1';
 const gs=gapC.querySelector('#gs');
 const gaps=[3.7,1.9,1.1,0.9];
@@ -41,10 +41,10 @@ scenes.push({el:s,beats:[
    gb.r.setAttribute('height',u*gb.g*26);gb.r.setAttribute('y',130-u*gb.g*26);op(gb.t,seg(p,.3+i*.14,.5+i*.14));});}},
  {d:12,f(p){rv(top,p);}},
 ],notes:[
- '<b>b1.</b> Triply heavy baryons, where we meet lattice QCD. The first row is ours: next-to-next-to-leading order with minimal renormalon subtraction, from triply charm to triply bottom, each with its statistical and its scale uncertainty.',
+ '<b>b1.</b> Triply heavy baryons, where we meet lattice QCD. The first row is ours: next-to-next-to-leading order with minimal renormalon subtraction, from triply charm to triply bottom, each with its statistical error and its scale range.',
  '<b>b2.</b> The second row is lattice QCD. We undershoot the lattice by 125 to 175 MeV. Note that fixed order actually sits closer, 80 to 110 MeV below the lattice. The advantage of M R S is not in the central value. It is in what comes next.',
  '<b>b3.</b> Here is the scale band for the triply bottom Omega at next-to-next-to-leading order. Fixed order: about 700 MeV. M R S: about 10 MeV. Nearly two orders of magnitude, and that is what makes the comparison with the lattice meaningful.',
- '<b>b4.</b> And the undershoot is a pattern, not noise. As a fraction of the lattice mass, the gap falls from nearly 4 percent for triply charm to under 1 percent for triply bottom. A one over the heavy quark mass trend: exactly what you expect if what is missing are the one over m Q corrections and the spin-dependent terms.',
+ '<b>b4.</b> And the undershoot is a pattern, not noise. As a fraction of the lattice mass, the gap falls from nearly 4 percent for triply charm to under 1 percent for triply bottom. A one over the heavy quark mass trend, consistent with what the static limit leaves out: the one over m Q corrections and the spin-dependent terms. A direct test is future work.',
  '<b>b5.</b> The same machinery gives benchmarks with top quarks, up to the triply top Omega at 514.46 GeV, with a scale range of plus or minus 0.94 GeV: for the triply top Omega the band is wide.',
 ]});
 })();

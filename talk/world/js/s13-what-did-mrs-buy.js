@@ -17,9 +17,9 @@ const rows=[['scale band, Ω<sub>bbb</sub> at NNLO','~700 MeV','~10 MeV'],
   const c=D('td','rv tc num',tr,r[2]);
   return {a,ar,c};});
 const row2=D('div','',b);row2.style.cssText='display:flex;gap:16px;margin-top:16px';
-const h1=D('div','card rv',row2,'<h2>Hallmarks of improved convergence</h2><div class="big">Every diagnostic moves the same way. Taken together they say the leading renormalon <i>was</i> the obstruction — not one problem among several.</div>');
+const h1=D('div','card rv',row2,'<h2>Hallmarks of improved convergence</h2><div class="big">For charm and bottom hadrons, every diagnostic moves the same way. Taken together they say the leading renormalon <i>was</i> the obstruction — not one problem among several.</div>');
 h1.style.flex='1';
-const h2=D('div','card rv',row2,'<h2 class="tc">The payoff</h2><div class="big">A <span class="num">10 MeV</span> band makes the remaining <span class="num">125–175 MeV</span> gap <i>interpretable</i>: missing 1/<i class="m">m<sub>Q</sub></i> physics, <b>not perturbative noise</b>.</div><svg viewBox="0 0 560 90" width="560" height="90" id="pv"></svg>');
+const h2=D('div','card rv',row2,'<h2 class="tc">The payoff</h2><div class="big">Order-by-order shifts of <span class="num">4–18 MeV</span> make the remaining <span class="num">125–175 MeV</span> gap <i>interpretable</i>: consistent with missing 1/<i class="m">m<sub>Q</sub></i> physics, <b>not perturbative noise</b>.</div><svg viewBox="0 0 560 90" width="560" height="90" id="pv"></svg>');
 h2.style.flex='1';
 const pv=h2.querySelector('#pv');
 E('line',{x1:20,y1:48,x2:540,y2:48,stroke:'var(--muted)','stroke-width':1.5},pv);
@@ -27,7 +27,7 @@ const gh=E('rect',{x:130,y:14,width:0,height:68,rx:4,fill:'var(--red)','fill-opa
 const gpt=E('circle',{cx:280,cy:48,r:0,fill:'var(--teal)'},pv);
 const gband=E('rect',{x:274,y:38,width:12,height:20,rx:2,fill:'var(--teal)','fill-opacity':.4,opacity:0},pv);
 const lpt=E('rect',{x:414,y:42,width:12,height:12,fill:'var(--red)',opacity:0},pv);
-E('text',{x:280,y:30,'text-anchor':'middle','font-size':'15',class:'axl'},pv).textContent='ours ±10 MeV';
+E('text',{x:280,y:30,'text-anchor':'middle','font-size':'15',class:'axl'},pv).textContent='ours: shifts 4–18 MeV';
 E('text',{x:420,y:30,'text-anchor':'middle','font-size':'15',class:'axl'},pv).textContent='lattice';
 const glab=E('text',{x:350,y:82,'text-anchor':'middle','font-size':'15',fill:'var(--rose)',opacity:0},pv);
 glab.textContent='← 125–175 MeV, now meaningful →';
@@ -39,7 +39,7 @@ scenes.push({el:s,beats:[
 ],notes:[
  '<b>b1.</b> So what did renormalon subtraction buy us? Four diagnostics that all move the same way. The scale band for the triply bottom Omega: from about 700 MeV to about 10. The order-by-order shifts of the baryon masses: from 33 to 55 MeV down to 4 to 18. The drift of the tuned masses: from 4 to 11 percent to below 1. And bands where leading order sat apart now overlap.',
  '<b>b2.</b> Together these are hallmarks of improved convergence. The series is still asymptotic, only the leading renormalon is gone, but every diagnostic says it was the obstruction, not one problem among several. And the lambda bands diagnose scheme stability; they are not a truncation-error estimate.',
- '<b>b3.</b> The payoff: because the band is 10 MeV rather than 700, the remaining gap of 125 to 175 MeV to the lattice becomes interpretable. It is missing one over m Q physics, not perturbative noise.',
+ '<b>b3.</b> The payoff: with order-by-order shifts of only 4 to 18 MeV, the remaining gap of 125 to 175 MeV to the lattice becomes interpretable. It is consistent with missing one over m Q physics, not perturbative noise.',
 ]});
 })();
 

@@ -26,7 +26,7 @@ const gT=E('text',{x:330,y:E0+26,'text-anchor':'middle','font-size':'17','font-s
 gT.textContent='descends monotonically from above onto ΔE₀';
 const R=D('div','col',b);R.style.flex='1';
 const w1=D('div','card rv',R,'<h2>Trial wavefunctions — per channel</h2><div class="big" style="display:flex;flex-direction:column;gap:8px"><span>mesons: <span class="m tc">e<sup>−r/a₀</sup></span> — Coulombic</span><span>baryons: <span class="tc">product of pair Coulomb factors</span></span><span>tetraquarks: <span class="tc">Hylleraas forms</span> in colour <span class="m">3⊗<span class="ov">3</span></span> / <span class="m">6⊗<span class="ov">6</span></span></span></div>');
-const w2=D('div','card rv',R,'<h2>Errors</h2><div class="big">Bootstrap errors: <span class="num">≤ 0.4 MeV</span> (most states) · <span class="num">6–11 MeV</span> (tetraquarks) · <span class="num">40–80 MeV</span> (η<sub>t</sub>, Ω<sub>ttt</sub>). Systematics tracked: τ extent, step δτ.</div>');
+const w2=D('div','card rv',R,'<h2>Errors</h2><div class="big">Bootstrap errors: <span class="num">&lt; 0.5 MeV</span> (most states) · <span class="num">6–11 MeV</span> (tetraquarks) · <span class="num">40–80 MeV</span> (η<sub>t</sub>, Ω<sub>ttt</sub>). Systematics tracked: τ extent, step δτ.</div>');
 scenes.push({el:s,beats:[
  {d:16,f(p){rv(vc,seg(p,0,.2));ds(vcv,seg(p,.15,.45));
    const q=seg(p,.42,.98);const u=0.62-0.56*Math.exp(-3.2*q)*Math.cos(7.85*q);op(ball,seg(p,.4,.5));
@@ -38,7 +38,7 @@ scenes.push({el:s,beats:[
  '<b>b1.</b> We solve the few-body problem with quantum Monte Carlo. Variational Monte Carlo first: minimize the energy over the parameters of a trial wavefunction. That gives an upper bound and a good starting point.',
  '<b>b2.</b> Then Green\'s function Monte Carlo: evolve in imaginary time to project onto the ground state. The energy estimate descends monotonically from above onto the true ground-state energy.',
  '<b>b3.</b> The trial wavefunctions are built per channel. Mesons: a Coulombic exponential. Baryons: a product of pair Coulomb factors. Tetraquarks: Hylleraas forms, explicit functions of all the pair distances, in both the triplet-antitriplet and the sextet-antisextet colour configurations.',
- '<b>b4.</b> Statistical errors come from bootstrap: below half an MeV for most states, 6 to 11 MeV for the tetraquarks, and 40 to 80 MeV for toponium and the triply top Omega. The imaginary-time extent and step size are tracked as systematics, so that what we quote is a converged ground-state energy.',
+ '<b>b4.</b> Statistical errors come from bootstrap: below half an MeV for most states, 6 to 11 MeV for the tetraquarks, and 40 to 80 MeV for toponium and the triply top Omega. The imaginary-time extent and step size are tracked as systematics, so that what we quote is a converged ground-state energy for mesons and baryons; for the tetraquarks, the colour convergence is still under study.',
 ]});
 })();
 

@@ -4,7 +4,7 @@
 const {s,b}=scene('Scene 14 / 15 — Conclusions','Conclusions and outlook');
 b.style.flexDirection='column';
 const c1=D('div','card rv',b,'<div class="big"><b>First application of MRS inside a bound-state pNRQCD calculation</b> — NNLO static potentials + VMC / GFMC.</div>');
-const c2=D('div','card rv',b,'<div class="big">Scale sensitivity down by <span class="tc num">up to two orders of magnitude</span>; results stable order by order.</div>');
+const c2=D('div','card rv',b,'<div class="big">Scale sensitivity of charm and bottom hadrons down by <span class="tc num">up to two orders of magnitude</span>; results stable order by order.</div>');
 const c3=D('div','card rv',b,'<h2>Predictions — 2 tuned masses + <span style="text-transform:none">m<sub>t</sub></span> input</h2><div id="fam"></div>');
 const fam=c3.querySelector('#fam');
 const chips=['B<sub>c</sub>','η<sub>t</sub> (toponium)','Ω<sub>ccc</sub> … Ω<sub>bbb</sub>','top baryons → Ω<sub>ttt</sub>','bound b b <span class="ov">t</span> <span class="ov">t</span> · b c <span class="ov">t</span> <span class="ov">t</span> · c c <span class="ov">t</span> <span class="ov">t</span>'].map(t=>{

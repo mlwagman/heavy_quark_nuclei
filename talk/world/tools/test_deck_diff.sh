@@ -31,9 +31,14 @@ minus() { printf '%s\n' "$1" | tr ',' '\n' | rg -vxF -f <(printf '%s\n' "$2" | t
 # Ticket 08 (Deck-claim wording fixes, 3677113): the union of differing_beats and notes_differing in
 # mrs-talk-world/evidence/08/{chromium,firefox}.report.json (both equal to their .allowed), via
 #   jq -r '[.differing_beats[],.notes_differing[]]|unique|join(",")'
+# Ticket 11 (physics-review wording fixes): ∪ the same union from mrs-talk-world/evidence/11/firefox.2b.report.json
+# (pre-11 world/ → post-11 world/), which the Chromium run matches except CHROMIUM_ONLY.
 # Later Deck edits (ticket 10, S09 legend first) append their beats here. W1/F1 demand EQUALITY with this list,
 # so a lost edit fails as surely as a stray one.
-DECK_EDITS=S02b4,S02b5,S03b4,S04b3,S04b4,S05b2,S05b3,S05b4,S05b5,S06b3,S06b4,S07b4,S08b1,S08b2,S08b3,S08b4,S09b1,S09b2,S10b4,S10b5,S11b2,S11b3,S11b4,S12b2,S12b3,S12b4,S13b0,S13b1,S13b2,S13b3,S14b2,S14b3,S14b4
+DECK_EDITS=S02b4,S02b5,S03b4,S04b0,S04b1,S04b2,S04b3,S04b4,S05b1,S05b2,S05b3,S05b4,S05b5,S06b0,S06b1,S06b2,S06b3,S06b4,S07b4,S08b1,S08b2,S08b3,S08b4,S09b1,S09b2,S09b3,S09b4,S10b1,S10b4,S10b5,S11b1,S11b2,S11b3,S11b4,S12b1,S12b2,S12b3,S12b4,S13b0,S13b1,S13b2,S13b3,S14b2,S14b3,S14b4
+# Beats only Chromium rasterizes differently. S12b0 (ticket 11): 24 px of the footer's 2nd progress dot, under
+# S12's hidden cards that T24 moved 2 px; gone when only T24 is undone (evidence/11/diag.extra-beats.md).
+CHROMIUM_ONLY=S12b0
 
 THANKS_FROM='>Thank you <span'; THANKS_TO='>Thank yoo <span'
 # the world/ negative control lives in S15, which DECK_EDITS does not touch (S14b4, T1's target, is in it)
@@ -68,28 +73,29 @@ if [ "${1:-}" = "--world" ] || [ "${1:-}" = "--firefox" ]; then
 fi
 
 if [ "${1:-}" = "--world" ]; then
+  EDITS=$(plus "$DECK_EDITS" "$CHROMIUM_ONLY")  # the --world runs are Chromium
   # W1 the acceptance gate: rebuilt page == Deck on all 129 frames and all notes except exactly DECK_EDITS
-  diff_run W1 "$DECK" "$W/index.html" --allow "$DECK_EDITS"
+  diff_run W1 "$DECK" "$W/index.html" --allow "$EDITS"
   check "W1 exit 0" 0 "$rc"
   check "W1 129 frames, nothing unexpected, no errors" '129 [] [] []' \
     "$(rep W1 '.frames') $(rep W1 '.unexpected') $(rep W1 '.errors.a') $(rep W1 '.errors.b')"
-  check "W1 differs from the Deck exactly on DECK_EDITS" "$DECK_EDITS" "$(union W1)"
+  check "W1 differs from the Deck exactly on DECK_EDITS + CHROMIUM_ONLY" "$EDITS" "$(union W1)"
   check "W1 audio ok on both" '"ok" "ok"' "$(rep W1 '.audio.a') $(rep W1 '.audio.b')"
   # W2 the negative control on the source folder: one word in js/s15 → exactly S15b1 on top of DECK_EDITS
-  diff_run W2 "$DECK" "$TMP/w_s15/index.html" --allow "$DECK_EDITS"
+  diff_run W2 "$DECK" "$TMP/w_s15/index.html" --allow "$EDITS"
   check "W2 exit 1" 1 "$rc"
-  check "W2 unexpected == [S15b1], union == DECK_EDITS + S15b1" "[\"S15b1\"] $(plus "$DECK_EDITS" S15b1)" "$(rep W2 '.unexpected') $(union W2)"
+  check "W2 unexpected == [S15b1], union == DECK_EDITS + CHROMIUM_ONLY + S15b1" "[\"S15b1\"] $(plus "$EDITS" S15b1)" "$(rep W2 '.unexpected') $(union W2)"
   # W3 ticket 08's mode: the changed beat is named in --allow → pass, still reported
-  diff_run W3 "$DECK" "$TMP/w_s15/index.html" --allow "$DECK_EDITS,S15b1"
+  diff_run W3 "$DECK" "$TMP/w_s15/index.html" --allow "$EDITS,S15b1"
   check "W3 exit 0" 0 "$rc"
-  check "W3 unexpected == [], union == DECK_EDITS + S15b1" "[] $(plus "$DECK_EDITS" S15b1)" "$(rep W3 '.unexpected') $(union W3)"
-  # W8 why W1 demands equality: undo ticket 08's S06 label edit and the run still exits 0 with nothing unexpected,
-  # but its union loses S06b3,S06b4, which W1's equality check would flag
-  cp -r "$W" "$TMP/w_rev"; mutate "$W/js/s06-mu-r.js" "$TMP/w_rev/js/s06-mu-r.js" \
-    ' 2 GeV → fixed order (Fig. 7: frozen <i>α<sub>s</sub></i>)' ' = 2 GeV → fixed order'
-  diff_run W8 "$DECK" "$TMP/w_rev/index.html" --allow "$DECK_EDITS"
+  check "W3 unexpected == [], union == DECK_EDITS + CHROMIUM_ONLY + S15b1" "[] $(plus "$EDITS" S15b1)" "$(rep W3 '.unexpected') $(union W3)"
+  # W8 why W1 demands equality: undo ticket 08's S13 table cells (row 34) and the run still exits 0 with nothing
+  # unexpected, but its union loses S13b0, which W1's equality check would flag
+  cp -r "$W" "$TMP/w_rev"; mutate "$W/js/s13-what-did-mrs-buy.js" "$TMP/w_rev/js/s13-what-did-mrs-buy.js" \
+    "'LO apart','overlap (partial)'" "'disjoint','overlapping (partial)'"
+  diff_run W8 "$DECK" "$TMP/w_rev/index.html" --allow "$EDITS"
   check "W8 a lost edit passes --allow alone (exit 0, unexpected [])" '0 []' "$rc $(rep W8 '.unexpected')"
-  check "W8 but its union is DECK_EDITS minus S06b3,S06b4 (≠ DECK_EDITS)" "$(minus "$DECK_EDITS" S06b3,S06b4)" "$(union W8)"
+  check "W8 but its union is DECK_EDITS + CHROMIUM_ONLY minus S13b0 (≠ W1's)" "$(minus "$EDITS" S13b0)" "$(union W8)"
   # W4 a missing font file is a setup error, never a quiet fallback-font render
   diff_run W4 "$DECK" "$TMP/w_nofont/index.html"
   check "W4 exit 2" 2 "$rc"
