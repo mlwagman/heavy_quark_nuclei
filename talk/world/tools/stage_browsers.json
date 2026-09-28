@@ -1,0 +1,8 @@
+{
+ "_comment": "Launch table shared by test_world_browser.mjs and test_world.sh (which passes .launch to deck_diff.mjs as DECK_DIFF_LAUNCH). chromium/firefox = Playwright's bundled builds. chrome/firefox-stock = the installed stage browsers, headed (they take over the screen), with the popup blocker and strict file:// origins that Playwright turns off put back on.",
+ "chromium": { "type": "chromium", "launch": {} },
+ "firefox": { "type": "firefox", "launch": {} },
+ "chrome": { "type": "chromium", "launch": { "channel": "chrome", "headless": false, "ignoreDefaultArgs": ["--disable-popup-blocking"] } },
+ "firefox-stock": { "type": "firefox", "launch": { "channel": "moz-firefox", "executablePath": "/usr/lib/firefox/firefox", "headless": false,
+   "firefoxUserPrefs": { "dom.disable_open_during_load": true, "security.fileuri.strict_origin_policy": true, "webgl.sanitize-unmasked-renderer": false } } }
+}

@@ -4,6 +4,7 @@
 //
 //   NODE_PATH=$(npm root -g) node talk/world/tools/deck_diff.mjs --a <ref.html> --b <cand.html> --out <dir>
 //        [--allow S14b4,S07b2,...] [--browser chromium|firefox]
+//   DECK_DIFF_LAUNCH='<json>' = Playwright launch options, e.g. the stage browsers in stage_browsers.json (ticket 04).
 //
 // Both pages open over file:// in the SAME browser at 1920×1080, get render/deck_shim.mjs, and are driven
 // through the identical sequence (the rv() reveal variants depend on call order). Per scene: the opening frame
@@ -87,7 +88,7 @@ async function pixelDiff(helper, a, b) {
 }
 
 let rc = 0;
-const browser = await pw[BROWSER].launch();
+const browser = await pw[BROWSER].launch(JSON.parse(process.env.DECK_DIFF_LAUNCH || '{}'));
 report.browser_version = browser.version();
 try {
   const pa = await open(browser, A, 'a'), pb = await open(browser, B, 'b');

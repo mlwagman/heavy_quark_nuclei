@@ -3,3 +3,6 @@ assets/narration.mp3
 __pycache__/
 .pytest_cache/
 .ruff_cache/
+# backup clips are regenerable recordings (ticket 06); only clips/manifest.js is tracked
+clips/*.webm
+clips/*.mp4

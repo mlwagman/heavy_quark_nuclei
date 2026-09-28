@@ -1,0 +1,50 @@
+<!-- The World (ticket 04): the Deck's 15 scenes hosted unchanged (same stage DOM and scripts as index.html, which
+     stays the Deck-equivalent reference) + a hidden 3D layer, a backup-clip overlay and the presenter link.
+     On stage: open presenter.html and click "Open World". Quirks mode on purpose (no DOCTYPE), like the Deck. -->
+<meta charset="utf-8">
+<title>MRS pNRQCD for heavy hadrons — World</title>
+<link rel="stylesheet" href="deck.css">
+<link rel="stylesheet" href="world.css">
+
+
+<canvas id="space"></canvas>
+<div id="stage">
+  <div id="deck"></div>
+  <footer>
+    <div id="prog"></div>
+    <div style="display:flex;gap:18px;align-items:center">
+      <span id="scix"></span><div id="dots"></div>
+    </div>
+    <div id="paused">⏸ paused</div>
+    <div id="auto">▶ narrated run</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div id="keys">space/→ next · ← back · ↑↓ scene · R restart · P pause · A narrated run · N notes · F fullscreen</div>
+      <img src="assets/qr.png" alt="arXiv 2607.08817" style="width:46px;display:block;border-radius:3px">
+    </div>
+  </footer>
+  <div id="notes"></div>
+</div>
+<div id="backup"></div>
+
+<script src="js/00-helpers.js"></script>
+<script src="js/s01-title.js"></script>
+<script src="js/s02-why-heavy-hadrons.js"></script>
+<script src="js/s03-pnrqcd.js"></script>
+<script src="js/s04-renormalon-problem.js"></script>
+<script src="js/s05-mrs.js"></script>
+<script src="js/s06-mu-r.js"></script>
+<script src="js/s07-qmc.js"></script>
+<script src="js/s08-quarkonium-tuning.js"></script>
+<script src="js/s09-mesons.js"></script>
+<script src="js/s10-baryons-vs-lattice.js"></script>
+<script src="js/s11-ratio-detmold.js"></script>
+<script src="js/s12-tetraquarks.js"></script>
+<script src="js/s13-what-did-mrs-buy.js"></script>
+<script src="js/s14-conclusions.js"></script>
+<script src="js/s15-references.js"></script>
+<script src="js/99-engine.js"></script>
+<script src="vendor/three/three.iife.js"></script>
+<script src="clips/manifest.js"></script>
+<script src="js/world-core.js"></script>
+<script src="js/world-space.js"></script>
+<script src="js/world.js"></script>

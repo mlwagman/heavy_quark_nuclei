@@ -1,0 +1,33 @@
+<!doctype html>
+<!-- Presenter view (ticket 04), on the laptop screen. Click "Open World", drag that window to the projector and press F
+     there. Notes = the Deck's notes (final narration). The clicker works in either window. presenter.html?backup=4,5
+     passes the backup setting on to the World. -->
+<meta charset="utf-8">
+<title>MRS talk — presenter</title>
+<style>
+  @font-face{font-family:'P052';src:url(fonts/P052-Regular.woff2) format('woff2');}
+  @font-face{font-family:'P052';src:url(fonts/P052-Italic.woff2) format('woff2');font-style:italic;}
+  html,body{margin:0;height:100%;background:#0A0E17;color:#E8EAF2;font:18px/1.5 system-ui,sans-serif;}
+  body{display:grid;grid-template-rows:auto 1fr auto;gap:18px;padding:22px 28px;box-sizing:border-box;}
+  header{display:flex;align-items:baseline;gap:24px;}
+  #title{font:400 30px/1.2 'P052',serif;flex:1;}
+  #wall,#elapsed{font:600 34px/1 ui-monospace,monospace;}
+  #elapsed{color:#E2A33C;cursor:pointer;} #elapsed:hover{text-decoration:underline;}
+  main{display:grid;grid-template-columns:3fr 2fr;gap:28px;min-height:0;}
+  section{background:#101624;border-radius:10px;padding:16px 20px;overflow:auto;}
+  .lbl{font:600 15px/1 ui-monospace,monospace;color:#6FD3C7;margin-bottom:10px;}
+  #now-note{font-size:26px;line-height:1.45;} #next-note{font-size:19px;color:#AAB2C8;}
+  #now-note b,#next-note b{color:#fff;}
+  footer{display:flex;gap:18px;align-items:center;color:#8A93A8;font-size:15px;}
+  #status.ok{color:#6FD3C7;} #status.lost{color:#E25B5B;}
+  button{font:inherit;font-size:18px;padding:8px 18px;border-radius:8px;border:0;background:#E2A33C;color:#0A0E17;cursor:pointer;}
+</style>
+<header><div id="title">—</div><div id="wall">--:--</div><div id="elapsed" title="click to reset">0:00</div></header>
+<main>
+  <section><div class="lbl">NOW <span id="now-label">—</span></div><div id="now-note"></div></section>
+  <section><div class="lbl">NEXT <span id="next-label">—</span></div><div id="next-note"></div></section>
+</main>
+<footer><button id="open-world">Open World</button><span id="status" class="lost">no World</span><span id="backup"></span>
+  <span>keys: → / space / PgDn next · ← / PgUp back · ↑↓ scene · V backup clip</span></footer>
+<script src="js/world-core.js"></script>
+<script src="js/presenter.js"></script>
