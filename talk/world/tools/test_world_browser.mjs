@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { shot, pxDiff } from './world_test_lib.mjs';
 const require = createRequire((process.env.NODE_PATH || '/usr/lib/node_modules') + '/');
 const pw = require('playwright');
 const here = path.dirname(new URL(import.meta.url).pathname);
@@ -35,26 +36,7 @@ async function openWorld(q = '', page = PAGE, dir = WD) {
 const state = pg => pg.evaluate(() => ({ si, done, run: run && run.i, auto, notesOn, audPaused: AUD.paused }));
 const settle = pg => pg.waitForFunction(() => run === null, null, { timeout: 15000 });
 
-// pin the ambient orbiters, repaint #stage afresh (deck_diff.mjs's recipe for a 0 px noise floor), screenshot
-async function shot(pg) {
-  await pg.evaluate(async () => {
-    window.__RENDER = true; tAmb = 0; window.__frame(0);
-    const st = document.getElementById('stage'), fr = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-    st.style.willChange = ''; await fr(); st.style.willChange = 'transform'; await fr();
-  });
-  return pg.screenshot({ animations: 'disabled', caret: 'hide' });
-}
-// differing pixels between two PNG screenshots, decoded in the browser under test
-async function pxDiff(pg, a, b) {
-  if (a.equals(b)) return 0;
-  return pg.evaluate(async ([a, b]) => {
-    const dec = async s => { const bm = await createImageBitmap(await (await fetch('data:image/png;base64,' + s)).blob());
-      const x = new OffscreenCanvas(bm.width, bm.height).getContext('2d'); x.drawImage(bm, 0, 0); return x.getImageData(0, 0, bm.width, bm.height).data; };
-    const [P, Q] = [await dec(a), await dec(b)]; let n = 0;
-    for (let i = 0; i < P.length; i += 4) if (P[i] !== Q[i] || P[i + 1] !== Q[i + 1] || P[i + 2] !== Q[i + 2] || P[i + 3] !== Q[i + 3]) n++;
-    return n;
-  }, [a.toString('base64'), b.toString('base64')]);
-}
+// shot / pxDiff: the 0 px recipes, shared with the ticket 06 tools (world_test_lib.mjs)
 
 test('K1 idle: nothing auto-plays', async () => {
   const { ctx, pg, errors } = await openWorld();
@@ -154,6 +136,22 @@ async function openPresenter(q = '') {
 const shows = (pres, sel, want, timeout = 1000) =>
   pres.waitForFunction(([s, w]) => document.querySelector(s)?.textContent === w, [sel, want], { timeout });
 const done_ = world => world.evaluate(() => done);
+
+test('X4 restarting the 3D layer leaks nothing: GPU textures flat over 5 stop/start cycles (ticket 06, R1: +11 per start)', async () => {
+  const { ctx, pg, errors } = await openWorld();
+  const counts = await pg.evaluate(() => {
+    const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 100); cam.position.z = 5;
+    sc.add(new THREE.Mesh(new THREE.SphereGeometry(1, 16, 8), new THREE.MeshBasicMaterial({ color: 0xffcc66 })));
+    const out = [];
+    for (let i = 0; i < 6; i++) { WorldSpace.start({ scene: sc, camera: cam }); WorldSpace.render(); out.push(WorldSpace.renderer.info.memory.textures); WorldSpace.stop(); }
+    return out;
+  });
+  assert.ok(counts[0] > 0, `the bloom allocates textures (control): ${counts}`);
+  // flat from the second start on (the first restart adds one lazily-made composer texture, once); a leak grows every start
+  assert.deepEqual(counts.slice(1), counts.slice(1).map(() => counts[1]), `textures per start: ${counts}`);
+  assert.ok(counts[1] - counts[0] <= 1, `textures per start: ${counts}`);
+  assert.deepEqual(errors, []); await ctx.close();
+});
 
 test('P1 the presenter opens the World and shows beat, next beat and its note within 1 s', async () => {
   const { ctx, pres, world, errors } = await openPresenter();

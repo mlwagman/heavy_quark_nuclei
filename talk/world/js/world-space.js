@@ -19,7 +19,7 @@ window.WorldSpace = (function () {
   function loop(ts) { raf = 0; if (!view || held) return; render(ts / 1000); raf = requestAnimationFrame(loop); }
   function start(v) {
     ensure();
-    while (composer.passes.length) composer.removePass(composer.passes[0]);
+    while (composer.passes.length) { const p = composer.passes[0]; composer.removePass(p); p.dispose(); } // free the old bloom targets (ticket 06: +11 textures per start)
     composer.addPass(new THREE.RenderPass(v.scene, v.camera));
     composer.addPass(new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.8, 0.4, 0.7));
     composer.addPass(new THREE.OutputPass());

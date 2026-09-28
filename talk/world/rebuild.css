@@ -1,0 +1,54 @@
+/* rebuild.css — the rebuilt World scenes (ticket 06: S04, S05). Every selector is scoped to rebuilt content
+   (.w-rebuilt sections, the #w-floor-overlay layer, #space.w-*), checked by tools/test_rebuild_core.mjs C11, so no
+   hosted scene can change through this file. Colours: the paper's order hues (evidence/06/palette.md), the rest neutral. */
+/* off screen = not rendered: a hidden rebuilt section still took part in Chromium's layer squashing (its SVG haze blur
+   changed hosted S02b5 by 73 px, lock I). The engine keeps .cur on both sections through a glide, so glides still show. */
+.w-rebuilt{--lo:#5E81B5;--nlo:#E19C24;--nnlo:#8FB032;--haze:rgba(255,255,255,.22);overflow:clip;}
+.w-rebuilt:not(.cur){display:none;}
+.w-rebuilt .w-abs{position:absolute;}
+/* the crisp Borel-floor overlay (rebuild-space.js): window pixels, --k = stage scale; never bloomed (W1, #17) */
+#w-floor-overlay{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;display:none;overflow:visible;}
+#w-floor-overlay .axis{stroke:var(--muted);stroke-width:calc(1.4px * var(--k,1));}
+#w-floor-overlay .contour{stroke:var(--ink);stroke-width:calc(3.2px * var(--k,1));stroke-linecap:round;opacity:0;}
+#w-floor-overlay .cut{fill:none;stroke:var(--ink);stroke-width:calc(1.6px * var(--k,1));}
+#w-floor-overlay .bp{fill:var(--bg);stroke:var(--ink);stroke-width:calc(2.2px * var(--k,1));}
+#w-floor-overlay .ulab{fill:var(--muted);font-family:var(--serif);font-style:italic;font-size:calc(24px * var(--k,1));}
+/* rebuilt sections: the Board is laid out by hand inside .sbody; labels glued to 3D points sit on the section */
+.w-rebuilt .w-label{font:15px/1.3 var(--sans);color:var(--muted);white-space:nowrap;transform:translate(-50%,0);}
+.w-rebuilt .w-svg{overflow:visible;display:block;}
+.w-rebuilt.w-s04 .w-svg{width:100%;height:auto;}
+.w-rebuilt .card{padding:9px 14px;}
+.w-rebuilt .w-eq{display:flex;align-items:center;flex-wrap:wrap;column-gap:4px;}
+.w-rebuilt .w-dim{opacity:.55;}
+.w-rebuilt .w-center{text-align:center;margin-top:2px;}
+.w-rebuilt .w-rel{position:relative;}
+.w-rebuilt .w-note{position:absolute;right:14px;bottom:8px;font-size:14px;}
+.w-rebuilt .w-left{transform:translate(-100%,-50%);}
+.w-rebuilt .w-up{transform:translate(-50%,-100%);}
+.w-rebuilt .w-soft{color:var(--muted);}
+.w-rebuilt .w-gauge{margin-top:8px;display:flex;flex-direction:column;gap:4px;}
+.w-rebuilt .w-gline{display:flex;align-items:center;gap:10px;min-height:22px;}
+.w-rebuilt .w-gbar{height:14px;border-radius:2px;flex:none;box-sizing:border-box;}
+.w-rebuilt .w-target{background:var(--ink);}
+.w-rebuilt .w-hatch-nnlo{border:1.5px solid var(--nnlo);background:repeating-linear-gradient(45deg,var(--nnlo) 0 2.5px,transparent 2.5px 7px);}
+/* hazes: Λ_R's own (from S04 b1), the band from the Borel cut (S05 b2-b3); 𝒥 never gets one */
+.w-rebuilt .w-lr{position:relative;display:inline-block;text-shadow:0 0 calc(7px * var(--hz,0)) rgba(255,255,255,calc(.9 * var(--hz,0))),0 0 calc(16px * var(--hz,0)) rgba(255,255,255,calc(.55 * var(--hz,0)));}
+.w-rebuilt .w-lr::before{content:'';position:absolute;inset:-10px -16px;border-radius:50%;background:radial-gradient(closest-side,rgba(255,255,255,.3),transparent);filter:blur(3px);opacity:var(--hz,0);pointer-events:none;}
+.w-rebuilt .w-band{width:170px;height:26px;border-radius:13px;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.62) 35%,rgba(255,255,255,.62) 65%,transparent);filter:blur(3px);opacity:0;pointer-events:none;}
+.w-rebuilt .w-tag{font:15px/1.2 var(--sans);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:4px 10px;white-space:nowrap;transform:translate(-50%,-50%);opacity:0;}
+/* S05 layout: the Board keeps above the Borel floor (camera tilted since S04 b4) */
+.w-rebuilt.w-s05 .sbody{flex-direction:column;gap:8px;}
+.w-rebuilt .w-head{font:italic 23px/1.3 var(--serif);}
+.w-rebuilt .w-zone{position:relative;height:188px;flex:none;}
+.w-rebuilt .w-split{position:absolute;left:0;top:0;width:700px;height:180px;}
+.w-rebuilt .w-eqrow{position:absolute;left:0;right:0;top:2px;display:flex;align-items:center;gap:8px;font-size:21px;}
+.w-rebuilt .w-box{display:flex;flex-direction:column;gap:6px;background:var(--panel);}
+.w-rebuilt .w-box .small{font-size:14.5px;line-height:1.35;}
+.w-rebuilt .w-b1{border-color:var(--muted);flex:1.15;}
+.w-rebuilt .w-b2{border-color:var(--ink);flex:1.2;}
+.w-rebuilt .w-b3{flex:.55;}
+.w-rebuilt .w-bm{white-space:nowrap;}
+.w-rebuilt .w-t{white-space:nowrap;}
+.w-rebuilt .w-row{display:flex;gap:14px;align-items:stretch;}
+.w-rebuilt .w-grow1{flex:1;}
+.w-rebuilt .w-o1{width:360px;flex:none;font:16.5px/1.45 var(--sans);color:var(--ink);align-self:center;}

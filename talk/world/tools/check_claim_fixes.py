@@ -399,6 +399,18 @@ def beats_of(path: Path) -> list[str]:
     return [" ".join(b.split()) for b in out]
 
 
+E1 = "In the Borel plane, it shows up as a branch point at u equals one half."
+
+
+def narration_for_hosted(beats: list[str]) -> list[str]:
+    """Scene 4's narration follows the rebuilt S04 (ticket 06, story edits E1 + E2): symptom at b3, origin at b4 closing
+    with the E1 sentence. The hosted S04 notes keep the Deck's order and words, so read it back through the inverse:
+    swap b3/b4 and strip E1. Raise if the narration is not in the rebuilt order, so a drift cannot pass silently."""
+    if len(beats) != 4 or not beats[2].startswith("And here is the symptom") or not beats[3].endswith(" " + E1):
+        raise SystemExit("scene_04.md is not in the rebuilt S04 order (E2: symptom b3, origin b4 + E1 sentence)")
+    return [beats[0], beats[1], beats[3][: -len(E1) - 1], beats[2]]
+
+
 def notes_of(js: str) -> list[str]:
     """The notes rail of one scene file, as plain text."""
     m = _NOTES_RE.search(js)
@@ -437,6 +449,7 @@ def main() -> int:
     js = {int(p.name[1:3]): p.read_text(encoding="utf-8") for p in sorted((a.world / "js").glob("s[0-9][0-9]-*.js"))}
     notes = {n: notes_of(t) for n, t in js.items()}
     md = {n: beats_of(a.narration / f"scene_{n:02d}.md") for n in js}
+    md[4] = narration_for_hosted(md[4])
     screens = screens_of(a.extract.read_text(encoding="utf-8"))
     t07 = a.ticket07.read_text(encoding="utf-8")
     t09 = a.ticket09.read_text(encoding="utf-8")

@@ -6,3 +6,5 @@ __pycache__/
 # backup clips are regenerable recordings (ticket 06); only clips/manifest.js is tracked
 clips/*.webm
 clips/*.mp4
+# the recorder's reference frames (record_clip.mjs), regenerated with their clip
+clips/*.png

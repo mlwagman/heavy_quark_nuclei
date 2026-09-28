@@ -4,4 +4,4 @@
    A click plays the clip on to the next mark and holds; back seeks and holds. An entry whose marks do not fit the
    scene (length ≠ n+1, not rising) is ignored, and forcing that scene does nothing. Clip files are gitignored
    (regenerable); force one with world.html?backup=4,5 or the V key. */
-window.WORLD_CLIPS = {};
+window.WORLD_CLIPS = { "4": { "src": "clips/s04-renormalon.webm", "marks": [ 0, 5.2, 11.4, 15.9333, 22.8 ] }, "5": { "src": "clips/s05-mrs.webm", "marks": [ 0, 4.2, 14.4, 20.6, 25.8, 34 ] } };
