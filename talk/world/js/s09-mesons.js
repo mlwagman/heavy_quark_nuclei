@@ -23,18 +23,18 @@ E('text',{x:bX(6.29121),y:26,'text-anchor':'middle','font-size':'16',fill:'var(-
 E('text',{x:bX(6.316),y:86,'text-anchor':'middle','font-size':'16',fill:'var(--rose)'},bc).textContent='exp+lat 6.316';
 const c3=D('div','card rv',R,'<h2>No comparison yet</h2><div class="big">t <span class="ov">c</span> and t <span class="ov">b</span> — benchmarks, not observables.</div>');
 scenes.push({el:s,beats:[
- {d:20,f(p){rv(rows[0],seg(p,0,.3));rv(c1,seg(p,.35,.8));}},
- {d:18,f(p){rv(rows[1],seg(p,0,.25));rv(c2,seg(p,.2,.5));
+ {d:20,f(p){rv(leg,p);}},
+ {d:18,f(p){rv(rows[0],seg(p,0,.3));rv(c1,seg(p,.35,.8));}},
+ {d:13,f(p){rv(rows[1],seg(p,0,.25));rv(c2,seg(p,.2,.5));
    bband.setAttribute('width',(bX(6.29121+0.00731)-bX(6.29121-0.00731))*eo(seg(p,.4,.7)));
    bpt.setAttribute('r',6*back(seg(p,.5,.75))>0?6*back(seg(p,.5,.75)):0);
    ept.setAttribute('r',6*back(seg(p,.65,.9))>0?6*back(seg(p,.65,.9)):0);}},
- {d:13,f(p){rv(rows[2],seg(p,0,.35));rv(rows[3],seg(p,.2,.55));rv(c3,seg(p,.5,.9));}},
- {d:14,f(p){rv(leg,p);}},
+ {d:14,f(p){rv(rows[2],seg(p,0,.35));rv(rows[3],seg(p,.2,.55));rv(c3,seg(p,.5,.9));}},
 ],notes:[
- '<b>b1.</b> Toponium first. The pseudoscalar comes out at 342.47 GeV, against roughly 343 from nonrelativistic threshold treatments. Its scale range reaches 0.77 GeV, so for toponium the band is wide, even though the shift from one order to the next is only 20 MeV. This is the zero-width limit, ignoring the decay of the top. That is directly relevant to the LHC excess.',
- '<b>b2.</b> The B c meson is parameter-free: once the charm and bottom masses are fixed there is nothing left to adjust. We find 6.29121 GeV, with a scale range of 7 MeV, about 25 MeV below the combined experimental and lattice value of 6.316, which is itself known to 7 MeV. The gap is about three times our scale range.',
- '<b>b3.</b> The mixed top mesons, top-charm and top-bottom, are benchmarks rather than observables: no comparison values exist, and the top decays before it can hadronize.',
- '<b>b4.</b> To read the numbers: first parenthesis, Monte Carlo statistics; second, the scale variation over lambda; and the top mass is an input at 172.52 GeV.',
+ '<b>b1.</b> To read the numbers: first parenthesis, Monte Carlo statistics; second, the scale variation over lambda; and the top mass is an input at 172.52 GeV.',
+ '<b>b2.</b> Toponium first. The pseudoscalar comes out at 342.47 GeV, against roughly 343 from nonrelativistic threshold treatments. Its scale range reaches 0.77 GeV, so for toponium the band is wide, even though the shift from one order to the next is only 20 MeV. This is the zero-width limit, ignoring the decay of the top. That is directly relevant to the LHC excess.',
+ '<b>b3.</b> The B c meson is parameter-free: once the charm and bottom masses are fixed there is nothing left to adjust. We find 6.29121 GeV, with a scale range of 7 MeV, about 25 MeV below the combined experimental and lattice value of 6.316, which is itself known to 7 MeV. The gap is about three times our scale range.',
+ '<b>b4.</b> The mixed top mesons, top-charm and top-bottom, are benchmarks rather than observables: no comparison values exist, and the top decays before it can hadronize.',
 ]});
 })();
 

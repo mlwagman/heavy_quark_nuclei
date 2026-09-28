@@ -54,6 +54,7 @@ DEVIATIONS = {
 # Edit kinds: "js" = raw scene JS (screen), "note" = JS notes beat + scene_NN.md beat,
 # "jsnote" / "mdnote" = one side only (the two scripts disagreed before the edit).
 # Row: (row, scene, where G3b looks: "screen" | beat | None, edits, t07 Now fragments, t07 New fragments)
+# Ticket 10 (story edit E3) moved S09 b1–b3 to b2–b4; rows 23, 24, M10, M11 use the new beat numbers, their tickets' tables the old ones.
 ROWS = [
     (1, 2, "screen", [("js", 0, "lattice Ω<sub>QQQ</sub> at ±10 MeV</span>", "lattice Ω<sub>QQQ</sub> at ±10–20 MeV</span>")],
      ["lattice Ω_QQQ at ±10 MeV"], ["lattice Ω_QQQ at ±10–20 MeV"]),
@@ -124,10 +125,10 @@ ROWS = [
      ["and the bands from different orders do not even overlap."], ["and leading order does not even overlap the higher orders."]),
     (22, 8, "screen", [("js", 0, "'2–3× narrower — orders sit on top of each other'", "'2–3× narrower (Fig. 1 caption) — orders sit on top of each other'")],
      [], ["(Fig. 1 caption)"]),
-    (23, 9, 1, [("note", 1, "342.47 GeV, with an uncertainty of 77 in the last digits, against", DEVIATIONS[23][1])],
+    (23, 9, 2, [("note", 2, "342.47 GeV, with an uncertainty of 77 in the last digits, against", DEVIATIONS[23][1])],
      ["342.47 GeV, with an uncertainty of 77 in the last digits, against"], [DEVIATIONS[23][1]]),
-    (24, 9, 2, [("jsnote", 2, "comparable to, though outside, our scale-variation range.", "well outside our scale-variation range: about three times it."),
-                ("mdnote", 2, "well outside our scale-variation range.", "well outside our scale-variation range: about three times it.")],
+    (24, 9, 3, [("jsnote", 3, "comparable to, though outside, our scale-variation range.", "well outside our scale-variation range: about three times it."),
+                ("mdnote", 3, "well outside our scale-variation range.", "well outside our scale-variation range: about three times it.")],
      ["comparable to, though outside, our scale-variation range."], ["well outside our scale-variation range: about three times it."]),
     (25, 10, "screen", [("js", 0, "const gaps=[3.8,1.9,1.1,1.0];",
                          "const gaps=[3.7,1.9,1.1,0.9];\n"
@@ -226,11 +227,11 @@ ROWS09 = [
                  "At the bottom mass the bands are two to three times narrower, and the orders now partly overlap.")],
      ["The bands are two to three times narrower at next-to-leading and next-to-next-to-leading order, and the orders sit on top of one another."],
      ["At the bottom mass the bands are two to three times narrower, and the orders now partly overlap."]),
-    ("M10", 9, 1, [("note", 1, "comes out at 342.47 GeV, with a scale range of plus or minus 0.77 GeV, for toponium, the band is wide, against roughly 343 from nonrelativistic threshold treatments.",
+    ("M10", 9, 2, [("note", 2, "comes out at 342.47 GeV, with a scale range of plus or minus 0.77 GeV, for toponium, the band is wide, against roughly 343 from nonrelativistic threshold treatments.",
                  "comes out at 342.47 GeV, against roughly 343 from nonrelativistic threshold treatments. Its scale range reaches 0.77 GeV, so for toponium the band is wide, even though the shift from one order to the next is only 20 MeV.")],
      ["comes out at 342.47 GeV, with a scale range of plus or minus 0.77 GeV, for toponium, the band is wide, against roughly 343 from nonrelativistic threshold treatments."],
      ["comes out at 342.47 GeV, against roughly 343 from nonrelativistic threshold treatments. Its scale range reaches 0.77 GeV, so for toponium the band is wide, even though the shift from one order to the next is only 20 MeV."]),
-    ("M11", 9, 2, [("note", 2, "We find 6.29121 GeV, with an uncertainty of 731 in the last digits, about 25 MeV below the combined experimental and lattice value of 6.316, well outside our scale-variation range: about three times it.",
+    ("M11", 9, 3, [("note", 3, "We find 6.29121 GeV, with an uncertainty of 731 in the last digits, about 25 MeV below the combined experimental and lattice value of 6.316, well outside our scale-variation range: about three times it.",
                  "We find 6.29121 GeV, with a scale range of 7 MeV, about 25 MeV below the combined experimental and lattice value of 6.316, which is itself known to 7 MeV. The gap is about three times our scale range.")],
      ["We find 6.29121 GeV, with an uncertainty of 731 in the last digits, about 25 MeV below the combined experimental and lattice value of 6.316, well outside our scale-variation range: about three times it."],
      ["We find 6.29121 GeV, with a scale range of 7 MeV, about 25 MeV below the combined experimental and lattice value of 6.316, which is itself known to 7 MeV. The gap is about three times our scale range."]),

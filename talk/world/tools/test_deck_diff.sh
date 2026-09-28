@@ -33,7 +33,8 @@ minus() { printf '%s\n' "$1" | tr ',' '\n' | rg -vxF -f <(printf '%s\n' "$2" | t
 #   jq -r '[.differing_beats[],.notes_differing[]]|unique|join(",")'
 # Ticket 11 (physics-review wording fixes): ∪ the same union from mrs-talk-world/evidence/11/firefox.2b.report.json
 # (pre-11 world/ → post-11 world/), which the Chromium run matches except CHROMIUM_ONLY.
-# Later Deck edits (ticket 10, S09 legend first) append their beats here. W1/F1 demand EQUALITY with this list,
+# Ticket 10 (E3, S09 legend first): its changed beats S09b1–S09b4 (evidence/10/{chromium,firefox}.report.json)
+# were already here from ticket 11, so the list is unchanged. Later Deck edits append their beats here. W1/F1 demand EQUALITY with this list,
 # so a lost edit fails as surely as a stray one.
 DECK_EDITS=S02b4,S02b5,S03b4,S04b0,S04b1,S04b2,S04b3,S04b4,S05b1,S05b2,S05b3,S05b4,S05b5,S06b0,S06b1,S06b2,S06b3,S06b4,S07b4,S08b1,S08b2,S08b3,S08b4,S09b1,S09b2,S09b3,S09b4,S10b1,S10b4,S10b5,S11b1,S11b2,S11b3,S11b4,S12b1,S12b2,S12b3,S12b4,S13b0,S13b1,S13b2,S13b3,S14b2,S14b3,S14b4
 # Beats only Chromium rasterizes differently. S12b0 (ticket 11): 24 px of the footer's 2nd progress dot, under
