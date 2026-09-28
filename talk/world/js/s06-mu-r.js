@@ -21,7 +21,7 @@ const wf=E('path',{d:'',fill:'var(--teal)','fill-opacity':.22,stroke:'none',opac
 function wfD(a){let d='M'+X(0.15)+' '+Y(0);for(let r=0.15;r<=2.6;r+=0.04){const h=a*1.1*Math.exp(-Math.pow((r-0.75)/0.42,2));d+='L'+X(r).toFixed(1)+' '+Y(h).toFixed(1)+' ';}return d+'L'+X(2.6)+' '+Y(0)+'Z';}
 const wfT=mlab(psv,X(0.78),Y(1.32),'|<i>ψ</i>|<sup>2</sup> — bound states live here',{anchor:'middle',size:17,color:'var(--teal)'});op(wfT,0);
 const g2=E('path',{d:curveD(r=>mu(r,0.55,2)),fill:'none',stroke:'var(--muted)','stroke-width':1.8,'stroke-dasharray':'5 5',opacity:0},psv);
-const g2T=mlab(psv,X(1.9),Y(2)-16,'<i>μ</i><sub>cut</sub> = 2 GeV → fixed order',{size:16});op(g2T,0);
+const g2T=mlab(psv,X(1.9),Y(2)-16,'<i>μ</i><sub>cut</sub> 2 GeV → fixed order (Fig. 7: frozen <i>α<sub>s</sub></i>)',{size:16});op(g2T,0);
 const bandC=E('path',{d:'',fill:'var(--rose)','fill-opacity':.16,opacity:0},psv);
 (function(){const xs=[],lo=[],hi=[];for(let r=0.14;r<=3.001;r+=0.05){xs.push(r);lo.push(Math.min(4.2,mu(r,0.275,1)));hi.push(Math.min(4.2,mu(r,1.1,1)));}
  bandC.setAttribute('d',bandPath(X,Y,xs,lo,hi));})();

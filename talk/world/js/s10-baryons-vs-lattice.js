@@ -20,7 +20,8 @@ blab.textContent='MRS ~10 MeV';
 const gapC=D('div','card rv',row2,'<h2>The undershoot is a pattern</h2><svg viewBox="0 0 520 160" width="520" height="160" id="gs"></svg><div class="big">fractional gap ∼ 1/<i class="m">m<sub>Q</sub></i> ⇒ missing <span class="rc">𝒪(1/m<sub>Q</sub>) + spin</span> — not noise</div>');
 gapC.style.flex='1';
 const gs=gapC.querySelector('#gs');
-const gaps=[3.8,1.9,1.1,1.0];
+const gaps=[3.7,1.9,1.1,0.9];
+E('text',{x:490,y:24,'text-anchor':'end','font-size':'16',class:'axl'},gs).textContent='gap ÷ lattice';
 const gbars=gaps.map((g,i)=>{
   E('text',{x:70+120*i,y:150,'text-anchor':'middle','font-size':'16',class:'axl'},gs).textContent=['Ωccc','Ωccb','Ωcbb','Ωbbb'][i];
   const r=E('rect',{x:44+120*i,y:130,width:52,height:0,rx:4,fill:'var(--rose)','fill-opacity':.6},gs);
@@ -43,8 +44,8 @@ scenes.push({el:s,beats:[
  '<b>b1.</b> Triply heavy baryons, where we meet lattice QCD. The first row is ours: next-to-next-to-leading order with minimal renormalon subtraction, from triply charm to triply bottom, each with its statistical and its scale uncertainty.',
  '<b>b2.</b> The second row is lattice QCD. We undershoot the lattice by 125 to 175 MeV. Note that fixed order actually sits closer, 80 to 110 MeV below the lattice. The advantage of M R S is not in the central value. It is in what comes next.',
  '<b>b3.</b> Here is the scale band for the triply bottom Omega at next-to-next-to-leading order. Fixed order: about 700 MeV. M R S: about 10 MeV. Nearly two orders of magnitude, and that is what makes the comparison with the lattice meaningful.',
- '<b>b4.</b> And the undershoot is a pattern, not noise. As a fraction of the mass, the gap falls from 3.8 percent for triply charm to 1.0 percent for triply bottom. A one over the heavy quark mass trend: exactly what you expect if what is missing are the one over m Q corrections and the spin-dependent terms.',
- '<b>b5.</b> The same machinery gives benchmarks with top quarks, up to the triply top Omega at 514.46 GeV, with an uncertainty of 94 in the last digits.',
+ '<b>b4.</b> And the undershoot is a pattern, not noise. As a fraction of the lattice mass, the gap falls from nearly 4 percent for triply charm to under 1 percent for triply bottom. A one over the heavy quark mass trend: exactly what you expect if what is missing are the one over m Q corrections and the spin-dependent terms.',
+ '<b>b5.</b> The same machinery gives benchmarks with top quarks, up to the triply top Omega at 514.46 GeV, with a scale range of plus or minus 0.94 GeV: for the triply top Omega the band is wide.',
 ]});
 })();
 

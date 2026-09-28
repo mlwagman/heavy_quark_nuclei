@@ -31,8 +31,8 @@ scenes.push({el:s,beats:[
  {d:13,f(p){rv(rows[2],seg(p,0,.35));rv(rows[3],seg(p,.2,.55));rv(c3,seg(p,.5,.9));}},
  {d:14,f(p){rv(leg,p);}},
 ],notes:[
- '<b>b1.</b> Toponium first. The pseudoscalar comes out at 342.47 GeV, with an uncertainty of 77 in the last digits, against roughly 343 from nonrelativistic threshold treatments. This is the zero-width limit, ignoring the decay of the top. That is directly relevant to the LHC excess.',
- '<b>b2.</b> The B c meson is parameter-free: once the charm and bottom masses are fixed there is nothing left to adjust. We find 6.29121 GeV, with an uncertainty of 731 in the last digits, about 25 MeV below the combined experimental and lattice value of 6.316, comparable to, though outside, our scale-variation range.',
+ '<b>b1.</b> Toponium first. The pseudoscalar comes out at 342.47 GeV, with a scale range of plus or minus 0.77 GeV, for toponium, the band is wide, against roughly 343 from nonrelativistic threshold treatments. This is the zero-width limit, ignoring the decay of the top. That is directly relevant to the LHC excess.',
+ '<b>b2.</b> The B c meson is parameter-free: once the charm and bottom masses are fixed there is nothing left to adjust. We find 6.29121 GeV, with an uncertainty of 731 in the last digits, about 25 MeV below the combined experimental and lattice value of 6.316, well outside our scale-variation range: about three times it.',
  '<b>b3.</b> The mixed top mesons, top-charm and top-bottom, are benchmarks rather than observables: no comparison values exist, and the top decays before it can hadronize.',
  '<b>b4.</b> To read the numbers: first parenthesis, Monte Carlo statistics; second, the scale variation over lambda; and the top mass is an input at 172.52 GeV.',
 ]});

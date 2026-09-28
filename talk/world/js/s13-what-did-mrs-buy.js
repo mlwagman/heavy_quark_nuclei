@@ -8,7 +8,7 @@ const T=tb.querySelector('table');
 const rows=[['scale band, Ω<sub>bbb</sub> at NNLO','~700 MeV','~10 MeV'],
             ['order-by-order shifts (baryons, |NNLO−NLO|)','33–55 MeV','4–18 MeV'],
             ['tuned m<sub>c</sub>, m<sub>b</sub> drift','4–11%','&lt; 1%'],
-            ['LO / NLO / NNLO bands','disjoint','overlapping (partial)']].map(r=>{
+            ['LO / NLO / NNLO bands','LO apart','overlap (partial)']].map(r=>{
   /* λ-band disclaimer added after the table below */
   const tr=D('tr','',T);
   D('td','st',tr,r[0]).style.fontStyle='normal';
@@ -37,7 +37,7 @@ scenes.push({el:s,beats:[
  {d:22,f(p){rv(h2,seg(p,0,.25));const u=eo(seg(p,.2,.5));gh.setAttribute('width',300*(1-u)+0*u);gh.setAttribute('x',130+150*u);
    gpt.setAttribute('r',7*back(seg(p,.45,.65))>0?7*back(seg(p,.45,.65)):0);op(gband,seg(p,.5,.7));op(lpt,seg(p,.6,.75));op(glab,seg(p,.75,.95));}},
 ],notes:[
- '<b>b1.</b> So what did renormalon subtraction buy us? Four diagnostics that all move the same way. The scale band for the triply bottom Omega: from about 700 MeV to about 10. The order-by-order shifts of the baryon masses: from 33 to 55 MeV down to 4 to 18. The drift of the tuned masses: from 4 to 11 percent to below 1. And bands that were disjoint now overlap.',
+ '<b>b1.</b> So what did renormalon subtraction buy us? Four diagnostics that all move the same way. The scale band for the triply bottom Omega: from about 700 MeV to about 10. The order-by-order shifts of the baryon masses: from 33 to 55 MeV down to 4 to 18. The drift of the tuned masses: from 4 to 11 percent to below 1. And bands where leading order sat apart now overlap.',
  '<b>b2.</b> Together these are hallmarks of improved convergence. The series is still asymptotic, only the leading renormalon is gone, but every diagnostic says it was the obstruction, not one problem among several. And the lambda bands diagnose scheme stability; they are not a truncation-error estimate.',
  '<b>b3.</b> The payoff: because the band is 10 MeV rather than 700, the remaining gap of 125 to 175 MeV to the lattice becomes interpretable. It is missing one over m Q physics, not perturbative noise.',
 ]});
