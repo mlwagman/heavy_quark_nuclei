@@ -18,7 +18,7 @@
   const span = (p, html, cls) => D('span', cls || '', p, html);
   const ml = (g, x, y, html, o) => mlab(g, x, y, `<span>${html}</span>`, o); // see w04: keeps the spaces
   const rel = el => { const r = el.getBoundingClientRect(), q = s.getBoundingClientRect(), k = q.width / s.offsetWidth;
-    return [(r.left + r.width / 2 - q.left) / k, (r.top + r.height / 2 - q.top) / k]; }; // centre, section coords
+    return [(r.left + r.width / 2 - q.left) / k, (r.top + r.height / 2 - q.top) / k, (r.right - q.left) / k]; }; // centre, right edge; section coords
 
   /* ---- b1: headline (B1) and the |term| dots splitting into V_l and v_l − V_l ---- */
   const th = D('div', 'w-head', b, 'Isolate the leading renormalon into an explicit power correction, and resum the growth <span class="small">(§II B)</span>.');
@@ -85,7 +85,7 @@
     terms.forEach((e, i) => fade(e, seg(p2, 0.1 + 0.08 * i, 0.22 + 0.08 * i)));
     fade(B1.cap, seg(p2, 0.3, 0.45)); fade(B2.cap, seg(p2, 0.4, 0.55)); fade(B3.cap, seg(p2, 0.5, 0.62));
     // off screen the section is display:none (rebuild.css) and has no layout: keep the last measured targets
-    if (s.offsetWidth) at = { b1: rel(B1.c), b2: rel(B2.c), lam: rel(lamR), argB: rel(argB), argY: rel(argY), zone: rel(sp) };
+    if (s.offsetWidth) at = { b1: rel(B1.c), b2: rel(B2.c), lam: rel(lamR), close: rel(close), argB: rel(argB), argY: rel(argY), zone: rel(sp) };
     // the V_l column folds into the 𝒥 box, the remainders into box 1 (storyboard S05 b2: the whole column, from l = 0)
     if (at.zone) for (const [g, to] of [[gV, at.b2], [gR, at.b1]]) {
       const dx = (to[0] - at.zone[0]) * fold, dy = (to[1] - at.zone[1]) * fold;
@@ -114,9 +114,10 @@
       Object.assign(el.style, { left: x + 'px', top: y + 'px', opacity: w * eo(seg(p2, a - 0.06, a)) * (1 - seg(p2, a + 0.12, a + 0.17)),
         transform: `translate(-50%,-50%) scale(${1 - 0.45 * t})` });
     });
-    const wait = [bp[0] + 100, bp[1] - 30 * eo(seg(p2, 0.72, 0.9))], t = hz.bandPos; // starts at u = ½, on the cut (physics review #3)
-    Object.assign(band.style, { left: wait[0] + (at.lam[0] - wait[0]) * t + 'px', top: wait[1] + (at.lam[1] - wait[1]) * t + 'px',
-      opacity: w * hz.band, transform: `translate(-50%,-50%) scale(${1 - 0.45 * t})` });
+    const wait = [bp[0] + 100, bp[1] - 30 * eo(seg(p2, 0.72, 0.9))]; // starts at u = ½, on the cut (physics review #3)
+    // it rises clear of the "} +": 45 px = the band's half width near the top (0.4 × 85 px) + its blur + a margin
+    const f = RC.bandFlight(wait, at.lam, hz.bandPos, Math.max(at.lam[0], at.close[2] + 45));
+    Object.assign(band.style, { left: f.x + 'px', top: f.y + 'px', opacity: w * hz.band, transform: `translate(-50%,-50%) scale(${f.scale})` });
   }
   scenes[I] = { el: s, beats: hosted.beats.map((bt, j) => ({ d: bt.d, f(p) { shadow(); prog[j] = p; draw(); } })), notes: hosted.notes.slice() };
   (window.W_REBUILT = window.W_REBUILT || []).push({ si: I, sc: 5, el: s, prog, place,

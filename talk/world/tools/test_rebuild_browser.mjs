@@ -160,6 +160,28 @@ test('R10 a rebuilt scene off screen is not rendered at all (hidden S04 content 
   await ctx.close();
 });
 
+test('R11 S05 b3: the band flies from the cut to Λ_R without crossing box 1, the 𝒥 box or the "} +" (physics review round 2, R2-1)', async () => {
+  const { ctx, pg } = await openWorld(browser, { page: PAGE });
+  await go(pg, () => { show(4); applyUpTo(2); }); await glideEnd(pg); await frames(pg, 3);
+  const r = await go(pg, () => {
+    const s = scenes[4].el, band = s.querySelector('.w-band'), out = [];
+    const box = (e, m = 0) => { const q = e.getBoundingClientRect(); return [q.left - m, q.top - m, q.right + m, q.bottom + m]; };
+    const keep = { 'box 1': s.querySelector('.w-b1'), '𝒥 box': s.querySelector('.w-b2'), '} +': s.querySelectorAll('.w-eqrow > .w-t')[2] };
+    let seen = 0;
+    for (let i = 0; i <= 100; i++) {
+      scenes[4].beats[2].f(i / 100); __rebuiltSpace.update();
+      if (+getComputedStyle(band).opacity < 0.02) continue;
+      seen++;
+      const [l, t, rt, b] = box(band, 3); // plus its 3 px blur
+      for (const [n, e] of Object.entries(keep)) { const [L, T, R, B] = box(e); if (l < R && rt > L && t < B && b > T) out.push(`p=${i / 100} ${n}`); }
+    }
+    return { seen, out };
+  });
+  assert.ok(r.seen > 20, `the band is on screen during its flight (${r.seen} of 101 samples)`);
+  assert.deepEqual(r.out, [], 'the band overlaps');
+  await ctx.close();
+});
+
 test('R8 dark hosted scenes are untouched: S01b0, every S03 and S06 frame, S15b1 are 0 px vs the Deck (index.html)', async () => {
   const init = () => { window.__RENDER = true; };
   const w = await openWorld(browser, { page: PAGE, init }), d = await openWorld(browser, { page: 'index.html', init });

@@ -66,6 +66,36 @@ test('C4 haze: Λ_R hazy from S04 b1 on; the S05 band only fades after it sits i
   assert.equal(C.haze(5, [1, 0, 0, 0, 0]).band, 0, 'no band before S05 b2');
 });
 
+test('C13 S05 b3 band flight: from the cut to Λ_R without crossing box 1, the 𝒥 box or the "} +" (physics review round 2, R2-1)', () => {
+  // layout of the settled S05 b3 in Chromium at 1920x1080 (evidence/06/stills-chromium/33-S05b3-p25.png): [left, top, right, bottom]
+  const a = [998, 872], b = [1580, 224], keepOut = { 'box 1': [240, 184, 838, 356], '𝒥 box': [874, 210, 1498, 324], '} +': [1510, 250, 1538, 282] };
+  const W = 170 / 2 + 3, H = 26 / 2 + 3; // band half-size plus its 3 px blur
+  let prev = null;
+  for (let i = 0; i <= 400; i++) {
+    const t = i / 400, f = C.bandFlight(a, b, t), hw = W * f.scale, hh = H * f.scale;
+    for (const [name, [l, tp, r, bt]] of Object.entries(keepOut))
+      assert.ok(f.x + hw < l || f.x - hw > r || f.y + hh < tp || f.y - hh > bt, `t=${t}: band [${(f.x - hw) | 0}, ${(f.y - hh) | 0}, ${(f.x + hw) | 0}, ${(f.y + hh) | 0}] inside ${name}`);
+    if (prev) assert.ok(Math.hypot(f.x - prev.x, f.y - prev.y) < 12, `t=${t}: no jump`);
+    prev = f;
+  }
+  const [s, e] = [C.bandFlight(a, b, 0), C.bandFlight(a, b, 1)];
+  assert.deepEqual([s.x, s.y, s.scale], [a[0], a[1], 1], 'starts over the cut, full size');
+  assert.deepEqual([e.x, e.y], b, 'ends on Λ_R');
+  assert.ok(Math.abs(170 * e.scale - 60) < 2, `lands at the size of Λ_R's own haze (~60 px), got ${170 * e.scale}`);
+  // the live "} +" box is wider than its glyphs (lock W, R11 in Chromium): rise in a column right of it, then step over
+  const close = [1505, 240, 1556, 292], xc = close[2] + 45;
+  prev = null;
+  for (let i = 0; i <= 400; i++) {
+    const t = i / 400, f = C.bandFlight(a, b, t, xc), hw = W * f.scale, hh = H * f.scale;
+    for (const [name, [l, tp, r, bt]] of Object.entries({ ...keepOut, '} +': close }))
+      assert.ok(f.x + hw < l || f.x - hw > r || f.y + hh < tp || f.y - hh > bt, `xc: t=${t}: band inside ${name}`);
+    if (prev) assert.ok(Math.hypot(f.x - prev.x, f.y - prev.y) < 12, `xc: t=${t}: no jump`);
+    prev = f;
+  }
+  const ex = C.bandFlight(a, b, 1, xc);
+  assert.deepEqual([ex.x, ex.y], b, 'xc: still ends on Λ_R');
+});
+
 test('C4b the V_R(r) haze band has the same width at every r (a constant, never fanning out)', () => {
   const ys = [-2.1, -1.3, -0.7, -0.4, -0.25, -0.2];
   const { lo, hi } = C.hazeBand(ys, 0.3);

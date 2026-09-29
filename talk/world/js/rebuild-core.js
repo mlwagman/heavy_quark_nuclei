@@ -42,6 +42,19 @@
     const cancel = seg(prog[2], 0.5, 0.75);
     return { lambdaR: 1 - cancel, band: seg(prog[1], 0.72, 0.9) * (1 - cancel), bandPos: eio(seg(prog[2], 0.05, 0.45)), J: 0 };
   }
+  /* S05 b3: where the band is on its flight a (over the cut) → b (Λ_R), t = bandPos; scale of its 170 px width.
+     Along the floor, a rounded turn, straight up in column xc (right of the "} +"), then the last step over to Λ_R,
+     shrinking to the size of Λ_R's own haze: a straight line clipped the 𝒥 box, and the band must never enter 𝒥
+     (physics review round 2, R2-1) */
+  function bandFlight(a, b, t, xc = b[0]) {
+    const sx = Math.sign(xc - a[0]), sy = Math.sign(b[1] - a[1]), h = Math.abs(xc - a[0]), v = Math.abs(b[1] - a[1]), e = Math.abs(xc - b[0]);
+    const R = Math.min(h, v, 120), q = Math.PI * R / 2, L = h - R + q + v - R + e, k = t * L; // straight, quarter turn, up, over
+    const scale = 1 - 0.65 * t;
+    if (k <= h - R) return { x: a[0] + sx * k, y: a[1], scale };
+    if (k <= h - R + q) { const th = (k - h + R) / R; return { x: xc - sx * R * (1 - Math.sin(th)), y: a[1] + sy * R * (1 - Math.cos(th)), scale }; }
+    if (k <= L - e) return { x: xc, y: b[1] - sy * (L - e - k), scale };
+    return { x: b[0] + Math.sign(xc - b[0]) * (L - k), y: b[1], scale };
+  }
   /* S04 b4: the haze around the perturbative sum V_R(r) has one width at every r (catalogue S04-P4, never S04-F2) */
   const hazeBand = (ys, w) => ({ lo: ys.map(y => y - w / 2), hi: ys.map(y => y + w / 2) });
   /* ---- the series level of the Zoom loop (storyboard A). World units: the Borel floor is the plane y = 0, its
@@ -111,5 +124,5 @@
     }
     return marks;
   }
-  return { _ease: { clamp, seg, eio }, marksFrom, once, spacePlan, E1, e12, termDots, remainder, bandCurves, haze, hazeBand, cameraAt, project, blend, boardShift, PAIR, U, VIEW };
+  return { _ease: { clamp, seg, eio }, marksFrom, once, spacePlan, E1, e12, termDots, remainder, bandCurves, haze, bandFlight, hazeBand, cameraAt, project, blend, boardShift, PAIR, U, VIEW };
 });

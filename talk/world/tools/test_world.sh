@@ -56,6 +56,9 @@ E1 typo|at u equals one half.'|at u equal one half.'
 shadow replay runs every time|if (!done) { done = true; f(); }|{ f(); }
 remainder drawn past l = 2|const REM = [0.23, -0.14, 0.01];|const REM = [0.23, -0.14, 0.01, 0.05];
 easing copy drifts from the Deck|return t < 0.5 ? 4 * t * t * t|return t < 0.5 ? 3 * t * t * t
+band flies straight through the 𝒥 box|if (k <= h - R) return { x: a[0] + sx * k, y: a[1], scale };|return { x: a[0] + (b[0] - a[0]) * t, y: a[1] + (b[1] - a[1]) * t, scale };
+band keeps its old size|const scale = 1 - 0.65 * t;|const scale = 1 - 0.45 * t;
+band rises against the "} +"|function bandFlight(a, b, t, xc = b[0]) {|function bandFlight(a, b, t, xc) { xc = b[0];
 EOF
 fi
 
