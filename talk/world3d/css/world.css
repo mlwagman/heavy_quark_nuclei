@@ -1,0 +1,119 @@
+@font-face{font-family:'P052';src:url('../fonts/P052-Regular.woff2') format('woff2');font-weight:400;font-style:normal}
+@font-face{font-family:'P052';src:url('../fonts/P052-Italic.woff2') format('woff2');font-weight:400;font-style:italic}
+
+:root{
+  /* the colour style of talk/mrs-talk-animated.html: its light theme by default, its dark theme with ?theme=dark.
+     Accents carry meaning, as in that deck: rose = the problem, teal = our result, amber = key parameters.
+     Order colours (W5): LO blue, NLO amber, NNLO green, lattice red = the deck's c1, amber, c3, red. */
+  --serif:'P052',Georgia,'Times New Roman',serif;
+  --sans:system-ui,-apple-system,'Segoe UI',sans-serif;
+  --bg:#F6F7F4; --body-bg:#F6F7F4;
+  --ink:#1A2233; --ink2:#3A4458; --muted:#5D6779; --dim:#98A1B0; --line:#C9D0D9; --strong:#0B1220;
+  --teal:#177E72; --amber:#A06E12; --rose:#BE4467;
+  --lo:#3B66B0; --nlo:#A06E12; --nnlo:#3E8E4E; --lat:#C03A3A;
+  --panel-bg:rgba(255,255,255,.95); --panel-border:#C9D0D9;
+  --chip-bg:#FFFFFF; --chip-border:#C9D0D9; --chip-border-dim:#DDE2E8;
+  --box-border:rgba(26,34,51,.45); --haze:rgba(190,68,103,.30); --hazeband:rgba(190,68,103,.45); --notes-bg:rgba(255,255,255,.96);
+  /* 3D (read by js/util.js TC/TN): quark spheres by colour charge, emissive share, links, wires, fills, particles, bloom */
+  /* colour charge: quarks red, green, blue; antiquarks their complements (anti-red cyan, anti-green magenta, anti-blue yellow) */
+  --qr:#D8342C; --qg:#2E9E48; --qb:#2F62C8; --qar:#22B3C4; --qag:#C93AA8; --qab:#D9B21F; --q-glow:0;
+  --link:#5D6779; --link-a:#1A2233; --link-b:#8A93A8; --link-c:#C9D0D9;
+  --wire:#1A2233; --wire-dim:#8A93A8; --grid:#DDE2E8; --floor:#E9ECEF; --soft:#177E72;
+  --dust:#98A1B0; --dust-a:0.12; --blend:normal; --bloom:0;
+  /* map sections: I framework (S01-S03), II method (S04-S07), III results (S08-S13), IV conclusions (S14-S15) */
+  --s1:#177E72; --s2:#A06E12; --s3:#BE4467; --s4:#3B66B0;
+}
+html.theme-dark{
+  --bg:#0A0E17; --body-bg:#0A0E17;
+  --ink:#E8EAF2; --ink2:#C4C9D6; --muted:#8A93A8; --dim:#5A6378; --line:#2A3448; --strong:#FFFFFF;
+  --teal:#6FD3C7; --amber:#E2A33C; --rose:#E2708C;
+  --lo:#6C9BE8; --nlo:#E2A33C; --nnlo:#7FC97F; --lat:#E25B5B;
+  --panel-bg:rgba(16,22,36,.95); --panel-border:#2A3448;
+  --chip-bg:#101624; --chip-border:#2A3448; --chip-border-dim:#232C3F;
+  --box-border:rgba(232,234,242,.4); --haze:rgba(226,112,140,.35); --hazeband:rgba(226,112,140,.55); --notes-bg:rgba(16,22,36,.96);
+  --qr:#FF6B5E; --qg:#5FD67A; --qb:#6C9BFF; --qar:#4FE0EA; --qag:#F070D8; --qab:#F2D24A; --q-glow:0.25;
+  --link:#8A93A8; --link-a:#E8EAF2; --link-b:#5A6378; --link-c:#2A3448;
+  --wire:#E8EAF2; --wire-dim:#5A6378; --grid:#232C3F; --floor:#101624; --soft:#6FD3C7;
+  --dust:#8A93A8; --dust-a:0.14; --blend:add; --bloom:0.15;
+  --s1:#6FD3C7; --s2:#E2A33C; --s3:#E2708C; --s4:#6C9BE8;
+}
+html,body{margin:0;height:100%;background:var(--body-bg);overflow:hidden;color:var(--ink);font-family:var(--sans)}
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center center;background:var(--bg);overflow:hidden}
+#gl{position:absolute;left:0;top:0;width:1920px;height:1080px;display:block}
+#boards{position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-events:none;overflow:hidden;z-index:2}
+#hud{position:absolute;left:12px;top:8px;font:14px/1.2 monospace;color:var(--muted);opacity:.85;pointer-events:none;display:flex;gap:14px}
+#hud:empty{display:none}
+#notes{position:absolute;left:0;right:0;bottom:0;max-height:180px;overflow:auto;padding:12px 40px;background:var(--notes-bg);color:var(--ink2);font:20px/1.4 var(--serif);display:none;border-top:1px solid var(--line)}
+#notes.show{display:block}
+
+/* ---------- boards: crisp DOM text anchored to 3D points ---------- */
+.board{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform,opacity;color:var(--ink);font:26px/1.42 var(--sans);white-space:normal}
+/* math and italics are serif, as in the deck (.m, .mx); body text is sans */
+.board i,.board .m,.board .ital,.board .frac,.board .sum{font-family:var(--serif)}
+.board .m{font-size:1.08em}
+.board.panel{background:var(--panel-bg);border:1px solid var(--panel-border);border-radius:6px;padding:16px 22px;box-sizing:border-box}
+/* --inv = 1/scale (set by boards.js) keeps borders and radii visible once a board is scaled down to a thumbnail */
+#boards.thumbs .scene .board.panel{background:color-mix(in srgb,var(--sec,#888) 14%,var(--panel-bg));border:calc(1.5px*var(--inv,1)) solid var(--sec,var(--muted));border-top-width:calc(5px*var(--inv,1));border-radius:calc(8px*var(--inv,1))}
+#boards.thumbs .scene .board:not(.panel):not(.frame){background:rgba(0,0,0,.10);border-radius:calc(6px*var(--inv,1))}
+/* overview: numbered badges on the camera track, and the legend fixed to the stage */
+.board.badge{height:64px;border-radius:50%;color:#fff;font:600 34px/64px var(--sans);text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.28)}
+.legend{position:absolute;top:150px;width:420px;opacity:0;pointer-events:none;z-index:3;font:21px/1.3 var(--sans);color:var(--ink)}
+.legend.left{left:40px} .legend.right{right:40px}
+.legend .lg{display:flex;gap:12px;align-items:flex-start;margin:0 0 18px}
+#stage.ov .board.badge,#stage.ov .legend .lg{pointer-events:auto;cursor:pointer}   /* the overview is a menu */
+.legend .n{flex:none;width:34px;height:34px;border-radius:50%;color:#fff;font:600 19px/34px var(--sans);text-align:center}
+.board.frame{background:#fff;border-radius:6px;padding:8px;box-sizing:border-box}
+.board .t{opacity:0;transform:translateY(10px);display:block}
+.board td.t{display:table-cell}
+.board .ti{opacity:0;transform:translateY(10px);display:inline-block}
+.board h2{font:600 17px/1.2 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.board h2 i,.board h2 sub,.board h2 sup,.board h2 .m,.board h2 .num,.board h2 .tiny,.board h2 .small{text-transform:none;letter-spacing:0}
+.board h2.nt{font:italic 22px/1.3 var(--serif);letter-spacing:0;text-transform:none}   /* number-line titles are sentences */
+.board .big{font-size:29px;line-height:1.42}
+.board .small{font-size:21px;line-height:1.42;color:var(--muted)}
+.board .tiny{font-size:17px;line-height:1.35;color:var(--muted)}
+.board .muted{color:var(--muted)}
+.board .white{color:var(--strong)}
+.board .grey{color:var(--muted)}
+/* the deck's accents */
+.board .tc{color:var(--teal)} .board .ac{color:var(--amber)} .board .rc{color:var(--rose)}
+.board .lo{color:var(--lo)} .board .nlo{color:var(--nlo)} .board .nnlo{color:var(--nnlo)} .board .lat{color:var(--lat)}
+.board .num{font-variant-numeric:tabular-nums}
+.board .ital{font-style:italic}
+.board .ov{text-decoration:overline}
+.board .lbl{font:italic 20px/1.3 var(--serif);color:var(--muted)}
+.board .chip{display:inline-block;padding:4px 12px;border:1px solid var(--chip-border);border-radius:20px;font:20px/1.3 var(--sans);margin:3px 4px 3px 0;color:var(--ink);background:var(--chip-bg);white-space:nowrap}
+.board .chip.pin{border-color:var(--teal);color:var(--teal)}
+.board .chip.lat{border-color:var(--lat)}
+.board .chip.dimc{color:var(--muted);border-color:var(--chip-border-dim)}
+.board .banner{font:italic 27px/1.4 var(--serif);color:var(--rose);margin-top:10px}
+.board .row{display:flex;align-items:center;gap:12px;margin:6px 0}
+.board .bar{height:14px;border-radius:3px}
+.board .hatch{background-image:repeating-linear-gradient(-45deg,currentColor 0 2px,transparent 2px 7px);border:1.5px solid currentColor;box-sizing:border-box}
+.board .solid{background:currentColor}
+.board table{border-collapse:collapse;font-size:25px}
+.board td,.board th{padding:6px 16px;text-align:left;border-bottom:1px solid var(--line);font-weight:400}
+.board th{font:600 16px/1.3 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:1.5px solid var(--muted)}
+.board svg{display:block;overflow:visible}
+.board.panel svg{max-width:100%;height:auto}   /* a plot never runs past its panel's padding */
+.board svg text{font-family:var(--sans);fill:var(--ink)}
+.board svg text:not([font-size]){font-size:17px}   /* a font-size attribute is a presentation attribute: any CSS rule would win over it */
+.board svg .ax{stroke:var(--muted);stroke-width:1.3;fill:none}
+.board svg .mt{fill:var(--muted)}
+.board svg .it{font-style:italic;font-family:var(--serif)}
+.board svg text.it:not([font-size]){font-size:19px}
+.board svg tspan.it{font-size:1.12em}   /* the serif italic runs small: 19 px beside 17 px sans, and in proportion at other sizes */
+.board img{display:block}
+
+/* math markup */
+.m{font-style:normal}
+.m i{font-style:italic}
+.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.05;margin:0 3px;font-size:.92em}
+.frac>span{padding:0 4px}
+.frac>.den{border-top:1px solid currentColor}
+.sum{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1;margin:0 4px}
+.sum .sg{font-size:1.5em;line-height:1}
+.sum .lim{font-size:.62em;line-height:1.1}
+.box{display:inline-block;padding:6px 12px;border:1.5px solid var(--box-border);border-radius:8px;margin:0 4px;vertical-align:middle;position:relative}
+.haze{box-shadow:0 0 18px 8px var(--haze);}
+.hazeband{position:absolute;background:var(--hazeband);filter:blur(7px);border-radius:8px}
