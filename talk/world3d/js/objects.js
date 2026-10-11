@@ -85,6 +85,7 @@ const SHELF = (() => {
   function tick(t) {
     for (const id in glyphs) { const G = glyphs[id]; if (!G.g.visible) { G.lab.hidden = G.chip.hidden = true; continue; }
       G.lab.hidden = G.chip.hidden = false;
+      G.g.userData.live = Math.max(liveOf(id), boardState(G.lab).focus, boardState(G.chip).focus, Math.min(1, 4 * (G.g.userData.pulse || 0)));   /* live: the beat shows its name or its number, or flashes it */
       G.g.tick(t); const p = _w.copy(G.g.position).add(at);
       /* names and chips hang from their top edge, so a second line grows downward: every first line of a row is level, and a
          two-line chip never climbs onto the name above it. The top row's chips alternate between two levels (they are wider than the spacing) */
@@ -105,13 +106,15 @@ const PAIR = (() => {
   const C = W.quark(1.15, { glow: 1.9, c: 'b' }); C.material.opacity = 0; g.add(C);           /* the third quark of S03 b3 */
   const lkAC = W.link({ th: 0.16, opacity: 0 }), lkBC = W.link({ th: 0.16, opacity: 0 }); g.add(lkAC, lkBC);
   const tri = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ color: TC('soft'), transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false })); g.add(tri);
-  const st = { sep: 7, cy: 0, jit: 1, fq: 1, lkOp: 1, tri: 0, third: 0, opacity: 1, scale: 1, bOp: 1 };   /* jit, fq: size and speed of the quarks' own motion; lkOp: the V_R link */
+  /* the pair jitters only in the beats that set its state (they are about it): tb is touched like a board, for the same focus */
+  const tb = { touched: -1, prev: -1 };
+  const st = new Proxy({ sep: 7, cy: 0, jit: 1, fq: 1, lkOp: 1, tri: 0, third: 0, opacity: 1, scale: 1, bOp: 1 }, { set(o, k, v) { o[k] = v; const i = BOARDS.apply(); if (i >= 0 && i !== tb.touched) { tb.prev = tb.touched; tb.touched = i; } return true; } });   /* jit, fq: size and speed of the quarks' own motion; lkOp: the V_R link */
   let ph = 0, lt = 0;
   const base = { A: new THREE.Vector3(), B: new THREE.Vector3(), C: new THREE.Vector3() };
   function tick(tt) {
     ph += clamp(tt - lt, 0, 0.1) * st.fq; lt = tt; const t = ph;   /* phase integrated so that a changing speed never jumps */
     base.A.set(-st.sep / 2, 0, 0); base.B.set(st.sep / 2, 0, 0); base.C.set(0, st.sep * 0.82, 0);
-    const j = 0.14 * st.jit;                               /* ambient jitter: static = leading-order potential, the quarks still move */
+    const j = 0.14 * st.jit * Math.max(liveOf('pair'), boardState(tb).focus);                               /* ambient jitter: static = leading-order potential, the quarks still move */
     A.position.set(base.A.x + j * Math.sin(t * 1.7), base.A.y + j * Math.cos(t * 1.3), j * Math.sin(t * 0.9));
     B.position.set(base.B.x + j * Math.sin(t * 1.5 + 2), base.B.y + j * Math.cos(t * 1.1 + 1), j * Math.cos(t * 0.8));
     C.position.set(base.C.x + j * Math.sin(t * 1.2 + 4), base.C.y + j * Math.cos(t * 1.4 + 3), j * Math.sin(t * 1.0 + 1)).lerp(B.position, 1 - eio(st.third));   /* it leaves from inside the antiquark */
@@ -153,7 +156,7 @@ const TOWER = (() => {
 })();
 
 /* ======================= Borel plane inset (S04 b4 → S05 b3) =======================
-   A small tilted patch, named twice by the narration; the |term| dots carry the argument. place() puts it, show() fades it. */
+   A small tilted patch. The narration names it in S04 b4 (the branch point) and in S05 (the contour up to it, then the cut past it). place() puts it, show() fades it. */
 const BOREL = (() => {
   const gL = new THREE.Group(), gC = new THREE.Group(); W.scene.add(gL); W.crisp.add(gC);
   const X = u => 30 * u - 15;                                   /* local x: the branch point u = ½ sits at the centre */
@@ -173,7 +176,7 @@ const BOREL = (() => {
   const tl = [[0, '0'], [.5, '½'], [1, '1']].map(([u, t]) => ({ u, b: BOARDS.board({ html: `<span class="tiny">${t}</span>`, px: 40, w: 1.6, a: 0 }) }));
   tl.forEach(t => t.b.el.style.textAlign = 'center');
   const label = BOARDS.board({ html: `<span class="lbl">Borel plane (textbook): leading IR singularity at <i>u</i> = ½, a branch point</span>`, px: 760, w: 33, a: 0, cls: 'panel' });
-  const cLabel = BOARDS.board({ html: `<span class="lbl">${I('V')}${sub('l')} series (all ${I('l')} ≥ 0) Borel-summed up to the branch point → 𝒥 (Eq. 4, A.11–A.13)</span>`, px: 720, w: 31, a: 0, cls: 'panel' });
+  const cLabel = BOARDS.board({ html: `<span class="lbl">${I('V')}${sub(I('l'))} series (all ${I('l')} ≥ 0) Borel-summed up to the branch point → 𝒥 (Eq. 4, A.11–A.13)</span>`, px: 720, w: 31, a: 0, cls: 'panel' });
   const _v = new THREE.Vector3();
   /* centre (x, y, z), scale s; lab / cl: offsets of the two labels from the centre */
   function place(x, y, z, s, lab, cl) {
@@ -184,10 +187,14 @@ const BOREL = (() => {
   function show(a) { plane.material.opacity = 0.92 * a; plane.visible = a > 0.003; grid.children.forEach(l => l.material.opacity = 0.9 * a); axis.material.opacity = 0.9 * a; ticks.forEach(t => t.material.opacity = 0.9 * a);
     circ.material.opacity = a; cut.material.opacity = 0.9 * a; tl.forEach(t => t.b.show(a)); }
   function dimPoint(k) { circ.material.opacity = k; cut.material.opacity = 0.9 * k; }
-  return { place, show, dimPoint, label, cLabel, contour, contourOp, circ, cut };
+  const at = u => gC.localToWorld(W.V3(X(u), .06, 0));          /* a point of the u axis, in the World */
+  return { place, show, dimPoint, label, cLabel, contour, contourOp, circ, cut, at };
 })();
 
 /* ======================= |term| dots (S04 b2 → S05 b2), a persistent DOM board ======================= */
+/* World position of a point given in an svg's own coordinates (vbW: the width of its viewBox); the svg sits in board b */
+function svgPoint(b, svg, vbW, sx, sy) { const rb = b.el.getBoundingClientRect(), rs = svg.getBoundingClientRect(), k = (rb.width / b.px) || 1, s = b.w / b.px, f = (rs.width / k / vbW) || 1;   /* f: the plot is fitted to the panel */
+  return W.V3(b.anchor.x + ((rs.left - rb.left) / k + sx * f - b.px / 2) * s, b.anchor.y - ((rs.top - rb.top) / k + sy * f - b.h / 2) * s, b.anchor.z + 0.5); }
 const TERMS = (() => {
   /* heights are schematic (S04-I4); the minimum sits within the first 3-4 dots (#15, S04-U2) */
   const HT = [1.0, 0.66, 0.46, 0.40, 0.46, 0.62, 0.9, 1.35, 2.0, 2.35];   /* the last one lands just above the panel: out of the frame, not adrift on the stage */
@@ -196,20 +203,24 @@ const TERMS = (() => {
   const b = BOARDS.board({ px: Wd, w: 30, cls: 'panel', a: 0, html: `<h2 class="t">|term| vs order</h2>` });
   const svg = S('svg', { viewBox: `0 0 ${Wd} ${Hd}`, width: Wd, height: Hd }, b.el);
   S('path', { d: `M60 205 H740 M60 205 V30`, class: 'ax' }, svg);
-  const yl = S('text', { x: 66, y: 22, class: 'mt' }, svg); yl.innerHTML = `|<tspan class="it">v</tspan><tspan baseline-shift="sub" font-size="12">ℓ</tspan> <tspan class="it">α</tspan><tspan baseline-shift="sub" font-size="12">s</tspan><tspan baseline-shift="super" font-size="12">ℓ+1</tspan>| (schematic)`;
-  const xl = S('text', { x: 738, y: 232, 'text-anchor': 'end', class: 'mt' }, svg); xl.innerHTML = `<tspan class="it">ℓ</tspan> (order)`;
+  const yl = S('text', { x: 66, y: 22, class: 'mt' }, svg); yl.innerHTML = `|<tspan class="it">v</tspan><tspan baseline-shift="sub" font-size="13" style="font-style:italic;font-family:var(--serif)">l</tspan> <tspan class="it">α</tspan><tspan baseline-shift="sub" font-size="12">s</tspan><tspan baseline-shift="super" font-size="12"><tspan font-size="13" style="font-style:italic;font-family:var(--serif)">l</tspan>+1</tspan>| (schematic)`;   /* the order is the italic l of the equation everywhere (round 19) */
+  const xl = S('text', { x: 738, y: 232, 'text-anchor': 'end', class: 'mt' }, svg); xl.innerHTML = `<tspan class="it">l</tspan> (order)`;
   const out = l => l === HT.length - 1 ? { 'data-out': 1 } : {};   /* the last term leaves the panel on purpose (tools/check-text.mjs skips what carries data-out) */
   const dots = HT.map((h, l) => S('circle', { cx: X(l), cy: Y(h), r: 0, fill: 'var(--ink)', ...out(l) }, svg));
   const vdots = HT.map((h, l) => S('circle', { cx: X(l), cy: Y(h), r: 0, fill: 'var(--amber)', ...out(l) }, svg));     /* V_l, the renormalon part: amber, as its box caption */
   const rdots = HT.map((h, l) => S('circle', { cx: X(l), cy: Y(h), r: 0, fill: 'var(--teal)' }, svg));      /* v_l − V_l, the remainder: teal, l ≤ 2 only (S05-F4) */
   const minL = S('line', { x1: 60, y1: Y(0.40), x2: 740, y2: Y(0.40), stroke: 'var(--muted)', 'stroke-width': 1.2, 'stroke-dasharray': '7 5', opacity: 0 }, svg);
   const minT = S('text', { x: 420, y: Y(0.40) + 22, 'text-anchor': 'middle', class: 'mt' }, svg); minT.innerHTML = `minimal term ⇒ <tspan class="it">δV</tspan> ~ Λ<tspan baseline-shift="sub" font-size="12">QCD</tspan>`; minT.setAttribute('opacity', 0);
+  /* the size of the smallest term, as a length: S04 carries it to the V(r) plot, where it is the width of the ambiguity band */
+  const MX = X(3) - 16, MY0 = Y(0.40), MY1 = 205, MARK = `M${MX} ${MY0} V${MY1} M${MX - 4} ${MY0 + 6} L${MX} ${MY0} L${MX + 4} ${MY0 + 6} M${MX - 4} ${MY1 - 6} L${MX} ${MY1} L${MX + 4} ${MY1 - 6}`;
+  const mk = S('path', { id: 'tmin', d: MARK, fill: 'none', stroke: 'var(--rose)', 'stroke-width': 2, opacity: 0 }, svg);
+  let mkA = 0, mkS = 0; const mkSet = () => mk.setAttribute('opacity', mkA * (1 - mkS)), mark = a => { mkA = a; mkSet(); };
   const brk = S('path', { d: `M${X(0) - 14} 216 v6 H${X(2) + 14} v-6`, fill: 'none', stroke: 'var(--muted)', 'stroke-width': 1.2, opacity: 0 }, svg);
-  const brkT = S('text', { x: X(1), y: 244, 'text-anchor': 'middle', class: 'mt', opacity: 0 }, svg); brkT.textContent = 'used (L = 3)';   /* pilot wording, S05-F4 */
+  const brkT = S('text', { x: X(1), y: 244, 'text-anchor': 'middle', class: 'mt', opacity: 0 }, svg); brkT.innerHTML = `used: <tspan class="it">l</tspan> = 0, 1, 2`;   /* round 19: no L beside the l of the sum */
   const foot = D('div', '', b.el); foot.style.display = 'grid';   /* the caption (S04) and the legend (S05) take turns in one place */
   const cap = D('div', 'lbl t', foot, 'schematic: terms shrink, reach a minimum, grow');
-  const legend = D('div', 'small t', foot, `<span class="ac">●</span> ${I('V')}${sub('l')} (renormalon part, grows) &nbsp; <span class="tc">●</span> ${I('v')}${sub('l')} − ${I('V')}${sub('l')} (remainder, stays small; ${I('l')} = 0, 1, 2 only)`);
-  cap.style.gridArea = legend.style.gridArea = '1 / 1'; legend.style.fontSize = '20px'; b.measure();   /* 20 px: the legend holds on one line */
+  const legend = D('div', 'small t', foot, `<span class="ac">●</span> ${I('V')}${sub(I('l'))} (renormalon part, grows) &nbsp; <span class="tc">●</span> ${I('v')}${sub(I('l'))} − ${I('V')}${sub(I('l'))} (remainder, stays small; ${I('l')} = 0, 1, 2 only)`);
+  cap.style.gridArea = legend.style.gridArea = '1 / 1'; legend.style.fontSize = '19px'; legend.style.whiteSpace = 'nowrap'; b.measure();   /* 19 px: the legend holds on one line (at 20 its last word went to a second) */
   /* S04 b2: dots appear one by one, the last one bursts out of the frame */
   function reveal(u) {
     rv(b.q('h2'), seg(u, 0, .15));
@@ -218,7 +229,7 @@ const TERMS = (() => {
     brk.setAttribute('opacity', seg(u, .3, .45)); brkT.setAttribute('opacity', seg(u, .3, .45));
     rv(cap, seg(u, .85, 1)); rv(legend, 0);
   }
-  /* S05 b1: each dot splits into V_l (white, above) and the remainder (grey, below) */
+  /* S05 b1: each dot splits into V_l (amber) and, for l ≤ 2, the remainder (teal) */
   function split(u) {
     dots.forEach((c, l) => {
       const k = eo(seg(u, .05 + l * .05, .35 + l * .05));
@@ -228,9 +239,9 @@ const TERMS = (() => {
       const showR = l <= 2 ? 1 : 0;
       rdots[l].setAttribute('r', 5.5 * k * showR); rdots[l].setAttribute('cy', lerp(Y(HT[l]), Y(hR), k)); rdots[l].setAttribute('cx', X(l) - 6 * k);
     });
-    minL.setAttribute('opacity', 1 - u); minT.setAttribute('opacity', 1 - u); rv(cap, 1 - seg(u, 0, .4)); rv(legend, seg(u, .5, .9));   /* the caption is gone before the legend takes its place */
+    minL.setAttribute('opacity', 1 - u); minT.setAttribute('opacity', 1 - u); mkS = u; mkSet(); rv(cap, 1 - seg(u, 0, .4)); rv(legend, seg(u, .5, .9));   /* the caption is gone before the legend takes its place */
   }
-  /* S05 b2: the V_l column gathers at the board's right edge and leaves (a flying cluster carries it into 𝒥) */
+  /* S05 b2: the V_l column gathers at the board's right edge and leaves (a flying cluster carries it into the second box, the sum of the V_l) */
   function fold(u) {
     const k = eio(u);
     vdots.forEach((c, l) => { const hV = HT[l] * VF[l]; c.setAttribute('cx', lerp(X(l) + 6, 700, k)); c.setAttribute('cy', lerp(Y(hV), 110, k)); c.setAttribute('r', 6.5 * (1 - 0.5 * k)); c.setAttribute('opacity', 1 - seg(k, .7, 1)); });
@@ -240,10 +251,8 @@ const TERMS = (() => {
     const k = eio(u);
     rdots.forEach((c, l) => { if (l > 2) return; const hR = HT[l] * (1 - VF[l]); c.setAttribute('cx', lerp(X(l) - 6, X(1), k)); c.setAttribute('cy', lerp(Y(hR), 190, k)); c.setAttribute('opacity', 1 - seg(k, .7, 1)); });
   }
-  /* world position of a point given in the plot's own coordinates */
-  const at = (sx, sy) => { const rb = b.el.getBoundingClientRect(), rs = svg.getBoundingClientRect(), k = (rb.width / b.px) || 1, s = b.w / b.px, f = (rs.width / k / Wd) || 1;   /* f: the plot is fitted to the panel */
-    return W.V3(b.anchor.x + ((rs.left - rb.left) / k + sx * f - b.px / 2) * s, b.anchor.y - ((rs.top - rb.top) / k + sy * f - b.h / 2) * s, b.anchor.z + 0.5); };
-  return { b, reveal, split, fold, foldR, at, X };
+  const at = (sx, sy) => svgPoint(b, svg, Wd, sx, sy);   /* World position of a point of the plot */
+  return { b, reveal, split, fold, foldR, at, X, mark, markAt: () => at(MX, (MY0 + MY1) / 2), markLen: MY1 - MY0, fit: () => svg.getBoundingClientRect().width / b.el.getBoundingClientRect().width * b.px / Wd };
 })();
 
 /* ======================= Band gauge (S02 b5, S04 b3, S10 b3, S13 b1) ======================= */
@@ -372,39 +381,66 @@ const WALK = (() => {
   return { pts, set, tick, u, a0 };
 })();
 
-/* ======================= |ψ|² bump over a ruler, red zone (S06) =======================
-   A ruler runs from one quark along the pair axis. Short distance is teal; beyond RC the ruler and a plane turn red: there
-   μ = 1/r would fall below Λ_QCD. The |ψ|² hill sits over both parts. st.clip: the interpolating scale removes the red fill
-   (μ′ saturates), the outline stays as the place μ′ never goes. */
+/* ======================= S06: what the cutoff does, a gauge for α_s (round 24) =======================
+   The gauge reads the coupling α_s at the scale μ used for the pair's separation r (0 at the left, ∞ at the right end stop).
+   b1: μ = 1/r, quark B walks out from 0.2 fm; past 0.56 fm (1/r < Λ_QCD) α_s blows up and the needle slams past the end stop.
+   st.clip (in step with the plot's morph): μ = μ′, B walks out again and the needle stays near 0.48. Bond and lens versions
+   were compared on the phone and dropped by the author. α_s: two loops, n_f = 3, Λ = 0.35 GeV, so the pole is at 1/r = Λ
+   (the ruler's red edge) and α_s(1 GeV) = 0.48. */
 const PSI = (() => {
-  const L = 22, seg_ = 80; const geo = new THREE.PlaneGeometry(L, 8, seg_, 10);
+  const L = 12, seg_ = 60;   /* out to 1.1 fm, where the hill is under 6 % of its peak: a longer base drew a flat grey sheet */ const geo = new THREE.PlaneGeometry(L, 8, seg_, 10);
   const p = geo.attributes.position; const base = new Float32Array(p.array);
   const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: TC('soft'), transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false }));
   mesh.rotation.x = -Math.PI / 2; W.scene.add(mesh);
-  function shape(a) { for (let i = 0; i < p.count; i++) { const x = base[3 * i] + L / 2; const r = x / L * 6; const h = r * r * Math.exp(-2 * r / 2.0) * 4.5; p.array[3 * i + 2] = h * a * (1 - Math.abs(base[3 * i + 1]) / 4.5); } p.needsUpdate = true; }
+  /* r²e^{−2r/a₀} in fm (1 fm = 12 units; the hill starts 1.5 units out), peak height 2.44. a₀ = 0.3 fm, between the Bohr
+     radii of cc̄ (0.49 fm) and bb̄ (0.21 fm): most of the weight is short of the red (round 20; it peaked at 0.74 fm) */
+  const A0 = 0.3;
+  function shape(a) { for (let i = 0; i < p.count; i++) { const u = (base[3 * i] + L / 2 + 1.5) / 12 / A0; const h = u * u * Math.exp(2 - 2 * u) * 2.44; p.array[3 * i + 2] = h * a * (1 - Math.abs(base[3 * i + 1]) / 4.5); } p.needsUpdate = true; }
   shape(1);
-  const RC = 12, RL = 34, Y0 = -1.6;
+  const LQ = 0.35, HC = 0.1973, RC = 12 * HC / LQ, RL = 20, Y0 = -1.6;   /* 1/r = Λ_QCD at 0.56 fm; the ruler ends at 1.7 fm (B walks to 1.25 fm; longer, it ran under the plot) */
+  const B0 = 9 / (4 * Math.PI), B1 = 96 / (24 * Math.PI * Math.PI);
+  const alpha = mu => { const l = Math.log(mu * mu / (LQ * LQ)); return l <= 0.02 ? Infinity : 1 / (B0 * l) * (1 - B1 / (B0 * B0) * Math.log(l) / l); };
   const g = new THREE.Group(); W.crisp.add(g);
   const mk = (pts, col) => { const l = W.cline(pts, col, 0); g.add(l); return l; };
-  const near = [mk([W.V3(0, Y0, 0), W.V3(RC, Y0, 0)], TC('teal'))], farR = [mk([W.V3(RC, Y0, 0), W.V3(RL, Y0, 0)], TC('lat'))], farT = [mk([W.V3(RC, Y0, 0), W.V3(RL, Y0, 0)], TC('teal'))];
+  /* the ruler in the gauge's own zones (review 1.3): teal while α_s(1/r) < 0.82, amber to 1.5, red beyond; a taller red tick at the
+     pole (0.56 fm). With μ′ the amber and red parts turn grey: α_s is finite there, but V still has no confinement */
+  const rAt = a => { let lo = 0.05, hi = HC / LQ; for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (alpha(HC / m) < a) lo = m; else hi = m; } return 12 * lo; };
+  const XT = rAt(0.82), XA = rAt(1.5);
+  const zones = { teal: mk([W.V3(0, Y0, 0), W.V3(XT, Y0, 0)], TC('teal')), amber: mk([W.V3(XT, Y0, 0), W.V3(XA, Y0, 0)], TC('amber')), red: mk([W.V3(XA, Y0, 0), W.V3(RL, Y0, 0)], TC('lat')) };
+  const near = [zones.teal], farR = [zones.amber, zones.red], farT = [mk([W.V3(XT, Y0, 0), W.V3(RL, Y0, 0)], TC('dim'))];
   for (let x = 0; x <= RL; x += 2) { const pts = [W.V3(x, Y0, 0), W.V3(x, Y0 - (x % 4 === 0 ? 1.0 : 0.55), 0)];
-    if (x <= RC) near.push(mk(pts, TC('teal'))); else { farR.push(mk(pts, TC('lat'))); farT.push(mk(pts, TC('teal'))); } }
-  const outline = mk([W.V3(RC, -3.5, 0), W.V3(RL, -3.5, 0), W.V3(RL, 3.5, 0), W.V3(RC, 3.5, 0), W.V3(RC, -3.5, 0)], TC('lat'));
-  const teal = W.plane(1, 7, TC('teal'), 0), red = W.plane(RL - RC, 7, TC('lat'), 0); W.scene.add(teal, red);
-  const redLab = BOARDS.board({ html: `<span class="lbl">where ${I('μ')} = 1/${I('r')} would fall below ${H.LQCD}: ${H.mup} never goes there</span>`, px: 420, w: 15, a: 0, cls: 'panel' });
-  const psiLab = BOARDS.board({ html: `<span class="lbl">schematic |${I('ψ')}|²: where bound states sample ${I('r')}</span>`, px: 380, w: 14, a: 0, cls: 'panel' });
+    if (x <= XT) near.push(mk(pts, TC('teal'))); else { farR.push(mk(pts, TC(x <= XA ? 'amber' : 'lat'))); farT.push(mk(pts, TC('dim'))); } }
+  farR.push(mk([W.V3(RC, Y0 + 0.6, 0), W.V3(RC, Y0 - 1.6, 0)], TC('lat')));   /* the pole: 1/r = Λ */
+  /* the gauge: a DOM dial; 0 at the left, ∞ at the right end stop; angle = 180° · α/(1+α) (α = 1 straight up) */
+  const GA = a => 180 * a / (1 + a), gp = th => { const t = th * Math.PI / 180; return [130 - 100 * Math.cos(t), 130 - 100 * Math.sin(t)]; };
+  const arc = (a0, a1, col) => { const [x0, y0] = gp(a0), [x1, y1] = gp(a1); return `<path d="M${x0.toFixed(1)} ${y0.toFixed(1)} A100 100 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)}" fill="none" stroke="var(--${col})" stroke-width="12"/>`; };
+  const tick_ = (a, t) => { const th = GA(a), [x, y] = gp(th), [x2, y2] = [130 + (x - 130) * 1.22, 130 + (y - 130) * 1.22]; return `<text x="${x2.toFixed(0)}" y="${(y2 + 5).toFixed(0)}" text-anchor="middle" font-size="16" fill="var(--muted)">${t}</text>`; };
+  const gauge = BOARDS.board({ html: `<div class="lbl" style="text-align:center">the coupling ${H.as} <span class="tiny">(schematic: two loops, Λ ≈ 0.35 GeV)</span></div><svg viewBox="0 0 260 150" width="260" height="150">${arc(0, 81, 'teal')}${arc(81, 108, 'amber')}${arc(108, 180, 'lat')}${tick_(0, '0')}${tick_(0.5, '0.5')}${tick_(1, '1')}<text x="${gp(180)[0] + 14}" y="135" font-size="18" fill="var(--muted)">∞</text><line id="ndl" x1="130" y1="130" x2="30" y2="130" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/><circle cx="130" cy="130" r="7" fill="var(--ink)"/></svg><div class="num" id="gread" style="text-align:center;font-size:20px"></div>`, px: 290, w: 10.5, a: 0, cls: 'panel' });
+  const ndl = gauge.el.querySelector('#ndl'), gread = gauge.el.querySelector('#gread');
+  const redLab = BOARDS.board({ html: `<span class="lbl">${I('μ')} = 1/${I('r')}: as the quarks move apart the coupling ${H.as} grows: about 1 by <span class="num">0.3 fm</span>, and at <span class="num">0.56 fm</span> it blows up</span>`, px: 420, w: 15, a: 0, cls: 'panel' });
+  const confLab = BOARDS.board({ html: `<span class="lbl">${H.mup}: the scale stops at ${H.mucut} = <span class="num">1 GeV</span>, so ${H.as} stays at or below <span class="num">0.48</span> at any distance. ${I('V')} still has no linear confining term (string tension · ${I('r')}): a systematic of the method</span>`, px: 420, w: 15, a: 0, cls: 'panel' });
+  const psiLab = BOARDS.board({ html: `<span class="lbl">schematic ${I('r')}²|${I('ψ')}|², bottomonium-like (${I('a')}₀ ≈ 0.3 fm): the separations a bound state samples</span>`, px: 380, w: 14, a: 0, cls: 'panel' });
   const st = { psi: 0, red: 0, rule: 0, clip: 0 };
-  function tick() {
+  let V = { r: 0, mu: 0, alpha: 0, broken: false }, ang = 0, gHtml = '';
+  const view = () => { const r = Math.max(PAIR.st.sep / 12, 0.02), mu = lerp(HC / r, Math.sqrt(1 + (HC / r) ** 2), st.clip), a = alpha(mu); return { r: +r.toFixed(3), mu: +mu.toFixed(3), alpha: isFinite(a) ? +a.toFixed(3) : 'inf', broken: !isFinite(a) }; };
+  function tick(t) {
     const A = PAIR.posA(), s = PAIR.st.scale;
     mesh.position.set(A.x + L / 2 * s + 1.5, A.y + Y0, A.z); mesh.scale.setScalar(s); mesh.material.opacity = 0.34 * st.psi; mesh.visible = st.psi > 0.003;
-    g.position.copy(A); g.scale.setScalar(s); g.visible = st.rule > 0.003;
+    g.position.copy(A); g.scale.setScalar(s); g.visible = st.rule > 0.003 || st.red > 0.003;
     near.forEach(l => l.material.opacity = st.rule); farR.forEach(l => l.material.opacity = st.rule * (1 - st.clip)); farT.forEach(l => l.material.opacity = st.rule * st.clip);
-    outline.material.opacity = 0.8 * st.red;
-    const tw = lerp(RC, RL, st.clip) * s; teal.scale.set(tw, s, 1); teal.position.set(A.x + tw / 2, A.y, A.z - 2); teal.material.opacity = 0.10 * st.rule; teal.visible = st.rule > 0.003;
-    red.scale.setScalar(s); red.position.set(A.x + (RC + RL) / 2 * s, A.y, A.z - 1.9); red.material.opacity = 0.18 * st.red * (1 - st.clip); red.visible = red.material.opacity > 0.003;
-    redLab.set(A.x + 19.5 * s, A.y + 6.2, A.z); redLab.show(st.red); psiLab.set(A.x + 8 * s, A.y - 8.6, A.z + 3); psiLab.show(st.psi);   /* clear of the S06 question board; under the pair's own caption, not on it */
+    V = view(); const a = V.broken ? Infinity : V.alpha, on = st.red;
+    /* no live number (a counter is text written and gone, check-transient): ∞ when it blows up, one bound once μ′ holds it */
+    const aTxt = V.broken ? `${H.as} → ∞` : st.clip > 0.5 ? `${H.as} ≤ 0.48 at any ${I('r')}` : '';
+    /* gauge */
+    ang = V.broken ? 183 : GA(a);   /* past the end stop; still, so a beat ends where its click starts (check-jumps) */
+    const [nx, ny] = gp(ang); ndl.setAttribute('x2', (130 + (nx - 130) * 0.92).toFixed(1)); ndl.setAttribute('y2', (130 + (ny - 130) * 0.92).toFixed(1));
+    if (aTxt !== gHtml) { gread.innerHTML = aTxt; gHtml = aTxt; } gread.style.color = V.broken ? 'var(--lat)' : 'var(--ink)'; ndl.setAttribute('stroke', V.broken ? 'var(--lat)' : 'var(--ink)');
+    gauge.set(A.x + 24 * s, A.y + 4 * s, A.z);   /* a unit higher since its caption says schematic: clear of the plot */ gauge.show(on);
+    const lx = A.x + 17 * s, ly = A.y + 11.8 * s;   /* over the pair, clear of the question board */
+    redLab.set(lx, ly, A.z); redLab.show(on * (1 - st.clip)); confLab.set(lx, ly, A.z); confLab.show(on * st.clip);
+    psiLab.set(A.x + 8 * s, A.y - 8.6, A.z + 3); psiLab.show(st.psi);   /* clear of the S06 question board; under the pair's own caption, not on it */
   }
-  return { st, tick, mesh, red };
+  return { st, tick, mesh, RC, zones, alpha, view, labels: [redLab, confLab, psiLab, gauge], parts: { gauge, angle: () => ang } };
 })();
 
 /* ======================= Lattice wall (S10 b2) ======================= */

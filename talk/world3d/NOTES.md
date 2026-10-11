@@ -15,7 +15,7 @@ numbers only), the paper's Tables I to V, the picture catalogue, and the capture
   second window, then shows the current beat's notes, the first sentence of the next beat, scene and beat numbers,
   and a clock. The keys and buttons in the presenter drive the World through postMessage, and a clicker in the
   World's window keeps the presenter in sync the other way.
-- **Contact sheet:** `NODE_PATH=$(npm root -g) node talk/world3d/tools/contact.mjs` drives all 71 beats through
+- **Contact sheet:** `NODE_PATH=$(npm root -g) node talk/world3d/tools/contact.mjs` drives all 75 beats through
   the shim and writes `contact/SNNbM.png`. `--only S07` for one scene, `--play S05` clicks through one scene in real
   time, `--firefox` loads it in Firefox, `--fps S07b2 S10b2` measures fps on the real GPU (headed Chromium).
 - **Framing check:** `NODE_PATH=$(npm root -g) node talk/world3d/tools/contact.mjs --frame --mid` lists every board the stage
@@ -30,8 +30,8 @@ numbers only), the paper's Tables I to V, the picture catalogue, and the capture
 - **Colour check:** `NODE_PATH=$(npm root -g) node talk/world3d/tools/check-colour.mjs`: every hadron as drawn (the colour each
   visible quark is painted with, not the charge it was created with) is colour-neutral at the end of every beat and at three
   moments inside it.
-- **Shim self-test:** `NODE_PATH=$(npm root -g) node /home/gofer/mrs_talk_video/render/deck_shim.mjs --selftest --want 15,71,1014 talk/world3d/index.html`
-  prints `SHIM OK scenes=15 beats=71 sum_d=1014` (round 18; without `--want` the shim checks the Deck's 15, 57, 1014).
+- **Shim self-test:** `NODE_PATH=$(npm root -g) node /home/gofer/mrs_talk_video/render/deck_shim.mjs --selftest --want 15,75,996 talk/world3d/index.html`
+  prints `SHIM OK scenes=15 beats=75 sum_d=996` (round 19: S12 lost a beat of 18; without `--want` the shim checks the Deck's 15, 57, 1014).
 - **Transient check:** `NODE_PATH=$(npm root -g) node talk/world3d/tools/check-transient.mjs [--only S05] [--strings FILE] [--selftest]`:
   every beat on a 30 fps clock; fails on any text or dot written in a beat and gone (faded or left by the camera) before it ends.
 - **Map check:** `NODE_PATH=$(npm root -g) node talk/world3d/tools/check-map.mjs [--boxes]`: the scenes' regions on the overview
@@ -52,7 +52,7 @@ every beat's `f(p)` is a deterministic function of `p`, so a scrubbed beat and a
 | `js/space.js` | renderer, bloom (EffectComposer + UnrealBloomPass, no MSAA, pixel ratio 1), a second "crisp" scene drawn after bloom, lights, ambient dust, the camera rig (`cam`, `samplePath`), factories: quark, link, glyph, plane, crisp line |
 | `js/boards.js` | DOM boards anchored to 3D points and re-projected every frame (billboards, perspective scale, z-order by depth), one container per scene (`scenes[i].el`), re-measure on font and image load |
 | `js/objects.js` | the persistent objects, one owner each: Family shelf (glyphs, labels, chips, named layouts with reflow), static pair, EFT tower, Borel floor + branch point (crisp) + contour, the \|term\| dots board, the band gauge, the number line, the walker cloud (200k points, GPU jitter/diffusion), the \|ψ\|² bump, μ rings and red zone, the lattice wall |
-| `js/s01-s02.js` … `js/s13-s15.js` | the 15 scenes, 71 beats; each beat `{ d, cam, win, f(p) }`; `notes: NOTES[SC]` from `js/notes.js` (the narration) |
+| `js/s01-s02.js` … `js/s13-s15.js` | the 15 scenes, 75 beats; each beat `{ d, cam, win, f(p) }`; `notes: NOTES[SC]` from `js/notes.js` (the narration) |
 | `js/engine.js` | the shim API (`scenes`, `si`, `done`, `run`, `auto`, `notesOn`, `show`, `next`, `prev`, `applyUpTo`, `setAuto`, `ui`), deterministic state application, camera keyframes per beat, keys, deep link, presenter sync, fps counter |
 | `presenter.html` | the speaker's second window |
 | `tools/contact.mjs` | the contact sheet, play-through, Firefox and fps checks |
@@ -792,6 +792,141 @@ A fresh agent re-ran every check and read all 71 beat ends and about 40 MP4 fram
   only on two map PNGs rendered before the last S14 edit: re-rendered and read at full size since.
 - The tab title says "build r18".
 
+## Round 19 (2026-10-03), first pass: S05 shows the renormalon series as a sum before its Borel sum, one letter for the order, the haze rises from the cut, the same tuned masses in every channel
+
+The author's review of the r18 video, scene 5: the Borel sum should be seen as the infinite sum it is before its result,
+and turn into it; "L = 3" under the dots beside a sum over l = 0 to 2 reads strange; the red bar comes from nowhere in
+the graph; and Λ_R is not "neglected" for baryons and tetraquarks: the same tuned quark masses are used there, and they
+already contain it ("it is neglected because we use the tuned quark mass where it is included").
+
+- **The second box is the sum first.** `#b2` holds two layers in one grid cell: Σ over l = 0 to ∞ of V_l α_s^(l+1)(μ′(r))
+  (Eq. A.10, at the scale of Eq. 6) and the closed form (Eq. A.11). The equation is written with the sum (b2); the amber
+  dots of every order go into it (b4, a new stop); then `borelSum(k)` turns it into the closed form while the contour
+  lights up to the branch point on the inset, with the two captions (b5, a new beat; `slow: 3.5`, timed on its sentence). Both layers share the cell, so no
+  box moves or changes size. S05 has 9 beats (the 7 of the old third stop became 3 + 4; `sum_d` stays 1014): 73 beats at that point.
+- **One letter for the order.** The bracket reads "used: l = 0, 1, 2" (was "used (L = 3)"); the axes carry the italic l of
+  the equation (were the script letter); the subscripts of the legend and of the Borel label are italic too.
+- **The haze rises on the cut.** At the Λ_R stop (b6; `slow: 3.6`, so it comes with its sentence) the rose haze rises on the
+  branch cut of the Borel inset, past u = ½, where the contour stopped: what the Borel sum cannot reach (`BOREL.at(u)`).
+  In b7 it leaves the cut, narrows and goes into the Λ_R box. It is drawn over the equation panel (`z: 300`, as the flying
+  dots): until r18 it slid behind that panel (boards are stacked by distance) and was never seen arriving. The |term|
+  graph, with nothing left on it, leaves when its last dots do (b4), not after the haze.
+- **Where the renormalon goes.** The board now reads: "Λ_R comes out free of the leading-renormalon ambiguity. It is
+  absorbed into the quark mass, tuned so that 2m_Q + E matches the spin-averaged 1S states. Baryons and tetraquarks use
+  the same tuned masses: the same fit to experiment absorbs it there too." Chosen by the author, without the "scheme
+  choice, future work" line. The paper's Sec. II B, step 3, says "neglected in other cases"; the author's reading: nothing
+  is added there because the tuned masses already contain it. S14's "Next" board still lists the non-singlet derivation.
+- **Narration** (`narration_world3d/scene_05.md`, 9 beats): b4 names the infinite sum, b5 its Borel sum, b6 ends on the
+  part the Borel sum cannot reach, b7 says the same tuned masses carry Λ_R and the fit to experiment takes care of it.
+- Not done, by the author's decision of 2026-10-01: the one-frame jumps at seven scene joins of the video (ambient phases
+  that restart with the page) stay as they are.
+
+### Tests changed, and why
+- `check-beats.mjs`: `raw()` addresses the build's own beats beside `at()` (r17 names); `CUT` for S05 b2 is
+  [10, 7, 3, 4, 6]; 14 new tests (section 8): 13 written first, 10 of them failed on r18. One of them ("the bar is on its way to
+  the Λ_R box") was tightened to "drawn over the equation panel" when the first frames showed it passing behind, and
+  failed again before the fix. "No box moves while the sum transforms" first compared stage positions to 0.1 px and
+  failed on the ambient camera's drift of the whole board; it now compares sizes and places relative to the first box, and a
+  14th test plants the fault (the closed form taken out of the shared cell: box 3 moves 48 px) to show it can fail. The round 14 test "the |term| board is
+  there while the haze leaves it" is gone with the thing it tested; its place is taken by "there while the dots leave it
+  (b3 end), gone once they are in the equation (b4 end)".
+- `check_narration.py`: the S05 rule required the word "neglect"; it now requires "same tuned masses" and "infinite sum"
+  and fails on "neglect". It failed on the r18 narration (3 failures) before the rewrite.
+
+### Second pass: panels 4, 6, 9, 10, 12 (same day, after the author's review of the first r19 video)
+- **S04 (7 beats).** The series board follows Eq. A.1 as two lines: V_R is the series, then 𝒱_R = V_R + Λ_R. The old
+  fourth beat is four stops, timed on the speech: the smallest-term mark (rose double arrow, `TERMS.mark`) is carried
+  from the |term| plot onto the V(r) plot (a TICK follower with `asDrawn`, as the S05 haze); the curve slides between
+  two dashed copies, with the band and two equal arrows; three parallel tangent marks for the force; the Borel inset.
+  The thin F(r) curve is gone. The bands figure has the order on its x axis (LO, NLO, NNLO), caption "binding energy
+  at fixed m_Q (Figs. 1–2 left, schematic)".
+- **S06.** The smooth cutoff only: no hard-cutoff curve, no frozen α_s curve, no line about them; the 2 GeV curve is the
+  smooth μ′, labelled "μcut 2 GeV → fixed order (Fig. 7)".
+- **S09.** "exp. B_c 6.2745(3)" (paper, text on Tab. II, ref. [92]) on the number line, window from 6.262; the narration
+  says it is the lighter spin state and that we compare with the spin average.
+- **S10.** GeV on every mass chip; headers "NNLO MRS" and "lattice QCD"; no "±0.94 GeV band" note beside Ω_ttt. With the
+  unit the chips of the main row and of the lattice row touched (`check-text`: 4 strong): padding 4 px, no side margin,
+  letter-spacing -0.4 px. A smaller font failed the 18 px test at b5.
+- **S12 (5 beats).** The colour-structure board and its beat are gone (`sum_d` 996). The bound tetraquarks carry their
+  MRS masses of Tab. V, marked NLO, where they said "top decays"; the BOUND header lost "· top decays" too (the author:
+  "gone everywhere" on panel 12; the η_t label "zero-width limit (top decays)" and the S09 sentence stay, by the author's answer).
+- **S13 b1.** S12 now ends on the verdict boards, further left: the gauge is shown once it is whole on the stage
+  (q .3 to .4; it crossed the edge as a focus board), and the S12 sketch caption is a focus board only in the first
+  piece of its cut (it counted as a click jump at S13 b1).
+- **presenter.html** needed no edit; `tools/check-presenter.mjs` (4 tests, shown failing on a planted narration change).
+- 75 beats; `--want 15,75,996`.
+
+### Third pass: the open points of the third review, changed at the author's request ("change all of them", then the small ones)
+- S05: the sum rolls up out of its box while the closed form rolls in from below (the box clips them; it was a fade through
+  an empty box). Board: "For baryons and tetraquarks it is neglected, because they use the same tuned masses, which already
+  include it." (the author's sentence; the narration says the same). The chip and the S08 dials say Λ_R (was Λ₁).
+- S04: a "V" on the y axis of the V(r) plot; "δV" over the landed mark; the LO box of the bands figure is narrow (the paper's
+  LO band collapses, Sec. III A); narration b2: "Even if you stop at the smallest term…".
+- S06: no "(Fig. 7)" (that figure is the hard-cutoff and frozen-α_s study); "μcut = 2 GeV → fixed order"; a curve above the
+  frame starts where it enters it (clamped, the λ = 2 curve drew a flat top with a corner).
+- S09: the gap label is "24.8 MeV gap" and the narration stops at "about 25 MeV below it" (the paper's prose and its
+  Table II disagree on how the gap compares with the scale range); GeV on the three values; the exp. B_c label above the line.
+- S10: GeV on the three masses of the Ω_bbb line; the lattice band is stat ⊕ sys in quadrature (11.4 MeV; it was 9); the
+  summary board no longer repeats "±0.94 GeV".
+- S12: "509(10)(340) MeV" and the two others carry both errors of Tab. V; the figure title ends "fixed order (left), MRS
+  (right)" (Fig. 5; it said "MRS at LO/NLO"); narration b3: three-body and four-body forces, the subtraction for them left
+  for future work.
+- S14: "Thank you: happy to take questions".
+- S04 band label: "same width at every r: δV ~ Λ_QCD" (was "constant-width haze", the author's choice of 2026-10-03).
+- Left as they are (taste, or the author's wording): n_f shown three times on S06; the unlabelled λ
+  curves; "~135 MeV" above the fixed-order label on S10 b3; the staggered top-row chips; the blended t̄t̄ in the bound
+  tetraquark glyphs; the blank number-line panel at S09 b3; "target precision ~10 MeV"; small pale captions; S14 b4's dim
+  thesis line at the top edge.
+- `check-beats.mjs` section 13 and three changed tests, written first: 8 failed before the changes; 101 tests.
+  `check_narration.py`: S05 must say "neglected, because they use the same tuned masses".
+
+### Tests changed in the second pass
+- `check-beats.mjs` sections 9 to 12 (S04, S06, S09/S10, S12), written before the changes: 96 tests. Corrected tests: S06
+  "distinct heights" became "under 30 % of the points at one height"; S09 "labels touch" needs 4 px of vertical overlap;
+  S12 chip text is read with `innerText`; the S09 window assertion is 0.072; S10 b5 expects the strings with " GeV".
+- `check_narration.py`: S04 needs "smallest term", "slide", "force", "plus a constant"; S12 fails on triplet, sextet, diquark.
+
+### Verified (final build r19, 75 beats)
+- `check-beats` 101 of 101; `check-transient` 0 texts, 0 marks over 16,523 frames (`--selftest` passes); `check-jumps`
+  0 of 75; `check-colour` all neutral; `check-text --mid` 0 strong at the ends of beats (13 items inside beats, listed);
+  `--frame --mid` 0 focus boards cut; `--layout` and `check-map` clean; `SHIM OK scenes=15 beats=75 sum_d=996`;
+  `check-presenter` 4 of 4; `check_narration` PASS (2407 words); `notes --check` PASS.
+- On-screen strings against r18 (`.scratch/r19/strings-r19.txt` at the repository root): only the changes above.
+- Video `~/mrs_talk_video/world3d/mrs-talk-world3d.mp4`: 14:45 (885.2 s), 26,555 frames, 75 clicks, 0 jumps, 0 page
+  errors; 808.0 s of speech, 0 audio gate failures; 172 subtitle cues; `verify3d.py` PASS (74 beats separated, S03 b1
+  read by eye). S04 in the video: the mark inside "its smallest term", the landing on "it is this much", the slide in "slide up or down";
+  S13 b1: the gauge with "This band, first" (measured on the second-pass recording; the third pass shifts everything by under 4 s).
+- Frames read at full size: S04 b4 to b7 and in-beat, S06 b5, S09 b4, S10 b2 and b5, S12 b4 and b5, S13 b1 in-beat;
+  MP4 frames at 200.0 and 206.2 s.
+- Third independent review (fresh context, frames at full size, numbers against the paper): every number of the changed
+  panels matches the paper; no dash added; no finding needed a change inside what was asked. Left for the author: the
+  Ω_bbb number line (S10 b3) has three masses without GeV beside a GeV axis; the S10 summary board still says "the band
+  is wide, ±0.94 GeV"; "(Fig. 7)" on S06 is the paper's hard-cutoff and frozen-α_s study; the chip "Λ₁ absorbed into
+  m_Q"; the paper's §III C prose (B_c gap "comparable to the scale range", 6.2865(2)(218)) against its Table II, which
+  the talk follows; S12 b5 "509(340) MeV" drops the statistical error of Tab. V.
+- Not done, by the author's decision: the one-frame jumps at seven scene joins of the video.
+
+### First pass: verified at the time (73 beats, superseded)
+- `check-beats` 66 of 66 (fastest pan 0.90 widths/s, S10 b6); `check-transient` 0 texts, 0 marks over 16,200 frames;
+  `check-jumps` 0 of 73; `check-colour` 2756 drawn hadrons over 73 beats, all neutral; `check-text --mid` 0 strong at the
+  ends of beats (12 items inside beats: the dots' flights, listed); `--frame --mid` 0 focus boards cut (15 dim listed: one
+  more than r18, a dim shelf chip 2 px over the edge at S14 b1 p = .5, where r18 already had chips at the edge);
+  `--layout` and `check-map` clean; `SHIM OK scenes=15 beats=73 sum_d=1014`; `check_narration` PASS (2328 words);
+  `notes --check` PASS.
+- On-screen strings against r18 (`check-transient --strings`, `.scratch/r19/strings-r19.txt`): only the bracket, the two
+  axis labels, the board on where the renormalon goes, and the new sum (10 changed lines).
+- Video `~/mrs_talk_video/world3d/mrs-talk-world3d.mp4`: 14:20 (859.8 s), 25,795 frames, 73 clicks, 0 jumps, 0 page
+  errors; 785.0 s of speech, 178 wpm overall, 0 audio gate failures; 168 subtitle cues; `verify3d.py` PASS (sync: 72
+  beats separated, S03 b1 read by eye). In the video the contour lights from 236.1 s and the sum turns into the closed
+  form from 238.3 s, inside "along this path up to the branch point, it turns into this closed form" (sentence from
+  234.5 s); the haze rises at 250.5 s, its sentence starts at 250.7 s. Three beats' animations outlast their narration
+  (S05 b5 by 0.4 s, S08 b5 by 1.7 s, S11 b3 by 1.0 s).
+- Frames read at full size: every S05 beat end and the in-beat frames of the World, and frames of the MP4 (the sum with
+  the contour lit, mid-transformation, the closed form with its captions, the haze on the cut, its way into Λ_R, the board).
+- The first recording of this round had the transformation 3 s ahead of its words and the haze 1.5 s ahead: `slow` on
+  b5 and b6 was set from the sentence timings and the video recorded again.
+- The tab title says "build r19".
+
 ## Speed
 
 Measured through the `?fps` counter with `tools/contact.mjs --fps` in headed Chromium on this laptop
@@ -821,3 +956,186 @@ sheet correctly but is not a speed reference.
 All on-screen strings come from the approved scene files, the storyboard or the Tables. The items flagged for the
 speaker in `issues/12-physics-majors-for-speaker.md` (the S02 "~700–850 MeV" wording, the S03 spin percentages,
 the S06 "2 GeV" sentence, the S05 non-singlet sentence, the S04 band cartoon caption) are unchanged here.
+
+## Round 20 (2026-10-04): particles move only in the beats about them; the presenter shows keynotes
+
+After the author rehearsed the talk live (20 minutes for a 15-minute slot, the first half spent reading the notes).
+
+- **Still particles.** A glyph moves only while the current beat shows its name or its number, or flashes it; the static pair
+  jitters only in the beats that set its state. `u.live` (0 to 1) is the same focus the boards use (`boardState`), so it eases
+  with the click and is a pure function of the beat; a glyph's place is its pose at t = 0 mixed with its orbit (`space.js`),
+  so a still glyph has one pose on every load (the phase was random) and nothing jumps as `live` comes and goes. `PAIR.st` is
+  a Proxy that records the beat that set it. The walkers, the dust and the glow pulses are unchanged.
+- **Keynotes.** `js/keys.js`, written by hand: one to three keynotes per beat (10 words or fewer), and `show`: what is on the
+  screen and needs no words. `presenter.html` shows them instead of the narration, with the time the panel should start
+  (`KEY_T`, the pace of the video, 15 minutes) and a clock that turns red once the panel should be over. The full sentences
+  stay in `js/notes.js` (key `n` in the World). The engine throws if keynotes and beats disagree.
+- **Tests, written first.** `tools/check-live.mjs` (what moves at each settled beat; 8 tests, 6 failed before the change);
+  `tools/check-presenter.mjs` rewritten for keynotes (12 tests; it failed on the missing `keys.js`).
+- **Verified.** check-live 8 of 8 (most moving at once: 6); check-presenter 12 of 12; check-beats 101; check-jumps 0 of 75;
+  check-colour, check-text --mid (0 strong at beat ends), --frame --mid (0 focus cut), check-map, check-transient clean;
+  `SHIM OK scenes=15 beats=75 sum_d=996`.
+- **The MP4 is not re-recorded** (the author: live talk only): `mrs-talk-world3d.mp4` is the round 19 World, with every
+  particle moving.
+
+### Round 20b (2026-10-05): a particle moves for as long as the talk is about it
+The author, rehearsing: particles "stop moving" while still being talked about. A real-click replay of the whole talk
+showed no engine fault: the rule of round 20 (a particle moves only in the beat that writes its name or number) froze the
+four families after S02 b1, the Ω baryons once the lattice row came, cc̄ and bb̄ during the tuning. Now `LIVE` in
+`js/keys.js` lists, per beat, the particles the talk is about (`liveOf(id)` in the engine, eased like a board's focus); the
+old rule stays as a floor. The title baryon turns in S01 (it never did). At S14 b3 the whole family moves.
+`check-live.mjs`: 13 tests, 8 failed before the change. Suite green (jumps 0 of 75, beats 101, presenter 12, colour, text,
+frame, transient, shim 15/75/996).
+
+### Round 21 (2026-10-05): the S04 potential plot reads as −C/r, with the script 𝒱 on its axis
+The author: the axis letter was a plain V, not the 𝒱 of Eq. A.1, and the curve did not look like 1/r. It was −1/r + 0.2
+drawn from r = 0.5 with no zero line, so only its flat part showed. Now V = −1/r from r = 0.4: steep at short distance,
+flattening under a dashed zero line marked 0; the band and the lower copy are clipped at the r axis; the two force labels sit
+above the zero line. Two tests written first in `check-beats.mjs` (section 14), both failed before; 103 pass. Jumps, text,
+frame, transient and live checks clean. The MP4 is not re-recorded.
+- Same day, at the author's request: the scale is larger and the zero line higher (V = 0 at y 56, 96 px per unit, from
+  r = 0.55), so the upper dashed copy of the curve stays under zero (test added; it reached above it). The "steep" test's
+  share of the drop in the first quarter of the arc went from 0.6 to 0.55: the steep part is longer at this scale.
+
+### Round 21b (2026-10-05): the video narration does not read the screen
+The author, about the keynotes: the video should drop the same things (names, the list of predictions, numbers on screen).
+`check_narration.py` gained three rules, written first: no person's name but the speaker's (Komijani, Kronfeld, the
+coauthors, Detmold), no sentence listing mesons, baryons and tetraquarks, and no number read off the screen outside
+S09 b4 (the B_c gap), S10 b2 (125 to 175 MeV) and S10 b4 (700 to 10 MeV). The old narration fails 31 times, the new one
+passes; 2407 → 2240 words. The facts stay, said qualitatively ("hundreds of MeV", "barely moves from one order to the next",
+"nearly two orders of magnitude"). The Hylleraas sentence stays (round 18 request), without the channel list. On-screen
+strings for the gate: `.scratch/r21/strings-r21.txt`. Backup of the narration before: `/tmp/r21/narration-before/`.
+Four renders of this round died (ffmpeg exit 255 or EPIPE, every running encoder in the same second). Not memory (no
+earlyoom or kernel kill in syslog) and not my session's signals (it died under `setsid` too): another Claude session on this
+machine, working on `~/program/tools/footage`, ran `pkill -x ffmpeg` at 18:12, 18:38 and 18:42, matching the crashes to the
+second. The render now runs ffmpeg under another process name (`/tmp/w3d-bin/ffmpeg` execs a symlink `ffmpeg-w3d`, put first
+on PATH), which `pkill -x ffmpeg` does not match. `run3d.sh` also takes `JOBS` (default 4).
+- **Video** (round 21, 2026-10-05): `~/mrs_talk_video/world3d/mrs-talk-world3d.mp4` rebuilt from this World (still particles,
+  the S04 plot, the trimmed narration): 13:43 (822.7 s), 24,681 frames, 75 clicks, 0 jumps, 0 page errors; 736.9 s of
+  speech, 0 audio gate failures; 167 subtitle cues, none naming a person; `verify3d.py` PASS (74 beats separated, S03 b1 read
+  by eye). MP4 frames read: S04 b6 end (𝒱 axis, curve under zero); S02 b2 against S02 b5, 0.5 s apart: whole balls move
+  in the first, only the camera drift's edges in the second. `run3d.sh` makes the renamed encoder itself. The schedule line
+  rounded the minutes (13:43 printed as 14:43; also in earlier rounds' logs): now truncated. Backup of the round 19 video:
+  `/tmp/mrs-talk-world3d.r19.mp4`.
+
+## Round 22 (2026-10-07): the talk travels as one zip
+- The sans face is bundled: `fonts/NotoSans-{Regular,Bold,Italic,BoldItalic}.woff2` (from /usr/share/fonts/truetype/noto,
+  OFL), family `NotoSansW`, first in `--sans`. Until now `system-ui` was the system's Noto Sans in headless Chrome (same width
+  to the pixel), Ubuntu in a desktop Chrome on this machine, Segoe UI on Windows, SF on a Mac: every layout check measured
+  one font and other devices would have drawn another. The web copy is drawn unhinted (regular text 1.5 % narrower than the
+  hinted system copy, italic identical). Checks on this build: check-text --mid 0 strong at beat ends, --frame --mid 0 focus
+  cut, check-map, check-beats 104, check-jumps 0 of 75, check-transient 0, check-presenter all pass.
+- `talk/mrs-talk-world3d.zip` (1.7 MB): index.html, presenter.html, css, js, vendor, fonts, assets and a README. Unzipped
+  alone in /tmp it ran in Chromium and Firefox from file:// with every font loaded, no request outside the folder, no page
+  error, and the presenter driving the World. Not tested on Windows, macOS, Safari or Android. The MP4 is not rebuilt
+  (the font is only in the World; the video's frames are unchanged in content).
+- **Phone practice file** `talk/mrs-talk-practice.html` (3.9 MB, built by `tools/build-practice.py`): every script, the
+  stylesheet, fonts and figures inlined, so it opens alone, offline. It starts in practice mode (`?practice` does the same in
+  the normal World): a strip under the World with the beat's keynotes, the panel's target time and a clock; a tap on the
+  left third of the screen goes back. Upright, the World sits on top and the keynotes fill the rest. `tools/check-practice.mjs`
+  (written first, failed on the missing file): emulated Pixel 7, portrait and landscape, 12 of 12 (taps forward and back,
+  keynotes of the current beat at 16 px or more, World above the strip, nothing loaded besides the file). Not tried on a
+  real phone. The zip carries it too.
+
+## Round 23 (2026-10-07): S06's ruler tells the confinement story right; the GdR QCD 2026 logo on the title
+- **S06 red zone at 0.56 fm** (was 1 fm). It starts where 1/r = 0.35 GeV, the edge of the plot's shaded band; at 1 fm the
+  ruler had implied Λ ≈ 0.2 GeV (the n_f = 5 value) and disagreed with the plot. One-loop α_s(1/r) is already ~1 at 0.3 to
+  0.4 fm, so the zone is if anything generous.
+- **S06 b3: the red zone stays red.** Before, as μ′ saturated, the red fill went and the ruler turned teal to its end, which
+  read as "the far region is now perturbative". μ′ only keeps α_s finite there (α_s(1 GeV) ≈ 0.5); V still has no linear
+  confining term (σ ≈ 0.18 GeV², ~0.9 GeV/fm). The fill and red ticks stay; the label "μ′ never goes there" gives way to
+  "μ′ keeps α_s finite here, but V has no linear confining term (string tension · r): a systematic of the method". The
+  symbol σr was tried and dropped: in the label's italic serif σ reads as "o" at full size.
+- **S06 |ψ|² hill** is r²e^{−2r/a₀} in fm with a₀ = 0.3 fm, between the Bohr radii of cc̄ (0.49 fm) and bb̄ (0.21 fm); it
+  peaked at 0.74 fm with 81 % of its weight in the red, now 0.31 fm and 27 %. The base mesh is 12 units (to 1.1 fm), was 22:
+  the longer base drew a flat grey sheet past the hill.
+- **S01: the GdR QCD 2026 logo** (`assets/gdr-qcd-2026.png`, the emblem cropped from the meeting's Indico poster,
+  indico.in2p3.fr/event/40045), top left over the title, 240 px; it dims with the title in b2 (0.42, the engine's focus level).
+- check-beats, written first and failing on the r22 build: 10b (S06 ruler, label, hill: 5 checks) and 10c (logo, b1 and b2).
+- Not rebuilt: `talk/mrs-talk-world3d.zip`, `talk/mrs-talk-practice.html`, the MP4.
+- **PowerPoint** `talk/mrs-talk-world3d.pptx` (60 MB, built by `tools/build_pptx.py` from the round 21 MP4): 75 slides, one
+  per beat; each holds a silent H.264 clip of its beat (click to end of the animation + 0.3 s) that starts by itself when the
+  slide opens (main sequence, onBegin, playFrom) and holds its last frame; the poster is the clip's first frame; speaker
+  notes = the keynotes. `tools/check_pptx.py` (written first, failed on the missing file): 75 slides at 16:9, one full-slide
+  video each, durations within 0.25 s, autoplay, notes, seams between clips under 4 grey levels, LibreOffice opens it
+  (75 pages). Two planted faults (no autoplay on one slide, emptied notes on another) were both caught. Autoplay in
+  PowerPoint itself is not tested here (no PowerPoint on this machine). Rebuild after a new render: build_pptx then check_pptx.
+
+## Round 24 (2026-10-07): S06 shows the cutoff with a gauge for α_s; the λ variation is a band; Fermilab and CPT logos
+- Supersedes the S06 parts of round 23 (red zone kept red; a 3D copy of the μ(r) plot, tried and dropped: "the animation is
+  the same as the plot, it doesn't help a non-expert").
+- **S06 gauge** (`PSI` in js/objects.js): a dial for the coupling α_s at the scale used for the pair's separation, 0 at the
+  left, ∞ at the right end stop, angle 180°·α/(1+α). α_s at two loops, n_f = 3, Λ = 0.35 GeV: the pole sits at 1/r = Λ
+  (0.56 fm, the ruler's red edge) and α_s(1 GeV) = 0.48. b1: quark B comes in to 0.2 fm, then walks out to 1.25 fm with
+  μ = 1/r; past 0.56 fm the needle slams past the end stop, "α_s → ∞" in red. b3: as the plot's curve becomes μ′ the needle
+  falls back to 0.47; B walks in and out again and it stays there. No live number under the dial (a counter is text written
+  and gone, check-transient): "α_s → ∞" when it blows up, then "α_s ≤ 0.48 at any r"; the needle does not shake (check-jumps). The label keeps the caveat: V still has no linear
+  confining term (string tension · r), a systematic of the method. Three versions (bond, gauge, lens) were compared on the
+  phone with buttons in the practice strip; the author chose the gauge and the other two and the buttons are gone.
+- **S06 b5 plot**: the λ = ½ and λ = 2 curves are one band (`#lamband`, ink2 at 22 %) under the λ = 1 line: the systematic
+  uncertainty of the scale choice.
+- **S01**: Fermilab (Wikimedia Commons, "Fermilab Logo.svg") and CPT (`assets/cpt.png`) on one white card, top right.
+- **Phone**: `talk/mrs-talk-gallery.html`, every beat as a picture (no WebGL needed), built by a one-off script.
+- check-beats 10b (gauge: broken at b1 end, calm at b3 end, B starts close, labels on stage), 10c (three logos), 10d
+  (λ band); check-practice: no version buttons. All written first and seen failing.
+- **S12 BOUND board**, cleaner, at the author's request: one MeV axis from 0, a dot at each binding energy and a teal band for
+  the scale range (± half the full range of Tab. V). Every band stays clear of 0, which is the board's one message: all three
+  are bound. The fixed-order bars and the "MRS is wider" note are gone. check-beats 12b, written first.
+- **Phone PDF** `talk/mrs-talk-slides.pdf`: the 75 beat frames, one per page (the phone reads PDF, not HTML).
+
+## Round 24b (2026-10-07): an independent review (Fable, read-only) and its fixes
+- **S06 ruler** now takes the gauge's zones: teal while α_s(1/r) < 0.82 (to 0.28 fm), amber to 1.5 (0.35 fm), red beyond, a taller
+  red tick at the pole (0.56 fm); with μ′ the amber and red parts turn grey. Before, the ruler stayed teal to 0.56 fm while the
+  gauge was already deep in its red arc. Ruler ends at 1.7 fm (was 2.8 fm, under the plot). Round 23's "red stays red" is
+  superseded: after μ′ the far ruler is grey (α_s finite there), and the label carries the confinement caveat.
+- **S06 words**: gauge caption "(schematic: two loops, Λ ≈ 0.35 GeV)" (the paper gives neither Λ nor α_s(1 GeV); with Λ = 0.33
+  the pole moves to 0.59 fm and α_s(1 GeV) to 0.45); b1 label "about 1 by 0.3 fm, and at 0.56 fm it blows up"; b3 label "at or
+  below 0.48" (one number with the gauge); hill label "schematic r²|ψ|², bottomonium-like (a₀ ≈ 0.3 fm)" (the hill is the radial
+  density; for charmonium, a₀ ≈ 0.5 fm, some 60 % of it lies past 0.56 fm). The gauge comes up once B is close (p .55, was .5:
+  it swung red, then teal). λ line: "the band probes the residual scale dependence" (the paper: a diagnostic of scheme
+  stability, not a truncation error).
+- **S12**: header "B ≈ 509–742 MeV below threshold" (B of Tab. V; ΔE is another quantity on the R board); caption "bound at
+  every λ". Keynote and narration no longer say "small shift between orders" (the board does not show it): "they stay bound at
+  every value of the scale we tried". Open: the band is ± half of Tab. V's second parenthesis ("full range"); §V B prose reads
+  better with ± the full value. The claim holds both ways; the λ = ½ and 2 numbers settle it.
+- **S01**: the University of Cincinnati logo joins Fermilab and CPT (the three affiliations under the authors).
+- **Checks**: 10b reads the drawn needle (#ndl), labels may not overlap each other, the ruler zones are tested against α_s;
+  10d tests the band's edges against μ′(r; ½) and μ′(r; 2); 12b tests positions in MeV against the 1000 MeV tick; the phone file
+  carries a source hash (build-practice.py) and check-practice fails on a stale build. The gauge-timing check was run against
+  the old timing and failed (0.50), then passed on the new.
+- Not done (nits): the deck title's hyphens differ from the arXiv title; the 2 GeV curve hides in the band at r < 0.19 fm.
+- **Zip for Windows** (`tools/build-zip.py`, checked by `tools/check-zip.mjs`, written first: the r22 zip failed 6 of its checks):
+  everything in one folder `mrs-talk-world3d/` (Windows "Extract all" gives a folder, not loose files), README.txt with CRLF line
+  ends and "Extract all" first, names legal on Windows, no case clashes, short paths; the sources inside byte-identical to
+  talk/world3d; unzipped, index.html and presenter.html open from file:// with no page error and nothing loaded from outside.
+  Not tried on a real Windows machine.
+- **Round 24c, S12 bands are ± the second parenthesis** (the author: 509(10)(340) is 509 ± 340; it was drawn ± half). The
+  axis runs to 1300 MeV (the widest band ends at 1221); the lowest edge is 169 MeV, so "bound at every λ" holds. 12b now
+  checks the band ends in MeV against the 1000 MeV tick; it caught the 1000 MeV label left at the old end of the axis.
+  S09 narration: toponium's band "reaches about three quarters of a GeV on either side" (the number line already drew ±).
+
+## Round 24d–e (2026-10-08): the scale-band board once; one conclusion panel (14 scenes)
+- **Scale-band board only in S10** ("this plot appears too often"): S02 b5 says the obstacle in words (`obst`), S04 b3 the
+  symptom (`sym`), S13 no longer flies the S10 board in; its table's first row is written in the table's first stop, where
+  the narration names it ("The first row: … nearly two orders of magnitude narrower"). The S03 and S05 lines that faded the
+  board out are gone (with nothing to fade they made it pop in, check-jumps).
+- **One conclusion panel**: the old S13 (what MRS bought) and S14 (conclusions) are scene 12, "Conclusions", 8 beats: the claim
+  (new b1, top right of the table's frame, gives way to the payoff's number line), the table (2 stops), hallmarks, payoff, the
+  family (the shelf now travels here), next + thank you, the map. The old S14 b2 board ("scale sensitivity down by two
+  orders") is gone: row 1 says it. The old S15 is S14. Places in the World do not move: the old S14 boards keep place 13
+  (`FR(PL)`), the references place 14; scene and place indices differ from 12 on. KEY_T loses 818; SEC: conclusion from 12.
+  Narration: scene_13.md merged (the old b2 sentence dropped), scene_14.md = the old scene_15 ("number fourteen"); the old
+  files are in /tmp/narr-bak. Tools moved to 14 scenes: check_narration, check-presenter, check-practice, check-zip,
+  check-map, contact.mjs (map frames), check-beats (remap: S13 opens one beat early).
+
+## Round 25 (2026-10-11): the panel counter
+- `#panel` on the stage (index.html, css/world.css, engine.js `ui()`): "N / 14" in the section colour of the map's badges
+  (`SECC[SEC(si)]`), bottom left, 22 px; it fades with the overview blend (the badges number the panels on the map). Check in
+  check-beats (written first, failed with no element): every panel's end, text, colour against a probe of the CSS var, whole on
+  stage, on no board; hidden at S13 b8. check-text, map, jumps, transient, presenter clean. Zip rebuilt; the phone file and the
+  PDF were left alone at the author's request (check-practice's source hash will say the phone file is stale).
+- The method and the standing rules of rounds 19 to 25 are now in the user-wide skill `~/.claude/skills/animated-world-video/`
+  (SKILL.md: method items 8 and 9, nine new standing rules; WORLD-ENGINE.md: the counter, 14 scenes, the shelf scenes of
+  check-map), so a World talk in any folder gets them; the project memory keeps the same list. check-map's shelf scenes
+  were `[1,7,8,9,11,13]` (13 was the old S14): now 12, the conclusion; the count of places was right by luck (the shelf does
+  not move in the references).

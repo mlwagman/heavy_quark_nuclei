@@ -1,12 +1,17 @@
 @font-face{font-family:'P052';src:url('../fonts/P052-Regular.woff2') format('woff2');font-weight:400;font-style:normal}
 @font-face{font-family:'P052';src:url('../fonts/P052-Italic.woff2') format('woff2');font-weight:400;font-style:italic}
+/* the sans face travels with the talk (round 22): every check measured it, and another system font would wrap text differently */
+@font-face{font-family:'NotoSansW';src:url('../fonts/NotoSans-Regular.woff2') format('woff2');font-weight:400;font-style:normal}
+@font-face{font-family:'NotoSansW';src:url('../fonts/NotoSans-Bold.woff2') format('woff2');font-weight:700;font-style:normal}
+@font-face{font-family:'NotoSansW';src:url('../fonts/NotoSans-Italic.woff2') format('woff2');font-weight:400;font-style:italic}
+@font-face{font-family:'NotoSansW';src:url('../fonts/NotoSans-BoldItalic.woff2') format('woff2');font-weight:700;font-style:italic}
 
 :root{
   /* the colour style of talk/mrs-talk-animated.html: its light theme by default, its dark theme with ?theme=dark.
      Accents carry meaning, as in that deck: rose = the problem, teal = our result, amber = key parameters.
      Order colours (W5): LO blue, NLO amber, NNLO green, lattice red = the deck's c1, amber, c3, red. */
   --serif:'P052',Georgia,'Times New Roman',serif;
-  --sans:system-ui,-apple-system,'Segoe UI',sans-serif;
+  --sans:'NotoSansW',system-ui,-apple-system,'Segoe UI',sans-serif;
   --bg:#F6F7F4; --body-bg:#F6F7F4;
   --ink:#1A2233; --ink2:#3A4458; --muted:#5D6779; --dim:#98A1B0; --line:#C9D0D9; --strong:#0B1220;
   --teal:#177E72; --amber:#A06E12; --rose:#BE4467;
@@ -43,6 +48,8 @@ html,body{margin:0;height:100%;background:var(--body-bg);overflow:hidden;color:v
 #boards{position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-events:none;overflow:hidden;z-index:2}
 #hud{position:absolute;left:12px;top:8px;font:14px/1.2 monospace;color:var(--muted);opacity:.85;pointer-events:none;display:flex;gap:14px}
 #hud:empty{display:none}
+/* the panel counter (round 25): "N / 14" in the section colour of the map's badges, bottom left, hidden while the map is up */
+#panel{position:absolute;left:24px;bottom:20px;padding:4px 14px;border-radius:999px;color:#fff;font:600 22px/1.3 var(--sans);letter-spacing:.02em;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.22)}
 #notes{position:absolute;left:0;right:0;bottom:0;max-height:180px;overflow:auto;padding:12px 40px;background:var(--notes-bg);color:var(--ink2);font:20px/1.4 var(--serif);display:none;border-top:1px solid var(--line)}
 #notes.show{display:block}
 

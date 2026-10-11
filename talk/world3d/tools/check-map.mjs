@@ -1,9 +1,9 @@
 // check-map.mjs: at the end of the talk, does every scene have its own place on the map? Measured on the screen, on the map
-// frames themselves (S14 b5 settled, S15 b1 at p = .1, the manual overview after S15), not on world boxes.
+// frames themselves (S13 b8 settled, S14 b1 at p = .1, the manual overview after S14; round 24e: 14 scenes), not on world boxes.
 //   NODE_PATH=$(npm root -g) node talk/world3d/tools/check-map.mjs
 // A scene's region = the box around its drawn boards and its badge; boards without a scene and the shelf glyphs join the nearest
 // region (one left between two scenes merges them). Two regions closer than 8 px, a region on a legend or off the stage fail.
-// The shelf: its place at the end of each scene that uses it (S02, S08, S09, S10, S12, S14) must be 6 distinct places.
+// The shelf: its place at the end of each scene that uses it (S02, S08, S09, S10, S12, S13) must be 6 distinct places.
 // Prints the World's box and the overview camera distance that fits it between the legends.
 import { createRequire } from 'node:module';
 const require = createRequire(process.env.NODE_PATH + '/');
@@ -47,13 +47,13 @@ const judge = (name, { R, legends }) => {
   console.log(`${name}: ${ids.length} regions, ${out.length} problems`); for (const o of out) console.log('  ' + o); bad += out.length;
   if (process.argv.includes('--boxes')) for (const s of ids) { const A = R[s]; console.log(`    ${S(s)} x ${Math.round(A.l)}..${Math.round(A.r)}  y ${Math.round(A.t)}..${Math.round(A.b)}  (${A.n} parts)`); } };
 
-await page.evaluate(() => { show(13); applyUpTo(5); }); await settle(); await settle(); judge('S14 b5 settled (the map)', await regions());
-await page.evaluate(() => { show(14); applyUpTo(0); applyState(14, 0, 0.1); }); await settle(); await settle(); judge('S15 b1 p=.1', await regions());
-await page.evaluate(() => { show(14, true); OV.on = true; OV.k = 1; }); await settle(); await settle(); judge('overview after S15', await regions());
+await page.evaluate(() => { show(12); applyUpTo(8); }); await settle(); await settle(); judge('S13 b8 settled (the map)', await regions());
+await page.evaluate(() => { show(13); applyUpTo(0); applyState(13, 0, 0.1); }); await settle(); await settle(); judge('S14 b1 p=.1', await regions());
+await page.evaluate(() => { show(13, true); OV.on = true; OV.k = 1; }); await settle(); await settle(); judge('overview after S14', await regions());
 
 /* the shelf's place at the end of each scene that uses it */
 const places = [];
-for (const s of [1, 7, 8, 9, 11, 13]) { const p = await page.evaluate(s => { OV.on = false; OV.k = 0; show(s, true); const v = SHELF.at ? SHELF.at.clone() : SHELF.glyphs.cc.g.getWorldPosition(new THREE.Vector3()); return [Math.round(v.x / 20) * 20, Math.round(v.y / 20) * 20];   /* the shelf's origin (r17: its first glyph, which the layouts shift a little) */ }, s); places.push(p.join(',')); }
+for (const s of [1, 7, 8, 9, 11, 12]) {   /* the shelf's scenes; the conclusion is scene 12 since round 24e */ const p = await page.evaluate(s => { OV.on = false; OV.k = 0; show(s, true); const v = SHELF.at ? SHELF.at.clone() : SHELF.glyphs.cc.g.getWorldPosition(new THREE.Vector3()); return [Math.round(v.x / 20) * 20, Math.round(v.y / 20) * 20];   /* the shelf's origin (r17: its first glyph, which the layouts shift a little) */ }, s); places.push(p.join(',')); }
 const distinct = new Set(places).size; console.log(`shelf: ${distinct} distinct places (want 6): ${places.join(' | ')}`); if (distinct < 6) bad++;
 
 /* the World's box (every board anchor) and the overview camera that fits it between the legends */

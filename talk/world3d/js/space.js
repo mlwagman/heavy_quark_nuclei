@@ -50,14 +50,23 @@ const W = (() => {
     return m;
   }
   /* hadron glyph: n quarks on a slow tilted orbit, links between them (S02-I2 cartoon) */
+  let nGlyph = 0; const _home = [0, 1, 2, 3].map(() => new THREE.Vector3());
   function glyph(n, o = {}) {
     const g = new THREE.Group(); const R = o.R ?? 2.2, r = o.r ?? 0.85;
-    g.userData = { n, R, r, spin: o.spin ?? 0.35, phase: o.phase ?? Math.random() * 6.28, tilt: o.tilt ?? 0.5, quarks: [], links: [], glowMul: 1, dim: 1 };
+    g.userData = { n, R, r, spin: o.spin ?? 0.35, phase: o.phase ?? (nGlyph++ * 2.4) % 6.2832,   /* the same pose on every load (it was random: a still glyph must look the same in every page) */ live: 0, tilt: o.tilt ?? 0.5, quarks: [], links: [], glowMul: 1, dim: 1 };
     for (let i = 0; i < n; i++) { const q = quark(r, { ...o, c: CHARGE[n][i] }); g.add(q); g.userData.quarks.push(q); }
     const pairs = n === 2 ? [[0, 1]] : n === 3 ? [[0, 1], [1, 2], [2, 0]] : [[0, 1], [1, 2], [2, 3], [3, 0], [0, 2], [1, 3]];
     for (const [a, b] of pairs) { const l = link({ opacity: 0.6, th: 0.09 * r }); l.userData.ab = [a, b]; g.add(l); g.userData.links.push(l); }
     if (o.custom) { g.userData.custom = o.custom; }
+    /* a glyph moves only while a beat is about it (u.live, 0..1, set by its owner from the beat's focus): its place is its pose
+       at t = 0 mixed with its orbit, so a still glyph has one pose and nothing jumps as live comes and goes */
     g.tick = (t) => {
+      const u = g.userData, k = u.live;
+      if (k < 1) { pose(0); if (k <= 0) return; u.quarks.forEach((q, i) => _home[i].copy(q.position)); }
+      pose(t);
+      if (k < 1) { u.quarks.forEach((q, i) => q.position.lerpVectors(_home[i], q.position, k)); for (const l of u.links) l.set(u.quarks[l.userData.ab[0]].position, u.quarks[l.userData.ab[1]].position); }
+    };
+    const pose = (t) => {
       const u = g.userData; if (u.custom) { u.custom(g, t); return; }
       for (let i = 0; i < n; i++) { const a = u.phase + t * u.spin + i * 6.2832 / n; const q = u.quarks[i];
         q.position.set(u.R * Math.cos(a), u.R * Math.sin(a) * Math.sin(u.tilt), u.R * Math.sin(a) * Math.cos(u.tilt)); }
@@ -66,7 +75,7 @@ const W = (() => {
     g.setOpacity = (a) => { g.userData.op = a; for (const q of g.userData.quarks) q.material.opacity = a; for (const l of g.userData.links) l.material.opacity = 0.6 * a; g.visible = a > 0.002; };
     /* k < 1: the glyph recedes toward the background; k > 1: a flash, read as a size pulse (emissive only helps on the dark theme) */
     g.setGlow = (k) => { const u = g.userData; u.pulse = Math.max(0, k - 1); for (const q of u.quarks) { q.material.emissiveIntensity = GLOW * k; q.material.color.lerpColors(BGC, q.userData.base, 0.4 + 0.6 * Math.min(1, k)); if (!u.custom) q.scale.setScalar(q.userData.r * (1 + 0.35 * Math.min(1, u.pulse))); } };
-    g.tick(0);
+    g.userData.live = 1; g.tick(0); g.userData.live = 0;
     return g;
   }
   /* translucent floor / wall plane */

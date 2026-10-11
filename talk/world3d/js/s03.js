@@ -48,7 +48,6 @@
          (no gluon cloud): fast and wide on QCD (hard modes, p ~ m_Q), slower on NRQCD (soft modes, p ~ m_Q v), the two static
          quarks on pNRQCD, where the link that becomes V_R appears. Each step's words stay while the camera goes down. */
       ...cut({ d: 18, slow: 1.5, camU: CAMU, cam: [KS([TX + 5, FY[0] + 13, 46], [TX + 3, FY[0] + 4, -2]), KS([TX + 5, FY[1] + 13, 46], [TX + 3, FY[1] + 4, -2]), KS([TX - 12, LAY.pairY + 10, DIST], [TX - 14, LAY.pairY, -2])], f(p) {
-        GAUGE.b.show(1 - seg(p, 0, .3));                       /* the gauge rests until S04 b3 */
         scenes[SC - 1].ghost = 1 - seg(p, .03, .14);           /* the S02 boards hang at the QCD floor's height: they leave, so the pair is read alone */
         TOWER.floors.forEach((f, i) => { const k = eo(seg(p, .02 + i * .06, .16 + i * .06)); TOWER.show(k, i); f.m.scale.set(0.4 + 0.6 * k, 1, 0.05 + 0.95 * k); f.edge.scale.copy(f.m.scale); });
         const lvl = clamp(CAMU(p) * 3 - 1, 0, 2);              /* 0 = on the QCD floor, 1 = NRQCD, 2 = pNRQCD */

@@ -1,5 +1,6 @@
 'use strict';
-/* S13 Synthesis · S14 Conclusions · S15 Key references. Every band gauge lands in one table; the shelf is full. */
+/* S13 Conclusions (round 24e: the old S13 synthesis and S14 conclusions in one panel) · S14 Key references. The shelf is full.
+   The old S14 boards keep their place in the World (place 13); they belong to scene 12 now. */
 
 /* ======================= S13 ======================= */
 (function () {
@@ -23,15 +24,14 @@
     <div class="big" style="font-size:23px">Order-by-order shifts of <span class="num">4–18 MeV</span> make the remaining <span class="num">125–175 MeV</span> gap <i>interpretable</i>: consistent with missing 1/${H.mQ} physics, <b>not perturbative noise</b>.</div>` });
   BOARDS.topAlign(h1, h2);
   scenes.push({
-    id: 'S13', title: 'What did renormalon subtraction buy us?', el: BOARDS.sceneEl(SC),
+    id: 'S13', title: 'Conclusions', el: BOARDS.sceneEl(SC),
     notes: NOTES[SC],
     beats: [
-      /* b1: the band gauge flies in from S10 and becomes row 1; the other rows follow */
+      /* b1: the table; its first row is the scale band of S10 */
       ...cut({ d: 26, win: [0, .48], cam: [KS([0, 275, DIST], [0, 275, 0])], f(q) {   /* a stop on the gauge in row 1, then the table */
-        const u = eio(seg(q, 0, .46)); GAUGE.b.lerpTo(TW(9, 114, 88, 0), V(-30, 294, 0), u);   /* from its S10 place */ GAUGE.b.show(seg(q, 0, .1) * (1 - seg(q, .5, .56))); GAUGE.b.touch();
-        tb.show(seg(q, .56, .64));                                /* the gauge is gone before the table comes: cross-faded in one place, the two were written on each other */
-        const p = q < .6 ? 0 : .55 + (q - .6) * 1.125;             /* the rows keep their old pace over the rest of the beat */
-        ROWS.forEach((r, i) => { rv(tb.q('#a' + i), seg(p, .55 + i * .1, .63 + i * .1)); rv(tb.q('#r' + i), seg(p, .59 + i * .1, .67 + i * .1)); rv(tb.q('#c' + i), seg(p, .63 + i * .1, .71 + i * .1));
+        tb.show(seg(q, .3, .4));                                  /* round 24d: no scale-band board here (it is S10's); the table comes on its own */
+        const p1 = q < .6 ? 0 : .55 + (q - .6) * 1.125;            /* rows 2 to 4 keep their old pace over the rest of the beat */
+        ROWS.forEach((r, i) => { const p = i === 0 ? clamp(.55 + (q - .36) * (.25 / .11), 0, 1) : p1;   /* row 1 is written in the first stop: the narration names it there (round 24d) */ rv(tb.q('#a' + i), seg(p, .55 + i * .1, .63 + i * .1)); rv(tb.q('#r' + i), seg(p, .59 + i * .1, .67 + i * .1)); rv(tb.q('#c' + i), seg(p, .63 + i * .1, .71 + i * .1));
           if (RATIO[i] == null) return;                          /* the fixed-order bar grows with its number; the MRS bar starts as long and shrinks to its own length: the same move in every row */
           tb.q('#fb' + i).style.width = (BW * eo(seg(p, .55 + i * .1, .66 + i * .1))) + 'px';
           tb.q('#mb' + i).style.width = (BW * seg(p, .62 + i * .1, .64 + i * .1) * lerp(1, RATIO[i], eo(seg(p, .66 + i * .1, .8 + i * .1)))) + 'px'; });
@@ -50,42 +50,41 @@
   });
 })();
 
-/* ======================= S14 ======================= */
+/* ======================= S13, second half (the old S14) ======================= */
 (function () {
   /* three framings, the whole shelf in each: the claims above-left of it (b1, b2), the predictions above it (b3), the outlook
      below-right (b4). Every board sits in a place no other scene uses (tools/contact.mjs --layout). */
-  const SC = 13, { P, V, KS } = FR(SC);
-  const c1 = BOARDS.board({ scene: SC, cls: 'panel', px: 560, w: 70, at: P(-116, 137.2, 0), a: 0, html: `<div class="big"><b>First application of MRS inside a bound-state pNRQCD calculation</b>: NNLO static potentials + VMC / GFMC.</div>` });
-  const c2 = BOARDS.board({ scene: SC, cls: 'panel', px: 560, w: 70, at: P(-116, 103.6, 0), a: 0,   /* clear of the first claim on the map too, where thumbnail borders grow */ html: `<div class="big">Scale sensitivity of charm and bottom hadrons down by <span class="num tc">up to two orders of magnitude</span>; results stable order by order.</div>` });   /* Tab. III: 706 → 11 */
+  const SC = 12, PL = 13, { P, V, KS } = FR(PL);   /* scene 12 (the conclusion panel), place 13 (the old S14's region) */
+  const P12 = FR(12).P, KS12 = FR(12).KS;
+  const c1 = BOARDS.board({ scene: SC, cls: 'panel', px: 560, w: U(560, 112), at: P12(34, 300, 0), a: 0, html: `<h2>Conclusions</h2><div class="big"><b>First application of MRS inside a bound-state pNRQCD calculation</b>: NNLO static potentials + VMC / GFMC.</div>` });
+  /* (the old S14 b2 board, scale sensitivity down by two orders, is gone: the table's first row says it, round 24e) */
   const chips = ['B' + sub('c'), 'η' + sub('t') + ' (toponium)', 'Ω' + sub('ccc') + ' … Ω' + sub('bbb'), 'top baryons → Ω' + sub('ttt'), `bound ${H.bbtt} · ${H.bctt} · ${H.cctt}`];
   const c3 = BOARDS.board({ scene: SC, cls: 'panel', px: 560, w: 44, at: P(51.5, 125.5, 0), a: 0, html: `<h2>Predictions: 2 tuned masses + ${H.mt} input</h2><div>${chips.map(c => `<span class="chip t">${c}</span>`).join(' ')}</div>` });
   const thesis = BOARDS.board({ scene: SC, px: 1000, w: 68, at: P(51.5, 115.6, 0), a: 0, html: `<div style="font-size:26px;font-style:italic;text-align:center">A decades-old infrared obstruction: the <b>leading</b> renormalon → removed → a whole family of states becomes predictable.</div>` });
   const c4 = BOARDS.board({ scene: SC, cls: 'panel', px: 560, w: 46, at: P(92.5, 44.5, 0), a: 0, html: `<h2>Next</h2><div class="big">𝒪(1/${H.mQ}) + spin potentials: where the gap points · MRS derivation for non-singlet and 3-body channels · NNLO tetraquarks · excited states · the t${ov('t')} threshold vs new LHC data · dark-sector bound states.</div>` });
-  const ty = BOARDS.board({ scene: SC, px: 640, w: 49.2, at: P(92.5, 24, 0), a: 0, html: `<div style="display:flex;align-items:center;justify-content:center;gap:40px"><div style="font:italic 36px/1.3 var(--serif)">Thank you <span class="small" style="font-style:normal">: happy to take questions</span></div><div style="text-align:center"><img src="assets/qr.png" style="width:130px;border-radius:6px"><div class="tiny">arXiv 2607.08817</div></div></div>` });
+  const ty = BOARDS.board({ scene: SC, px: 640, w: 49.2, at: P(92.5, 24, 0), a: 0, html: `<div style="display:flex;align-items:center;justify-content:center;gap:40px"><div style="font:italic 36px/1.3 var(--serif)">Thank you<span class="small" style="font-style:normal">: happy to take questions</span></div><div style="text-align:center"><img src="assets/qr.png" style="width:130px;border-radius:6px"><div class="tiny">arXiv 2607.08817</div></div></div>` });
   const FLASH = ['bc', 'et', 'Occc', 'Occb', 'Ocbb', 'Obbb', 'Otcc', 'Otcb', 'Otbb', 'Ottc', 'Ottb', 'Ottt', 'bbtt', 'bctt', 'cctt'];
-  scenes.push({
-    id: 'S14', title: 'Conclusions and outlook', el: BOARDS.sceneEl(SC),
-    notes: NOTES[SC],
-    beats: [
-      /* b1: down from the table to the whole shelf, the first claim above-left of it */
-      { d: 14, win: [0, .75], cam: [KS([-42.5, 101.5, 184], [-42.5, 101.5, 0])], f(p) { SHELF.travel(11, SC, eio(seg(p, 0, .75))); NLINE.b.show(1 - seg(p, 0, .2)); c1.show(seg(p, .5, .8));
-        window.__S12.sketch.a = 1 - seg(p, 0, .25); } },   /* the shelf comes up from S12 with the camera; the S12 caption about its glyphs goes with it (.a: no touch, it stays an S12 ghost) */   /* the shelf comes up from S12 with the camera */
-      { d: 12, f(p) { c2.show(seg(p, 0, .4)); } },
+  const S = scenes[SC];
+  /* b1: to conclude, the claim above the table (the camera of the table's first stop) */
+  S.beats.unshift({ d: 14, cam: [KS12([34, 290, 112], [34, 290, 0])], f(p) { c1.show(seg(p, .2, .5)); } });   /* centred on the claim; the table's stop pans left */
+  /* the claim sits where the payoff's number line comes (top right of the table's frame); it gives way to it in the payoff beat */
+  { const pay = S.beats[4], f0 = pay.f; pay.f = function (p) { f0.call(this, p); c1.show(1 - seg(p, 0, .3)); }; }
+  S.beats.push(
       /* b3: closer on the shelf: the glyphs flash one by one as the narration names them; the S01 thesis line comes back above it */
-      { d: 18, cam: [KS([11.5, 93.75, 122], [11.5, 93.75, 0])], f(p) {   /* the whole top row, the η_t name left of it included, and the thesis line */
+      { d: 18, win: [0, .5], cam: [KS([11.5, 93.75, 122], [11.5, 93.75, 0])], f(p) {   /* the whole top row, the η_t name left of it included, and the thesis line */
+        SHELF.travel(11, PL, eio(seg(p, 0, .5))); NLINE.b.show(1 - seg(p, 0, .15)); window.__S12.sketch.a = 1 - seg(p, 0, .2);   /* the shelf comes up from S12 with the camera (it waited here since round 24e) */
         c3.show(seg(p, 0, .2)); BOARDS.T(c3, '.t', seg(p, .15, .6));
         FLASH.forEach((id, i) => { const G = SHELF.glyphs[id]; const t = seg(p, .2 + i * .045, .32 + i * .045); const base = G.top ? 0.6 : 1; G.g.setGlow(base + 1.2 * Math.sin(Math.PI * t)); });
         thesis.show(seg(p, .8, 1));
       } },
       /* b4: Next, Thank you, then the World lifts off into the journey map (the overview) and stays there for questions */
       ...cut({ d: 20, win: [0, .4], cam: [KS([27.35, 66.5, 147.6], [27.35, 66.5, 0])], f(p) { c4.show(seg(p, .38, .46)); ty.show(seg(p, .42, .5)); OV.beat = eio(seg(p, .55, .95)); OV.trace = seg(p, .62, 1); } }, [10, 10]),   /* a stop on the outlook and the thank-you (round 18: the lift-off shrank them to 4 px in the beat that wrote them), then the lift-off */
-    ],
-  });
+  );
 })();
 
-/* ======================= S15 ======================= */
+/* ======================= S14 (the old S15) ======================= */
 (function () {
-  const SC = 14, DIST = 150, { P, V, KS } = FR(SC);
+  const SC = 13, DIST = 150, { P, V, KS } = FR(14);   /* scene 13 since round 24e; its place stays 14 */
   const refs = BOARDS.board({ scene: SC, cls: 'panel', px: 1600, w: U(1600, DIST), at: P(0, 334, -6), a: 0, html: `<h2>Key references</h2>
     <div style="display:flex;gap:48px;font-size:19px;line-height:1.7;color:var(--ink2)">
     <div><b class="white">This work &amp; predecessors</b><br>Assi, Kronfeld, Vaiva, Wagman: arXiv:2607.08817 · FERMILAB-PUB-26-0061-T (2026)<br>Assi, Wagman: PRD 108, 096004 (2023) · PRD 110, 094001 (2024)<br>Assi, Grebe, Wagman: PRD 113, 016013 (2026)<br><br>
@@ -100,12 +99,12 @@
   TICKS.push(() => { if (!threads[0].l.material.opacity) return; if (!tg) { const c = boardPoint(refs, '#rgl'), y = refs.anchor.y - refs.h * refs.w / refs.px / 2; tg = { gl: W.V3(c.x - 4, y, c.z), gb: W.V3(c.x + 4, y, c.z) }; }
     for (const t of threads) { const a = SHELF.wp(t.id), b = tg[t.grp]; t.l.geometry.setFromPoints([a, b]); } });
   scenes.push({
-    id: 'S15', title: 'Key references', el: BOARDS.sceneEl(SC),
+    id: 'S14', title: 'Key references', el: BOARDS.sceneEl(SC),
     notes: NOTES[SC],
     home: P(0, 320),                                         /* overview badge on the references: the scene opens on the map, over S14 */
     beats: [
       /* a stop on the map with the last line of its legend lit, then down onto the references */
-      ...cut({ d: 14, win: [.22, .8], cam: [KS([0, 320, DIST], [0, 320, 0])], f(p) { OV.beat = 1 - eio(seg(p, .22, .65)); OV.trace = lerp(track.first[13] / track.first[14], 1, eio(seg(p, 0, .18)));   /* the line grows on to badge 15 during the stop */
+      ...cut({ d: 14, win: [.22, .8], cam: [KS([0, 320, DIST], [0, 320, 0])], f(p) { OV.beat = 1 - eio(seg(p, .22, .65)); OV.trace = lerp(track.first[12] / track.first[13], 1, eio(seg(p, 0, .18)));   /* the line grows on to badge 14 during the stop */
         refs.show(seg(p, .55, .78)); threads.forEach((t, i) => t.l.material.opacity = 0.6 * seg(p, .7 + i * .05, .8 + i * .05)); } }, [3, 11]),
     ],
   });

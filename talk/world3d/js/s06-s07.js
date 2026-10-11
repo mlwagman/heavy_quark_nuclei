@@ -10,7 +10,7 @@
   /* the μ′ plot: schematic curves (never Fig. 6, S06-F1) */
   const pl = BOARDS.board({ scene: SC, cls: 'panel', px: 700, w: U(700, DIST), at: P(-4, -30, 0), a: 0, html: `<h2>The interpolating scale</h2><svg viewBox="0 0 640 300" width="640" height="300" id="ps"></svg>
     <div class="small t" id="k2"><b>Smooth interpolation:</b> ${H.mup} ≈ ${I('λ')}/${I('r')} at short distance → saturates at <span class="num">1 GeV</span>. No kinks in the force: stable Monte Carlo.</div>
-    <div class="small t" id="k3"><b>The cutoff matters:</b> <span class="num">1 GeV</span> keeps MRS <i>active</i> where bound states live. At <span class="num">2 GeV</span> MRS is rarely used and results fall back to fixed order <span class="tiny">(Fig. 7, frozen ${H.as})</span>.</div>
+    <div class="small t" id="k3"><b>The cutoff matters:</b> <span class="num">1 GeV</span> keeps MRS <i>active</i> where bound states live. At <span class="num">2 GeV</span> MRS is rarely used and results fall back to fixed order.</div>
     <div class="small t" id="k4"><b>What we vary:</b> <span class="rc">${I('λ')} ∈ {½, 1, 2}</span>: the analogue of the usual factor-of-two variation. ${I('n')}${sub('f')} = 3 / 4 / 5, set by the lightest valence quark (${I('c')}/${I('b')}/${I('t')}).</div>` });
   const ps = pl.q('#ps');
   const X = r => 60 + (r / 1.2) * 560, Y = m => 260 - (m / 4.4) * 240;
@@ -19,21 +19,24 @@
   const yl = S('text', { x: 64, y: 16, class: 'mt' }, ps); yl.innerHTML = `<tspan class="it">μ</tspan> [GeV]`;
   S('rect', { x: 60, y: Y(0.35), width: 570, height: 260 - Y(0.35), fill: 'var(--lat)', 'fill-opacity': .1 }, ps);
   const inv = r => 0.1973 / r, mup = (r, l = 1, cut = 1) => Math.sqrt(cut * cut + (l * 0.1973 / r) ** 2);   /* Eq. 5, ħc = 0.1973 GeV fm */
-  const path = (f, r0 = 0.05, r1 = 1.2) => { let d = ''; for (let r = r0; r <= r1 + 1e-9; r += 0.01) { const m = Math.min(4.3, f(r)); d += (d ? 'L' : 'M') + X(r).toFixed(1) + ' ' + Y(m).toFixed(1) + ' '; } return d; };
+  const path = (f, r0 = 0.05, r1 = 1.2) => { let d = ''; for (let r = r0; r <= r1 + 1e-9; r += 0.01) { const m = f(r); if (m > 4.3) continue;   /* a curve above the frame starts where it enters it: clamped, it drew a flat top with a corner */ d += (d ? 'L' : 'M') + X(r).toFixed(1) + ' ' + Y(m).toFixed(1) + ' '; } return d; };
   const c1 = S('path', { d: path(inv), fill: 'none', stroke: 'var(--ink)', 'stroke-width': 2.4 }, ps);
   const c1lab = S('text', { x: X(0.5) + 6, y: Y(inv(0.5)) - 8, class: 'it' }, ps); c1lab.innerHTML = `<tspan class="it">μ</tspan> = 1/<tspan class="it">r</tspan>`;
   const cutL = S('line', { x1: 60, y1: Y(1), x2: 630, y2: Y(1), stroke: 'var(--muted)', 'stroke-width': 1.2, 'stroke-dasharray': '7 5', opacity: 0 }, ps);
   const cutT = S('text', { x: 626, y: Y(1) - 17, 'text-anchor': 'end', class: 'mt', opacity: 0 }, ps);   /* above the curves that come down onto the line */ cutT.innerHTML = `<tspan class="it">μ</tspan><tspan baseline-shift="sub" font-size="12">cut</tspan> = 1 GeV: saturates`;
   const frm = S('text', { x: 250, y: 50, 'font-size': 22, opacity: 0 }, ps);   /* the plot's three lines of words share one left edge, in the free corner */ frm.innerHTML = `<tspan class="it">μ′</tspan>(<tspan class="it">r</tspan>; <tspan class="it">λ</tspan>) = √(<tspan class="it">μ</tspan><tspan baseline-shift="sub" font-size="14">cut</tspan>² + <tspan class="it">λ</tspan>²/<tspan class="it">r</tspan>²)`;
-  /* schematic prescriptions (App. A.2): hard cutoff and frozen α_s kink near r ~ 1/μ_cut, μ′ is smooth */
-  const hard = S('path', { d: path(r => r < 0.1973 ? inv(r) : 0.62), fill: 'none', stroke: 'var(--muted)', 'stroke-width': 1.4, 'stroke-dasharray': '6 4', opacity: 0 }, ps);
-  const froz = S('path', { d: path(r => r < 0.1973 ? inv(r) : 1), fill: 'none', stroke: 'var(--muted)', 'stroke-width': 1.4, 'stroke-dasharray': '2 3', opacity: 0 }, ps);
-  const presT = S('text', { x: X(1.18), y: Y(0.62) + 24, 'text-anchor': 'end', class: 'mt', opacity: 0, 'font-size': 15 }, ps); presT.textContent = 'schematic: hard cutoff (dashed) and frozen αs (dotted) kink; μ′ is smooth';
-  const g2 = S('path', { d: path(r => r < 0.0987 ? inv(r) : 2), fill: 'none', stroke: 'var(--muted)', 'stroke-width': 1.6, 'stroke-dasharray': '2 3', opacity: 0 }, ps);
-  const g2T = S('text', { x: X(0.3), y: Y(2) - 8, class: 'mt', opacity: 0, 'font-size': 15 }, ps); g2T.innerHTML = `<tspan class="it">μ</tspan><tspan baseline-shift="sub" font-size="11">cut</tspan> 2 GeV → fixed order (Fig. 7: frozen <tspan class="it">α</tspan><tspan baseline-shift="sub" font-size="11">s</tspan>), kink at 1/(2 GeV)`;
-  const gh = [0.5, 2].map(l => S('path', { d: path(r => mup(r, l)), fill: 'none', stroke: l < 1 ? 'var(--dim)' : 'var(--ink2)', 'stroke-width': 1.6, opacity: 0 }, ps));
-  const lamT = S('text', { x: 250, y: 84, class: 'it', opacity: 0 }, ps); lamT.innerHTML = `<tspan class="it">λ</tspan> ∈ {½, 1, 2}: the scale probe (converge at <tspan class="it">μ</tspan><tspan baseline-shift="sub" font-size="12">cut</tspan>)`;
-  const nfT = S('text', { x: 250, y: 110, class: 'mt', opacity: 0 }, ps); nfT.innerHTML = `<tspan class="it">n</tspan><tspan baseline-shift="sub" font-size="12">f</tspan> = 3 / 4 / 5 ← <tspan class="it">c</tspan> / <tspan class="it">b</tspan> / <tspan class="it">t</tspan>`;
+  /* the smooth cutoff only (round 19): the hard cutoff and the frozen α_s of App. A.2 are not shown, their dashed and dotted lines
+     overloaded the plot. The 2 GeV comparison is the same smooth μ′ with μ_cut = 2 GeV */
+  const g2 = S('path', { id: 'g2', d: path(r => mup(r, 1, 2)), fill: 'none', stroke: 'var(--muted)', 'stroke-width': 1.6, opacity: 0 }, ps);
+  const g2T = S('text', { x: 626, y: Y(2) - 8, 'text-anchor': 'end',   /* at its curve's right end, above it: the left is the n_f line's */ class: 'mt', opacity: 0, 'font-size': 15 }, ps); g2T.innerHTML = `<tspan class="it">μ</tspan><tspan baseline-shift="sub" font-size="11">cut</tspan> = 2 GeV → fixed order`;
+  /* the scale variation λ ∈ {½, 1, 2}: one half-transparent band from the λ = ½ to the λ = 2 curve, the systematic uncertainty
+     (round 24; two separate lines before): the residual scale dependence, a diagnostic of scheme stability, not a truncation
+     error (the paper's words). Its top is cut at the frame, like the curves; it lies under the λ = 1 line */
+  const bandD = (() => { const R = []; for (let r = 0.05; r <= 1.2 + 1e-9; r += 0.01) R.push(r); const P = (r, l) => X(r).toFixed(1) + ' ' + Y(Math.min(mup(r, l), 4.3)).toFixed(1);
+    return 'M' + R.map(r => P(r, 2)).join(' L') + ' L' + R.slice().reverse().map(r => P(r, 0.5)).join(' L') + ' Z'; })();
+  const gh = [S('path', { id: 'lamband', d: bandD, fill: 'var(--ink2)', 'fill-opacity': 0.22, stroke: 'none', opacity: 0 })]; ps.insertBefore(gh[0], c1);
+  const lamT = S('text', { x: 250, y: 84, class: 'it', opacity: 0 }, ps); lamT.innerHTML = `<tspan class="it">λ</tspan> ∈ {½, 1, 2}: the band probes<tspan x="250" dy="21">the residual scale dependence</tspan>`;   /* two lines: on one it ran out of the panel */
+  const nfT = S('text', { x: 250, y: 130, class: 'mt', opacity: 0 }, ps); nfT.innerHTML = `<tspan class="it">n</tspan><tspan baseline-shift="sub" font-size="12">f</tspan> = 3 / 4 / 5 ← <tspan class="it">c</tspan> / <tspan class="it">b</tspan> / <tspan class="it">t</tspan>`;
   pl.measure();
   const nfChips = BOARDS.board({ scene: SC, px: 440, w: U(440, DIST), at: P(-38, -29.6, 4), a: 0,   /* one row, between the |ψ|² caption and the place the S07 cloud's caption takes */ html: `<span class="chip">${I('n')}${sub('f')} = 3 ← ${I('c')}</span> <span class="chip">${I('n')}${sub('f')} = 4 ← ${I('b')}</span> <span class="chip">${I('n')}${sub('f')} = 5 ← ${I('t')}</span>` });
   scenes.push({
@@ -41,21 +44,22 @@
     notes: NOTES[SC],
     beats: [
       /* b1: climb back to the pair. A ruler runs out from one quark along the axis; the other quark walks out along it, past the
-         point where μ = 1/r would fall below Λ_QCD (the ruler and a plane turn red there); the |ψ|² hill sits over both parts */
+         point where μ = 1/r would fall below Λ_QCD; the ruler takes the gauge's zones, the gauge reads α_s (objects.js PSI); the r²|ψ|² hill sits on it */
       { d: 18, cam: [KS([-18, -3, 56], [-18, -21, 0])], win: [0, .6], f(p) {   /* one smooth zoom-pan up from S05: the two hand-placed legs made the fastest pan of the talk */
         window.__S05.lam1.show(1 - seg(p, 0, .2));
         const u = eio(seg(p, 0, .45)); PAIR.g.position.lerpVectors(CORNER, HOME, u); PAIR.st.scale = lerp(0.45, 1, u); PAIR.st.bOp = 1;
         PSI.st.rule = seg(p, .25, .45); PSI.st.clip = 0;
-        const s = eo(seg(p, .45, .8)); PAIR.st.sep = lerp(7, 15, s);
-        PSI.st.red = seg(p, .55, .75); PSI.st.psi = seg(p, .7, .95);
+        /* B comes in to 0.2 fm, then walks out with μ = 1/r: past 0.56 fm α_s blows up (the S06 version shows it, objects.js PSI) */
+        PAIR.st.sep = p < .55 ? lerp(7, 2.4, eio(seg(p, .45, .55))) : lerp(2.4, 15, eio(seg(p, .58, .88)));
+        PSI.st.red = seg(p, .55, .58);   /* the gauge comes up once B is close (review 1.6: earlier it swung red, then teal) */ PSI.st.psi = seg(p, .7, .95);
         k1.show(seg(p, .5, .7));
       } },
       ...cut({ d: 18, f(p) {                                     /* a stop on μ = 1/r with its name, then the morph into μ′ */
         pl.show(seg(p, 0, .2)); const m = eo(seg(p, .22, .5)); c1.setAttribute('d', path(r => lerp(inv(r), mup(r), m)));
         c1lab.setAttribute('opacity', 1 - m); cutL.setAttribute('opacity', seg(p, .45, .6)); cutT.setAttribute('opacity', seg(p, .5, .65)); frm.setAttribute('opacity', seg(p, .55, .7));
-        hard.setAttribute('opacity', seg(p, .65, .8)); froz.setAttribute('opacity', seg(p, .7, .85)); presT.setAttribute('opacity', seg(p, .75, .9));
         rv(pl.q('#k2'), seg(p, .8, 1));
-        PSI.st.clip = eo(seg(p, .22, .5));                  /* in space: as μ′ saturates the red fill goes; the outline stays as the place μ′ never goes */
+        PSI.st.clip = eo(seg(p, .22, .5));                  /* in space: μ becomes μ′ at the pair, so α_s heals at once */
+        PAIR.st.sep = p < .58 ? lerp(15, 2.4, eio(seg(p, .5, .58))) : lerp(2.4, 15, eio(seg(p, .6, .85)));   /* with μ′, B walks out again: nothing blows up */
       } }, [4, 14]),
       { d: 20, f(p) { pl.touch(); g2.setAttribute('opacity', seg(p, .1, .3)); g2T.setAttribute('opacity', seg(p, .25, .4)); rv(pl.q('#k3'), seg(p, .4, .7)); } },
       { d: 19, f(p) {

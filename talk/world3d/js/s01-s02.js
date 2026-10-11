@@ -25,6 +25,10 @@ SHELF.place('fam', 'fam', 0);
     <div class="t small" style="margin-top:8px">Fermilab Theory Division &nbsp;·&nbsp; Aix-Marseille Univ, CPT &nbsp;·&nbsp; Univ. of Cincinnati</div>
     <div class="t small" style="margin-top:14px"><span class="chip pin">arXiv:2607.08817</span> <span class="chip dimc">FERMILAB-PUB-26-0061-T</span> <span class="chip dimc">July 2026</span></div>` });
   const qr = BOARDS.board({ scene: SC, px: 190, w: U(190, DIST), at: P(-100, 72, 0), a: 1, html: `<img src="assets/qr.png" style="width:150px;border-radius:6px;margin:0 auto"><div class="tiny" style="text-align:center;margin-top:4px">arxiv.org/abs/2607.08817</div>` });
+  /* the meeting's logo (GdR QCD, Nantes, 7 to 9 October 2026; cropped from its Indico poster), top left over the title: the frame's one free corner in b1 and b2 */
+  const gdr = BOARDS.board({ scene: SC, px: 240, w: U(240, DIST), at: P(-195, 109, 0), a: 1, html: `<img src="assets/gdr-qcd-2026.png" alt="GdR QCD 2026, Nantes" style="width:240px;display:block;border-radius:6px">` });
+  /* the affiliations' logos, the three of the line under the authors (Fermilab: Wikimedia Commons "Fermilab Logo.svg"; CPT: the lab's logo with its name; Cincinnati: Commons "University of Cincinnati logo.png"), top right on a white card like the QR's */
+  const labs = BOARDS.board({ scene: SC, px: 660, w: U(660, DIST), at: P(-115.5, 112.5, 0), a: 1, html: `<div style="display:flex;align-items:center;justify-content:space-between;background:#fff;padding:10px 18px;border-radius:6px"><img src="assets/fermilab.png" alt="Fermilab" style="height:46px"><img src="assets/cpt.png" alt="Centre de Physique Théorique" style="height:96px"><img src="assets/cincinnati.png" alt="University of Cincinnati" style="height:62px"></div>` });
   const thesis = BOARDS.board({ scene: SC, px: 900, w: U(900, DIST), at: P(-122, 64, 0), a: 1, html: `
     <div style="font-size:27px;font-style:italic;line-height:1.45"><span class="ti">A decades-old infrared obstruction: the <b>leading</b> renormalon</span> <span class="ti">→ removed</span> <span class="ti">→ a whole family of states becomes predictable.</span></div>` });
   const fam = ['cc', 'bb', 'Occc', 'T4'];
@@ -35,7 +39,7 @@ SHELF.place('fam', 'fam', 0);
     notes: NOTES[SC],
     beats: [
       { d: 20, cam: [KS([-150, 88, DIST], [-150, 88, 0])], win: [0, .4], f(p) {          /* d: deck value (shim sum 1014); the World opens on this frame (engine CAM0), the title writes itself from p = .05 */
-        hero.setOpacity(1); hero.setGlow(1); title.touch(); heroLab.touch(); qr.touch();
+        hero.setOpacity(1); hero.setGlow(1); title.touch(); heroLab.touch(); qr.touch(); gdr.touch(); labs.touch();
         tparts.forEach((e, i) => rv(e, seg(p, .05 + i * .16, .3 + i * .16)));
         rv(heroLab.el.firstElementChild, seg(p, .1, .35)); qr.show(seg(p, .7, .95));   /* show, not rv: the board sets its own element's opacity every frame */
       } },
@@ -51,6 +55,7 @@ SHELF.place('fam', 'fam', 0);
       } },
     ],
   });
+  TICKS.push(t => { if (!hero.visible) return; hero.userData.live = liveOf('hero'); hero.tick(t); });   /* the title baryon turns while the talk is about it */
   window.__S01 = { hero, ROW };
 })();
 
@@ -82,6 +87,11 @@ SHELF.place('fam', 'fam', 0);
   const timChips = tim.qa('.chip');
   tim.measure(); BOARDS.topAlign(hier, tri, tim);
   const GA = P(0, 21, 0);                                       /* the gauge's S02 place */
+  /* the obstacle in words (round 24d: the scale-band board appears once, in S10; here its bars said what these lines say) */
+  const obst = BOARDS.board({ scene: SC, cls: 'panel', px: 720, w: U(720, DIST), at: GA, a: 0, html: `<h2 class="rc">The obstacle</h2>
+    <div class="t big" style="font-size:24px">target precision: <span class="num">~10 MeV</span></div>
+    <div class="t big" style="font-size:24px">fixed-order scale dependence: <span class="num">~100 MeV</span> for quarkonium <span class="small">(§III A)</span>, <span class="num rc">~700–850 MeV</span> for the Ω masses at NNLO <span class="small">(Tab. III)</span></div>
+    <div class="t small" style="margin-top:6px">This talk: remove the leading renormalon.</div>` });
   scenes.push({
     id: 'S02', title: 'Why all-heavy hadrons?', el: BOARDS.sceneEl(SC),
     notes: NOTES[SC],
@@ -99,15 +109,7 @@ SHELF.place('fam', 'fam', 0);
       { d: 13, f(p) { tri.show(seg(p, 0, .2)); te.forEach((e, i) => dl(e, seg(p, .15 + i * .18, .5 + i * .18))); tlab.setAttribute('opacity', seg(p, .75, 1)); } },
       { d: 18, f(p) { tim.show(seg(p, 0, .25)); timChips.forEach((c, i) => rv(c, seg(p, .15 + i * .12, .35 + i * .12))); bump.setAttribute('d', bumpD(eo(seg(p, .45, .9)))); } },
       { d: 17, cam: [KS([0, 46, DIST], [0, 46, 0])], f(p) {
-        GAUGE.set({ title: 'The obstacle', tcls: 'rc', rows: [
-          { lab: 'target precision', style: 'tick', val: '~10 MeV' },
-          { lab: 'fixed-order scale dependence', cls: 'nnlo', style: 'hatch', w: 0.28, val: '~100 MeV (quarkonium) (§III A)' },       /* §III B prose, S02-P6 */
-          { lab: '', cls: 'nnlo', style: 'hatch', w: 1.0, val: '~700–850 MeV (Ω masses, NNLO, Tab. III)' },                             /* Tab. III FO NNLO: 706 (Ω_bbb) … 849 (Ω_ccc) */
-        ], note: 'This talk: remove the leading renormalon.' });
-        GAUGE.b.set(...GA); GAUGE.b.w = U(720, DIST); GAUGE.b.show(seg(p, 0, .2));
-        GAUGE.width(1, 0.28 * eo(seg(p, .2, .5))); GAUGE.width(2, 1.0 * eo(seg(p, .35, .7)));
-        GAUGE.rows[1].r.style.opacity = seg(p, .15, .3); GAUGE.rows[2].r.style.opacity = seg(p, .3, .45);
-        rv(GAUGE.b.q('#gnote'), seg(p, .75, 1));
+        obst.set(...GA); obst.show(seg(p, 0, .2)); obst.qa('.t').forEach((e, i) => rv(e, seg(p, .15 + i * .2, .35 + i * .2)));
       } },
     ],
   });

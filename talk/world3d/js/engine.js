@@ -3,12 +3,15 @@
    deterministic state application, the camera rig, focus tiers, the overview, keys, deep links, presenter sync, fps. */
 let si = 0, done = 0, run = null, auto = false, notesOn = false;
 const $ = id => document.getElementById(id);
-const notesEl = $('notes'), stage = $('stage'), fpsEl = $('fps'), beatEl = $('beatid');
+const notesEl = $('notes'), stage = $('stage'), fpsEl = $('fps'), beatEl = $('beatid'), panelEl = $('panel');
 const QS = new URLSearchParams(location.search);
+const PR = QS.has('practice') || window.PRACTICE === 1;   /* practice mode: see practice() */
 const SPEED = 2;                                              /* a beat's tween lasts d / SPEED seconds (the Deck engine used 3; 2 leaves every reveal readable) */
 
 /* ---------- camera keyframes: one path per beat, previous beat's end as its start ---------- */
 const CAM0 = W.KF(TP(0, -150, 88, 95), TP(0, -150, 88, 0));   /* the World opens on the title's frame (S01 b1's own), so no beat starts on an empty stage */
+scenes.forEach((sc, i) => { if ((LIVE[i] || []).length !== sc.beats.length) throw new Error(`S${i + 1}: ${sc.beats.length} beats but ${(LIVE[i] || []).length} LIVE lists (js/keys.js)`); });
+scenes.forEach((sc, i) => { sc.keys = KEYS[i] || []; if (sc.keys.length !== sc.beats.length) throw new Error(`S${i + 1}: ${sc.beats.length} beats but ${sc.keys.length} keynotes (js/keys.js)`); });
 scenes.forEach((sc, i) => { if ((sc.notes || []).length !== sc.beats.length) throw new Error(`S${i + 1}: ${sc.beats.length} beats but ${(sc.notes || []).length} notes (js/notes.js is made from the narration: audio3d.py notes)`); });
 const beatList = [];                                          /* flat [ {s, k, b} ] in talk order */
 scenes.forEach((sc, s) => sc.beats.forEach((b, k) => beatList.push({ s, k, b })));
@@ -53,12 +56,18 @@ function boardState(b) {
   return { tier, focus, was, enter, ov: OV.kk, gk: b.scene != null ? (scenes[b.scene].ghost ?? 1) : 1 };   /* gk: a beat may fade the previous scene's ghosts (scene.ghost) */
 }
 
+/* is the current beat about this particle (js/keys.js LIVE)? 0..1, eased over the click like a board's focus */
+function liveOf(id) {
+  const { idx, p } = cur, has = i => { if (i < 0) return 0; const e = beatList[i], L = (LIVE[e.s] || [])[e.k] || []; return L.includes(id) || L.includes('*') ? 1 : 0; };
+  return p != null ? lerp(has(idx - 1), has(idx), eio(seg(p, 0, .45))) : has(idx);
+}
+
 /* ---------- overview: a plain pull-back over the real World. Nothing is moved: every scene has its own place
    (tools/contact.mjs --layout checks that no two scenes share one). The line is the track the camera really flew: the
    look-at point at the end of every beat, in talk order. Numbered badges sit on the track where each scene opens; the two
    legends at the sides of the stage name them. k = max(manual toggle, beat): S14 b4 pulls back, S15 b1 flies on to the references. ---------- */
 const OV = { on: QS.has('overview'), k: QS.has('overview') ? 1 : 0, beat: 0, trace: 1, kk: 0 };   /* trace: how much of the track the opening beat has retraced */
-const SEC = i => i < 3 ? 0 : i < 7 ? 1 : i < 13 ? 2 : 3;
+const SEC = i => i < 3 ? 0 : i < 7 ? 1 : i < 12 ? 2 : 3;   /* round 24e: the conclusion is scene 12 */
 const SECC = ['s1', 's2', 's3', 's4'].map(TV), SECH = ['s1', 's2', 's3', 's4'].map(TC);
 const OVCAM = W.KF([-2.6, 64.7, 1051], [-2.6, 64.7, 0]);   /* fitted to the World's box, x -313..308, y -270..400, between the legends (tools/check-map.mjs prints it) */
 const track = (() => {
@@ -101,7 +110,9 @@ function typed(d) { digits += d; clearTimeout(digitT); const go = () => { const 
 
 /* ---------- the Deck-compatible API ---------- */
 function ui() {
+  panelEl.textContent = `${si + 1} / ${scenes.length}`; panelEl.style.background = SECC[SEC(si)];   /* the panel counter, in the section colour of the map's badges */
   beatEl.textContent = QS.has('fps') ? `S${String(si + 1).padStart(2, '0')} b${run ? run.i + 1 : done}` : '';
+  if (PR) practice();
   if (notesOn) { const N = scenes[si].notes || []; const i = run ? run.i : Math.max(0, done - 1); notesEl.textContent = N[i] || ''; }
   post();
 }
@@ -122,7 +133,7 @@ function setAuto(a) { auto = !!a; }
 
 /* ---------- presenter sync ---------- */
 function post() {
-  const msg = { type: 'state', si, done, run: run ? run.i : null, overview: OV.on, title: scenes[si].title, notes: scenes[si].notes, nextNotes: scenes[si + 1] ? scenes[si + 1].notes : [], nBeats: scenes[si].beats.length, nScenes: scenes.length };
+  const msg = { type: 'state', si, done, run: run ? run.i : null, overview: OV.on, title: scenes[si].title, keys: scenes[si].keys, nextKeys: scenes[si + 1] ? scenes[si + 1].keys : [], target: KEY_T[si], nextTarget: KEY_T[si + 1] ?? 900, nBeats: scenes[si].beats.length, nScenes: scenes.length };
   try { if (window.opener) window.opener.postMessage(msg, '*'); } catch (e) { }
 }
 addEventListener('message', ev => { const m = ev.data || {}; if (m.type === 'next') next(); else if (m.type === 'prev') prev(); else if (m.type === 'show') show(m.si, m.end); else if (m.type === 'overview') setOverview(!OV.on); else if (m.type === 'hello') post(); });
@@ -141,7 +152,7 @@ function loop(ts) {
   }
   /* overview blend, a real-time tween (it is not a beat) */
   OV.k = clamp(OV.k + (OV.on ? dt / 2.2 : -dt / 1.6));
-  const k = Math.max(eio(OV.k), OV.beat); OV.kk = k;
+  const k = Math.max(eio(OV.k), OV.beat); OV.kk = k; panelEl.style.opacity = 1 - seg(k, 0, .4);   /* the counter leaves as the map comes: the badges number the panels there */
   BOARDS.layer.classList.toggle('thumbs', k > 0.5); stage.classList.toggle('ov', k > 0.5);
   W.cam.pos.lerpVectors(beatCam.pos, OVCAM.pos, k); W.cam.look.lerpVectors(beatCam.look, OVCAM.look, k);
   /* the track is retraced while the overview opens: it grows from the title to the current beat, and each scene's badge and
@@ -170,9 +181,28 @@ addEventListener('keydown', ev => {
   else if (k === 'n' || k === 'N') { notesOn = !notesOn; notesEl.classList.toggle('show', notesOn); stage.classList.toggle('notes-on', notesOn); ui(); }
   else if (k === 'f' || k === 'F') { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); }
 });
-addEventListener('click', ev => { if (ev.button === 0) next(); });
+addEventListener('click', ev => { if (ev.button !== 0) return; if (PR && ev.clientX < innerWidth / 3) prev(); else next(); });   /* practice: the left third of the screen goes back */
 addEventListener('contextmenu', ev => { ev.preventDefault(); prev(); });
-function fitStage() { const sc = Math.min(innerWidth / 1920, innerHeight / 1080); stage.style.transform = `translate(-50%,-50%) scale(${sc})`; }
+/* practice mode (?practice, or the phone file built by tools/build-practice.py): the keynotes, the beat and the pace under the
+   World, in screen pixels, readable on a phone; the World is fitted into the space above them */
+let prEl = null, prT0 = 0;
+function practice() {
+  if (!prEl) { prEl = document.createElement('div'); prEl.id = 'practice'; document.body.appendChild(prEl);
+    prEl.style.cssText = 'position:fixed;left:0;right:0;bottom:0;padding:8px 14px;background:var(--notes-bg);border-top:1px solid var(--line);color:var(--ink);font:16px/1.3 var(--sans);overflow:auto';
+    setInterval(() => practice(), 1000); }
+  const started = run != null || done > 0, i = run ? run.i : Math.max(0, done - 1), K = (scenes[si].keys || [])[started ? i : 0] || { k: [] };
+  if (started && !prT0) prT0 = Date.now();
+  const t = prT0 ? Math.floor((Date.now() - prT0) / 1000) : 0, mm = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'), late = t > (KEY_T[si + 1] ?? 900);
+  prEl.innerHTML = `<div class="where" style="font-size:13px;color:var(--muted)">${si + 1} / ${scenes.length} · beat ${started ? i + 1 : 0} / ${scenes[si].beats.length} · target ${mm(KEY_T[si])} · <span style="color:${late ? 'var(--rose)' : 'inherit'}">${mm(t)}</span></div>` +
+    `<ul style="margin:4px 0 0;padding-left:1.1em">${K.k.map(x => `<li>${x}</li>`).join('')}</ul>` + (K.show ? `<div style="font-size:13px;color:var(--teal)">on screen: ${K.show}</div>` : '');
+  fitStage();
+}
+function fitStage() {
+  const portrait = PR && prEl && innerHeight - innerWidth * 1080 / 1920 >= 160;   /* a phone held upright: the World on top, the keynotes fill the rest */
+  if (prEl) { prEl.style.top = portrait ? (innerWidth * 1080 / 1920) + 'px' : ''; prEl.style.fontSize = portrait ? '19px' : '16px'; }
+  const H = portrait ? innerWidth * 1080 / 1920 : PR && prEl ? innerHeight - prEl.offsetHeight : innerHeight, sc = Math.min(innerWidth / 1920, H / 1080);
+  stage.style.top = (H / 2) + 'px'; stage.style.transform = `translate(-50%,-50%) scale(${sc})`;
+}
 addEventListener('resize', fitStage); fitStage();
 
 /* deep link ?beat=S07b2 opens the World settled on that beat; ?overview starts in the overview */

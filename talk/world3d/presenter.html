@@ -8,7 +8,10 @@
   #top{display:flex;justify-content:space-between;align-items:center;padding:12px 22px;border-bottom:1px solid #333;font-size:18px;color:#aaa}
   #clock{font:28px/1 monospace;color:#eee}
   #where{font-size:22px;color:#eee}
-  #notes{flex:1;padding:22px 26px;font-size:26px;line-height:1.5;overflow:auto}
+  #notes{flex:1;padding:22px 26px;font-size:34px;line-height:1.35;overflow:auto}
+  #notes ul{margin:0;padding-left:1.1em} #notes li{margin:0 0 .5em}
+  #notes .show{margin-top:1em;font-size:22px;color:#8fb8a8}
+  #clock.late{color:#ff7a7a}
   #next{padding:14px 26px;border-top:1px solid #333;color:#8a8a8a;font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #bar{display:flex;gap:12px;padding:12px 22px;border-top:1px solid #333}
   button{font:18px Georgia,serif;padding:8px 18px;background:#222;color:#eee;border:1px solid #555;border-radius:6px;cursor:pointer}
@@ -34,13 +37,18 @@ addEventListener('message', ev => {
   const m = ev.data || {}; if (m.type !== 'state') return; state = m;
   const cur = m.run != null ? m.run : Math.max(0, m.done - 1);
   const started = m.run != null || m.done > 0;
-  $('where').textContent = `scene ${m.si + 1} / ${m.nScenes} · beat ${started ? cur + 1 : 0} / ${m.nBeats}` + (m.overview ? ' · OVERVIEW' : '');
+  const mmss = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  $('where').textContent = `scene ${m.si + 1} / ${m.nScenes} · beat ${started ? cur + 1 : 0} / ${m.nBeats} · target ${mmss(m.target)}` + (m.overview ? ' · OVERVIEW' : '');
   $('title').textContent = m.title;
-  $('notes').textContent = started ? (m.notes[cur] || '') : ('next: ' + (m.notes[0] || ''));
-  const nx = started ? (m.notes[cur + 1] || (m.nextNotes && m.nextNotes[0]) || '') : (m.notes[1] || '');
-  $('next').textContent = nx ? 'next → ' + nx.split(/(?<=\.)\s/)[0] : '';
+  /* keynotes, not sentences: a few words per beat, and what is on the screen and needs no words */
+  const K = m.keys[started ? cur : 0] || { k: [] }, N = $('notes'); N.textContent = '';
+  const ul = document.createElement('ul'); K.k.forEach(t => { ul.appendChild(document.createElement('li')).textContent = t; }); N.appendChild(ul);
+  if (K.show) { const d = document.createElement('div'); d.className = 'show'; d.textContent = 'on screen, no need to say: ' + K.show; N.appendChild(d); }
+  const nx = started ? (m.keys[cur + 1] || (m.nextKeys && m.nextKeys[0])) : m.keys[1];
+  $('next').textContent = nx ? 'next → ' + nx.k[0] : '';
 });
-setInterval(() => { const s = Math.floor((Date.now() - t0) / 1000); $('clock').textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); }, 500);
+setInterval(() => { const s = Math.floor((Date.now() - t0) / 1000); $('clock').textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+  $('clock').classList.toggle('late', !!state && s > state.nextTarget); }, 500);   /* red: this panel should be over */
 </script>
 </body>
 </html>

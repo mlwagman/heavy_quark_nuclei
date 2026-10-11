@@ -45,29 +45,31 @@ DASH.lay = (len, drop) => { const l = DASH.q('line'); l.setAttribute('x1', 260 -
     <div class="m" style="font-size:22px">R = (Δ${I('E')}${sub('4Q')} − 2Δ${I('E')}${sub('Q' + ov('Q′'))}) / 2Δ${I('E')}${sub('Q' + ov('Q′'))}</div>
     <div class="small t" style="margin-top:6px">R &gt; 0 ⇔ bound below the two-quarkonium threshold</div>
     <div class="big t" style="margin-top:6px">binding requires a mass <b>hierarchy</b></div>` });
-  const fig = BOARDS.board({ scene: SC, cls: 'panel', px: 1000, w: U(1000, DIST), at: P(82, 233, 0), a: 0, html: `<h2>Binding ratio R vs ${H.mQ}/${I('m')}${sub('Q′')}: R &gt; 0 ⇔ bound below the two-meson threshold · MRS at LO/NLO</h2>
+  const fig = BOARDS.board({ scene: SC, cls: 'panel', px: 1000, w: U(1000, DIST), at: P(82, 233, 0), a: 0, html: `<h2>Binding ratio R vs ${H.mQ}/${I('m')}${sub('Q′')}: R &gt; 0 ⇔ bound below the two-meson threshold · fixed order (left), MRS (right)</h2>
     <div style="background:#fff;border-radius:4px;padding:6px"><img src="assets/s12-figure.png" style="width:100%"></div>
     <div class="small t" style="margin-top:8px">critical <span class="num">${H.mQ}/${I('m')}${sub('Q′')} = 0.085(5)</span> (§V A) at NLO: fixed-order NLO said ≈0.125 (§VI). MRS requires a <b>smaller</b> mass ratio: the binding window <b>tightens</b> by ~30%, with the same verdicts in both schemes.</div>` });   /* Fig. 5; §V A, §VI prose (S12-U1) */
   const sketch = BOARDS.board({ scene: SC, px: 320, w: 24, at: P(68, 79, 0), a: 0,   /* at the right end of the top row, beside the glyphs it is about */
     html: `<span class="lbl">sketch: ${ov('t')}${ov('t')} compact, lighter quarks outside; sizes not computed</span>` });
-  /* Tab. V, NLO: B [MeV] with the full range of the scale variation (second parenthesis); drawn as ± half of it about the centre (G5) */
-  const BOUND = [['bbtt', H.bbtt, 509, 340, 476, 19], ['bctt', H.bctt, 604, 410, 516, 135], ['cctt', H.cctt, 742, 479, 622, 240]];   /* [id, name, MRS B, MRS range, FO B, FO range] */
-  const bound = BOARDS.board({ scene: SC, cls: 'panel', px: 560, w: U(560, 175), at: P(32, 156, 0), a: 0, html: `<h2 class="tc">BOUND · ΔE ≈ <span class="num">509–742 MeV</span> <span class="tiny">(Tab. V, NLO) · top decays</span></h2><div id="rows"></div>
-    <div class="tiny" style="margin-top:6px">bars: scale range (full range, Tab. V) · <span class="nlo">hatched = fixed order</span>, <span class="nlo">solid = MRS</span>: MRS is wider; what stays small is the order-by-order shift</div>` });
-  const brows = BOUND.map(([id, nm, mb, mr, fb, fr]) => { const r = D('div', 'row t', bound.q('#rows')); r.style.margin = '4px 0';
+  /* Tab. V, NLO: B [MeV]; the second parenthesis is ± (the author, round 24c: 509(10)(340) is 509 ± 340; it was drawn ± half).
+     Round 24: one message, all three stay bound within it: a dot at B, a band for the scale range, one axis from 0 (the
+     fixed-order bars and their "MRS is wider" note are gone: they argued a second point the slide does not need) */
+  const BOUND = [['bbtt', H.bbtt, 509, 340, 476, 19, '353.479(10)(371)'], ['bctt', H.bctt, 604, 410, 516, 135, '350.376(9)(401)'], ['cctt', H.cctt, 742, 479, 622, 240, '347.216(8)(414)']];   /* [id, name, MRS B, MRS range, FO B, FO range, MRS mass in GeV]: Tab. V, NLO */
+  const TW_ = 250, XM = mev => mev / 1300 * TW_;   /* the track: 0 to 1300 MeV (the widest band ends at 742 + 479 = 1221) */
+  const bound = BOARDS.board({ scene: SC, cls: 'panel', px: 560, w: U(560, 175), at: P(32, 156, 0), a: 0, html: `<h2 class="tc">BOUND · B ≈ <span class="num">509–742 MeV</span> <span class="tiny">below threshold (Tab. V, NLO)</span></h2><div id="rows"></div>
+    <div class="row" style="margin-top:2px"><div style="width:60px;flex:none"></div><div style="position:relative;width:${TW_}px;height:22px;flex:none;border-top:1px solid var(--line)">
+      <div data-zero style="position:absolute;left:0;top:-4px;width:1.5px;height:8px;background:var(--muted)"></div>
+      <span data-tick class="tiny" style="position:absolute;left:0;top:3px;transform:translateX(-50%)">0</span><span data-tick class="tiny" style="position:absolute;left:${XM(500)}px;top:3px;transform:translateX(-50%)">500</span><span data-tick class="tiny" style="position:absolute;left:${XM(1000)}px;top:3px;transform:translateX(-50%);white-space:nowrap">1000 MeV</span></div></div>
+    <div class="tiny" style="margin-top:4px">dot: binding energy ${I('B')} · band: its range over ${I('λ')} ∈ {½, 1, 2} (Tab. V). Every band clears 0: bound at every ${I('λ')}.</div>` });
+  const brows = BOUND.map(([id, nm, mb, mr]) => { const r = D('div', 'row t', bound.q('#rows')); r.style.margin = '6px 0';
     D('div', 'm', r, nm).style.cssText = 'width:60px;flex:none';
-    const col = D('div', '', r); col.style.cssText = 'flex:1;display:flex;flex-direction:column;gap:3px';
-    const f = D('div', 'bar hatch nlo', col); f.style.cssText = `height:10px;width:0`; const m = D('div', 'bar solid nlo', col); m.style.cssText = `height:10px;width:0`;
-    D('div', 'small num', r, `${mb}(${mr}) MeV`).style.cssText = 'width:150px;flex:none;text-align:right';
-    return { r, f, m, fw: fr / 479 * 230, mw: mr / 479 * 230 }; });
+    const tr = D('div', '', r); tr.style.cssText = `position:relative;width:${TW_}px;height:16px;flex:none;border-left:1.5px solid var(--muted)`;
+    const f = D('div', '', tr); f.dataset.band = ''; f.style.cssText = `position:absolute;top:2px;height:12px;left:${XM(mb - mr)}px;width:${XM(2 * mr)}px;background:var(--teal);opacity:.28;border-radius:6px;transform:scaleX(0)`;
+    const m = D('div', '', tr); m.dataset.dot = ''; m.style.cssText = `position:absolute;top:2px;width:12px;height:12px;left:${XM(mb) - 6}px;background:var(--teal);border-radius:50%;opacity:0`;
+    D('div', 'small num', r, `${mb}(${{ 509: 10, 604: 9, 742: 8 }[mb]})(${mr}) MeV`).style.cssText = 'width:190px;flex:none;text-align:right';
+    return { r, f, m }; });
   bound.measure();
   const unb = BOARDS.board({ scene: SC, cls: 'panel', px: 420, w: U(420, 175), at: P(88, 156, 0), a: 0, html: `<h2 class="rc">UNBOUND · ratio ≫ 0.085</h2><div class="big" style="font-size:22px"><span class="chip t">${H.bbbb}</span> <span class="chip t">${H.ccbb}</span><br><span class="t">no binding within our variational space</span><br><span class="small t">mass ratios 1 and 0.324, far above the threshold</span></div>` });   /* Tab. I derived: 1.55489/4.80221 = 0.324 */
-  const col = BOARDS.board({ scene: SC, cls: 'panel', px: 560, w: U(560, 175), at: P(142, 156, 0), a: 0, html: `<h2>Colour structure</h2>
-    <div class="row"><div class="small m" style="width:56px;flex:none">3⊗${ov('3')}</div><div class="bar solid" id="c1" style="width:0;height:13px;flex:none;color:var(--ink2)"></div></div>
-    <div class="row"><div class="small m" style="width:56px;flex:none">6⊗${ov('6')}</div><div class="bar solid" id="c2" style="width:0;height:13px;flex:none;color:var(--dim)"></div></div>
-    <div class="tiny">GFMC from 3⊗${ov('3')} vs 6⊗${ov('6')} starting states: slow colour convergence (§V B) · schematic lengths</div>
-    <div class="big t" style="font-size:22px;margin-top:6px">3⊗${ov('3')} beats 6⊗${ov('6')} by 50–150 MeV <span class="small">(§V B)</span> ⇒ consistent with a <b>diquark–antidiquark</b> structure (colour convergence under study)</div>` });
-  BOARDS.topAlign(bound, unb, col);
+  BOARDS.topAlign(bound, unb);   /* round 19: the colour-structure board and its beat are gone, at the author's request */
   window.__S12 = { sketch };
   scenes.push({
     id: 'S12', title: 'All-heavy tetraquarks: who binds?', el: BOARDS.sceneEl(SC),
@@ -89,17 +91,15 @@ DASH.lay = (len, drop) => { const l = DASH.q('line'); l.setAttribute('x1', 260 -
         cam: [KS([9.7, 77, 116], [9.7, 77, 0]), KS([56, 153, 150], [56, 153, 0])], f(p) {   /* the first frame holds the whole top row, the η_t name at its left end included */
         const u = eio(seg(p, 0, .2)); SHELF.place('s10b', 's12', u); SHELF.travel(9, SC, eio(seg(p, 0, .18)));   /* the shelf comes over from S10 with the camera's first stage */
         scenes[SC - 1].ghost = 1 - seg(p, .5, .65);              /* the S11 boards go before the second frame, which held one of them cut in its corner */
-        BOUND.forEach(([id], i) => { const G = SHELF.glyphs[id]; const k = seg(p, .14 + i * .06, .26 + i * .06); G.g.setOpacity(0.55 * k); G.g.setGlow(0.6); G.lab.show(k); G.chip.html(`<span class="chip">top decays</span>`).show(k); });
-        sketch.show(seg(p, .2, .3));
+        BOUND.forEach(([id, , , , , , M], i) => { const G = SHELF.glyphs[id]; const k = seg(p, .14 + i * .06, .26 + i * .06); G.g.setOpacity(0.55 * k); G.g.setGlow(0.6); G.lab.show(k); G.chip.html(`<span class="chip">${M} GeV <span class="tiny">NLO</span></span>`).show(k); });   /* the predicted mass (round 19; it was "top decays"). NLO: every other mass on the shelf is NNLO */
+        sketch.a = seg(p, .2, .3); if (p <= .5) sketch.touch();   /* a focus board only while the camera holds it (first piece of the cut): S12 now ends on the verdict boards */
         /* unbound: the glyphs try to form beside the row, then split into two mesons and fade (S12-F6) */
         ['bbbb', 'ccbb'].forEach((id, i) => { const G = SHELF.glyphs[id]; G.g.position.set(63 + 12 * i, LAY.topY + 8, 0);
           const form = seg(p, .34, .4), split = eo(seg(p, .42, .49)), fade = seg(p, .5, .56);   /* a stop on the two split pairs with their names; they go as the camera leaves */
           G.g.setOpacity(0.55 * form * (1 - fade)); G.g.userData.split = split; G.lab.show(form * (1 - fade)); });
-        bound.show(seg(p, .68, .78)); brows.forEach((r, i) => { const k = eo(seg(p, .74 + i * .04, .88 + i * .04)); rv(r.r, seg(p, .72 + i * .04, .8 + i * .04)); r.f.style.width = (r.fw * k) + 'px'; r.m.style.width = (r.mw * k) + 'px'; });
+        bound.show(seg(p, .68, .78)); brows.forEach((r, i) => { const k = eo(seg(p, .74 + i * .04, .88 + i * .04)); rv(r.r, seg(p, .72 + i * .04, .8 + i * .04)); r.f.style.transform = `scaleX(${k})`; r.m.style.opacity = k; });
         unb.show(seg(p, .84, .92)); BOARDS.T(unb, '.t', seg(p, .9, 1));
       } }, [13, 13]),
-      { d: 18, cam: [KS([87, 156, 147], [87, 156, 0])], f(p) { col.show(seg(p, .4, .58));   /* the three verdict boards fill the frame; the third comes once the camera holds it whole */
-        col.q('#c1').style.width = (240 * eo(seg(p, .5, .7))) + 'px'; col.q('#c2').style.width = (160 * eo(seg(p, .6, .8))) + 'px'; rv(col.q('.t'), seg(p, .8, 1)); } },
     ],
   });
 })();

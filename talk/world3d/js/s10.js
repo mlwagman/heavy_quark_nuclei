@@ -3,13 +3,13 @@
 (function () {
   const SC = 9, DIST = 112, { P, V, KS } = FR(SC);
   const OM = ['Occc', 'Occb', 'Ocbb', 'Obbb'];
-  const MRS = ['4.6186(1)(34)', '7.8511(1)(52)', '11.0701(1)(83)', '14.2311(1)(112)'];                 /* Tab. III, This work MRS, NNLO (rounded as on the Deck) */
-  const LAT = ['4.796(8)(18) [27]', '8.005(6)(11) [28]', '11.194(5)(12) [28]', '14.366(7)(9) [31]'];   /* Tab. III, lattice QCD column */
+  const MRS = ['4.6186(1)(34) GeV', '7.8511(1)(52) GeV', '11.0701(1)(83) GeV', '14.2311(1)(112) GeV'];                 /* Tab. III, This work MRS, NNLO (rounded as on the Deck) */
+  const LAT = ['4.796(8)(18) GeV [27]', '8.005(6)(11) GeV [28]', '11.194(5)(12) GeV [28]', '14.366(7)(9) GeV [31]'];   /* Tab. III, lattice QCD column */
   const GAP = ['~175', '~155', '~125', '~135'];                                                          /* Tab. III derived: 177.5 / 153.9 / 123.9 / 134.9 MeV */
   const PCT = [3.7, 1.9, 1.1, 0.9];                                                                      /* gap ÷ lattice, storyboard S10 b4 */
   /* the two row headers stand under the tetraquark, which has no number: beside the row they name and inside the closest shelf frame */
-  const hdr = BOARDS.board({ scene: SC, px: 170, w: U(170, DIST), at: P(44.6, 61.8, 0), a: 0, html: `<span class="lbl">NNLO MRS [GeV]</span>` });
-  const hdr2 = BOARDS.board({ scene: SC, px: 170, w: U(170, DIST), at: P(44.6, 57.8, 0), a: 0, html: `<span class="lbl lat">lattice QCD [GeV]</span>` });
+  const hdr = BOARDS.board({ scene: SC, px: 170, w: U(170, DIST), at: P(44.6, 61.8, 0), a: 0, html: `<span class="lbl">NNLO MRS</span>` });   /* round 19: every mass carries its own unit */
+  const hdr2 = BOARDS.board({ scene: SC, px: 170, w: U(170, DIST), at: P(44.6, 57.8, 0), a: 0, html: `<span class="lbl lat">lattice QCD</span>` });
   const lchips = OM.map(() => BOARDS.board({ scene: SC, px: 240, w: U(240, DIST) * 0.84, a: 0, cls: 'small', html: '' }));   /* at full size a lattice value with its reference is wider than the glyph spacing */
   lchips.forEach(b => b.el.style.textAlign = 'center');
   /* the lattice chips ride under their glyphs while the shelf is here; once it has moved on they stay, under where the glyphs stood */
@@ -25,8 +25,8 @@
   gaps.measure();
   /* the summary of b5 stands over the top row it sums up, in the one free place there (between the S08 drift board and the S09
      benchmark board): the beat can end close on the shelf. Beside the shelf, it forced a frame 162 back and numbers 9 to 11 px high */
-  const topN = BOARDS.board({ scene: SC, cls: 'panel', px: 900, w: 38, at: P(9.5, 90.3, 0), a: 0, html: `<div class="big">Top-quark benchmarks up to ${H.Ottt} = <span class="num">514.46(4)(94) GeV</span>: for ${H.Ottt} the band is wide, ±0.94 GeV. <span class="small">cannot form: top decays (Tab. IV)</span></div>` });
-  const TOP = [['Otcc', '175.55827(6)(648)'], ['Otcb', '178.76384(5)(995)'], ['Otbb', '181.85756(8)(1444)'], ['Ottc', '346.44124(7)(1273)'], ['Ottb', '349.33347(34)(4681)'], ['Ottt', '514.46(4)(94)']];   /* Tab. IV, NNLO */
+  const topN = BOARDS.board({ scene: SC, cls: 'panel', px: 900, w: 38, at: P(9.5, 90.3, 0), a: 0, html: `<div class="big">Top-quark benchmarks up to ${H.Ottt} = <span class="num">514.46(4)(94) GeV</span>. <span class="small">cannot form: top decays (Tab. IV)</span></div>` });
+  const TOP = [['Otcc', '175.55827(6)(648) GeV'], ['Otcb', '178.76384(5)(995) GeV'], ['Otbb', '181.85756(8)(1444) GeV'], ['Ottc', '346.44124(7)(1273) GeV'], ['Ottb', '349.33347(34)(4681) GeV'], ['Ottt', '514.46(4)(94) GeV']];   /* Tab. IV, NNLO */
   scenes.push({
     id: 'S10', title: 'Triply-heavy baryons against lattice QCD', el: BOARDS.sceneEl(SC),
     notes: NOTES[SC],
@@ -39,7 +39,7 @@
         const u = eio(seg(p, 0, .35)); SHELF.place('s09c', 's10a', u);
         OM.forEach((id, i) => { const G = SHELF.glyphs[id]; const k = seg(p, .25 + i * .12, .45 + i * .12);
           if (id !== 'Occc') { G.g.setOpacity(k); G.g.setGlow(1); G.lab.show(k); }
-          G.chip.html(`<span class="chip">${MRS[i]}</span>`).show(k); });
+          G.chip.html(`<span class="chip" style="padding:4px;margin:3px 0;letter-spacing:-.4px">${MRS[i]}</span>`).show(k); });   /* narrower sides: with their unit two neighbours of the row all but touched in the wide frames */
         hdr.show(seg(p, .3, .5));
       } },
       /* b2: the faint red lattice wall rises behind the baryons; lattice chips with refs; gap arrows.
@@ -47,12 +47,12 @@
       ...cut({ d: 18, win: [.5, .9], cam: [KS([114, 101, 80], [114, 101, 0])], f(p) {   /* a stop on the shelf with the lattice row, then the boards */
         LATT.show(seg(p, 0, .25)); hdr2.show(seg(p, .1, .25));
         scenes[SC - 1].ghost = 1 - seg(p, .5, .7);              /* the S09 boards hang above the shelf: they leave with it, so no ghost is cut by the closer frames */
-        OM.forEach((id, i) => { const k = seg(p, .12 + i * .08, .26 + i * .08); lchips[i].html(`<span class="chip lat">${LAT[i]}</span><br><span class="tiny rc">↕ ${GAP[i]} MeV</span>`).show(k); });
+        OM.forEach((id, i) => { const k = seg(p, .12 + i * .08, .26 + i * .08); lchips[i].html(`<span class="chip lat" style="padding:4px;margin:3px 0;letter-spacing:-.4px">${LAT[i]}</span><br><span class="tiny rc">↕ ${GAP[i]} MeV</span>`).show(k); });
         nb.show(seg(p, .7, .9));
         NLINE.config({ key: 'obbb', title: `${H.Obbb} at NNLO: ours vs lattice`, lo: 14.19, hi: 14.41, unit: 'GeV',
-          items: [{ v: 14.2311, dev: 0.01116, cls: 'nnlo', style: 'solid', lab: 'MRS 14.2311(1)(112)', side: 'down', devLab: 'max deviation ±11 MeV' },   /* Tab. III */
-                  { v: 14.282, style: 'hatchpt', cls: 'nnlo', lab: 'fixed order 14.282(1)(706)', side: 'up', anchor: 'middle' },                        /* Tab. III (band ±706 MeV not drawn to scale) */
-                  { v: 14.366, dev: 0.009, cls: 'lat', style: 'square', lab: 'lattice 14.366(7)(9) [31]', side: 'down', devLab: 'stat ⊕ sys' }],       /* Tab. III */
+          items: [{ v: 14.2311, dev: 0.01116, cls: 'nnlo', style: 'solid', lab: 'MRS 14.2311(1)(112) GeV', side: 'down', devLab: 'max deviation ±11 MeV' },   /* Tab. III */
+                  { v: 14.282, style: 'hatchpt', cls: 'nnlo', lab: 'fixed order 14.282(1)(706) GeV', side: 'up', anchor: 'middle' },                        /* Tab. III (band ±706 MeV not drawn to scale) */
+                  { v: 14.366, dev: 0.0114, cls: 'lat', style: 'square', lab: 'lattice 14.366(7)(9) GeV [31]', side: 'down', devLab: 'stat ⊕ sys' }],       /* Tab. III */
           gap: { a: 14.2311, b: 14.366, lab: '~135 MeV' } });
         NLINE.b.set(...P(114, 112, 0)); NLINE.b.w = U(720, DIST); NLINE.b.show(seg(p, .55, .7)); NLINE.b.touch(); NLINE.reveal(seg(p, .6, 1), 0.15);
       } }, [9, 9]),
@@ -77,8 +77,7 @@
         const u = eio(seg(p, 0, .35)); SHELF.place('s10a', 's10b', u);
         LATT.show(1 - seg(p, 0, .2));                            /* the wall stood behind the baryons for the lattice numbers; from this frame its grid ran through the top row */
         TOP.forEach(([id, v], i) => { const G = SHELF.glyphs[id]; const k = seg(p, .26 + i * .05, .38 + i * .05); G.g.setOpacity(0.55 * k); G.g.setGlow(0.6); G.lab.show(k);
-          /* the Ω_ttt note stands beside its chip (it is the last of the row): under it, it ran into the lower level of chips */
-          G.chip.html(id === 'Ottt' ? `<span style="position:relative;display:inline-block"><span class="chip">${v}</span><span class="tiny" style="position:absolute;left:100%;top:9px;margin-left:4px;white-space:nowrap">±0.94 GeV band</span></span>` : `<span class="chip">${v}</span>`).show(k); });
+          G.chip.html(`<span class="chip">${v}</span>`).show(k); });   /* no "±0.94 GeV band" beside Ω_ttt: its (94) says it */
         topN.show(seg(p, .75, .95));
       } },
     ],

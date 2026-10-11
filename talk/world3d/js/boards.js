@@ -71,5 +71,5 @@ const BOARDS = (() => {
   /* per-frame update; stFn(board) gives {tier, focus, ov, gk} */
   function update(stFn) { for (const b of all) b.update(stFn(b)); }
   const T = (b, sel, u, dy) => { for (const e of b.qa(sel)) rv(e, u, dy); };
-  return { board, update, all, T, layer, sceneEl, topAlign, setApply: i => { APPLY = i; }, touch: b => b.touch() };
+  return { board, update, all, T, layer, sceneEl, topAlign, setApply: i => { APPLY = i; }, apply: () => APPLY, touch: b => b.touch() };
 })();

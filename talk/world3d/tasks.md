@@ -13,3 +13,8 @@ Baseline r17 (2026-09-30): check-beats 53/53, check-jumps 0/57, check-colour 213
 - [x] Narration rewrite → verify: check_narration exit 0, notes --check exit 0, deck-scripts hash unchanged
 - [x] Voice + MP4 → verify: wpm 170-180, 0 gate failures, verify3d PASS (177 wpm, 0, PASS)
 - [x] Review at full size, NOTES Round 18, build r18, ADR-001 → verify: independent verifier clean (third round: only stale map PNGs, re-rendered)
+
+# Round 19 (2026-10-03): done
+Panels 4, 5, 6, 9, 10, 12 after the author's review; details and numbers in NOTES.md "Round 19". Working tree of branch
+`talk-world3d-r18`, uncommitted (commit only when asked). `/tmp/mrs-talk-world3d.r18.mp4` is the r18 video.
+- [ ] Author's answers awaited on the open points listed at the end of NOTES.md Round 19 → verify: each answered or changed

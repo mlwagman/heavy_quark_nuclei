@@ -32,10 +32,10 @@ function figBoard(SC, title, src, cap, at, px, dist, capCls = '') {
     <div class="row"><div class="small" style="width:110px;flex:none">fixed order</div><div class="bar hatch nnlo" id="d1" style="width:0;height:15px;flex:none"></div><div class="small num" id="v1" style="white-space:nowrap"></div></div>
     <div class="row"><div class="small" style="width:110px;flex:none">MRS</div><div class="bar solid nnlo" id="d2" style="width:0;height:15px;flex:none"></div><div class="small num" id="v2" style="white-space:nowrap"></div></div>
     <div class="tiny" style="margin-top:6px">drift LO → NNLO of the tuned ${H.mc}, ${H.mb} (Tab. I + caption)</div>` });
-  /* two dials under cc̄ and bb̄: the Λ₁ chip splits into them (S08 b3) */
-  const dial = () => { const b = BOARDS.board({ px: 120, w: U(120, DIST), a: 0, html: `<svg viewBox="0 0 120 88" width="120" height="88"><path d="M15 60 A45 45 0 0 1 105 60" fill="none" stroke="var(--muted)" stroke-width="2"/><line id="nd" x1="60" y1="60" x2="60" y2="20" stroke="var(--ink)" stroke-width="2.5"/><text x="60" y="82" text-anchor="middle" font-size="15" fill="var(--muted)">Λ₁ → m<tspan baseline-shift="sub" font-size="11">Q</tspan></text></svg>` }); return b; };   /* the words under the dial, clear of its needle */
+  /* two dials under cc̄ and bb̄: the Λ_R chip splits into them (S08 b3) */
+  const dial = () => { const b = BOARDS.board({ px: 120, w: U(120, DIST), a: 0, html: `<svg viewBox="0 0 120 88" width="120" height="88"><path d="M15 60 A45 45 0 0 1 105 60" fill="none" stroke="var(--muted)" stroke-width="2"/><line id="nd" x1="60" y1="60" x2="60" y2="20" stroke="var(--ink)" stroke-width="2.5"/><text x="60" y="82" text-anchor="middle" font-size="15" fill="var(--muted)">Λ<tspan baseline-shift="sub" font-size="11">R</tspan> → m<tspan baseline-shift="sub" font-size="11">Q</tspan></text></svg>` }); return b; };   /* the words under the dial, clear of its needle */
   const dialC = dial(), dialB = dial();
-  const mt = BOARDS.board({ px: 300, w: U(300, DIST), a: 0, html: `<span class="chip">${H.mt} = 172.52 GeV · input</span>` }); mt.el.style.textAlign = 'center';    /* Tab. I caption, §III B */
+  const mt = BOARDS.board({ px: 300, w: U(300, DIST), a: 0, html: `<span class="chip">${H.mt} = 172.52 GeV · pole mass, input</span>` }); mt.el.style.textAlign = 'center';    /* Tab. I caption, §III B */
   const pred = BOARDS.board({ scene: SC, px: 1000, w: U(1000, DIST), at: P(-32, 137, 0), a: 0, html: `<div class="banner" style="text-align:center;border:none;font-size:28px">Everything after this is a prediction: two tuned numbers + one input.</div>` });
   const lam1 = window.__S05.lam1;
   const MT = W.V3(31.5, LAY.shelfY - 8.2, 0), MTw = () => SHELF.at.clone().add(MT);   /* the input waits in the chip row, right of the family: two tuned numbers and one input on one line (shelf coordinates: it travels with the shelf) */
@@ -82,7 +82,7 @@ function figBoard(SC, title, src, cap, at, px, dist, capCls = '') {
 /* ======================= S09 ======================= */
 (function () {
   const SC = 8, DIST = 112, { P, V, KS } = FR(SC);
-  const leg = BOARDS.board({ scene: SC, cls: 'panel', px: 900, w: U(900, DIST), at: P(48, 104, 0), a: 0, html: `<h2>Reading the numbers</h2><div class="big">first parenthesis: <span class="tc">GFMC statistics</span> · second: <span class="rc">scale variation ${I('λ')} ∈ {½, 1, 2}</span> &nbsp;·&nbsp; ${H.mt} = 172.52 GeV input</div>` });
+  const leg = BOARDS.board({ scene: SC, cls: 'panel', px: 900, w: U(900, DIST), at: P(48, 104, 0), a: 0, html: `<h2>Reading the numbers</h2><div class="big">first parenthesis: <span class="tc">GFMC statistics</span> · second: <span class="rc">scale variation ${I('λ')} ∈ {½, 1, 2}</span> &nbsp;·&nbsp; ${H.mt} = 172.52 GeV pole mass, input</div>` });
   const ghostC = BOARDS.board({ px: 220, w: U(220, DIST), a: 0, html: `<span class="chip">${H.mc}</span>` }), ghostB = BOARDS.board({ px: 220, w: U(220, DIST), a: 0, html: `<span class="chip">${H.mb}</span>` });
   const nocmp = BOARDS.board({ scene: SC, cls: 'panel', px: 520, w: U(520, DIST), at: P(48, 90, 0), a: 0, html: `<h2>No comparison yet</h2><div class="big">${H.tc} and ${H.tb}: benchmarks, not observables.</div>` });
   const mt = window.__S08.mt;
@@ -90,10 +90,11 @@ function figBoard(SC, title, src, cap, at, px, dist, capCls = '') {
   const ET = { key: 'et', title: `${H.et} at NNLO MRS: second parenthesis = max deviation, ±0.77 GeV drawn to scale`, lo: 341.3, hi: 344.3, unit: 'GeV',
     items: [{ v: 342.47, dev: 0.77, cls: 'nnlo', style: 'solid', lab: '342.47(4)(77) GeV', side: 'down', devLab: 'max deviation (λ ∈ {½, 1, 2}), one envelope' },   /* Tab. I */
             { v: 343, style: 'tickmark', lab: '≈ 343 (NRQCD threshold)', side: 'up' }] };                /* Tab. I comparison column [75] */
-  const BC = { key: 'bc', title: `B${sub('c')}: parameter-free. Once ${H.mc}, ${H.mb} are fixed there is nothing left to adjust`, lo: 6.272, hi: 6.334, unit: 'GeV',
-    items: [{ v: 6.29121, dev: 0.00731, cls: 'nnlo', style: 'solid', lab: 'ours 6.29121', side: 'down', devLab: 'max deviation ±7.31 MeV' },          /* Tab. II */
-            { v: 6.316, dev: 0.007, style: 'square', lab: 'exp. + lattice 6.316(7)', side: 'up', devLab: '±7 MeV' }],                            /* Tab. II [92, 96] */
-    gap: { a: 6.29121, b: 6.316, lab: '24.8 MeV gap: well outside our scale-variation range: about three times it' } };
+  const BC = { key: 'bc', title: `B${sub('c')}: parameter-free. Once ${H.mc}, ${H.mb} are fixed there is nothing left to adjust`, lo: 6.262, hi: 6.334, unit: 'GeV',   /* from 6.262 since round 19: room for the measured B_c and its label */
+    items: [{ v: 6.29121, dev: 0.00731, cls: 'nnlo', style: 'solid', lab: 'ours 6.29121 GeV', side: 'down', devLab: 'max deviation ±7.31 MeV' },          /* Tab. II */
+            { v: 6.2745, style: 'square', lab: `exp. B${sub('c')} 6.2745(3) GeV`.replace('<sub>', '<tspan baseline-shift="sub" font-size="12">').replace('</sub>', '</tspan>'), side: 'up' },   /* the measured B_c, the lighter spin state (Sec. on Tab. II, [92]): it enters the spin average beside it */
+            { v: 6.316, dev: 0.007, style: 'square', lab: 'exp. + lattice 6.316(7) GeV', side: 'up', devLab: '±7 MeV' }],                            /* Tab. II [92, 96] */
+    gap: { a: 6.29121, b: 6.316, lab: '24.8 MeV gap' } };
   scenes.push({
     id: 'S09', title: 'Toponium and mixed-flavour mesons', el: BOARDS.sceneEl(SC),
     notes: NOTES[SC],
@@ -118,7 +119,7 @@ function figBoard(SC, title, src, cap, at, px, dist, capCls = '') {
         const c = SHELF.wp('cc'), b = SHELF.wp('bb'), t = SHELF.wp('bc');
         ghostC.lerpTo(c, t.clone().add(W.V3(-2.4, 0, 0)), u); ghostB.lerpTo(b, t.clone().add(W.V3(2.4, 0, 0)), u); ghostC.show(seg(p, 0, .1) * (1 - seg(p, .47, .55))); ghostB.show(seg(p, 0, .1) * (1 - seg(p, .47, .55)));
         const k = seg(p, .47, .62); G.g.setOpacity(k); G.g.setGlow(1); G.lab.show(k);
-        G.chip.html(`<span class="chip">6.29121(4)(731) GeV</span>`).show(seg(p, .6, .72));                     /* Tab. II, bc̄ NNLO */
+        G.chip.html(`<span class="chip" style="padding:4px 7px">6.29121(4)(731) GeV</span>`).show(seg(p, .6, .72));                     /* Tab. II, bc̄ NNLO */
         const z = eio(seg(p, .05, .44)); NLINE.zoom(ET, BC, z);   /* one ruler: it travels from 342 GeV to 6.3 GeV while the glyph forms, then B_c lands on it */
         NLINE.b.set(...P(48, 120, 0)); NLINE.b.show(1); NLINE.b.touch(); if (z >= 1) NLINE.reveal(seg(p, .55, 1), 0.2);
       } }, [6, 7]),

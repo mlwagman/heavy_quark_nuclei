@@ -155,7 +155,7 @@ if (mapMode) {
   const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
   const errs = []; page.on('pageerror', e => errs.push(String(e)));
   await page.goto(url('')); await installDeckShim(page); await page.evaluate(() => document.fonts.ready);
-  for (const [s, k, p, name] of [[13, 5, 0.5, 'S14b5-p50'], [13, 5, null, 'S14b5-end'], [14, 1, null, 'S15b1-end'], [14, 2, 0.25, 'S15b2-p25'], [14, 2, null, 'S15b2-end']]) {   /* S14 b5: the lift-off (round 18) */   /* S15 b1: a stop on the map (round 18), b2: down onto the references */
+  for (const [s, k, p, name] of [[12, 8, 0.5, 'S13b8-p50'], [12, 8, null, 'S13b8-end'], [13, 1, null, 'S14b1-end'], [13, 2, 0.25, 'S14b2-p25'], [13, 2, null, 'S14b2-end']]) {   /* S14 b5: the lift-off (round 18) */   /* S15 b1: a stop on the map (round 18), b2: down onto the references */
     await page.evaluate(([s, k, p]) => { window.__deck.show(s); if (p == null) window.__deck.applyUpTo(k); else { window.__deck.applyUpTo(k - 1); applyState(s, k - 1, p); } }, [s, k, p]);
     await page.waitForTimeout(400); await page.screenshot({ path: path.join(OUT, `map-${name}.png`) }); process.stdout.write(`map-${name} `);
   }
