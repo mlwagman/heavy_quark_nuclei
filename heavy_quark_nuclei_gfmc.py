@@ -143,7 +143,7 @@ def V3(r1, r2):
    xy_vmap_f = jax.vmap(y_vmap_f, (0, None))
    V3_grid = np.transpose( xy_vmap_f(x_grid, y_grid), (2,0,1))
 
-   V3_integral = np.trapz( np.trapz(V3_grid, dx=1/int_points), dx=1/int_points)
+   V3_integral = np.trapezoid( np.trapezoid(V3_grid, dx=1/int_points), dx=1/int_points)
 
    return V3_integral
 
