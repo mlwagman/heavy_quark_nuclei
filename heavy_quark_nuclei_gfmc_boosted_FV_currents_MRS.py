@@ -1248,6 +1248,12 @@ C2_2tau = onp.zeros(N_tau)
 Ws2_all = onp.zeros((N_tau, n_walkers), dtype=onp.complex128)
 
 C3_N = onp.zeros((n_walkers, N_tau), dtype=onp.complex128)
+# Two-time objects C_J(t1,t2) and <tau_i|tau_j>. C3_N alone is the SYMMETRIC
+# point C_J(t,t); the Ritz basis needs C_J(2s dt, 2t dt), and building the
+# Hankel from C3_N[s+t] gets the f!=i interference terms wrong (inert at Q=0,
+# where the number operator commutes with H, hence the exact F(0)=N check).
+C3_N_od = onp.zeros((N_tau, N_tau, n_walkers), dtype=onp.complex128)
+Ws2_od  = onp.zeros((N_tau, N_tau, n_walkers), dtype=onp.complex128)
 C3_S = onp.zeros((n_walkers, N_tau), dtype=onp.complex128)
 C3_V0 = onp.zeros((n_walkers, N_tau), dtype=onp.complex128)
 C3_Vi = onp.zeros((n_walkers, N_tau, 3), dtype=onp.complex128)
@@ -1267,12 +1273,17 @@ for i_t, t in enumerate(t_indices):
     tau = t * dtau_iMev
     print(f"\n--- tau = {tau:.3f} MeV^-1 (slice {i_t+1}/{N_tau}) ---")
 
-    N_leg2 = max(t, 1)  # leg-2 only needs t steps (not full n_step)
+    # Leg 2 must run the FULL n_step, not just t: the two-time object
+    # C_J(t1,t2) is needed for t2 > t1 as well, and the Ritz basis wants
+    # C_J(2s dt, 2t dt). The old shortcut (N_leg2 = t) computed only the
+    # symmetric point t2 = t1. Costs ~2x the leg-2 work.
+    N_leg2 = max(n_step, 1)
     rand2_shared = onp.random.random(size=(N_leg2, R.shape[0]))
     rng_seed = onp.random.randint(0, 2**31)
 
     onp.random.seed(rng_seed)
     ws_seq_C2 = _run_leg2_Ws_sequence(R, S, W1, rand2_shared, N_leg2=N_leg2)
+    Ws2_od[i_t, :, :] = onp.array([ws_seq_C2[min(t2, N_leg2)] for t2 in t_indices])
 
     Ws2 = onp.array(ws_seq_C2[min(t, N_leg2)])
     Ws2_all[i_t] = Ws2
@@ -1337,6 +1348,7 @@ for i_t, t in enumerate(t_indices):
     Ws_seed_N = W1 * (currents['N'] * r01)
     ws_seq_N = _safe_leg2(Ws_seed_N, "J_N")
     C3_N[:, i_t] = onp.array(ws_seq_N[t])
+    C3_N_od[i_t, :, :] = onp.array([ws_seq_N[min(t2, N_leg2)] for t2 in t_indices])
 
     C3_N_t = onp.array(ws_seq_N[t])
     C2_t = onp.array(ws_seq_C2[t])
@@ -1483,6 +1495,8 @@ with h5py.File(filename, 'w') as f:
     f.create_dataset("C2_2tau", data=C2_2tau)
     f.create_dataset("Ws2_all", data=Ws2_all)
     f.create_dataset("C3_N", data=C3_N)
+    f.create_dataset("C3_N_offdiag", data=C3_N_od)
+    f.create_dataset("Ws2_offdiag",  data=Ws2_od)
     f.create_dataset("C3_S", data=C3_S)
     f.create_dataset("C3_V0", data=C3_V0)
     f.create_dataset("C3_Vi", data=C3_Vi)

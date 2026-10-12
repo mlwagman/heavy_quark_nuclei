@@ -123,7 +123,16 @@ def stability_select(F, E, nsig=1.0):
 # ── Load ────────────────────────────────────────────────────────────────────
 f = h5py.File(args.currents_file, 'r')
 Ws2_all   = np.real(np.array(f['Ws2_all']))   # (N_tau, N_walkers)
+# C3_N[:,k] is the SYMMETRIC point C_J(t_k,t_k): the generator puts both legs at
+# the same time. The Ritz basis needs C_J(2s dt, 2t dt). Building the Hankel from
+# C3_N[s+t] supplies C_J((s+t)dt,(s+t)dt), which matches only on f=i; the f!=i
+# interference terms -- what the projector exists to cancel -- are wrong. At Q=0
+# the number operator commutes with H so J_fi ~ delta_fi and the error is inert,
+# which is why F(0)=N_coord always passed exactly.
+# Measured size on Coulomb a=0.3 with a 30% mismatched trial: 1.35%.
+C3_N_od_raw = np.real(np.array(f['C3_N_offdiag'])) if 'C3_N_offdiag' in f else None
 tau_values = np.array(f['tau_values'])
+tau_full = tau_values.copy()   # untruncated: indexes C3_N_offdiag
 dtau_stored = float(tau_values[1] - tau_values[0])
 N_tau_full, N_walkers = Ws2_all.shape
 print(f"Loaded: N_tau={N_tau_full}, N_walkers={N_walkers}, dtau_stored={dtau_stored:.2f}")
@@ -258,11 +267,21 @@ for cur_name in currents:
         F_m1 = float(np.sum(F_m1_raw * W_m1_raw) / np.sum(W_m1_raw)) if W_m1_raw.sum() > 0 \
                else float(np.mean(F_m1_raw))
 
-        # Build Hankel 3pt matrix
-        C3pt = np.zeros((N_samps, Nt//2, Nt//2))
-        for ti in range(Nt//2):
-            for si in range(Nt//2):
-                C3pt[:, si, ti] = C3_binned[:, si + ti]
+        # Build the 3pt matrix on the Ritz grid. Prefer the two-time object;
+        # fall back to the old (incorrect) diagonal path for h5 that lack it.
+        m_h = Nt//2
+        if cur_name == 'C3_N' and C3_N_od_raw is not None and 2*(m_h-1) < C3_N_od_raw.shape[0]:
+            od = np.empty((C3_N_od_raw.shape[2], m_h, m_h))
+            for si in range(m_h):
+                for ti in range(m_h):
+                    od[:, si, ti] = (C3_N_od_raw[2*si, 2*ti, :] *
+                                     np.exp(-E_shift*(tau_full[2*si] + tau_full[2*ti])))
+            C3pt = bin_data(od, args.n_block)
+        else:
+            C3pt = np.zeros((N_samps, m_h, m_h))
+            for ti in range(m_h):
+                for si in range(m_h):
+                    C3pt[:, si, ti] = C3_binned[:, si + ti]
 
         bs_C3pt  = np.einsum('bn,n...->b...', bs_tensor,  C3pt)
         nbs_C3pt = np.einsum('oin,n...->oi...', nbs_tensor, C3pt)
