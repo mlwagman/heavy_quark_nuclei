@@ -58,7 +58,9 @@ parser.add_argument('--p_leg1_dir', type=float, nargs=3, default=[0, 0, 0], help
 parser.add_argument('--count_skip', type=int, default=1)
 parser.add_argument('--tau_min_plateau', type=float, default=None, help='Start of plateau region (default: 40% of max tau)')
 parser.add_argument('--tau_max_plateau', type=float, default=None, help='End of plateau region (default: max tau)')
+parser.add_argument('--seed', type=int, default=0, help='RNG seed (vary across parallel jobs for independent walker batches)')
 globals().update(vars(parser.parse_args()))
+onp.random.seed(seed)
 
 # only mesons and baryons with compact wavefunction
 assert N_coord in (2,3), "Only mesons (N_coord=2) and baryons (N_coord=3) supported"
@@ -726,7 +728,7 @@ for t_idx in range(len(gfmc_Rs)):
     K_avg = onp.sum(onp.real(Ks[t_idx]) * onp.abs(W)) / W_sum
     V_avg = onp.sum(onp.real(Vs[t_idx]) * onp.abs(W)) / W_sum
     
-    print(f"tau={tau:5.3f} MeV^-1: <H>={H_avg:+8.5f} MeV  <K>={K_avg:+8.5f} MeV  <V>={V_avg:+8.5f} MeV")
+    print(f"tau={tau:5.3f} MeV^-1: <H>={H_avg:+.12f} MeV  <K>={K_avg:+.12f} MeV  <V>={V_avg:+.12f} MeV")
 print("="*70 + "\n")
 
 ###

@@ -1,0 +1,19 @@
+# GFMC output. These are large (prodv2/ alone is 29 GB) and the repo already
+# carries 1042 committed .h5 in its history, which is why .git is ~62 GB.
+*.h5
+prod_a*/
+prodv2/
+coulval/
+smallalpha/
+coulsys/
+scalevar/
+alphas_sweep/
+dark_meson_*/
+dark_baryon_*/
+baryon_*/
+mrs_data/
+mtm_data/
+repro_out/
+out/
+*.zip
+__pycache__/

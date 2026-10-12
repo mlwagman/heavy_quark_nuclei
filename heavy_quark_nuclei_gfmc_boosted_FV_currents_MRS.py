@@ -70,7 +70,9 @@ parser.add_argument('--p_leg1_dir', type=float, nargs=3, default=[0, 0, 0], help
 parser.add_argument('--count_skip', type=int, default=1)
 parser.add_argument('--tau_min_plateau', type=float, default=None, help='Start of plateau region (default: 40% of max tau)')
 parser.add_argument('--tau_max_plateau', type=float, default=None, help='End of plateau region (default: max tau)')
+parser.add_argument('--seed', type=int, default=0, help='RNG seed (vary across parallel jobs for independent walker batches)')
 globals().update(vars(parser.parse_args()))
+onp.random.seed(seed)
 
 # only mesons and baryons with compact wavefunction
 assert N_coord in (2,3), "Only mesons (N_coord=2) and baryons (N_coord=3) supported"
@@ -529,6 +531,18 @@ if alpha_s is not None:
     # alpha_s(mQ) = 1 / (Beta0(0) * log(mQ^2/Lambda_dark^2))
     # => Lambda_dark = mQ * exp(-1 / (2*Beta0(0)*alpha_s))
     Lambda_dark = float(mQ) * onp.exp(-1.0 / (2.0 * Beta0(0) * alpha_s))
+    # NLO runs the coupling at TWO loops, so it needs its own Lambda anchored to
+    # the same physical input alpha_s(mQ) -- this is what find_Lambda() does per
+    # loop order in the SM branch. Solve
+    #     alpha_s = 1/(b0 L) - b1 ln(L)/(b0^3 L^2),   L = ln(mQ^2/Lambda^2)
+    # for L, then Lambda = mQ exp(-L/2). Reusing the 1-loop Lambda would leave
+    # alpha_s^{2-loop}(mQ) != alpha_s(mQ).
+    _b0, _b1 = float(Beta0(0)), float(Beta1(0))
+    _L1 = 1.0 / (_b0 * alpha_s)                      # 1-loop value of L
+    _sol = root_scalar(
+        lambda L: 1.0/(_b0*L) - _b1*onp.log(L)/(_b0**3 * L*L) - alpha_s,
+        bracket=[0.5*_L1, _L1], method='brentq')
+    Lambda_dark_2loop = float(mQ) * onp.exp(-0.5 * _sol.root)
     # dummy arrays so LambdaNLoopNf helpers don't crash if called
     Lambda4Loop = Lambda3Loop = Lambda2Loop = Lambda1Loop = [Lambda_dark] * 4
 else:
@@ -610,8 +624,22 @@ else:
         return result
 
 
-@jax.jit
-def Alpha_s2Loop(R):
+if alpha_s is not None:
+    # Dark sector: 2-loop running at nf=0, anchored at alpha_s(mQ).
+    # This branch was MISSING: Alpha_s2Loop fell through to the SM flavour tree
+    # below, which picks nf=3..6 by scale. With mu_cut=2 and mQ=1, mu' is always
+    # in [2, Mb), so it always chose nf=4 and --nf 0 never reached the NLO
+    # coupling. VB_NLO/VB_LO then drifted to Beta0(0)/Beta0(4)=1.32 instead of
+    # ->1 as alpha_s->0, and MRS NLO failed to reduce to Coulomb at weak coupling.
+    @jax.jit
+    def Alpha_s2Loop(R):
+        muPrime = mu_Prime(R)
+        LR = np.log(muPrime**2 / Lambda_dark_2loop**2)
+        return (1.0 / (Beta0(0) * LR)
+                - Beta1(0) * np.log(LR) / (Beta0(0)**3 * LR**2))
+else:
+  @jax.jit
+  def Alpha_s2Loop(R):
     muPrime = mu_Prime(R)
     result = np.where(
         muPrime < 1,
@@ -1165,7 +1193,7 @@ for t_idx in range(len(gfmc_Rs)):
     H_avg = onp.sum(onp.real(H) * onp.abs(W)) / W_sum
     K_avg = onp.sum(onp.real(Ks[t_idx]) * onp.abs(W)) / W_sum
     V_avg = onp.sum(onp.real(Vs[t_idx]) * onp.abs(W)) / W_sum
-    print(f"tau={tau:5.3f} MeV^-1: <H>={H_avg:+8.5f} MeV  <K>={K_avg:+8.5f} MeV  <V>={V_avg:+8.5f} MeV")
+    print(f"tau={tau:5.3f} MeV^-1: <H>={H_avg:+.12f} MeV  <K>={K_avg:+.12f} MeV  <V>={V_avg:+.12f} MeV")
 print("="*70 + "\n")
 
 ###

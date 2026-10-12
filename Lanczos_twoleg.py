@@ -44,17 +44,81 @@ parser.add_argument('--thresh',    type=float, default=0.05)
 parser.add_argument('--final_m',   type=int,   default=None)
 parser.add_argument('--cv_thresh', type=float, default=1.5,
                     help='max CV=std/mean of Ws2 for usable tau points')
-parser.add_argument('--extra_decay', type=float, default=0.015,
-                    help='extra decay rate added on top of measured c/2')
+parser.add_argument('--extra_decay', type=float, default=None,
+                    help='ABSOLUTE extra decay rate added to c/2. Leave unset '
+                         '(default) to use --extra_decay_rel*|c| instead, which '
+                         'is scale-covariant. A FIXED absolute value silently '
+                         'destroys weak-coupling runs: the physical rate c '
+                         'scales as alpha^2, so at alpha=0.001 c ~ 9e-7 while '
+                         '0.015 is ~1e4x larger -- the shifted correlator then '
+                         'underflows to zero, the effective mass comes back '
+                         'inf/nan, and Korrelator reports a singular matrix.')
+parser.add_argument('--extra_decay_rel', type=float, default=0.1875,
+                    help='extra decay as a FRACTION of the measured |c|. '
+                         'Default 0.1875 = 0.015/0.08 reproduces the old '
+                         'absolute default at alpha~0.3, but now follows the '
+                         'physical scale at any coupling.')
 parser.add_argument('--max_tau_pts', type=int, default=10,
                     help='max usable tau points fed to Korrelator; keep 2*N_ritz_max << sqrt(N_samps)')
 parser.add_argument('--cv_consec', type=int, default=3,
                     help='require CV > cv_thresh for this many consecutive pts before cutting')
 parser.add_argument('--spike_thresh', type=float, default=1.5,
                     help='CV above this is a single-step spike: interpolate from neighbors')
+parser.add_argument('--stab_nsig', type=float, default=1.0,
+                    help='consecutive Ritz ranks agreeing within this many sigma '
+                         'count as stable; used by F_stab (see stability_select)')
 # legacy arg, ignored
 parser.add_argument('--E_shift', type=float, default=None)
 args = parser.parse_args()
+
+
+def stability_select(F, E, nsig=1.0):
+    """Pick the Ritz rank by stability rather than taking the endpoint.
+
+    Low m is statistically precise but systematically contaminated: projecting
+    out excited states is the whole reason to increase m. High m eventually
+    becomes noise-dominated. The optimum is therefore the HIGHEST rank the data
+    still support, not the lowest and not the endpoint.
+
+    Find the longest run of consecutive ranks agreeing within nsig sigma and
+    return its LAST member, with the error inflated by the spread across the
+    window so residual rank dependence is carried as a systematic. If the whole
+    curve reads as stable -- which is what happens when the errors are too large
+    to discriminate -- this degenerates to the endpoint, i.e. to F_final, but
+    now with an honest systematic attached.
+
+    Returns (F, err, m_1based, window_length). window_length == 0 flags that no
+    stable run was found, in which case the endpoint is returned unchanged.
+    """
+    F = np.asarray(F, float); E = np.asarray(E, float)
+    M = len(F)
+    ok = np.zeros(M, bool)
+    for i in range(1, M):
+        if not (np.isfinite(F[i]) and np.isfinite(F[i-1])):
+            continue
+        s = np.sqrt(E[i]**2 + E[i-1]**2)
+        ok[i] = s > 0 and abs(F[i] - F[i-1]) <= nsig * s
+    best_len, best_a, best_b = 0, 0, 0
+    i = 1
+    while i < M:
+        if ok[i]:
+            j = i
+            while j + 1 < M and ok[j+1]:
+                j += 1
+            if j - i + 1 > best_len:
+                best_len, best_a, best_b = j - i + 1, i - 1, j
+            i = j + 1
+        else:
+            i += 1
+    if best_len == 0:
+        k = M - 1
+        while k > 0 and not np.isfinite(F[k]):
+            k -= 1
+        return float(F[k]), float(E[k]), k + 1, 0
+    win = F[best_a:best_b+1]
+    spread = float(np.nanmax(win) - np.nanmin(win))
+    k = best_b
+    return float(F[k]), float(np.sqrt(E[k]**2 + spread**2)), k + 1, best_b - best_a + 1
 
 # ── Load ────────────────────────────────────────────────────────────────────
 f = h5py.File(args.currents_file, 'r')
@@ -70,8 +134,14 @@ n_fit = min(11, N_tau_full)
 W_mean_full = Ws2_all.mean(axis=1)            # (N_tau,)
 log_W = np.log(np.maximum(W_mean_full[:n_fit], 1e-30))
 c = np.polyfit(tau_values[:n_fit], log_W, 1)[0]  # growth rate per tau unit
-E_shift = c / 2.0 + args.extra_decay
-print(f"Ws2 growth rate c = {c:.5f}  =>  E_shift = c/2 + {args.extra_decay} = {E_shift:.5f}")
+if args.extra_decay is not None:
+    extra = args.extra_decay
+    extra_src = f'absolute {extra:.6g}'
+else:
+    extra = args.extra_decay_rel * abs(c)
+    extra_src = f'{args.extra_decay_rel} * |c| = {extra:.6g}'
+E_shift = c / 2.0 + extra
+print(f"Ws2 growth rate c = {c:.6g}  =>  E_shift = c/2 + {extra_src} = {E_shift:.6g}")
 
 # ── Find usable tau window (CV < cv_thresh) ──────────────────────────────────
 W_std_full = Ws2_all.std(axis=1)
@@ -213,19 +283,40 @@ for cur_name in currents:
                                       nbs_C3pt[:, :, :m, :m], nbs_P, np.conj(nbs_P)))
             med_F_err[m-1] = make_boot_ci(inner_median(nbs_F, thresh=args.thresh))
 
+        Fs, Es, ms, wlen = stability_select(med_F, med_F_err, nsig=args.stab_nsig)
         print(f"  F vs m: {np.round(med_F, 5)}")
-        print(f"  F_m1={F_m1:.6f}  F_final={med_F[-1]:.6f} ± {med_F_err[-1]:.6f}")
-        results[label] = {'F_m1': F_m1, 'F_vs_m': med_F, 'F_vs_m_err': med_F_err}
+        print(f"  F_m1={F_m1:.6f}  F_final={med_F[-1]:.6f} +/- {med_F_err[-1]:.6f}"
+              f"  F_stab={Fs:.6f} +/- {Es:.6f} (m={ms}, window={wlen})")
+        results[label] = {'F_m1': F_m1, 'F_vs_m': med_F, 'F_vs_m_err': med_F_err,
+                          'F_stab': Fs, 'F_stab_err': Es, 'm_stab': ms,
+                          'stab_window': wlen}
 
 f.close()
 
 print(f"\nwriting {basename}_twoleg_Lanczos.csv")
 with open(basename + '_twoleg_Lanczos.csv', 'w', newline='') as csvfile:
-    writer = csv.DictWriter(csvfile, fieldnames=['current', 'F_m1', 'F_final', 'F_err'])
+    writer = csv.DictWriter(csvfile, fieldnames=['current', 'F_m1', 'F_final', 'F_err',
+                                                 'F_stab', 'F_stab_err', 'm_stab',
+                                                 'stab_window', 'm_max'])
     writer.writeheader()
     for label, res in results.items():
         writer.writerow({'current': label,
                          'F_m1':    res['F_m1'],
                          'F_final': res['F_vs_m'][-1],
-                         'F_err':   res['F_vs_m_err'][-1]})
+                         'F_err':   res['F_vs_m_err'][-1],
+                         'F_stab':  res['F_stab'],
+                         'F_stab_err': res['F_stab_err'],
+                         'm_stab':  res['m_stab'],
+                         'stab_window': res['stab_window'],
+                         'm_max':   len(res['F_vs_m'])})
+
+# The full F-vs-m curve, so convergence can be assessed later without re-running.
+# Previously this was computed, printed, and discarded.
+print(f"writing {basename}_twoleg_Lanczos_vsm.csv")
+with open(basename + '_twoleg_Lanczos_vsm.csv', 'w', newline='') as csvfile:
+    w = csv.DictWriter(csvfile, fieldnames=['current', 'm', 'F', 'F_err'])
+    w.writeheader()
+    for label, res in results.items():
+        for i, (v, e) in enumerate(zip(res['F_vs_m'], res['F_vs_m_err'])):
+            w.writerow({'current': label, 'm': i + 1, 'F': v, 'F_err': e})
 print("Done.")
