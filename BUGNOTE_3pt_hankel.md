@@ -44,6 +44,21 @@ fix moves the answer by 1.35% -- and AWAY from exact.
 So the defect is real and worth fixing, but it is a ~1% effect, not the
 explanation for the 4-6% MRS meson deficit.
 
+## Correction to what was previously circulated
+
+`run/02_mrs_meson.sh` in the August pack described the ~4.5% deficit as a
+"projection-time systematic, still being measured". That reading was wrong and
+is retracted. The evidence against it:
+
+- Coulomb at tau=30, 100 and 200 is -0.80%, -5.56%, -0.32%: not monotonic in
+  tau, so not a projection-time effect.
+- What looked like tau dependence was the extraction taking the HIGHEST Ritz
+  rank, whose ceiling m_max = N_tau/2 is set by n_step. Longer runs stored more
+  tau points, reached higher m, and drifted further. Fixed separately; the
+  radius is now quoted as value(stat)(rank).
+- The residual after that is ~4%, and this note's test shows the Hankel defect
+  accounts for ~1% of it.
+
 ## What the test did turn up
 
 The same table shows a 30% trial mismatch moving the extracted radius by 31%

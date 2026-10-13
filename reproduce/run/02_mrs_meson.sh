@@ -15,5 +15,7 @@ for Q in 0.0 0.05 0.1 0.2 0.35; do
 done
 $PY prod_extract_lanczos.py "$O" --max_tau_pts 40
 $PY "$ROOT/run/fit.py" "$O/prod_ME.csv" meson 26.89
-echo "Our full-statistics value is 25.69 +/- 0.37, 4.5% low. That offset is a"
-echo "projection-time systematic, still being measured."
+echo "Our full-statistics value is ~4% low against Numerov. NOTE: an earlier"
+echo "version of this script called that a projection-time systematic. That was"
+echo "wrong -- see BUGNOTE_3pt_hankel.md. Current reading: it is dominated by"
+echo "sensitivity to the trial wavefunction, with the 3pt Hankel defect ~1% of it."
