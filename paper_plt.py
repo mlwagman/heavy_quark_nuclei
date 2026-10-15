@@ -1,5 +1,6 @@
 ### Configures matplotlib for paper-quality plots (Latex fonts, font sizes, etc)
 
+import shutil
 import matplotlib.pyplot as plt
 
 pix_to_pt = 72/100
@@ -18,7 +19,7 @@ def load_latex_config():
     plt.rcParams['ytick.major.width'] = 0.5 * pix_to_pt
     plt.rcParams['ytick.minor.width'] = 0.5 * pix_to_pt
     plt.rcParams['legend.fontsize'] = 8
-    plt.rcParams['text.usetex'] = True
+    plt.rcParams['text.usetex'] = shutil.which('latex') is not None
     plt.rcParams['text.latex.preamble'] = r'\usepackage{amsmath,amssymb}'
     plt.rcParams['font.family'] = 'serif'
     plt.rcParams['font.serif'] = ['Computer Modern Roman']

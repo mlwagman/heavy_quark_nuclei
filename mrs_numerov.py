@@ -10,11 +10,16 @@ from scipy.linalg import eigh_tridiagonal
 ap = argparse.ArgumentParser()
 ap.add_argument('--OLO', default='NLO')
 ap.add_argument('--alpha_s', type=float, default=0.3)
+ap.add_argument('--mufac', type=float, default=1.0,
+                help='renormalization-scale factor; vary 0.5/1/2 for the '
+                     'perturbative (scale) uncertainty')
+ap.add_argument('--mu', type=float, default=2.0)
+ap.add_argument('--quiet', action='store_true')
 a = ap.parse_args()
 
 SRC = "heavy_quark_nuclei_gfmc_boosted_FV_currents_MRS.py"
 argv = (f"x --n_step 100 --n_walkers 2 --dtau_iMev 0.5 --count_skip 5 --nf 0 "
-        f"--Nc 3 --N_coord 2 --mQ 1.0 --mu 2.0 --mufac 1.0 --Rstar 0.35 "
+        f"--Nc 3 --N_coord 2 --mQ 1.0 --mu {a.mu} --mufac {a.mufac} --Rstar 0.35 "
         f"--spoila 1 --wavefunction compact --potential full --OLO {a.OLO} "
         f"--alpha_s {a.alpha_s} --Q_dir 1 0 0 --outdir /tmp/xx/ --Q_mag 0.0").split()
 src = open(SRC).read()
@@ -31,7 +36,11 @@ def V(r):
     return -1*(Nc-1)*np.array(VB(r/(mufac*mQ)))/r
 
 mu_red = 0.5
-rmax, h = 300.0, 0.01
+# box must comfortably contain the bound state; scale with the trial Bohr
+# radius (fixed rmax=300 silently truncated the wavefunction for a0 >~ 10,
+# e.g. alpha_s=0.01 gave a spurious unbound "E1>0")
+rmax = max(300.0, 40.0*float(ns['a0']))
+h = 0.01
 r = np.arange(h, rmax, h); n = len(r)
 main = 1.0/(mu_red*h*h) + V(r)
 off  = -0.5/(mu_red*h*h)*np.ones(n-1)
