@@ -323,36 +323,44 @@ def VB_MRS_definition(alpha, Order, s, o='singulet'):
 
     def Javad_jax_real(a, alpha):
         x = 1/(2 * Beta(0) * alpha)
-        term1 = np.exp(-x)
 
         def lower_incomplete_gamma(a_value, x_values):
 
+            # e^{-y} sum_n y^n / (n! (n + a)), y = -x_values = 1/(2 b0 alpha).
+            # y < 40: the series, as Poisson weights in log space (y^n and n!
+            # separately overflow for y > ~140, alpha_s < ~0.004, and gave NaN).
+            # y >= 40: the asymptotic form (1/y) sum_k (1-a)_k / y^k, exact to
+            # 1e-15 there; the series needs ~y terms, ~800 at alpha_s = 0.001.
             @partial(jax.jit)
-            def series_sum(a, x, tolerance=1e-10, max_iter=10000):
-                y = -x
+            def series_sum(a, x, tolerance=1e-15, max_iter=100000):
+                y_full = -x
+                y = np.minimum(y_full, 40.0)
+                logy = np.log(y)
+                ymax = np.max(y)
                 def body_fun(val):
                     n, total, last_term = val
-                    n_fact = jax.scipy.special.gamma(n + 1)
-                    current_term = (y ** n) / (n_fact * (n + a))
-                    new_total = total + current_term
-                    return (n + 1, new_total, current_term)
+                    current_term = np.exp(n * logy - y - jax.scipy.special.gammaln(n + 1.0)) / (n + a)
+                    return (n + 1, total + current_term, current_term)
 
                 def cond_fun(val):
                     n, total, last_term = val
-                    return (np.max(np.abs(last_term)) > tolerance) & (n < max_iter)
+                    return ((n < ymax + 1) | (np.max(np.abs(last_term)) > tolerance * np.max(np.abs(total))))\
+                        & (n < max_iter)
 
-                n0 = 0
                 total0 = np.zeros_like(y)
                 last_term0 = np.ones_like(y) * np.inf
-
-                _, total, _ = jax.lax.while_loop(cond_fun, body_fun, (n0, total0, last_term0))
-                return total
+                _, total, _ = jax.lax.while_loop(cond_fun, body_fun, (0, total0, last_term0))
+                ya = np.maximum(y_full, 40.0)
+                asym, t = np.zeros_like(ya), np.ones_like(ya)
+                for k in range(30):
+                    asym = asym + t
+                    t = t * (k + 1 - a) / ya
+                return np.where(y_full < 40.0, total, asym / ya)
 
             result = series_sum(a_value, x_values)
             return result
 
-        term3 = lower_incomplete_gamma(-a, -x)
-        result = term1 * term3
+        result = lower_incomplete_gamma(-a, -x)      # e^{-x} already inside the sum
         return np.real(result)
 
     def Javad_float_real(a, alpha):
@@ -543,6 +551,9 @@ if alpha_s is not None:
         lambda L: 1.0/(_b0*L) - _b1*onp.log(L)/(_b0**3 * L*L) - alpha_s,
         bracket=[0.5*_L1, _L1], method='brentq')
     Lambda_dark_2loop = float(mQ) * onp.exp(-0.5 * _sol.root)
+    # ln(Lambda^2), kept separately: Lambda^2 underflows for alpha_s < ~0.0016
+    LogLam2_dark = 2.0 * onp.log(float(mQ)) - 1.0 / (Beta0(0) * alpha_s)
+    LogLam2_dark_2loop = 2.0 * onp.log(float(mQ)) - _sol.root
     # dummy arrays so LambdaNLoopNf helpers don't crash if called
     Lambda4Loop = Lambda3Loop = Lambda2Loop = Lambda1Loop = [Lambda_dark] * 4
 else:
@@ -598,7 +609,7 @@ if alpha_s is not None:
     @jax.jit
     def Alpha_s1Loop(R):
         muPrime = mu_Prime(R)
-        LR = np.log(muPrime**2 / Lambda_dark**2)
+        LR = np.log(muPrime**2) - LogLam2_dark
         return 1.0 / (Beta0(0) * LR)
 else:
     @jax.jit
@@ -634,7 +645,7 @@ if alpha_s is not None:
     @jax.jit
     def Alpha_s2Loop(R):
         muPrime = mu_Prime(R)
-        LR = np.log(muPrime**2 / Lambda_dark_2loop**2)
+        LR = np.log(muPrime**2) - LogLam2_dark_2loop
         return (1.0 / (Beta0(0) * LR)
                 - Beta1(0) * np.log(LR) / (Beta0(0)**3 * LR**2))
 else:

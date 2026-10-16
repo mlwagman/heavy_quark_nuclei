@@ -65,7 +65,7 @@ for sp in grid:
         continue
     H = float(m.group(1))
     res.append((sp, H))
-    print(f'{sp:>8} {H:13.6f}')
+    print(f'{sp:>8} {H:13.6e}')
 
 if len(res) < 3:
     raise SystemExit('not enough points to locate a minimum')
@@ -79,7 +79,7 @@ else:
     c = np.polyfit(x[i-1:i+2], y[i-1:i+2], 2)
     best = -c[1] / (2 * c[0])
 print(f'\noptimal spoila = {best:.4f}   (grid min at {x[i]}, '
-      f'<H> = {y[i]:.6f})')
+      f'<H> = {y[i]:.6e})')
 if a.exact:
     print(f'cross-check: exact <r^2>_rel = {a.exact} -> E0 comparison only; '
           f'trial/true matching is the independent route.')

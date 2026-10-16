@@ -40,7 +40,7 @@ mu_red = 0.5
 # radius (fixed rmax=300 silently truncated the wavefunction for a0 >~ 10,
 # e.g. alpha_s=0.01 gave a spurious unbound "E1>0")
 rmax = max(300.0, 40.0*float(ns['a0']))
-h = 0.01
+h = max(0.01, float(ns['a0'])/1000)   # ~1000 points per Bohr radius
 r = np.arange(h, rmax, h); n = len(r)
 main = 1.0/(mu_red*h*h) + V(r)
 off  = -0.5/(mu_red*h*h)*np.ones(n-1)
