@@ -1,0 +1,33 @@
+# Generated GFMC output and analysis products. These are large (the MRS/baryon output
+# directories run to GB) and fully reproducible from the run scripts.
+atomic_units/
+mrs_korr/
+nw1000/
+mike_20260824/out/
+audit_plots/
+logs/
+
+# Raw correlator / configuration dumps, wherever they land
+*.h5
+.Hammys_*
+Hammys_*.h5
+Rs_*.h5
+currents_3pt_*.h5
+
+# Extraction products
+prod_ME*.csv
+*_korr_ME*.csv
+*_korr_ME*_boot.npy
+*_twoleg_Lanczos.csv
+
+# Figures
+*.png
+*.pdf
+
+# macOS / editor noise
+.DS_Store
+Icon?
+._*
+__pycache__/
+*.pyc
+.ruff_cache/
