@@ -1,12 +1,26 @@
 # GFMC matrix elements: audit findings and the korr-based pipeline
 
-Handoff for Ben, 2026-10-20. Covers the `mike_20260824` bundle: what we reproduced, two bugs we
+Handoff for Ben, 2026-10-20. Covers the `mike_20260824` bundle: what we reproduced, three bugs we
 found, the replacement extraction pipeline, and what to expect to change on your end.
 
-Short version: **two bugs, both in the extraction rather than the GFMC.** Fixing both brings every
-case we can check into agreement with its exact reference, including the MRS meson, which lands at
-26.75 ± 2.29 against the Numerov 26.89. Fixing only one of the two does not get there. The GFMC
-itself came out clean on every test we threw at it.
+Short version: **three bugs, all in the extraction rather than the GFMC.** The GFMC itself came out
+clean on every test we threw at it — including a check that its Q = 0 output is exact to all printed
+digits.
+
+1. The three-point Hankel is built from the symmetric-point diagonal instead of the two-time
+   correlator (§2). Demonstrable with zero statistics. You have independently fixed this on
+   `fix/3pt-hankel-offdiag`; see §9 for how the two fixes compare.
+2. The Ritz rank `m_max` is bounded by the time extent rather than by the data, with no criterion
+   for choosing it (§3). Still open in both pipelines.
+3. A single spiking walker out of 500 silently destroys the extraction, and nothing screens for it
+   (§3b). This one accounted for the whole of what we had attributed to (2) on the baryon.
+
+With all three handled, every case we can check agrees with its exact reference: MRS LO meson
+26.9 ± 2.3 against Numerov 26.89, Nc = 3 baryon 6.61 ± 0.33 against SVM 6.808, and the two Coulomb
+mesons against closed form.
+
+Where we corrected ourselves mid-investigation, the note says so — those are the places most worth
+your scepticism.
 
 ---
 
@@ -98,50 +112,111 @@ stopped guessing at mechanisms for it.
 
 ## 3. Bug 2 — the Ritz iteration count is not bounded by the statistics
 
-This is the larger of the two effects, and it bites hardest on exactly the diffuse / three-body
-cases the method is for.
-
 `Lanczos_twoleg.py`'s own `--max_tau_pts` help states the rule:
 
 > keep `2*N_ritz_max << sqrt(N_samps)`
 
 **Nothing enforces it.** korr picks `m_max` from the number of time slices, `final_m`/`m_window`
 then average the *last* few iterations, and those can sit entirely inside the region where the
-analysis has already broken down.
+analysis has already broken down. Neither pipeline enforces it numerically: your `n_bins = 100`
+gives `sqrt(N_samps) = 10` against `2*m_max = 24`, and our `n_block = 5` on 1000 walkers gives
+`sqrt = 14.1`.
 
-Caught on the Nc = 3 Coulomb baryon: `J^(m)` is clean and flat for m = 1…9, the bootstrap errors go
-`nan` from m = 10, and the automatic `final_m = 14`, `m_window = 3` takes the median over
-m = 12, 13, 14. It returned **F(0) = 2.9279** where the generator's own diagnostic shows the data is
-*exactly* right (`C3_N/C2 per-walker: min=max=3.0000000000`).
+**An attribution we got wrong, and then corrected.** We first caught this on the Nc = 3 baryon,
+where `J^(m)` was clean to m = 9, the bootstrap errors went `nan` from m = 10, and the automatic
+window averaged m = 12, 13, 14 to return F(0) = 2.9279 against an exact 3. We reported that as a
+statistics-driven conditioning limit, and pointed at the weight-growth rate `c` (0.04 for the
+Coulomb meson vs 0.27 for the baryon) as the explanation.
 
-The breakdown tracks the GFMC weight-growth rate `c = dlog<C2>/dτ`. The Coulomb meson has
-c ≈ 0.04 and survives to m = 12; the Nc = 3 baryon has c ≈ 0.27 and dies past m = 9. Expect any
-three-body, diffuse, or weakly bound case to need a tighter cap than a two-body one.
+**That was wrong.** It was a single spiking walker (§3b). With that one walker removed, `J^(m)` is
+flat from m = 1 to the maximum available and *no* breakdown is visible on the baryon at all. The
+rank issue below is real and still open, but it is **not** the larger of the three effects, and the
+weight-growth-rate story does not hold up: a weight-SNR criterion built on it fails outright (§7,
+item 0).
 
-**How much it matters.** On the MRS meson, m_max = 12 vs 16 moves `<r^2>` by **~1.5 absolute
-(~6%)** — three times the Hankel effect and comparable to the statistical error:
+**How much it matters — and a figure we previously overstated.** Scanning `m_max` on the MRS meson
+(our pipeline, `--n_block 1`, Numerov 26.89):
 
-| m_max | Q=0 charge check | `<r^2>` (z-exp) | vs 26.89 |
+| m_max | Q=0 charge check | `<r^2>` (z-exp, correlated) | vs 26.89 |
 |---|---|---|---|
-| **12** | 0.006% | **26.749 ± 2.291** | **−0.53%** |
-| 16 | 0.463% | 28.261 ± 2.267 | +5.10% |
+| 6 | 0.141% | 27.239 ± 2.624 | +1.30% |
+| 10 | 0.145% | 26.851 ± 2.308 | −0.14% |
+| 12 | 0.006% | 26.749 ± 2.291 | −0.53% |
+| 16 | **0.463%** | 28.261 ± 2.267 | +5.10% |
+| 20 | **0.551%** | 29.093 ± 2.267 | +8.19% |
 
-### The fix, and a free calibrator
+There is a clean **plateau**: `m_max` = 6–12 all agree within 1.3% of the exact value, well inside
+the statistical error, and `m_max` ≥ 16 breaks away monotonically. An earlier draft of this note
+quoted "~6%" as the rank systematic; that was wrong, because it averaged across the breakdown.
+**Inside the plateau the rank spread is ~1%.**
 
-Two changes, each backed by a measurement:
+### The fix: a veto, not an objective
 
 1. **`--n_block 1`** — use all walkers as independent samples. Justified because the walker
-   autocorrelation is negligible (see §5): `N_samps` goes from 100 to 500.
-2. **Calibrate `m_max` on the exact Q = 0 charge check.** At Q = 0, `J_N = N_coord · 1`, so
-   `J^(m) = N_coord` exactly, at every m, for every coupling — a known answer available for free in
-   every single run. Any deviation is the analysis breaking down, not physics. `gfmc_me_korr.py`
-   scans a ladder of `m_max` and reports the deviation.
+   autocorrelation is negligible (§5): `N_samps` goes from 100 to 500.
+2. **Use the exact Q = 0 charge check as a VETO on `m_max`, and quote the spread over the
+   survivors as the rank systematic.**
 
-One subtlety we got wrong first: picking the *largest* passing `m_max` parks you one step from
-breakdown (it chose 16 at 0.463% over 12 at 0.006%). The rule is now **largest `m_max` before the
-deviation starts rising persistently**, which selects 12 here.
+The distinction matters and we got it wrong twice before arriving at it. At Q = 0,
+`J_N = N_coord · 1` has **no off-diagonal elements**, so `J^(m) = N_coord` tests only that
+`P^L C2 P^R = 1` — the rotator *normalization*. It is therefore **structurally blind to
+excited-state contamination**, which is what sets the error at Q ≠ 0. (Same blindness as bug 1,
+for the same reason.) Minimizing it is meaningless: one rule we tried parked `m_max` at the
+tolerance edge, and another — reacting to any rise in the deviation — collapsed to `m_max = 3`
+while discarding `m_max = 12` at 0.011%, because two entries printing "0.000%" differed in the
+16th decimal.
+
+What it *does* detect is numerical breakdown of the pencil, which shows up in the normalization —
+empirically with a clean 3–4× step at exactly the `m_max` where `<r^2>` departs (table above). So:
+reject what it rejects (`--charge_tol`, default 0.0025), take the largest survivor, and scan the
+surviving range to get the rank systematic. `gfmc_me_korr.py --dir` does the veto automatically and
+prints the surviving range.
+
+Caveat: the 0.0025 threshold is calibrated on two systems (MRS meson, and the Nc=3 baryon after
+spike screening, where every `m_max` ≤ 15 passes at ≤ 0.149%). Re-check it on a new system.
 
 ---
+
+## 3b. Bug 3 — a single spiking walker destroys the extraction, and nothing screens for it
+
+Found 2026-10-20, while testing whether a weight-SNR criterion could set `m_max` adaptively (it
+cannot — see §7, item 0). The Nc = 3 baryon's noise profile was not a smooth exponential; it was
+dominated by **one walker out of 500**:
+
+* the pathology is confined to leg-1 row `i = 0` (mean CV 2.161, against 0.22–0.38 for every other
+  row);
+* walker 223 carries `w = +760` in cell `(0, 15)` — **24% of the total |weight| over all 500
+  walkers**. The same walker is `+1.739` in a clean cell;
+* a leverage score `max_ij |w| / median_w |w|` puts it at **170x** with the next-worst at **6x**.
+  The meson ensembles top out at 16–37x with smooth tails and no outlier, so this is isolated to
+  the baryon, not systemic.
+
+Dropping that one walker:
+
+| baryon, Q = 0, exact F(0) = 3 | all 500 | 499 |
+|---|---|---|
+| NaN iterations (of 15) | 4 | **0** |
+| F(0) | 2.941677 ± 0.107972 | **2.995531 ± 0.005376** |
+| E_0 vs SVM −0.267838 | −0.265077 ± 0.004588 | **−0.268157 ± 0.002035 (0.16σ)** |
+| `<r^2>` vs SVM 6.808 | 6.465 (−5.04%) | **6.605 ± 0.334 (−2.98%)** |
+
+So **the baryon had no `m_max` problem at all** — `J^(m)` runs clean and flat from m = 1 to the
+maximum available once the spike is gone. What looked like a conditioning limit was one walker, and
+it also inflated the error bar 20×.
+
+Two things worth knowing:
+
+* **Binning cannot fix this.** Binning preserves the grand mean *exactly*, and the Hankel entries
+  **are** sample means. Measured across a 25× range of `n_block` the failure count barely moved
+  (4 → 5 NaN). Mitigation has to act on the data.
+* **You already had machinery for this and we had dropped it.** `Lanczos_twoleg.py`'s
+  `--spike_thresh` interpolates time slices whose CV exceeds a threshold. Our rewrite lost it;
+  `gfmc_me_korr.py --spike_leverage 50` is the per-walker replacement (it leaves unaffected walkers
+  at a contaminated time alone, where slice interpolation replaces them all). Your
+  `fix/3pt-hankel-offdiag` branch does not screen for spikes either.
+
+Because row `i = 0` feeds the Hankel's first row and column, a spike there contaminates **every**
+iteration `m`, not only large ones.
 
 ## 4. What we changed in your code
 
@@ -235,8 +310,8 @@ otherwise `mrs_numerov.py` (2-body MRS, same potential code `exec`'d from the pr
 |---|---|---|---|
 | Coulomb meson, α = 0.3, 1000 walkers | 18.692 ± 0.975 | 18.75 exact | −0.31% |
 | Coulomb meson, α = 3/4 | 3.0966 ± 0.2442 | 3.000 exact | +3.2% (+0.4σ) |
-| Nc = 3 baryon, α = 3/4 | 6.4646 ± 0.3432 | 6.808 SVM | −5.0% (−1.0σ) |
-| MRS LO meson, α_s = 0.3 | 26.749 ± 2.291 | 26.89 Numerov | −0.53% |
+| Nc = 3 baryon, α = 3/4 (spike-screened) | 6.605 ± 0.334 | 6.808 SVM | −3.0% (−0.6σ) |
+| MRS LO meson, α_s = 0.3 | 26.9 ± 2.3 (stat) ± 0.3 (rank) | 26.89 Numerov | −0.0% |
 
 Ground-state energies, as an independent check on the spectroscopy that produces the rotators
 (these weights carry no trial-energy subtraction, so `E_0 − E_T` is absolute — confirmed on the
@@ -246,7 +321,7 @@ Coulomb case where E_0 = −μ(αC_F)²/2 is closed form):
 |---|---|---|
 | Coulomb meson, α = 0.3 | −0.040261 ± 0.000390 | −0.0400 exact |
 | MRS LO meson, α_s = 0.3 | −0.028154 ± 0.000163 | −0.028033 Numerov |
-| Nc = 3 baryon, α = 3/4 | −0.265077 ± 0.004588 | −0.267838 SVM |
+| Nc = 3 baryon, α = 3/4 (spike-screened) | −0.268157 ± 0.002035 | −0.267838 SVM |
 
 Two shape results worth flagging:
 
@@ -265,6 +340,17 @@ Two shape results worth flagging:
 ## 7. Things worth cross-checking on your end
 
 Roughly in order of how much we think they matter.
+
+0. **A weight-SNR criterion for `m_max` does not work — we tried it and it failed.** The idea is
+   attractive: the pencil at iteration `m` reaches two-point index `2m-1` (korr says so itself:
+   *"the Hankel matrices of iteration m need C(t) through t=2m-1"*), and GFMC weight variance grows
+   exponentially, so `SNR(k) = sqrt(N_samps)/CV(k)` ought to set the cap. Measured over 5 systems
+   spanning `lambda` = 0.022-0.080 and `N_samps` = 500/1000, **no threshold separates usable from
+   broken iterations**: the broken ones had *higher* median SNR (130.5) than the usable ones (84.4),
+   and purity never exceeded 0.83. The reason is §3b — the noise is not smooth exponential growth
+   but localized spikes, so there is nothing for an SNR cut to bite on. `mmax_snr_study.py` has the
+   harness if you want to re-run it on your own data; the negative result is worth knowing before
+   anyone else tries it.
 
 1. **Re-run `02_mrs_meson.sh` through the new pipeline** and see whether you also land near 26.75.
    This is the single most informative check, since your 25.69 is the number we could not explain.
@@ -322,9 +408,15 @@ So you don't re-audit them:
   cannot reproduce your pipeline (it fails outright here), so we have no mechanism, only the
   observation that it lies within the extraction-settings spread. Treat "projection-time
   systematic" as unverified rather than established.
-- **The MRS result rests on one `m_max` choice.** 26.749 ± 2.291 is at m_max = 12, selected by the
-  Q = 0 calibration. The m_max = 16 alternative gives 28.26. We quote ±1.5 as the `m_max`
-  systematic; it is the dominant one and deserves a proper study rather than a two-point scan.
+- **Reproducing the quoted numbers needs non-default flags.** The table above is at
+  `--n_block 1`, and the baryon additionally at `--spike_leverage 50`. The committed defaults
+  (`n_block = 5`, no spike screening) give different answers — notably ≈25.8 for MRS. Either pass
+  the flags or change the defaults before comparing.
+- **The veto threshold rests on two systems.** `--charge_tol 0.0025` cleanly separates plateau from
+  breakdown on the MRS meson and the screened baryon, but that is n = 2.
+- **Only the baryon has been re-run with spike screening.** The meson and MRS numbers above predate
+  it. Their leverage scores are modest (16–37x, smooth tails) so we expect little change, but it
+  has not been checked.
 - **Everything here is at 500–1000 walkers**, i.e. roughly 2× your production errors. The α = 0.3
   Coulomb case taught us to be careful: at 500 walkers it looked like a −5% systematic, and at 1000
   it was −0.31%. Several of the smaller numbers above may be statistics.
@@ -366,3 +458,87 @@ the meson's known `16/a_0²` exactly, which is how we validated it; for the MRS 
 are *not* O(1) here — the singularity is a pole, not a bounded branch cut, so the exact meson series
 is 1, −8, +32, −88, +192. Stability in `k_max` and `t_cut` is the diagnostic, not coefficient size;
 `k_max ≥ 3` is needed (validated against the SVM baryon form factor, which it reproduces to 0.0σ).
+
+---
+
+## 9. Comparison with your `fix/3pt-hankel-offdiag` branch
+
+Audited 2026-10-20 against commit `e5145b7` (merge-base `0051df0`), read-only.
+
+**Bug 1: you fixed it, correctly, in two places.** `Lanczos_twoleg.py` subsamples the two-time array
+at even indices `[2*si, 2*ti]`, which keeps you self-consistently on the `2Δ` grid — so your `/2` on
+the Ritz rate stays correct — and `gfmc_korr.py` works on the step-`Δ` grid. `E_shift` cancels
+identically in both. At matched `m_max = 12` our two pipelines agree on the MRS meson to 0.1
+(25.78 ± 1.79 vs 25.89 ± 0.88).
+
+We also note the diagnosis predates this branch: `twoleg_gevp.py` on `main` already states that the
+old code "fed the DIAGONAL C3(tau_i+tau_j) into the off-diagonal Hankel slots". We rediscovered a
+bug you had already found. Two things there may still be worth having: the zero-statistics
+isolation, and the observation that Q = 0 makes it *identically* inert (which is why `F(0)` could
+never catch it).
+
+One claim worth retracting: `twoleg_gevp.py` says the defect makes the meson radius overshoot to
+`a = 8.75` vs analytic `5.0` — a ~200% effect — while `Lanczos_twoleg.py:132` on this branch says
+1.35%, and we measure ~4% on MRS. The `8.75` figure looks wrong.
+
+**The one substantive difference: which two-point vector you pair with the 3pt.** You use row 0 of
+`Ws2_offdiag` (length `N_tau`); we average its antidiagonals (length `2 N_tau − 1`). Both are
+unbiased, but the longer vector doubles the attainable Krylov dimension, and yours caps `m` at
+`N_tau/2`. On the Coulomb meson, where the answer is *exactly* 18.75:
+
+| | F(0), exact = 2 | `<r^2>` |
+|---|---|---|
+| your `gfmc_korr.py`, `m` capped at 6 | 2.00717 | 17.824 ± 0.953 (−4.9%) |
+| ours, `m_max = 12` | 1.99529 | 18.522 ± 0.664 (−1.2%) |
+
+You cannot reach the plateau with a 13-entry 2pt vector. The antidiagonal spread on that file is
+0.3–1.0%, so averaging it is a legitimate variance reduction rather than a trick.
+
+**Bug 2: not addressed on the branch.** `gfmc_korr.py:23` hardcodes `m_max = 12` with no CLI flag,
+no coupling to `N_samps`, and no rank systematic in the output; passing no `config` means korr's
+defaults then median over m = 9, 10, 11. On the MRS meson that setting violates the exact Q = 0
+identity by 0.79% and sits outside the plateau we measure. Note also that
+`radius_with_rank_systematic.py` — which states the problem correctly, "the drift (4-7%) exceeds the
+statistical error (~1.5%). Quoting a single m ... hides it" — reads a file only the now-disused
+`Lanczos_twoleg.py` produces, so it is orphaned from the live pipeline. **That tool had the right
+idea and we would suggest reviving it;** our §3 veto is the complementary half (which ranks to
+exclude), not a replacement for quoting the spread.
+
+**Bug 3: not screened for** on your branch either, and `Lanczos_twoleg.py`'s spike interpolation is
+applied to `Ws2_all` but not to `C3_N_od_raw`, so if it ever fires the 2pt and the two-time 3pt no
+longer describe the same walker ensemble at that slice.
+
+**MRS generator.** You set `N_leg2 = max(n_step, 1)` unconditionally, which your own comment notes
+costs ~2x the leg-2 work. Because `_safe_leg2` closes over the single `N_leg2`, all 16 leg-2 runs
+lengthen — but only `C3_N` is stored two-time, so the extra cost buys nothing. Ours threads the
+length through and runs full-length for C2 and `J_N` only (~25%). Both preserve exact diagonal
+consistency and both preserve `conj(r01)`; we verified the other six currents are bitwise unchanged
+by the lengthening (identical `dtau`, same `rand_draws` prefix).
+
+**Minor issues found, all cheap to fix:**
+
+* `gfmc_reduce.py:19` — the `'korr' not in x` filter tests the whole path, not the basename, so any
+  run directory whose *path* contains "korr" silently finds zero files. Confirmed: our `mrs_korr/`
+  directory reduces to "no currents_3pt h5 found". It exits loudly, so nothing is corrupted.
+* `gfmc_korr.py:21` — blanket `warnings.filterwarnings('ignore')` suppresses korr's
+  `MatrixElementWindowWarning` (which exists to catch a 2pt/3pt window mismatch) along with every
+  singular-matrix warning. It would not fire today, but it will hide it later.
+* `gfmc_korr.py:36` — `assume_aligned=True` is unnecessary (both rotators come from the same
+  `SpectrumResult`, so the fingerprints match by construction) and disables the only guard against
+  feeding mismatched ensembles.
+* `Lanczos_twoleg.py:273` — silent fallback to the known-wrong construction if `C3_N_offdiag` is
+  absent, with no warning; and the two-time branch is gated on `cur_name == 'C3_N'`, so S, V0, Vi,
+  Ai, T0i, Tij all still use the wrong Hankel there.
+* `reproduce/run/00_env.sh:6` prefers `python3.13` then `python3`; on this machine only
+  `python3.12` has `korr`, and the guard warns rather than failing.
+
+**Where we genuinely disagree and neither of us can settle it from the code:** the binning
+convention. You fix the bin *count* (`n_bins = 100`), we fix the bin *size* (`n_block`, and the
+numbers in this note use 1). Fixing the count holds `N_samps` constant across datasets, which is the
+right variable for the `2m << sqrt(N_samps)` rule; fixing the size holds the autocorrelation
+argument constant. It interacts with both bug 2 and the error treatment, so it is worth agreeing on
+explicitly rather than by default.
+
+Your bootstrap error treatment (`gfmc_korr.py:58-67`, refitting every aligned draw) is the right one
+and matches what we converged on independently; our diagonal χ²/dof of 0.011 on the same data is the
+symptom you describe in `NOTES.md`.

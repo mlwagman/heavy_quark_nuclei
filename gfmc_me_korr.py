@@ -84,11 +84,17 @@ p.add_argument('--calibrate_m_max', action='store_true', default=True,
 p.add_argument('--no_calibrate_m_max', dest='calibrate_m_max', action='store_false')
 p.add_argument('--m_max_ladder', type=int, nargs='+', default=None,
                help='candidate m_max values for the calibration, ascending')
-p.add_argument('--charge_tol', type=float, default=0.005,
-               help='max fractional deviation of F(0) from N_coord for an m_max to pass')
-p.add_argument('--charge_rise_runs', type=int, default=2,
-               help='consecutive increases in the Q=0 deviation that mark the onset of '
-                    'breakdown; m_max is taken from before that point')
+p.add_argument('--charge_tol', type=float, default=0.0025,
+               help='VETO threshold: reject an m_max whose exact Q=0 charge check misses N_coord '
+                    'by more than this fraction. 0.0025 separates the stable region from the '
+                    'broken one on both systems measured (MRS meson: 0.006-0.145%% stable vs '
+                    '0.46-0.55%% broken; Nc=3 baryon after spike screening: all <= 0.149%%). '
+                    'Calibrated on two systems only -- re-check it on a new one.')
+p.add_argument('--spike_leverage', type=float, default=0.0,
+               help='drop walkers whose leverage max_ij |w|/median_w|w| exceeds this (0 = off). '
+                    'A single spiking walker biases the Hankel means directly and binning cannot '
+                    'remove it. With --dir the drop set is fixed once from the Q=0 file so the '
+                    'cross-Q bootstrap ensembles stay aligned.')
 p.add_argument('--current', default='C3_N',
                help="which current; only C3_N has two-time data stored")
 p.add_argument('--n_block', type=int, default=5, help='walkers averaged per sample')
@@ -155,7 +161,42 @@ def bin_walkers(x, n_block):
     return np.moveaxis(head, -1, 0)
 
 
-def load(fn, current, max_tau_pts=None):
+def walker_leverage(ws2_od):
+    r"""Per-walker spike score: :math:`\max_{ij} |w_{ij}| / {\rm median}_w |w_{ij}|`.
+
+    GFMC importance weights occasionally blow up on a single walker, and because the Hankel
+    entries are sample *means* such a walker biases them directly.  Binning cannot help -- it
+    leaves the grand mean exactly invariant -- so the spike has to be dealt with in the data.
+    (``Lanczos_twoleg.py`` handled the same phenomenon by interpolating whole time slices whose CV
+    exceeded ``--spike_thresh``; this is the per-walker version, which does not touch the
+    unaffected walkers at a contaminated time.)
+
+    The score is deliberately a max over cells rather than an average: a walker that is fine
+    almost everywhere and catastrophic in one cell is exactly the case that matters.  Measured
+    scores separate cleanly -- the Nc=3 baryon has one walker at 170x with the next at 6x, while
+    the meson ensembles top out around 16-37x with a smooth tail and no outlier.
+    """
+    lev = np.zeros(ws2_od.shape[2])
+    for i in range(ws2_od.shape[0]):
+        for j in range(ws2_od.shape[1]):
+            med = np.median(np.abs(ws2_od[i, j]))
+            if med > 0:
+                lev = np.maximum(lev, np.abs(ws2_od[i, j]) / med)
+    return lev
+
+
+def spike_walkers(fn, thresh):
+    """``(indices, leverage)`` of walkers above the leverage threshold in one file."""
+    import h5py
+    with h5py.File(fn, 'r') as f:
+        if 'Ws2_offdiag' not in f:
+            return np.array([], dtype=int), None
+        ws2_od = np.real(f['Ws2_offdiag'][:])
+    lev = walker_leverage(ws2_od)
+    return np.where(lev > thresh)[0], lev
+
+
+def load(fn, current, max_tau_pts=None, drop_walkers=None):
     """Read the generator's output.  Returns a dict of real arrays plus metadata."""
     import h5py
     with h5py.File(fn, 'r') as f:
@@ -189,6 +230,16 @@ def load(fn, current, max_tau_pts=None):
         for k in ('C3_od', 'Ws2_od'):
             if k in out:
                 out[k] = out[k][:n, :n]
+
+    if drop_walkers is not None and len(drop_walkers):
+        n_w = out['Ws2_all'].shape[1]
+        keep = np.setdiff1d(np.arange(n_w), np.asarray(drop_walkers, dtype=int))
+        out['Ws2_all'] = out['Ws2_all'][:, keep]
+        out['C3_diag'] = out['C3_diag'][keep, :]
+        for k in ('C3_od', 'Ws2_od'):
+            if k in out:
+                out[k] = out[k][:, :, keep]
+        out['n_dropped'] = int(n_w - len(keep))
     return out
 
 
@@ -314,14 +365,15 @@ def shifted_energy(spec, info):
     return e / info['dt_unit'] - info['E_shift'], err / info['dt_unit']
 
 
-def analyse(fn, m_max=None, out_name=None, verbose=True):
+def analyse(fn, m_max=None, out_name=None, verbose=True, drop_walkers=None):
     m_max = args.m_max if m_max is None else m_max
-    d = load(fn, args.current, args.max_tau_pts)
+    d = load(fn, args.current, args.max_tau_pts, drop_walkers)
     n_coord = len(d['masses'])
     if verbose:
         say(f"\n{'=' * 78}\n{os.path.basename(fn)}\n{'=' * 78}")
         say(f"  Q^2 = {d['q2']:.6g}  (Q = {np.sqrt(d['q2']):.6g})   N_coord = {n_coord}   "
-            f"N_tau = {len(d['tau'])}   N_walkers = {d['Ws2_all'].shape[1]}")
+            f"N_tau = {len(d['tau'])}   N_walkers = {d['Ws2_all'].shape[1]}"
+            + (f"  ({d['n_dropped']} spiking walker(s) dropped)" if d.get('n_dropped') else ""))
 
     C2, C3, info = build(d, args.hankel, args.extra_decay_rel, args.extra_decay,
                          args.n_block, args.n_fit_growth, verbose=verbose)
@@ -405,7 +457,7 @@ def q_of(fn):
     return float(m.group(1)) if m else None
 
 
-def calibrate_m_max(fn_q0, ladder, tol):
+def calibrate_m_max(fn_q0, ladder, tol, drop_walkers=None):
     r"""Pick the largest Ritz iteration cap that still passes the exact :math:`Q=0` charge check.
 
     At :math:`Q = 0` the number operator is :math:`J_N = N_{\rm coord}\mathbb{1}`, so
@@ -426,7 +478,8 @@ def calibrate_m_max(fn_q0, ladder, tol):
     tmp = os.path.join(tempfile.mkdtemp(prefix='korr_mmax_'), 'probe_korr_ME.csv')
     for mm in ladder:
         try:
-            r = analyse(fn_q0, m_max=mm, out_name=tmp, verbose=False)
+            r = analyse(fn_q0, m_max=mm, out_name=tmp, verbose=False,
+                        drop_walkers=drop_walkers)
         except Exception as e:                      # a cap past the conditioning limit can throw
             say(f"  m_max={mm:<3d}  failed ({e!s:.60})")
             continue
@@ -438,31 +491,31 @@ def calibrate_m_max(fn_q0, ladder, tol):
 
     passing = [r for r in rows if r[4]]
     if not passing:
-        say("  WARNING: no m_max passed; falling back to the smallest tried")
+        say("  WARNING: no m_max passed the veto; falling back to the smallest tried")
         return ladder[0]
 
-    # Taking simply the largest passing m_max is the wrong rule when the charge-check deviation
-    # degrades monotonically: the largest value then sits right at the tolerance edge, one step
-    # from the breakdown, which is exactly where we do not want to be.  (On the MRS meson that
-    # rule chose m_max=16 at 0.463% over m_max=12 at 0.006%.)  Instead stop at the last m_max
-    # before the deviation starts rising persistently, and among the remaining candidates take the
-    # largest -- biggest Krylov space that is still demonstrably in the clean region.
-    cut = len(passing)
-    rises = 0
-    for i in range(1, len(passing)):
-        if passing[i][3] > passing[i - 1][3]:
-            rises += 1
-            if rises >= args.charge_rise_runs:
-                cut = i - rises + 1
-                break
-        else:
-            rises = 0
-    kept = passing[:max(cut, 1)]
-    best = kept[-1][0]
-    if cut < len(passing):
-        say(f"  deviation rises persistently from m_max={passing[cut][0]}; "
-            f"restricting to the clean region m_max <= {best}")
-    say(f"  -> using m_max = {best}  (charge check {100 * kept[-1][3]:+.3f}%)")
+    # The charge check is a VETO, not an objective to minimize.
+    #
+    # Structurally, J_N = N_coord * 1 at Q=0 has no off-diagonal elements, so J^(m) = N_coord
+    # tests only that P^L C2 P^R = 1 -- the rotator normalization.  It is therefore *blind to
+    # excited-state contamination*, which is what sets the error at Q != 0.  Minimizing it is
+    # meaningless: two earlier rules here both failed badly for that reason, one parking m_max at
+    # the tolerance edge and one (reacting to any rise, including ties differing in the 16th
+    # decimal) collapsing to m_max=3 while discarding m_max=12 at 0.011%.
+    #
+    # What the check *does* detect is numerical breakdown of the pencil, which shows up in the
+    # normalization.  Measured on the MRS meson, the deviation is 0.006-0.145% across the whole
+    # region where <r^2> is stable (m_max 6-12, spanning 26.75-27.24 against the Numerov 26.89)
+    # and steps up 3-4x to 0.46-0.55% exactly where <r^2> breaks away (+5.1% at 16, +8.2% at 20).
+    # So: reject what it rejects, take the largest survivor, and quote the spread over the
+    # surviving range as the rank systematic rather than pretending one m_max is the answer.
+    best = passing[-1][0]
+    rejected = [r[0] for r in rows if not r[4]]
+    say(f"  veto rejects m_max in {rejected}" if rejected else "  veto rejects nothing")
+    say(f"  -> using m_max = {best} (largest survivor; charge check "
+        f"{100 * passing[-1][3]:+.3f}%)")
+    say(f"  surviving range m_max {passing[0][0]}..{best}: scan it and quote the spread of the "
+        f"final answer as the rank systematic")
     return best
 
 
@@ -487,18 +540,35 @@ def run_dir(d):
     by_q = {q_of(f): f for f in files if q_of(f) is not None}
     say(f"{len(by_q)} Q values in {d}: " + "  ".join(f"{q:g}" for q in sorted(by_q)))
 
+    # One drop set for every Q.  It must be identical across Q or the aligned bootstrap replicas
+    # that fit_ff.py relies on no longer describe the same ensemble.
+    drop = None
+    if args.spike_leverage > 0:
+        if 0.0 not in by_q:
+            say("  no Q=0 file; cannot fix a spike drop set, leaving all walkers in")
+        else:
+            drop, lev = spike_walkers(by_q[0.0], args.spike_leverage)
+            if lev is None:
+                say("  no Ws2_offdiag; spike screening skipped")
+                drop = None
+            else:
+                srt = np.sort(lev)[::-1]
+                say(f"  walker leverage: worst {srt[0]:.0f}x, next {srt[1]:.0f}x, "
+                    f"{srt[2]:.0f}x   threshold {args.spike_leverage:g}x")
+                say(f"  dropping {len(drop)} of {len(lev)} walkers: {list(map(int, drop))}")
+
     m_max = args.m_max
     if m_max is None and args.calibrate_m_max:
         if 0.0 not in by_q:
             say("  no Q=0 file; cannot calibrate m_max, leaving it automatic")
         else:
             ladder = args.m_max_ladder or [3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20]
-            m_max = calibrate_m_max(by_q[0.0], ladder, args.charge_tol)
+            m_max = calibrate_m_max(by_q[0.0], ladder, args.charge_tol, drop)
 
     rows, failed = [], []
     for q in sorted(by_q):
         try:
-            r = analyse(by_q[q], m_max=m_max, verbose=False)
+            r = analyse(by_q[q], m_max=m_max, verbose=False, drop_walkers=drop)
         except Exception as e:
             say(f"  FAILED Q={q}: {e!s:.100}")
             failed.append(q)
