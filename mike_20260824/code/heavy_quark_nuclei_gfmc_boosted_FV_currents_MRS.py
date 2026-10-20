@@ -1247,6 +1247,17 @@ print(f"Computing ALL current operators: N, S, V0, Vi(x,y,z), Ai(x,y,z), T0i(x,y
 C2_2tau = onp.zeros(N_tau)
 Ws2_all = onp.zeros((N_tau, n_walkers), dtype=onp.complex128)
 
+# Two-time (off-diagonal) correlators, as the Coulomb generator already stores:
+#   C3_N_od[i,j] = C_J(t_i dtau, t_j dtau)   -- leg-1 time first, leg-2 time second
+#   Ws2_od[i,j]  = C_2((t_i + t_j) dtau)
+# These are what a Rayleigh-Ritz / Lanczos matrix-element analysis actually needs.  The diagonal
+# arrays below hold only the symmetric point C_J(t dtau, t dtau), from which the (sigma,tau)
+# Hankel matrix CANNOT be reconstructed: doing so silently assumes C_J depends on sigma+tau alone,
+# which holds only when [J,H] = 0 -- true at Q=0, where J_N = N_coord*1, and false at Q != 0,
+# exactly where the form-factor shape lives.
+C3_N_od = onp.zeros((N_tau, N_tau, n_walkers), dtype=onp.complex128)
+Ws2_od  = onp.zeros((N_tau, N_tau, n_walkers), dtype=onp.complex128)
+
 C3_N = onp.zeros((n_walkers, N_tau), dtype=onp.complex128)
 C3_S = onp.zeros((n_walkers, N_tau), dtype=onp.complex128)
 C3_V0 = onp.zeros((n_walkers, N_tau), dtype=onp.complex128)
@@ -1267,16 +1278,24 @@ for i_t, t in enumerate(t_indices):
     tau = t * dtau_iMev
     print(f"\n--- tau = {tau:.3f} MeV^-1 (slice {i_t+1}/{N_tau}) ---")
 
-    N_leg2 = max(t, 1)  # leg-2 only needs t steps (not full n_step)
-    rand2_shared = onp.random.random(size=(N_leg2, R.shape[0]))
+    N_leg2 = max(t, 1)  # leg-2 only needs t steps (not full n_step) for the DIAGONAL C_J(t,t)
+    # ...but the two-time correlators need leg 2 carried out to the end of the stored grid, so
+    # that C_J(t_i, t_j) exists for every t_j, not only t_j <= t_i.  Only C2 and J_N are run to
+    # full length (they are the two the matrix-element analysis consumes); the other six currents
+    # keep the short path below.  Cost goes from 8*(n_step/2) to 6*(n_step/2) + 2*n_step, i.e.
+    # about 25% more, rather than the 2x a blanket change would cost.  Taking the diagonal from
+    # these same full-length sequences keeps Ws2_all[k] == Ws2_od[k,k] exactly.
+    N_leg2_full = max(n_step, 1)
+    rand2_shared = onp.random.random(size=(N_leg2_full, R.shape[0]))
     rng_seed = onp.random.randint(0, 2**31)
 
     onp.random.seed(rng_seed)
-    ws_seq_C2 = _run_leg2_Ws_sequence(R, S, W1, rand2_shared, N_leg2=N_leg2)
+    ws_seq_C2 = _run_leg2_Ws_sequence(R, S, W1, rand2_shared, N_leg2=N_leg2_full)
 
-    Ws2 = onp.array(ws_seq_C2[min(t, N_leg2)])
+    Ws2 = onp.array(ws_seq_C2[t])
     Ws2_all[i_t] = Ws2
     C2_2tau[i_t] = onp.sum(Ws2.real)
+    Ws2_od[i_t, :, :] = onp.array([ws_seq_C2[t2] for t2 in t_indices])
 
     # sink-side boosted-bra reweighting needs the CONJUGATE CM phase e^{-iq.R_cm}:
     # J = Sum_k e^{iq.x_k} = e^{+iq.R_cm} * (relative part), so conj(r01) cancels the
@@ -1322,21 +1341,27 @@ for i_t, t in enumerate(t_indices):
         J_Tij_avg = onp.sum(currents['Tij'][:, i] * onp.abs(W1)) / W_sum
         print(f"  <J_T{label}> = {J_Tij_avg.real:+.6f} + {J_Tij_avg.imag:+.6f}i")
 
-    def _safe_leg2(Ws_seed, label=""):
-        """Run leg-2 only if Ws_seed is non-trivial; return zeros otherwise."""
+    def _safe_leg2(Ws_seed, label="", n_leg2=None):
+        """Run leg-2 only if Ws_seed is non-trivial; return zeros otherwise.
+
+        ``n_leg2`` defaults to the short length that the diagonal needs; pass ``N_leg2_full`` for
+        the currents whose two-time correlator is stored.
+        """
+        n_leg2 = N_leg2 if n_leg2 is None else n_leg2
         if onp.max(onp.abs(Ws_seed)) < 1e-30:
             print(f"  Skipping leg-2 for {label}: Ws_seed is zero (spin-0 baryon)")
-            return [onp.zeros_like(Ws_seed)] * (N_leg2 + 1)
+            return [onp.zeros_like(Ws_seed)] * (n_leg2 + 1)
         if onp.any(onp.isnan(Ws_seed)):
             print(f"  WARNING: NaN in Ws_seed for {label}! Setting to zero.")
-            return [onp.zeros_like(Ws_seed)] * (N_leg2 + 1)
+            return [onp.zeros_like(Ws_seed)] * (n_leg2 + 1)
         onp.random.seed(rng_seed)
-        return _run_leg2_Ws_sequence(R, S, Ws_seed, rand2_shared, N_leg2=N_leg2)
+        return _run_leg2_Ws_sequence(R, S, Ws_seed, rand2_shared, N_leg2=n_leg2)
 
-    # number operator J_N
+    # number operator J_N -- run to full length so the two-time C_J(t_i, t_j) is available
     Ws_seed_N = W1 * (currents['N'] * r01)
-    ws_seq_N = _safe_leg2(Ws_seed_N, "J_N")
+    ws_seq_N = _safe_leg2(Ws_seed_N, "J_N", n_leg2=N_leg2_full)
     C3_N[:, i_t] = onp.array(ws_seq_N[t])
+    C3_N_od[i_t, :, :] = onp.array([ws_seq_N[t2] for t2 in t_indices])
 
     C3_N_t = onp.array(ws_seq_N[t])
     C2_t = onp.array(ws_seq_C2[t])
@@ -1482,6 +1507,9 @@ with h5py.File(filename, 'w') as f:
     f.create_dataset("masses", data=onp.array(masses))
     f.create_dataset("C2_2tau", data=C2_2tau)
     f.create_dataset("Ws2_all", data=Ws2_all)
+    # the two-time correlators the Rayleigh-Ritz matrix-element analysis consumes
+    f.create_dataset("C3_N_offdiag", data=C3_N_od)
+    f.create_dataset("Ws2_offdiag",  data=Ws2_od)
     f.create_dataset("C3_N", data=C3_N)
     f.create_dataset("C3_S", data=C3_S)
     f.create_dataset("C3_V0", data=C3_V0)
