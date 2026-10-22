@@ -542,3 +542,39 @@ explicitly rather than by default.
 Your bootstrap error treatment (`gfmc_korr.py:58-67`, refitting every aligned draw) is the right one
 and matches what we converged on independently; our diagonal χ²/dof of 0.011 on the same data is the
 symptom you describe in `NOTES.md`.
+
+---
+
+## 10. Do not turn on `--resampling` with this estimator
+
+We considered population control as the structural fix for the unbranched weight-variance growth
+(§3b) and stopped after reading the implementation. **It is incompatible with the correlated
+two-leg estimator**, for two independent reasons:
+
+1. `afdmc_lib_col/lib_col.py:1100` draws the branching indices from each run's *own* weights:
+   ```python
+   p = W_abs / W_sum
+   inds = onp.random.choice(onp.arange(W.shape[0]), size=W.shape[0], p=p_np)
+   ```
+   The generator reseeds `onp.random` to the same `rng_seed` before the C2 and the J_N leg-2 runs,
+   so the RNG *state* matches — but `p` does not, because `Ws_seed_N = W1 * currents['N'] * r01`
+   while the C2 run uses `W1`. Different `p` with the same state gives different indices, so the
+   two runs branch to different walker sets and the per-walker correspondence that `C3/C2` and the
+   two-time correlators depend on is destroyed.
+2. The diffusion draws from the same global RNG (`lib_col.py:25`, `:50`), so a `choice` call that
+   consumes RNG state also desynchronizes the trajectories, not just the indices.
+
+**It would pass the Q = 0 charge check.** `p` is normalized and `J_N = N_coord` is a constant
+factor at Q = 0, so the probabilities — and therefore the indices — coincide there. The corruption
+appears only at Q != 0, i.e. only in the form factor. Same blind spot as bug 1, and the reason
+`compute_form_factor_bootstrap`'s docstring ("resampling with the same indices preserves
+per-walker correlations") describes a requirement the evolution code does not meet.
+
+The weight reset itself is correct and unbiased — `W -> mean|W| * phase(W)` with multinomial draws
+gives `E[sum W_new] = sum W_old` — so this is not a bug in the resampling, it is a structural
+incompatibility. Making it usable would require drawing one index set from the C2 weights and
+applying it to **every** current's leg-2 run, plus taking the diffusion draws from an explicit
+per-run stream rather than the global RNG.
+
+Until then: leave `--resampling` off (the default), and control the weight tails with the
+`--spike_leverage` screen and the `m_max` veto instead.
