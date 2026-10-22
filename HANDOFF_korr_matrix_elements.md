@@ -150,7 +150,47 @@ the statistical error, and `m_max` ≥ 16 breaks away monotonically. An earlier 
 quoted "~6%" as the rank systematic; that was wrong, because it averaged across the breakdown.
 **Inside the plateau the rank spread is ~1%.**
 
-### The fix: a veto, not an objective
+### RESOLVED: the mechanism is excited-state admixture, and no proxy can detect it
+
+Settled 2026-10-22 by doing the one thing all the earlier m_max studies had not: looking at
+`J^(m)` at **Q != 0**.  Every previous study used Q = 0, where the current is
+`N_coord * 1` and therefore cannot show contamination at all.
+
+`J^(m)` is flat for m <~ 11 at every Q, then drifts **downward**, by an amount that grows sharply
+with Q (MRS LO meson, 500 walkers, `--n_block 1`):
+
+| Q | plateau (m <= 11) | large m (m ~ 15-19) | drift |
+|---|---|---|---|
+| 0.0 | ~2.000 | ~1.991 | **-0.5%** |
+| 0.2 | ~1.690 | ~1.663 | **-1.6%** |
+| 0.5 | ~0.865 | ~0.790 | **-8.7%** |
+
+That Q-dependence identifies the cause.  Excited states of a diffuse, weakly bound system are
+*more* diffuse, so their form factors fall faster; admixture therefore drags `J(Q)` down
+increasingly with Q.  Since `F/F(0) = J(Q)/J(0)` and `J(0)` barely moves while `J(0.5)` falls
+8.7%, the ratio steepens -- which **inflates** `<r^2>`.  That is exactly the +5.10% / +8.19%
+seen at m_max 16 / 20.  It also explains why the effect is strong here and absent on the Coulomb
+meson: a tiny gap (E_1 - E_0 = 0.021) and a diffuse state make the admixture both easy and costly.
+
+**Three candidate criteria, three distinct structural failures.**  Worth recording so nobody
+re-tries them:
+
+| criterion | why it cannot work |
+|---|---|
+| Q = 0 charge check | **Charge conservation.** `J = N_coord` for *every* state, so admixture cannot change `J(0)` at all.  Blind by a conservation law, not by bad luck or poor statistics. |
+| korr residual / gap bound | **Energies are variational.** An admixture `eps` gives an energy error `~eps^2` but a matrix-element error `~eps`.  Measured: the residual window shrinks monotonically 1.6e-1 -> 7.8e-3 while `J^(m)` drifts 8%.  The gap window is undefined on this data throughout. |
+| weight SNR / N_eff | Measures **noise**, not contamination.  No threshold separated usable from broken iterations over 5 systems (`mmax_snr_study.py`). |
+
+**What does work is the observable's own plateau.**  Scan `m` at the largest Q that matters, take
+the flat region, quote its spread as the rank systematic.  That gives m <~ 11 here, consistent with
+the `<r^2>` plateau over m_max 6-12 (26.75-27.24 against the Numerov 26.89).  It is what
+`radius_with_rank_systematic.py` on Ben's branch already did -- now with a mechanism behind it.
+
+`gfmc_me_korr.py` prints `J^(m)` against `m`, `t_reach(m)` and both bound windows, so the plateau
+is visible in every run.  Nothing selects `m_max` automatically any more, by design; the Q = 0
+diagnostic is still printed but explicitly labelled as not a selection rule.
+
+### Superseded: the veto, which was also wrong
 
 1. **`--n_block 1`** — use all walkers as independent samples. Justified because the walker
    autocorrelation is negligible (§5): `N_samps` goes from 100 to 500.

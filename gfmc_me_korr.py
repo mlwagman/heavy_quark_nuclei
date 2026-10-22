@@ -347,6 +347,44 @@ def run_korr(C2, C3, cfg, label='', verbose=True):
     return me, spec
 
 
+def bound_widths_by_m(spec):
+    r"""``{m: (residual width, gap width)}`` for the ground state, from ``spec.bounds``.
+
+    korr keeps rigorous bounds as *windows* rather than central values
+    (``BoundDistributions``: ``lower_by_m``/``upper_by_m`` are
+    ``{m: {window: (n_outer, n_states)}}``).  The ``'residual'`` window brackets
+    :math:`-\ln\lambda`; the ``'gap'`` window is the Davis-Kahan one, i.e. the eigenvector
+    statement.  The width of each is the honest "how far could this Ritz state be from an exact
+    one" at that iteration, and it is available at **every** Q -- unlike the Q=0 charge check,
+    which charge conservation makes blind to admixture.
+
+    Caveat on what these can and cannot catch: both windows are statements about **energies**.
+    A Ritz vector with admixture :math:`\epsilon` of an excited state has an energy error of
+    order :math:`\epsilon^2` (the Rayleigh quotient is variational) but a *matrix-element* error
+    of order :math:`\epsilon`.  So an energy-based bound is quadratically insensitive to exactly
+    the contamination that spoils a three-point function, and a small residual window is not by
+    itself evidence that :math:`J^{(m)}` is clean.
+    """
+    out = {}
+    b = getattr(spec, 'bounds', None)
+    if b is None:
+        return out
+    for m in getattr(b, 'lower_by_m', {}):
+        row = {}
+        for win in ('residual', 'gap'):
+            lo = b.lower_by_m[m].get(win)
+            hi = b.upper_by_m[m].get(win)
+            if lo is None or hi is None:
+                continue
+            lo = np.real(np.asarray(lo, dtype=float))
+            hi = np.real(np.asarray(hi, dtype=float))
+            if lo.ndim == 2 and lo.shape[1] > 0:
+                row[win] = float(np.nanmedian(hi[:, 0] - lo[:, 0]))
+        if row:
+            out[m] = row
+    return out
+
+
 def ground_state(me):
     """``(J_00, err)`` -- the ground-state diagonal matrix element and its 1-sigma half-width."""
     return float(me.matrix[0, 0]), float(np.asarray(me.errors['final']['me'])[0, 0])
@@ -392,9 +430,16 @@ def analyse(fn, m_max=None, out_name=None, verbose=True, drop_walkers=None):
     stack = me.stack_by_m()[:, 0, 0]
     stack_err = me.stack_by_m(source='err')[:, 0, 0]
     if verbose:
-        say("\n  J^(m) vs m (ground state):")
+        rbm = bound_widths_by_m(spec)
+        say("\n  J^(m) vs m (ground state), with korr's rigorous bound windows:")
+        say(f"    {'m':>3} {'t_reach':>9} {'J^(m)':>12} {'err':>10} "
+            f"{'resid window':>13} {'gap window':>12}")
         for m, v, e in zip(me.all_m, stack, stack_err):
-            say(f"    m={m:3d}   {v:+.6f} +/- {e:.6f}")
+            row = rbm.get(m, {})
+            def _f(x, w=12):
+                return f"{x:{w}.3e}" if x is not None and np.isfinite(x) else f"{'--':>{w}}"
+            say(f"    {m:3d} {(2 * m - 1) * info['dt_unit']:9.2f} {v:+12.6f} {e:10.6f} "
+                f"{_f(row.get('residual'), 13)} {_f(row.get('gap'))}")
         say(f"\n  E_0 - E_T   = {E[0]:+.6f} +/- {E_err[0]:.6f}"
             + (f"   (E_1 - E_T = {E[1]:+.6f})" if len(E) > 1 else ""))
         say(f"  F (VMC, tau=0)  = {F_m1:.6f}")
@@ -458,65 +503,57 @@ def q_of(fn):
 
 
 def calibrate_m_max(fn_q0, ladder, tol, drop_walkers=None):
-    r"""Pick the largest Ritz iteration cap that still passes the exact :math:`Q=0` charge check.
+    r"""Report the exact :math:`Q=0` charge check across a ladder of ``m_max``.
 
-    At :math:`Q = 0` the number operator is :math:`J_N = N_{\rm coord}\mathbb{1}`, so
-    :math:`J^{(m)} = N_{\rm coord}` **exactly**, at every :math:`m`, for every coupling -- a known
-    answer available for free in every run.  Any deviation is the analysis breaking down, not
-    physics, which makes it the natural calibrator for ``m_max``.
+    .. warning::
+        **This is a diagnostic, not a selection rule.**  Three successive attempts to turn it into
+        one all failed, and the reason is now understood: it has neither the structural nor the
+        statistical power to choose ``m_max``.
 
-    This matters because nothing else enforces the rule ``Lanczos_twoleg.py``'s own ``--max_tau_pts``
-    help states -- *"keep 2*N_ritz_max << sqrt(N_samps)"*.  korr picks ``m_max`` from the number of
-    time slices, and ``final_m``/``m_window`` then average the **last** few iterations, which can
-    sit entirely inside the region where the bootstrap has already gone singular.  On the Nc=3
-    baryon that returned F(0) = 2.93 where the data was exactly 3.00.
+        *Structurally*, :math:`J_N = N_{\rm coord}\mathbb{1}` at :math:`Q=0` has no off-diagonal
+        elements, so :math:`J^{(m)} = N_{\rm coord}` probes only the rotator normalization
+        :math:`P^L C_2 P^R = 1` and is blind to excited-state contamination -- which is what sets
+        the error at :math:`Q \neq 0`.
+
+        *Statistically*, measured over four datasets and 18 ``m_max`` settings, **every** charge
+        check sat within 1.56 sigma of exact.  The MRS meson at ``m_max=20``, where
+        :math:`\langle r^2\rangle` is +8.19% wrong, pulls only 1.56 sigma -- indistinguishable
+        from the ``m_max=12`` plateau point at 0.02 sigma.  A fractional-deviation threshold that
+        appears to separate them is thresholding on noise, and it behaves accordingly: on the
+        alpha=3/4 meson it rejected ``m_max`` 8 and 10 (0.90 and 1.01 sigma) while accepting 12
+        (0.63 sigma), and the 1000-walker meson rejected *more* settings than the 500-walker subset
+        it contains.
+
+    What to do instead: scan ``m_max``, find the plateau **in the observable itself**, and quote its
+    spread as the rank systematic.  On the MRS meson that is unambiguous --
+    :math:`\langle r^2\rangle` = 27.24, 26.85, 26.75 for ``m_max`` 6, 10, 12 and then 28.26,
+    29.09 at 16, 20 -- and it is what ``radius_with_rank_systematic.py`` on Ben's branch already
+    did.  korr's residual and gap bounds are the principled a-priori alternative and are not yet
+    wired in here.
+
+    Returns ``None``: callers must set ``m_max`` explicitly.
     """
     import tempfile
-    say(f"\n{'=' * 78}\ncalibrating m_max on the exact Q=0 charge check "
-        f"(tol {100 * tol:.2f}% of N_coord)\n{'=' * 78}")
-    best, rows = None, []
+    say(f"\n{'=' * 78}\nQ=0 charge-check DIAGNOSTIC across m_max (not a selection rule -- see "
+        f"the docstring)\n{'=' * 78}")
     tmp = os.path.join(tempfile.mkdtemp(prefix='korr_mmax_'), 'probe_korr_ME.csv')
     for mm in ladder:
         try:
             r = analyse(fn_q0, m_max=mm, out_name=tmp, verbose=False,
                         drop_walkers=drop_walkers)
-        except Exception as e:                      # a cap past the conditioning limit can throw
+        except Exception as e:
             say(f"  m_max={mm:<3d}  failed ({e!s:.60})")
             continue
-        dev = abs(r['F'] - r['N_coord']) / r['N_coord']
-        ok = np.isfinite(r['F_err']) and dev <= tol
-        rows.append((mm, r['F'], r['F_err'], dev, ok))
+        dev = abs(r['F'] - r['N_coord'])
+        pull = dev / r['F_err'] if np.isfinite(r['F_err']) and r['F_err'] > 0 else np.inf
+        ps = f"{pull:5.2f}" if np.isfinite(pull) else "  inf"
+        flag = '  <- error non-finite' if not np.isfinite(r['F_err']) else ''
         say(f"  m_max={mm:<3d}  F(0) = {r['F']:.6f} +/- {r['F_err']:.6f}   "
-            f"deviation {100 * dev:+.3f}%   {'PASS' if ok else 'fail'}")
-
-    passing = [r for r in rows if r[4]]
-    if not passing:
-        say("  WARNING: no m_max passed the veto; falling back to the smallest tried")
-        return ladder[0]
-
-    # The charge check is a VETO, not an objective to minimize.
-    #
-    # Structurally, J_N = N_coord * 1 at Q=0 has no off-diagonal elements, so J^(m) = N_coord
-    # tests only that P^L C2 P^R = 1 -- the rotator normalization.  It is therefore *blind to
-    # excited-state contamination*, which is what sets the error at Q != 0.  Minimizing it is
-    # meaningless: two earlier rules here both failed badly for that reason, one parking m_max at
-    # the tolerance edge and one (reacting to any rise, including ties differing in the 16th
-    # decimal) collapsing to m_max=3 while discarding m_max=12 at 0.011%.
-    #
-    # What the check *does* detect is numerical breakdown of the pencil, which shows up in the
-    # normalization.  Measured on the MRS meson, the deviation is 0.006-0.145% across the whole
-    # region where <r^2> is stable (m_max 6-12, spanning 26.75-27.24 against the Numerov 26.89)
-    # and steps up 3-4x to 0.46-0.55% exactly where <r^2> breaks away (+5.1% at 16, +8.2% at 20).
-    # So: reject what it rejects, take the largest survivor, and quote the spread over the
-    # surviving range as the rank systematic rather than pretending one m_max is the answer.
-    best = passing[-1][0]
-    rejected = [r[0] for r in rows if not r[4]]
-    say(f"  veto rejects m_max in {rejected}" if rejected else "  veto rejects nothing")
-    say(f"  -> using m_max = {best} (largest survivor; charge check "
-        f"{100 * passing[-1][3]:+.3f}%)")
-    say(f"  surviving range m_max {passing[0][0]}..{best}: scan it and quote the spread of the "
-        f"final answer as the rank systematic")
-    return best
+            f"dev {100 * dev / r['N_coord']:+.3f}%   pull {ps} sigma{flag}")
+    say("  Non-finite errors are a real signal (the bootstrap went singular); the central-value")
+    say("  deviations are not -- they scatter within ~1.5 sigma whether or not the extraction is")
+    say("  sound.  Choose m_max from the plateau in the final observable instead.")
+    return None
 
 
 def run_dir(d):
@@ -563,7 +600,9 @@ def run_dir(d):
             say("  no Q=0 file; cannot calibrate m_max, leaving it automatic")
         else:
             ladder = args.m_max_ladder or [3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20]
-            m_max = calibrate_m_max(by_q[0.0], ladder, args.charge_tol, drop)
+            calibrate_m_max(by_q[0.0], ladder, args.charge_tol, drop)
+            say("  m_max left to korr's default; pass --m_max explicitly, chosen from the "
+                "plateau in the observable.")
 
     rows, failed = [], []
     for q in sorted(by_q):
