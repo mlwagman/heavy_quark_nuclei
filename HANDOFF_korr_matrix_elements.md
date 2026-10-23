@@ -150,11 +150,46 @@ the statistical error, and `m_max` ≥ 16 breaks away monotonically. An earlier 
 quoted "~6%" as the rank systematic; that was wrong, because it averaged across the breakdown.
 **Inside the plateau the rank spread is ~1%.**
 
-### RESOLVED: the mechanism is excited-state admixture, and no proxy can detect it
+### The large-m drift: NOT resolved (a ~2 sigma hint), and an earlier overclaim
 
-Settled 2026-10-22 by doing the one thing all the earlier m_max studies had not: looking at
-`J^(m)` at **Q != 0**.  Every previous study used Q = 0, where the current is
-`N_coord * 1` and therefore cannot show contamination at all.
+**Correction, 2026-10-23.** An earlier version of this section claimed the large-m behaviour was
+established as excited-state admixture.  **It is not.**  Tested properly -- differencing the
+*aligned* bootstrap replicas draw-by-draw, so the correlation between m settings cancels -- the
+effect is only ~2 sigma and its cause is undetermined:
+
+| quantity | value | significance |
+|---|---|---|
+| `J^(5) - J^(18)`, Q=0.2 | 0.0336 +/- 0.0230 | 1.46 sigma |
+| `J^(5) - J^(18)`, Q=0.5 | 0.0820 +/- 0.0491 | 1.67 sigma |
+| `<r^2>`, m_max 12 -> 16 | +1.682 +/- 0.943 | 1.78 sigma |
+| `<r^2>`, m_max 12 -> 20 | +2.634 +/- 1.303 | **2.02 sigma** |
+
+A noise-induced bias in a nonlinear estimator scales as `1/N_samps`, so halving the walkers should
+roughly double it; genuine convergence is statistics-independent.  Measured ratios were 1.10 (Q=0.2)
+and 1.32 (Q=0.5) -- but each carries ~70% uncertainty, so they cannot distinguish 1 from 2.  **The
+discriminator is right; the data cannot resolve it.**  Reaching 5 sigma on the `<r^2>` drift needs
+the error down from 1.30 to ~0.52, i.e. roughly 6x the statistics (~3000 walkers).
+
+Two further cautions on the earlier reasoning:
+
+* The exact reference does **not** discriminate either.  At +/- 2.3 statistical, the plateau
+  (-0.5%) and the large-m values (+8.2%) are *both* within ~1 sigma of the Numerov 26.89.
+* In exact Rayleigh-Ritz, larger m monotonically *improves* ground-state isolation, so the naive
+  expectation is that small m is the contaminated end.  For the admixture reading to hold, the
+  large-m behaviour has to be noise-driven rather than variational -- which is exactly what is
+  unresolved.
+
+**What IS established** is the positive result, and it is the practically useful one: the plateau is
+genuinely flat rather than merely unresolved.  `m_max` 10 -> 12 agree to 0.014 +/- 0.561
+(0.03 sigma), and 6 -> 12 to -0.267 +/- 1.250, with correlated errors far tighter than the 2.3 on
+the absolute value.  **The rank systematic within m <= 12 is <= ~0.6 absolute (~2%).**
+
+The observations below stand as *observations* -- the Q-dependence pattern is suggestive of
+admixture and is why that hypothesis was formed -- but at 1.5 sigma per point the pattern itself is
+not established.  Read them as a hypothesis worth testing with more statistics, not a conclusion.
+
+Done by looking at `J^(m)` at **Q != 0**, which all the earlier m_max studies had skipped: they
+used Q = 0, where the current is `N_coord * 1` and cannot show contamination at all.
 
 `J^(m)` is flat for m <~ 11 at every Q, then drifts **downward**, by an amount that grows sharply
 with Q (MRS LO meson, 500 walkers, `--n_block 1`):
@@ -165,11 +200,11 @@ with Q (MRS LO meson, 500 walkers, `--n_block 1`):
 | 0.2 | ~1.690 | ~1.663 | **-1.6%** |
 | 0.5 | ~0.865 | ~0.790 | **-8.7%** |
 
-That Q-dependence identifies the cause.  Excited states of a diffuse, weakly bound system are
+That Q-dependence is *consistent with* admixture (unproven, see the correction above).  Excited states of a diffuse, weakly bound system are
 *more* diffuse, so their form factors fall faster; admixture therefore drags `J(Q)` down
 increasingly with Q.  Since `F/F(0) = J(Q)/J(0)` and `J(0)` barely moves while `J(0.5)` falls
-8.7%, the ratio steepens -- which **inflates** `<r^2>`.  That is exactly the +5.10% / +8.19%
-seen at m_max 16 / 20.  It also explains why the effect is strong here and absent on the Coulomb
+8.7%, the ratio steepens -- which **inflates** `<r^2>`.  That matches the +5.10% / +8.19% seen at m_max 16 / 20 --
+though at 2 sigma the drift itself is not established.  It also explains why the effect is strong here and absent on the Coulomb
 meson: a tiny gap (E_1 - E_0 = 0.021) and a diffuse state make the admixture both easy and costly.
 
 **Three candidate criteria, three distinct structural failures.**  Worth recording so nobody
