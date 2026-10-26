@@ -20,23 +20,39 @@ from korr.analysis.ritz_rotators import RitzRotators
 from korr.analysis.matrix_elements import matrix_elements
 warnings.filterwarnings('ignore')
 
-def J00(npz, m_max=12, n_boot=100):
-    d = np.load(npz); out = {}
-    for iq, Q in enumerate(d['Q']):
-        c2 = d['Ws2'][iq][0].T                      # (Nb, Nt)
-        c3 = d['C3N'][iq].transpose(2, 1, 0)        # (Nb, sigma, tau)
-        Nt = c2.shape[1]; k = np.arange(Nt)
-        c = np.polyfit(k[:6], np.log(np.abs(c2.mean(0)[:6])), 1)[0]
-        sh = np.exp(-(c + 0.05) * k)
-        spec = korr.analysis.spectroscopy(c2 * sh, ritz_coeffs=True, m_max=min(m_max, Nt // 2),
-                                          n_outer=n_boot, n_inner=n_boot,
-                                          sensitivity=False, summarize=False)
-        me = matrix_elements(c3 * (sh[:, None] * sh[None, :])[None],
-                             RitzRotators.from_result(spec, side='L'),
-                             RitzRotators.from_result(spec, side='R'), assume_aligned=True)
-        out[float(Q)] = (float(np.real(np.asarray(me.final['me'])[0, 0])),
-                         np.real(np.asarray(me.final_boot['me'])[:, 0, 0]))
-    return out
+def me00(d, iq, m_max, n_boot):
+    """ground-state matrix element of J at momentum index iq, and its bootstrap draws"""
+    c2 = d['Ws2'][iq][0].T                      # (Nb, Nt)
+    c3 = d['C3N'][iq].transpose(2, 1, 0)        # (Nb, sigma, tau)
+    Nt = c2.shape[1]; k = np.arange(Nt)
+    c = np.polyfit(k[:6], np.log(np.abs(c2.mean(0)[:6])), 1)[0]
+    sh = np.exp(-(c + 0.05) * k)
+    spec = korr.analysis.spectroscopy(c2 * sh, ritz_coeffs=True, m_max=min(m_max, Nt // 2),
+                                      n_outer=n_boot, n_inner=n_boot,
+                                      sensitivity=False, summarize=False)
+    me = matrix_elements(c3 * (sh[:, None] * sh[None, :])[None],
+                         RitzRotators.from_result(spec, side='L'),
+                         RitzRotators.from_result(spec, side='R'), assume_aligned=True)
+    return (float(np.real(np.asarray(me.final['me'])[0, 0])),
+            np.real(np.asarray(me.final_boot['me'])[:, 0, 0]))
+
+def calibrate_m(d, N, m_hi=12, tol=2e-3):
+    """Largest m_max for which the Q=0 charge check F(0) = N holds to tol at every
+    m <= m_max (Wagman): beyond it the Ritz iteration outruns the statistics."""
+    iq0 = int(np.argmin(np.abs(d['Q'])))
+    m_hi = min(m_hi, d['Ws2'].shape[1] // 2)
+    best = 3
+    for m in range(3, m_hi + 1):
+        if abs(me00(d, iq0, m, 40)[0] / N - 1) > tol: break
+        best = m
+    return best
+
+def J00(npz, m_max=None, n_boot=100, N=None):
+    """J_00(Q) for every Q. m_max=None calibrates it on the Q=0 charge check (needs N)."""
+    d = np.load(npz)
+    if m_max is None:
+        m_max = calibrate_m(d, N if N else (3 if 'baryon' in npz else 2))
+    return {float(Q): me00(d, iq, m_max, n_boot) for iq, Q in enumerate(d['Q'])}
 
 def fit(Qs, F, E, system):
     ok = (F > 0.05) & (F < 1)                                 # start from the p=2 inversion
@@ -72,7 +88,7 @@ if __name__ == '__main__':
     if out_csv in args: args.remove(out_csv)
     npz, system = args[0], args[1]
     ref = float(args[2]) if len(args) > 2 else None
-    o = J00(npz)
+    o = J00(npz, N=3 if system == 'baryon' else 2)
     F0, r2, er, p, Qs, F, E = radius(o, system)
     line = f'{npz}: F(0)={F0:.5f}  <r^2>={r2:.6g} +/- {er:.3g}  p={p:.2f}'
     if ref: line += f'  ref {ref:.6g}  {100*(r2/ref-1):+.2f}%  ({(r2-ref)/er:+.1f} sigma)'

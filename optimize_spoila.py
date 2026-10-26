@@ -26,6 +26,8 @@ ap = argparse.ArgumentParser()
 ap.add_argument('--OLO', default='LO')
 ap.add_argument('--alpha_s', type=float, required=True)
 ap.add_argument('--N_coord', type=int, required=True)
+ap.add_argument('--mu', type=float, default=2.0, help='MRS mu_cut (units of mQ), 3.4 x the 2-loop Lambda_d in the paper scheme')
+ap.add_argument('--mufac', type=float, default=1.0, help='MRS scale factor lambda in mu\' = sqrt(mu^2 + lambda^2/r^2)')
 ap.add_argument('--grid', default='0.80,0.85,0.90,0.95,1.00,1.05')
 ap.add_argument('--n_walkers', type=int, default=2000)
 ap.add_argument('--exact', type=float, default=None,
@@ -49,7 +51,7 @@ for sp in grid:
            '--dtau_iMev', str(DTAU), '--count_skip', str(CSKIP),
            '--nf', '0', '--Nc', '3', '--N_coord', str(a.N_coord),
            '--alpha_s', str(a.alpha_s), '--OLO', a.OLO,
-           '--mQ', '1.0', '--mu', '2.0', '--mufac', '1.0', '--Rstar', '0.35',
+           '--mQ', '1.0', '--mu', str(a.mu), '--mufac', str(a.mufac), '--Rstar', '0.35',
            '--spoila', str(sp), '--wavefunction', 'compact',
            '--potential', 'full', '--color', '1x1',
            '--Q_dir', '1', '0', '0', '--Q_mag', '0.0',

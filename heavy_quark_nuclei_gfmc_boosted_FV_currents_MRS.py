@@ -59,7 +59,8 @@ parser.add_argument('--log_mu_r', type=float, default=1)
 parser.add_argument('--L', type=float, default=0.0)
 parser.add_argument('--Lcut', type=int, default=5)
 parser.add_argument('--spoilS', type=float, default=1)
-parser.add_argument('--wavefunction', type=str, default="compact")
+parser.add_argument('--wavefunction', type=str, default="compact", help='compact (exp(-sum r_ij/a0)) or svm')
+parser.add_argument('--svm_trial', type=str, default="", help='npz from svm_baryon.py --save_trial (with --wavefunction svm)')
 parser.add_argument('--color', type=str, default="1x1")
 parser.add_argument('--potential', type=str, default="full")
 parser.add_argument('--masses', type=float, default=0., nargs='+')
@@ -76,7 +77,8 @@ onp.random.seed(seed)
 
 # only mesons and baryons with compact wavefunction
 assert N_coord in (2,3), "Only mesons (N_coord=2) and baryons (N_coord=3) supported"
-assert wavefunction == "compact", "Only compact wavefunction supported"
+assert wavefunction in ("compact", "svm"), "Only compact or svm wavefunction supported"
+assert (wavefunction == "svm") == (svm_trial != ""), "--wavefunction svm needs --svm_trial and vice versa"
 
 #######################################################################################
 
@@ -991,6 +993,60 @@ def lap_psi_over_psi_per_particle(Rs, a0=a0, masses=absmasses):
         lap_over_psi = lap_over_psi.at[k, :].set(grad_sq + lap_ln_psi_k)
 
     return lap_over_psi
+
+
+###
+# correlated-Gaussian (SVM) trial, replacing the compact one:
+#   psi(R) = sum_i c_i exp(-1/2 sum_p a_ip r_p^2),  r_p = r_i - r_j for pairs (01),(02),(12)
+# with grad_k psi = -sum_i phi_i g_ik,  g_ik = sum_{p ni k} sign a_ip r_p,
+#      lap_k psi  =  sum_i phi_i (|g_ik|^2 - 3 sum_{p ni k} a_ip)
+###
+
+if wavefunction == "svm":
+    _svm = onp.load(svm_trial)
+    assert int(_svm['N']) == N_coord, f"svm trial is for N={int(_svm['N'])}, run has N_coord={N_coord}"
+    _svm_a = np.array(_svm['a']); _svm_c = np.array(_svm['c'])
+    assert _svm_a.shape[1] == pairs.shape[0], "svm trial pair count mismatch"
+    _sgn = onp.zeros((N_coord, pairs.shape[0]))
+    for _p, (_i, _j) in enumerate(onp.array(pairs)):
+        _sgn[_i, _p], _sgn[_j, _p] = 1.0, -1.0
+    _svm_sa = np.array(onp.abs(_sgn) @ onp.array(_svm['a']).T).T     # (n, N): sum of a_ip over pairs containing k
+    _sgn = np.array(_sgn)
+    print(f"svm trial: {svm_trial}  ({_svm_a.shape[0]} Gaussians, E0={float(_svm['E0']):.8g}, <r^2>_ch={float(_svm['r2']):.8g})")
+
+    @jax.jit
+    def _svm_parts(Rs):
+        rp = Rs[..., pairs[:, 0], :] - Rs[..., pairs[:, 1], :]          # (..., P, 3)
+        phi = _svm_c*np.exp(-0.5*np.sum(rp*rp, axis=-1) @ _svm_a.T)     # (..., n)
+        g = np.einsum('kp,np,...pd->...nkd', _sgn, _svm_a, rp)          # (..., n, N, 3)
+        psi = np.sum(phi, axis=-1)
+        grad = -np.einsum('...n,...nkd->...kd', phi, g)
+        lap = np.einsum('...n,...nk->...k', phi, np.sum(g*g, axis=-1) - 3*_svm_sa)
+        return psi, grad, lap
+
+    @jax.jit
+    def _svm_psi(Rs):
+        rp = Rs[..., pairs[:, 0], :] - Rs[..., pairs[:, 1], :]
+        return np.sum(_svm_c*np.exp(-0.5*np.sum(rp*rp, axis=-1) @ _svm_a.T), axis=-1)
+
+    def _psi_core_no_phase(Rs, a0=None, masses=None):
+        return _svm_psi(Rs)
+
+    def grad_f_R(Rs, a0=None, masses=absmasses):
+        gr = _svm_parts(Rs)[1]                                          # (W, N, 3)
+        return np.transpose(gr, (1, 2, 0))/masses[:, None, None]*_phase(Rs, mtm)[None, None, :]
+
+    def laplacian_f_R(Rs, a0=None, masses=absmasses):
+        lp = _svm_parts(Rs)[2]
+        return np.sum(lp/masses[None, :], axis=-1)*_phase(Rs, mtm)
+
+    def grad_psi_over_psi_per_particle(Rs, a0=None, masses=None):
+        ps, gr, _ = _svm_parts(Rs)
+        return np.transpose(gr/ps[:, None, None], (1, 2, 0))
+
+    def lap_psi_over_psi_per_particle(Rs, a0=None, masses=None):
+        ps, _, lp = _svm_parts(Rs)
+        return np.transpose(lp/ps[:, None])
 
 
 ###
