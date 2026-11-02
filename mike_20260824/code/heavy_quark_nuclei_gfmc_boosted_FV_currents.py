@@ -49,6 +49,11 @@ parser.add_argument('--Lcut', type=int, default=5)
 parser.add_argument('--spoilS', type=float, default=1)
 parser.add_argument('--wavefunction', type=str, default="compact")
 parser.add_argument('--color', type=str, default="1x1")
+parser.add_argument('--no_color_vectors', action='store_true',
+                    help='Carry the scalar color-singlet eigenvalue of the pairwise potential '
+                         'instead of the explicit NI^N_coord color vector. Exactly equivalent '
+                         'for the meson/baryon singlet -- see '
+                         'afdmc_lib_col.make_pairwise_singlet_potential -- and much cheaper.')
 parser.add_argument('--potential', type=str, default="full")
 parser.add_argument('--masses', type=float, default=0., nargs='+')
 parser.add_argument('--Q_mag', type=float, default=0.1, help='Magnitude of current operator momentum')
@@ -232,7 +237,12 @@ else:
     AV_Coulomb['OSing'] = singlet_potential_fun
     AV_Coulomb['OO'] = octet_potential_fun
 
-Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb, B3_Coulomb, masses)
+if no_color_vectors:
+    print("color vectors = off (scalar singlet eigenvalue)")
+    Coulomb_potential = adl.make_pairwise_singlet_potential(AV_Coulomb, B3_Coulomb, masses)
+else:
+    print(f"color vectors = on ({NI**N_coord} amplitudes per walker)")
+    Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb, B3_Coulomb, masses)
 
 # trial wavefunction pieces
 pairs = np.array([np.array([j, i]) for i in range(0,N_coord) for j in range(0, i)])
@@ -639,28 +649,32 @@ else:
     Rs_metropolis = f["Rs"][-1]
 
 # spin-flavor structure
-S_av4p_metropolis = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
+if no_color_vectors:
+  # one trivial amplitude per walker; the singlet eigenvalue rides in the potential
+  S_av4p_metropolis = adl.singlet_S(Rs_metropolis.shape[0], N_coord)
+else:
+  S_av4p_metropolis = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
 
-def levi_civita(i, j, k):
+  def levi_civita(i, j, k):
     if i == j or j == k or i == k: return 0
     return 1 if (i,j,k) in [(0,1,2), (1,2,0), (2,0,1)] else -1
 
-def kronecker_delta(i, j): return 1 if i == j else 0
+  def kronecker_delta(i, j): return 1 if i == j else 0
 
-if N_coord == 3:
-  for i in range(NI):
-   for j in range(NI):
-    for k in range(NI):
-     if i != j and j != k and i != k:
-      spin_slice = (slice(0, None),) + (i,0,j,0,k,0)
-      S_av4p_metropolis[spin_slice] = levi_civita(i, j, k) / np.sqrt(2*NI)
+  if N_coord == 3:
+    for i in range(NI):
+     for j in range(NI):
+      for k in range(NI):
+       if i != j and j != k and i != k:
+        spin_slice = (slice(0, None),) + (i,0,j,0,k,0)
+        S_av4p_metropolis[spin_slice] = levi_civita(i, j, k) / np.sqrt(2*NI)
 
-if N_coord == 2:
-  for i in range(NI):
-   for j in range(NI):
-    if i == j:
-      spin_slice = (slice(0, None),) + (i,0,j,0)
-      S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)/np.sqrt(NI)
+  if N_coord == 2:
+    for i in range(NI):
+     for j in range(NI):
+      if i == j:
+        spin_slice = (slice(0, None),) + (i,0,j,0)
+        S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)/np.sqrt(NI)
 
 S_av4p_metropolis_norm = adl.inner(S_av4p_metropolis, S_av4p_metropolis)
 assert (np.abs(S_av4p_metropolis_norm - 1.0) < 1e-6).all()
@@ -1135,6 +1149,9 @@ filename = outdir + 'currents_3pt_' + tag + '.h5'
 print(f"\nSaving results to {filename}...")
 
 with h5py.File(filename, 'w') as f:
+    # the filename tag is deliberately identical for both color modes: the two are
+    # equivalent, so files are interchangeable downstream. Record which one ran here.
+    f.attrs['color_vectors'] = 'off' if no_color_vectors else 'on'
     f.create_dataset("tau_values", data=tau_values)
     f.create_dataset("t_indices", data=onp.array(t_indices, dtype=onp.int32))
     f.create_dataset("q_total", data=onp.array(q_total))

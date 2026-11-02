@@ -653,3 +653,102 @@ per-run stream rather than the global RNG.
 
 Until then: leave `--resampling` off (the default), and control the weight tails with the
 `--spike_leverage` screen and the `m_max` veto instead.
+
+## 11. Color-vector-free propagation (`--no_color_vectors`)
+
+Both currents generators carry an explicit `NI^N_coord` color vector per walker and build the
+pairwise potential as a full `(NI,NS)*2A` matrix. For the systems these generators actually
+support that work is **redundant**, and the generators are already meson-and-baryon-only: the
+color state is hardcoded at initialization (`delta_ij/sqrt(NI)` for `N_coord==2`,
+`eps_ijk/sqrt(2 NI)` for `N_coord==3`) and any other `N_coord` trips the norm assert. `--color` is
+only a filename tag; it is never read.
+
+Either of those states is an **exact eigenvector** of `make_pairwise_potential` — the symmetric and
+octet projectors annihilate it — so the vector never mixes and only its eigenvalue enters. Measured
+on random configurations rather than derived:
+
+```
+||V|S> - lam|S>|| / |lam|  =  3.9e-16  (meson)      2.5e-16  (baryon)
+lam(R) = sum_{i<j} v_ij(|R_i - R_j|),   v = AVcoeffs['OSing'] (qqbar),  AVcoeffs['OA'] (qq)
+```
+
+`afdmc_lib_col.make_pairwise_singlet_potential` returns that scalar carried on a trivial
+1-dimensional color space, and `singlet_S()` builds the matching `S`. Nothing else changes:
+`compute_VS`, `batched_apply`, `inner`, `batched_vev` and `kinetic_step_absolute` are all written
+against the *shape* of `S` rather than against `NI`, so they work unchanged — and, importantly, the
+scalar path therefore goes through the *same* truncated propagator
+`1 - (dtau/2)V + (dtau^2/8)V^2` rather than a separately coded exponential. The eigenvalue is read
+from the same `AVcoeffs` dict the color build consumes, so the two cannot drift apart.
+
+**This is an identity, and it is tested as one.** Every random draw in the generators is in
+coordinate space only (Metropolis initialization, the forward/backward heatbath, the accept/reject
+uniforms), so at a fixed `--seed` the two modes walk the *same* walkers through the *same*
+configurations. `test_singlet_potential.py` runs both and compares **every** dataset in the
+resulting HDF5 files entry by entry:
+
+| config | worst relative difference, all datasets | `C3_N_offdiag` | `Ws2_offdiag` |
+|---|---|---|---|
+| Coulomb meson, Q=0.2 | 7.6e-15 | 8.3e-16 | 1.3e-15 |
+| Coulomb baryon, Q=0.2 | 1.0e-14 | 1.6e-15 | 2.2e-15 |
+| MRS LO meson, Q=0.2 | 1.7e-14 | 2.1e-15 | 1.9e-15 |
+
+That is roundoff from floating-point summation order, not "consistent within errors". `Q != 0` on
+purpose: at `Q = 0` the current is `N_coord * identity` and commutes with `H`, which would hide an
+error in the 3pt legs.
+
+```bash
+python3 test_singlet_potential.py                        # all three, ~10 min
+python3 test_singlet_potential.py --only mrs_meson --n_walkers 500
+```
+
+**Cost.** Isolating the one operation that differs, at 5000 walkers:
+
+| system | `potential(R)` build | `compute_VS` (the whole step operator) |
+|---|---|---|
+| meson | 0.89 ms -> 0.03 ms (30x) | 6.54 ms -> 0.71 ms (9.2x) |
+| baryon | 27.1 ms -> 0.05 ms (538x) | 53.4 ms -> 0.81 ms (66x) |
+
+Measured end to end at 5000 walkers (median GFMC step, past the first so compilation is excluded):
+
+| config | color vectors | singlet | speedup |
+|---|---|---|---|
+| Coulomb meson | 0.034 s/step | 0.009 s/step | 3.7x |
+| Coulomb baryon | 0.187 s/step | 0.011 s/step | 17.5x |
+| MRS LO meson | 0.043 s/step | 0.016 s/step | 2.7x |
+
+The step count is exactly predictable, which lets those convert to wall-clock. In the fixed-order
+script every leg-2 run is full length `n_step` and there are 16 per time slice (C2, N, S, V0,
+3xVi, 3xAi, 3xT0i, 3xTij), so total steps = `n_step * (1 + 16*N_tau)` -- verified against the
+measured 588 steps at `n_step=12, count_skip=6`. In the MRS script only C2 and J_N run full length
+(the patch in section 4), the other 14 run length `max(t,1)`. Per Q point at 5000 walkers:
+
+| production job | GFMC steps | color vectors | singlet | saved |
+|---|---|---|---|---|
+| FO meson, `n_step 60 count_skip 5` | 12,540 | 0.12 h | 0.03 h | 0.09 h |
+| FO baryon, `n_step 300 count_skip 10` | 149,100 | **7.74 h** | **0.46 h** | 7.3 h |
+| MRS meson, `n_step 200 count_skip 5` | 74,014 | 0.88 h | 0.33 h | 0.56 h |
+
+Two honest caveats. First, each run also carries roughly 7 minutes of cost at 5000 walkers that is
+*independent* of `n_step` and of the color mode -- Metropolis thermalization at `n_skip=100`, jax
+tracing and compilation, the bootstrap and matplotlib. For the fixed-order meson that overhead is
+comparable to the whole GFMC cost, so the flag buys little there; it is the baryon, where a Q point
+goes from most of a day to half an hour, that changes what is affordable. Second, these were taken
+with `OMP_NUM_THREADS=1`.
+
+Memory matters as much at 5000 walkers: the `gfmc_Ss` history at `n_step=200` drops 138 MB -> 15 MB
+(meson) and 414 MB -> 15 MB (baryon), and the potential matrix goes from 81 or 729 complex entries
+per walker to 1.
+
+**Conventions.** The output filename tag is deliberately *identical* in both modes, so files are
+interchangeable downstream and no glob, `prod_extract_lanczos.py` path or extraction code changes.
+Which mode produced a file is recorded as the HDF5 attribute `color_vectors` (`'on'`/`'off'`).
+
+**Scope.** This is an optimization of the existing generators, not a port to the genuinely
+color-free library. Matrix elements remain unimplemented in `afdmc_lib` (`NI=NS=1`) scripts such as
+`heavy_quark_nuclei_gfmc.py`, which have no `--Q_mag`, no `C3_N` and no two-leg evolution. Both
+currents generators also still `raise ValueError("Only LO and NLO supported")`; NNLO exists only in
+the no-currents generators (`simon/heavy_quark_nuclei_gfmc_MRS_mu_prime.py`, which already has the
+`VB_MRS_definition(..., 'NNLO', ...)` path and `Alpha_sNf3Loop`, and
+`heavy_quark_nuclei_gfmc.py`). Only the generators under `mike_20260824/code/` were patched — the
+project-root `heavy_quark_nuclei_gfmc_boosted_FV_currents.py` is an older lineage (3160 diff lines,
+no two-time datasets) and is not the currents pipeline.

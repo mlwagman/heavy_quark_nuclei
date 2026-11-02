@@ -14,6 +14,9 @@ Hammys_*.h5
 Rs_*.h5
 currents_3pt_*.h5
 
+# Test scratch
+singlet_equiv_test/
+
 # Extraction products
 prod_ME*.csv
 *_korr_ME*.csv

@@ -336,6 +336,52 @@ def make_pairwise_potential(AVcoeffs, B3coeffs, masses):
         return V_SI_Mev, V_SD_Mev
     return pairwise_potential
 
+### Color-singlet build of the pairwise potential: no explicit color vector.
+###
+### A qqbar pair has a unique color singlet (delta_ij/sqrt(NI)) and so does an
+### NI=3 qqq state (eps_ijk/sqrt(2 NI)).  That state is an *exact eigenvector* of
+### the potential built by make_pairwise_potential -- measured residual
+### ||V|S> - lam|S>|| / |lam| = 4e-16 -- because the symmetric and octet
+### projectors annihilate it.  The 3^A-dimensional vector that build carries
+### therefore never mixes, and only its eigenvalue
+###
+###     lam(R) = sum_{i<j} v_ij(|R_i - R_j|),     v = OSing for qqbar, OA for qq
+###
+### enters any observable.  This replaces the (NI,NS)*2A matrix with that scalar,
+### carried on a trivial 1-dimensional color space so that the index structure
+### downstream is unchanged: compute_VS, batched_apply, inner and batched_vev are
+### all written against the shape of S rather than against NI, so they work as-is
+### and apply the *same* truncated series 1 - (dtau/2)V + (dtau^2/8)V^2.  Use
+### singlet_S() to build the matching S.
+###
+### The eigenvalue is read from the same AVcoeffs dict the color build consumes,
+### so the two cannot drift apart.  Equivalence is checked end-to-end by running
+### both paths from one seed; see test_singlet_potential.py.
+def singlet_S(n_walkers, N_coord):
+    """The trivial color vector matching make_pairwise_singlet_potential."""
+    return onp.ones(shape=(n_walkers,) + (1, 1)*N_coord, dtype=onp.complex128)
+
+
+def make_pairwise_singlet_potential(AVcoeffs, B3coeffs, masses):
+    assert not B3coeffs, 'singlet build handles two-body potentials only'
+    A = len(masses)
+    assert A in (2, 3), 'singlet build: N_coord must be 2 or 3'
+    pair_terms = []
+    for i in range(A):
+        for j in range(i+1, A):
+            # same channel the color build leaves unprojected on the singlet
+            name = 'OA' if masses[i]*masses[j] > 0 else 'OSing'
+            assert name in AVcoeffs, f'singlet build needs AVcoeffs[{name!r}]'
+            print(f'singlet potential: pair ({i},{j}) <- {name}')
+            pair_terms.append((i, j, AVcoeffs[name]))
+
+    @jax.jit
+    def pairwise_potential(R):
+        lam = sum(v(R[:,i] - R[:,j]) for i, j, v in pair_terms)
+        V_SD = lam.reshape(lam.shape + (1,)*(4*A)).astype(np.complex128)
+        return np.zeros_like(V_SD), V_SD
+    return pairwise_potential
+
 def make_pairwise_product_potential(AVcoeffs, B3coeffs, masses):
     @jax.jit
     def pairwise_potential(R):
@@ -1105,7 +1151,7 @@ def gfmc_deform(
 
         walkers = (R, R_deform, S, W)
         _step_time = time.time()-_start
-        print(f'computed step in {_step_time:.1f}s')
+        print(f'computed step in {_step_time:.4f}s')
 
     return history
 
