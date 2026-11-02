@@ -675,7 +675,10 @@ else:
 
 
 VB_LO = lambda R: CF * VB_MRS_definition(Alpha_s1Loop(R), 'LO', 1) / (Nc - 1)
-VB_NLO = lambda R: CF * VB_MRS_definition(Alpha_s2Loop(R), 'NLO', 1) / (Nc - 1)
+# s = mu r in the series coefficients: mu = lambda/r at short distance, so s = mufac. With s = 1 the
+# NLO term missed 2 beta0 ln(lambda), which offsets the shift of alpha(lambda/r), and the NLO scale
+# band came out as large as the LO one. At lambda = 1 nothing changes.
+VB_NLO = lambda R: CF * VB_MRS_definition(Alpha_s2Loop(R), 'NLO', mufac) / (Nc - 1)
 
 ###################################################################################################################
 

@@ -147,6 +147,7 @@ E, c = eigh(U.T @ (T + V) @ U)
 g = U @ c[:, 0]
 norm = g @ S @ g
 r2 = (g @ R2 @ g)/norm
+K = (g @ T @ g)/norm
 
 def FF(q):
     f = np.mean([np.exp(-0.5*q*q*np.einsum('i,nmij,j->nm', wk, Ci, wk)) for wk in Wk], axis=0)
@@ -157,6 +158,7 @@ tag = f"{args.potential}{'' if args.potential == 'coulomb' else ' '+args.OLO} N=
 print(f"SVM {tag}  nbasis={len(b)} kept={keep.sum()} seed={args.seed}")
 print(f"  E0 = {E[0]:.8g}   E1 = {E[1]:.8g}")
 print(f"  <r^2>_ch = {r2:.8g}" + (f"   / Coulomb = {r2/r2C:.5f}" if r2C else ''))
+print(f"  <K> = {K:.8g}")
 if args.trial_curve:
     Gv = U @ c                                       # all eigenvectors, G^T S G = 1
     cn = Gv.T @ S @ xt                               # trial amplitudes on eigenstates
