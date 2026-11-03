@@ -3,7 +3,7 @@
 \centering
 \begin{tabular}{lllccccccc}
 \hline\hline
-potential & state & $\alpha_d$ & $p$ & $p_{\rm exact}$ & $\alpha_d^2\langle r^2\rangle$ & $\alpha_d^2\langle r^2\rangle_z$ & $\alpha_d^2\langle r^2\rangle_{\rm exact}$ & $\langle K\rangle/(\alpha_d^2m_\psi)$ & $\chi^2/\mathrm{dof}$\\
+potential & state & $\alpha_d$ & $p$ & $p_{\rm ref}$ & $\alpha_d^2\langle r^2\rangle$ & $\alpha_d^2\langle r^2\rangle_z$ & $\alpha_d^2\langle r^2\rangle_{\rm ref}$ & $\langle K\rangle/(\alpha_d^2m_\psi)$ & $\chi^2/\mathrm{dof}$\\
 \hline
 Coulomb & meson & 0.001 & $2$ & $2$ & $1.594(59)$ & $1.584(63)$ & 1.688 & 0.444 & 0.48\\
 Coulomb & meson & 0.03 & $2$ & $2$ & $1.607(73)$ & $1.607(82)$ & 1.688 & 0.444 & 1.34\\
@@ -26,13 +26,13 @@ MRS NLO & baryon & 0.05 & $3.7(5)$ & 3.55 & $1.823(36)$ & $1.826(36)$ & 1.820 & 
 MRS NLO & baryon & 0.07 & $4.7(6)$ & 3.83 & $1.430(28)$ & $1.432(28)$ & 1.422 & 1.214 & 0.44\\
 \hline\hline
 \end{tabular}
-\caption{The GFMC charge form factor stays within $1.9\sigma$ of the exact radius at every coupling, for $\lambda=1$.
+\caption{The GFMC charge form factor stays within $1.9\sigma$ of the reference radius at every coupling, for $\lambda=1$.
 The fits use $F_1(q^2)/F_1(0)=[1+q^2\langle r^2\rangle/(6p)]^{-p}$, Eq.~\eqref{eq:app:gendip}, with $F_1$ from
 $\langle J_{V^0}\rangle$ and the Lanczos method (App.~\ref{app:gfmc:lanczos}). Radii are in units of $m_\psi^{-2}$.
 Uncertainties are statistical, from a bootstrap that refits every resample, and $\chi^2/\mathrm{dof}$ uses the bootstrap
 covariance of the $q$ points. $\langle r^2\rangle_z$ is the same radius from a three-term $z$-expansion
-(App.~\ref{app:gfmc:ansatz}). The exact values come from the closed form (Coulomb meson) and the variational solution
-(baryon), and $p_{\rm exact}$ is the fit of Eq.~\eqref{eq:app:gendip} to the exact $F_1$ with the radius held fixed.
+(App.~\ref{app:gfmc:ansatz}). The reference values come from the closed form (Coulomb meson) and the variational solution
+(baryon), and $p_{\rm ref}$ is the fit of Eq.~\eqref{eq:app:gendip} to the reference $F_1$ with the radius held fixed.
 The same profile sets every channel (Sec.~\ref{app:gfmc:me2ff}): $F_{V^i}=(q^i/2M_\Psi)F_1$ and
 $\langle J_{T^{0i}}\rangle=(q^i/2m_\psi)F_1$ exactly, the scalar $F_S=F_1-(\langle K\rangle/2m_\psi)g(q^2)$, and the
 spin-dependent form factors carry the same $q^2$ shape with group-theory normalizations.}
