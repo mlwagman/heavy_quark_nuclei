@@ -84,6 +84,18 @@ p.add_argument('--extra_decay_rel', type=float, default=0.1875,
                     'a fixed absolute value breaks at small alpha)')
 p.add_argument('--system', default=None, choices=['meson', 'baryon'])
 p.add_argument('--ref', type=float, default=None, help='reference <r^2> to compare against')
+p.add_argument('--q_max', type=float, default=None,
+               help='restrict the radius fit to Q <= this. The p=2 dipole is NOT a faithful '
+                    'estimator of <r^2> for the MRS form factor: fitting the EXACT Numerov F/F0 '
+                    'with it returns +1.0%% over Q<=0.15 but +4.3%% over Q<=0.4 (LO; +1.1%%/+4.9%% '
+                    'at NLO), because the shape is not a dipole and the large-Q points pull the '
+                    'fit. Over the wide grid that bias exceeds our statistics, so restrict the '
+                    'fit, and compare fit-to-fit via --ref_ff.')
+p.add_argument('--ref_ff', default=None,
+               help='exact F/F0 on the same Q grid, as "Q:F,Q:F,...". Reports the GFMC F/F0 '
+                    'against it per Q, and refits the exact values with the identical fit to give '
+                    'a like-for-like target, which is what the GFMC number should be judged '
+                    'against rather than the true <r^2>.')
 args = p.parse_args()
 
 
@@ -218,12 +230,36 @@ def main():
         res[q] = analyse_q(w, c, args.m, args.gevp_cut, args.extra_decay_rel,
                            args.n_block, args.n_boot, rng)
 
+    ref_ff = None
+    if args.ref_ff:
+        ref_ff = {}
+        for tok in args.ref_ff.split(','):
+            a, b = tok.split(':')
+            ref_ff[float(a)] = float(b)
+
     ms = sorted(set.intersection(*(set(r) for r in res.values())))
+    fit_target = args.ref
+    if ref_ff:
+        pos_all = [q for q in qs if q > 0 and (args.q_max is None or q <= args.q_max + 1e-12)]
+        have = [q for q in pos_all if q in ref_ff]
+        if len(have) >= 2:
+            try:
+                fit_target = fit_radius(np.array(have),
+                                        np.array([ref_ff[q] for q in have]),
+                                        np.ones(len(have)), system)[0]
+                print(f'\n  like-for-like target: the identical fit applied to the EXACT F/F0 on '
+                      f'this grid\n  gives <r^2> = {fit_target:.3f}'
+                      + (f', against the true {args.ref:.3f} '
+                         f'({100 * (fit_target / args.ref - 1):+.2f}% fit-form bias)'
+                         if args.ref else ''))
+            except Exception as e:
+                print(f'  (could not refit the reference form factor: {e!s:.50})')
+
     print(f'\n  {"m":>3s} {"F(0)":>12s} {"dev from N":>12s}   <r^2> +/- err'
-          + ('      ref      pull' if args.ref else ''))
+          + ('      target     pull' if fit_target else ''))
     for m in ms:
         F0, F0e, F0d = res[qs[0]][m]
-        pos = [q for q in qs if q > 0]
+        pos = [q for q in qs if q > 0 and (args.q_max is None or q <= args.q_max + 1e-12)]
         F = np.array([res[q][m][0] / F0 for q in pos])
         E = np.array([max(np.nanstd(res[q][m][2] / F0d, ddof=1), 1e-5) for q in pos])
         try:
@@ -242,11 +278,25 @@ def main():
                     pass
         er = float(np.std(rb, ddof=1)) if len(rb) > 2 else float('nan')
         line = f'  {m:3d} {F0:12.6f} {F0 - N:12.2e}   {r2:9.4g} +/- {er:<8.3g}'
-        if args.ref:
-            line += f'  {args.ref:8.4g}  {100 * (r2 / args.ref - 1):+6.2f}%  ({(r2 - args.ref) / er:+.1f}s)'
+        if fit_target:
+            line += (f'  {fit_target:8.4g}  {100 * (r2 / fit_target - 1):+6.2f}%'
+                     f'  ({(r2 - fit_target) / er:+.1f}s)')
         print(line)
+        last = (m, pos, F, E)
+
+    if ref_ff and 'last' in dir():
+        m, pos, F, E = last
+        print(f'\n  F(Q)/F(0) at m={m}, model independent:')
+        print(f'    {"Q":>6s} {"GFMC":>18s} {"exact":>9s} {"ratio":>8s}')
+        for q, f, e in zip(pos, F, E):
+            if q in ref_ff:
+                print(f'    {q:6g} {f:9.5f} +/- {e:<6.4f} {ref_ff[q]:9.5f} {f / ref_ff[q]:8.4f}')
+            else:
+                print(f'    {q:6g} {f:9.5f} +/- {e:<6.4f} {"-":>9s} {"-":>8s}')
+
     print('\n  F(0) must equal N exactly here -- G and M are one measurement, so any')
-    print('  deviation is a bug, not a statistical statement.  Choose m from the <r^2> plateau.')
+    print('  deviation is a bug, not a statistical statement.  Choose m from the <r^2> plateau,')
+    print('  and judge <r^2> against the like-for-like target, not the true value.')
 
 
 if __name__ == '__main__':
