@@ -709,6 +709,18 @@ if __name__ == '__main__':
     if args.dir:
         run_dir(args.dir)
     elif args.currents_file:
-        analyse(args.currents_file)
+        # --spike_leverage used to be honoured only in --dir mode, so a single-file run
+        # silently ignored it and returned the unscreened answer.
+        drop = None
+        if args.spike_leverage > 0:
+            drop, lev = spike_walkers(args.currents_file, args.spike_leverage)
+            if lev is None:
+                say("--spike_leverage: no Ws2_offdiag in this file, screening skipped")
+            else:
+                srt = np.sort(lev)[::-1]
+                say(f"spike screen: dropping {len(drop)} of {len(lev)} walkers; "
+                    f"top leverages {srt[0]:.0f}x {srt[1]:.0f}x {srt[2]:.0f}x   "
+                    f"threshold {args.spike_leverage:g}x")
+        analyse(args.currents_file, drop_walkers=drop)
     else:
         p.error('one of --currents_file, --dir or --self_test is required')
