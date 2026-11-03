@@ -11,5 +11,14 @@ command -v "$PY" >/dev/null || { echo "no python found; set PY=/path/to/python";
   echo "missing deps: pip install numpy scipy jax h5py matplotlib tqdm"
 export ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export CODE="$ROOT/code"
-export OUT="$ROOT/out"
+# GFMC output is large -- one 5000-walker, 7-Q config is ~1-1.5 GB, and a whole campaign
+# ran to 14 GB -- and $ROOT sits inside Dropbox, so writing here makes Dropbox sync every
+# h5 file (observed: Dropbox.app pinned at 54% CPU while the campaign was running, on top
+# of the machine already swapping). Keep the bulk out of any synced folder. The h5 files are
+# regenerable, and gfmc_reduce.py compresses a run directory ~50x for analysis.
+#   HQN_OUT=/path/to/scratch   overrides explicitly
+#   ~/hqn_out                  used automatically when it exists
+#   $ROOT/out                  fallback, so this stays portable
+if [ -z "${HQN_OUT:-}" ] && [ -d "$HOME/hqn_out" ]; then HQN_OUT="$HOME/hqn_out"; fi
+export OUT="${HQN_OUT:-$ROOT/out}"
 mkdir -p "$OUT"
