@@ -91,6 +91,12 @@ p.add_argument('--q_max', type=float, default=None,
                     'at NLO), because the shape is not a dipole and the large-Q points pull the '
                     'fit. Over the wide grid that bias exceeds our statistics, so restrict the '
                     'fit, and compare fit-to-fit via --ref_ff.')
+p.add_argument('--f0_analytic', action='store_true',
+               help='Take F(0) = N_coord analytically instead of from a Q=0 run. Exact here: '
+                    'with the consistent-Gram GEVP, C3_N_offdiag == N*Ws2_offdiag identically at '
+                    'Q=0 (max abs difference 0.0), so F(0) = N for every vector, at every rank, '
+                    'in every bootstrap draw -- F0d[b] is a constant and adds no variance. Lets a '
+                    'replica/seed study skip its Q=0 runs, halving the cost per seed.')
 p.add_argument('--ref_ff', default=None,
                help='exact F/F0 on the same Q grid, as "Q:F,Q:F,...". Reports the GFMC F/F0 '
                     'against it per Q, and refits the exact values with the identical fit to give '
@@ -258,7 +264,10 @@ def main():
     print(f'\n  {"m":>3s} {"F(0)":>12s} {"dev from N":>12s}   <r^2> +/- err'
           + ('      target     pull' if fit_target else ''))
     for m in ms:
-        F0, F0e, F0d = res[qs[0]][m]
+        if args.f0_analytic:
+            F0, F0e, F0d = float(N), 0.0, np.full(args.n_boot, float(N))
+        else:
+            F0, F0e, F0d = res[qs[0]][m]
         pos = [q for q in qs if q > 0 and (args.q_max is None or q <= args.q_max + 1e-12)]
         F = np.array([res[q][m][0] / F0 for q in pos])
         E = np.array([max(np.nanstd(res[q][m][2] / F0d, ddof=1), 1e-5) for q in pos])

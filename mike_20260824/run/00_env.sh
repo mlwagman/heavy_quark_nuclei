@@ -1,6 +1,11 @@
 # source before the others
 export JAX_PLATFORMS=cpu
-export XLA_FLAGS=--xla_cpu_multi_thread_eigen=false
+# --xla_cpu_multi_thread_eigen=false alone still leaves JAX an intra-op thread pool: a job
+# shows 21 threads and its spin-waiting pool inflates load average far above the real CPU
+# demand (load 27 on 6 cores while the jobs between them used ~4.5 cores and swap was idle).
+# intra_op_parallelism_threads=1 pins it to one; verified jax 0.4.13 imports and computes
+# correctly under it, reporting threads = 1.
+export XLA_FLAGS="--xla_cpu_multi_thread_eigen=false intra_op_parallelism_threads=1"
 export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
 if [ -z "${PY:-}" ]; then
   for c in python3.13 python3 python; do command -v $c >/dev/null 2>&1 && { PY=$c; break; }; done
