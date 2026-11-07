@@ -337,6 +337,30 @@ def make_pairwise_potential(AVcoeffs, B3coeffs, masses):
         return V_SI_Mev, V_SD_Mev
     return pairwise_potential
 
+def singlet_S(n_walkers, N_coord):
+    """Trivial colour vector for make_pairwise_singlet_potential (ported from Mike's ae6d179)."""
+    return onp.ones(shape=(n_walkers,) + (1, 1)*N_coord, dtype=onp.complex128)
+
+
+def make_pairwise_singlet_potential(AVcoeffs, B3coeffs, masses):
+    """Scalar colour-singlet eigenvalue of the pair potential: OA per qq pair, OSing per qqbar pair."""
+    assert not B3coeffs, 'singlet build handles two-body potentials only'
+    A = len(masses)
+    pair_terms = []
+    for i in range(A):
+        for j in range(i+1, A):
+            name = 'OA' if masses[i]*masses[j] > 0 else 'OSing'
+            assert name in AVcoeffs, f'singlet build needs AVcoeffs[{name!r}]'
+            print(f'singlet potential: pair ({i},{j}) <- {name}')
+            pair_terms.append((i, j, AVcoeffs[name]))
+
+    @jax.jit
+    def pairwise_potential(R):
+        lam = sum(v(R[:,i] - R[:,j]) for i, j, v in pair_terms)
+        V_SD = lam.reshape(lam.shape + (1,)*(4*A)).astype(np.complex128)
+        return np.zeros_like(V_SD), V_SD
+    return pairwise_potential
+
 def make_pairwise_product_potential(AVcoeffs, B3coeffs, masses):
     @jax.jit
     def pairwise_potential(R):
@@ -1106,7 +1130,7 @@ def gfmc_deform(
 
         walkers = (R, R_deform, S, W)
         _step_time = time.time()-_start
-        print(f'computed step in {_step_time:.1f}s')
+        print(f'computed step in {_step_time:.4f}s')
 
     return history
 

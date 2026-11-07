@@ -14,12 +14,13 @@ ap.add_argument('--mufac', type=float, default=1.0,
                 help='renormalization-scale factor; vary 0.5/1/2 for the '
                      'perturbative (scale) uncertainty')
 ap.add_argument('--mu', type=float, default=2.0)
-ap.add_argument('--quiet', action='store_true')
+ap.add_argument("--quiet", action="store_true")
+ap.add_argument("--Nc", type=int, default=3)
 a = ap.parse_args()
 
 SRC = "heavy_quark_nuclei_gfmc_boosted_FV_currents_MRS.py"
 argv = (f"x --n_step 100 --n_walkers 2 --dtau_iMev 0.5 --count_skip 5 --nf 0 "
-        f"--Nc 3 --N_coord 2 --mQ 1.0 --mu {a.mu} --mufac {a.mufac} --Rstar 0.35 "
+        f"--Nc {a.Nc} --N_coord 2 --mQ 1.0 --mu {a.mu} --mufac {a.mufac} --Rstar 0.35 "
         f"--spoila 1 --wavefunction compact --potential full --OLO {a.OLO} "
         f"--alpha_s {a.alpha_s} --Q_dir 1 0 0 --outdir /tmp/xx/ --Q_mag 0.0").split()
 src = open(SRC).read()

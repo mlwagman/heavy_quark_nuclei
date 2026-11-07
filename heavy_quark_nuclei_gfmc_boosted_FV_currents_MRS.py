@@ -61,6 +61,12 @@ parser.add_argument('--Lcut', type=int, default=5)
 parser.add_argument('--spoilS', type=float, default=1)
 parser.add_argument('--wavefunction', type=str, default="compact", help='compact (exp(-sum r_ij/a0)) or svm')
 parser.add_argument('--svm_trial', type=str, default="", help='npz from svm_baryon.py --save_trial (with --wavefunction svm)')
+parser.add_argument('--no_color_vectors', action='store_true')
+parser.add_argument('--only_N', action='store_true', help='leg 2 only for C2 and J_N (radius tests)')
+parser.add_argument('--no_Rs_file', action='store_true', help='do not write the walker-position history')
+parser.add_argument('--fast_lap', action='store_true', help='vectorized grad/laplacian of the compact trial (same values, O(N^2))')
+parser.add_argument('--fast_metropolis', type=int, default=0, help='vectorized Metropolis: one independent chain per walker, this many sweeps (compact trial)')
+parser.add_argument('--sym_only', action='store_true', help='leg 2 only up to t: symmetric points C(t,t) only, off-diagonal entries invalid')
 parser.add_argument('--color', type=str, default="1x1")
 parser.add_argument('--potential', type=str, default="full")
 parser.add_argument('--masses', type=float, default=0., nargs='+')
@@ -76,7 +82,7 @@ globals().update(vars(parser.parse_args()))
 onp.random.seed(seed)
 
 # only mesons and baryons with compact wavefunction
-assert N_coord in (2,3), "Only mesons (N_coord=2) and baryons (N_coord=3) supported"
+assert N_coord in (2,3) or (no_color_vectors and N_coord == Nc), "mesons, baryons; N_coord = Nc > 3 needs --no_color_vectors"
 assert wavefunction in ("compact", "svm"), "Only compact or svm wavefunction supported"
 assert (wavefunction == "svm") == (svm_trial != ""), "--wavefunction svm needs --svm_trial and vice versa"
 
@@ -806,7 +812,11 @@ else:
     AV_Coulomb['OSing'] = singlet_potential_fun
     AV_Coulomb['OO'] = octet_potential_fun
 
-Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb, B3_Coulomb, masses)
+if no_color_vectors:
+    print('color vectors = off (scalar singlet eigenvalue)')
+    Coulomb_potential = adl.make_pairwise_singlet_potential(AV_Coulomb, B3_Coulomb, masses)
+else:
+    Coulomb_potential = adl.make_pairwise_potential(AV_Coulomb, B3_Coulomb, masses)
 
 # trial wavefunction pieces
 pairs = np.array([np.array([j, i]) for i in range(0,N_coord) for j in range(0, i)])
@@ -934,6 +944,32 @@ def _phase(Rs, q_vec):
 
 def grad_core(Rs): return grad_f_R(Rs) / _phase(Rs, mtm)[None, None, :]
 def lap_core(Rs):  return laplacian_f_R(Rs) / _phase(Rs, mtm)
+
+# Vectorized gradient and Laplacian of the compact trial psi = exp(-sum_{i<j} m_ij r_ij/a0), radial_n = 1.
+# ln psi derivatives: grad_k = -sum_j rhat_kj m_kj/a0,  lap_k = -sum_j 2 m_kj/(a0 r_kj);
+# lap psi/psi = lap ln psi + |grad ln psi|^2.  Same outputs (with 1/m_k and the mtm phase) as the loops above.
+if fast_lap and radial_n == 1:
+    _eyeN = np.eye(N_coord)
+    _mij = 2*absmasses[:, None]*absmasses[None, :]/(absmasses[:, None] + absmasses[None, :])
+    @partial(jax.jit)
+    def _lnpsi_derivs(Rs):
+        d = Rs[:, :, None, :] - Rs[:, None, :, :]
+        r = np.sqrt(np.sum(d*d, -1)) + _eyeN
+        w = (_mij/a0)*(1 - _eyeN)
+        g = -np.sum(w[None, :, :, None]*d/r[..., None], axis=2)
+        l = -np.sum(2*w[None]/r, axis=2)
+        return g, l
+    @partial(jax.jit)
+    def grad_f_R(Rs, a0=a0, masses=absmasses):
+        g, _ = _lnpsi_derivs(Rs)
+        psi = _psi_core_no_phase(Rs)*np.exp(1j*np.einsum('nai,ai->n', Rs, mtm))
+        # sign as in the loop version above (which returns -grad psi; only used with mtm != 0)
+        return -np.transpose(g/absmasses[None, :, None], (1, 2, 0))*psi[None, None, :]
+    @partial(jax.jit)
+    def laplacian_f_R(Rs, a0=a0, masses=absmasses):
+        g, l = _lnpsi_derivs(Rs)
+        psi = _psi_core_no_phase(Rs)*np.exp(1j*np.einsum('nai,ai->n', Rs, mtm))
+        return np.sum((l + np.sum(g*g, -1))/absmasses[None, :], axis=1)*psi
 
 
 ###
@@ -1168,36 +1204,62 @@ if input_Rs_database == "":
     met_time = time.time()
     R0 = onp.random.normal(size=(N_coord,3))/onp.mean(onp.abs(masses))
     R0 -= onp.transpose(onp.transpose(onp.mean(onp.transpose(onp.transpose(R0)*onp.abs(masses)), axis=0, keepdims=True))/onp.mean(onp.abs(masses)))
-    samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2*radial_n, masses=onp.abs(masses))
-    print(f"metropolis in {time.time() - met_time} sec")
-    Rs_metropolis = np.array([R for R,_ in samples])
+    if fast_metropolis > 0 and radial_n == 1 and wavefunction == "compact":
+        # independent chains sampling |psi|^2 = exp(-2 sum_{i<j} m_ij r_ij/a0); CM recentred (psi does not depend on it)
+        _a0 = float(a0); _m = onp.abs(onp.array(masses, dtype=float)); _mij = 2*onp.outer(_m, _m)/(_m[:, None] + _m[None, :])
+        _iu = onp.triu_indices(N_coord, 1)
+        def _logp(Rv):
+            dd = onp.linalg.norm(Rv[:, :, None] - Rv[:, None], axis=-1)
+            return -2*onp.sum(dd[:, _iu[0], _iu[1]]*_mij[_iu]/_a0, axis=1)
+        Rv = onp.random.normal(size=(n_walkers, N_coord, 3))*_a0*0.5
+        Rv -= Rv.mean(1, keepdims=True); lpv = _logp(Rv); eps_v = 0.5*_a0/N_coord; nacc = 0
+        for it in range(fast_metropolis):
+            Rn = Rv + eps_v*onp.random.normal(size=Rv.shape); Rn -= Rn.mean(1, keepdims=True)
+            lpn = _logp(Rn); ok = onp.log(onp.random.random(n_walkers)) < lpn - lpv
+            Rv[ok] = Rn[ok]; lpv[ok] = lpn[ok]
+            if it < fast_metropolis//3:
+                eps_v *= onp.exp(0.5*(ok.mean() - 0.4))
+            else:
+                nacc += ok.mean()
+        _cm = Rv.mean(1, keepdims=True)
+        print(f"fast metropolis: {fast_metropolis} sweeps, eps {eps_v/_a0:.3f} a0, acceptance {nacc/(fast_metropolis - fast_metropolis//3):.2f}, "
+              f"<r^2>_ch/a0^2 = {onp.mean(onp.sum((Rv-_cm)**2, -1))/_a0**2:.5f}")
+        print(f"metropolis in {time.time() - met_time} sec")
+        Rs_metropolis = np.array(Rv)
+    else:
+        samples = adl.metropolis(R0, f_R_braket, n_therm=500*n_skip, n_step=n_walkers, n_skip=n_skip, eps=4*2*a0/N_coord**2*radial_n, masses=onp.abs(masses))
+        print(f"metropolis in {time.time() - met_time} sec")
+        Rs_metropolis = np.array([R for R,_ in samples])
 else:
     f = h5py.File(input_Rs_database, 'r')
     Rs_metropolis = f["Rs"][-1]
 
 # spin-flavor structure
-S_av4p_metropolis = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
+if no_color_vectors:
+  S_av4p_metropolis = adl.singlet_S(Rs_metropolis.shape[0], N_coord)
+else:
+  S_av4p_metropolis = onp.zeros(shape=(Rs_metropolis.shape[0],) + (NI,NS)*N_coord).astype(np.complex128)
 
-def levi_civita(i, j, k):
-    if i == j or j == k or i == k: return 0
-    return 1 if (i,j,k) in [(0,1,2), (1,2,0), (2,0,1)] else -1
+  def levi_civita(i, j, k):
+      if i == j or j == k or i == k: return 0
+      return 1 if (i,j,k) in [(0,1,2), (1,2,0), (2,0,1)] else -1
 
-def kronecker_delta(i, j): return 1 if i == j else 0
+  def kronecker_delta(i, j): return 1 if i == j else 0
 
-if N_coord == 3:
-  for i in range(NI):
-   for j in range(NI):
-    for k in range(NI):
-     if i != j and j != k and i != k:
-      spin_slice = (slice(0, None),) + (i,0,j,0,k,0)
-      S_av4p_metropolis[spin_slice] = levi_civita(i, j, k) / np.sqrt(2*NI)
+  if N_coord == 3:
+    for i in range(NI):
+     for j in range(NI):
+      for k in range(NI):
+       if i != j and j != k and i != k:
+        spin_slice = (slice(0, None),) + (i,0,j,0,k,0)
+        S_av4p_metropolis[spin_slice] = levi_civita(i, j, k) / np.sqrt(2*NI)
 
-if N_coord == 2:
-  for i in range(NI):
-   for j in range(NI):
-    if i == j:
-      spin_slice = (slice(0, None),) + (i,0,j,0)
-      S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)/np.sqrt(NI)
+  if N_coord == 2:
+    for i in range(NI):
+     for j in range(NI):
+      if i == j:
+        spin_slice = (slice(0, None),) + (i,0,j,0)
+        S_av4p_metropolis[spin_slice] = kronecker_delta(i, j)/np.sqrt(NI)
 
 S_av4p_metropolis_norm = adl.inner(S_av4p_metropolis, S_av4p_metropolis)
 assert (np.abs(S_av4p_metropolis_norm - 1.0) < 1e-6).all()
@@ -1279,7 +1341,8 @@ with h5py.File(outdir+'Hammys_'+tag+'.h5', 'w') as f:
     f.create_dataset("Ks", data=Ks)
     f.create_dataset("Vs", data=Vs)
 
-with h5py.File(outdir+'Rs_'+tag+'.h5', 'w') as f:
+if not no_Rs_file:
+  with h5py.File(outdir+'Rs_'+tag+'.h5', 'w') as f:
     f.create_dataset("Rs", data=gfmc_Rs)
     f.create_dataset("Ws_leg1", data=gfmc_Ws)
 
@@ -1347,7 +1410,7 @@ for i_t, t in enumerate(t_indices):
     # C_J(t1,t2) is needed for t2 > t1 as well, and the Ritz basis wants
     # C_J(2s dt, 2t dt). The old shortcut (N_leg2 = t) computed only the
     # symmetric point t2 = t1. Costs ~2x the leg-2 work.
-    N_leg2 = max(n_step, 1)
+    N_leg2 = max(t, 1) if sym_only else max(n_step, 1)
     rand2_shared = onp.random.random(size=(N_leg2, R.shape[0]))
     rng_seed = onp.random.randint(0, 2**31)
 
@@ -1405,6 +1468,8 @@ for i_t, t in enumerate(t_indices):
 
     def _safe_leg2(Ws_seed, label=""):
         """Run leg-2 only if Ws_seed is non-trivial; return zeros otherwise."""
+        if only_N and label != "J_N":
+            return [onp.zeros_like(Ws_seed)] * (N_leg2 + 1)
         if onp.max(onp.abs(Ws_seed)) < 1e-30:
             print(f"  Skipping leg-2 for {label}: Ws_seed is zero (spin-0 baryon)")
             return [onp.zeros_like(Ws_seed)] * (N_leg2 + 1)
@@ -1557,6 +1622,8 @@ filename = outdir + 'currents_3pt_' + tag + '.h5'
 print(f"\nSaving results to {filename}...")
 
 with h5py.File(filename, 'w') as f:
+    f.attrs['color_vectors'] = 'off' if no_color_vectors else 'on'
+    f.attrs['sym_only'] = int(sym_only)
     f.create_dataset("tau_values", data=tau_values)
     f.create_dataset("t_indices", data=onp.array(t_indices, dtype=onp.int32))
     f.create_dataset("q_total", data=onp.array(q_total))

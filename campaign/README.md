@@ -15,3 +15,5 @@ Couplings used in the paper: alpha_d <= 0.07. mu_cut = 3.4 Lambda_d (two-loop), 
 
 Checks: `blockcheck.py` (error against walker block size), `flat_inr.py` (drift of C3/C2 in tau),
 `echeck.py` (GFMC <H> against the variational E0).
+
+N_d = 5 and 7 baryons (colour-free GFMC, matched N_d alpha_d): see `nd/README.md`.
