@@ -80,7 +80,20 @@ globals().update(vars(parser.parse_args()))
 onp.random.seed(seed)
 
 # only mesons and baryons with compact wavefunction
-assert N_coord in (2,3), "Only mesons (N_coord=2) and baryons (N_coord=3) supported"
+# N_coord = 2 is the meson and N_coord = Nc the baryon, so general-Nc baryons need N_coord > 3.
+# Everything downstream is written with N_coord_local loops and a generic pair list, and the
+# pair color factors in AV_Coulomb are already general in Nc: the antisymmetric channel 'OA'
+# carries -CF/(Nc-1) per pair, which is exactly the eigenvalue every pair takes inside the
+# totally antisymmetric N_coord = Nc singlet.  The one piece that is NOT general is the explicit
+# color-vector construction below, which hardcodes the Nc=3 epsilon tensor (N_coord=3) and the
+# qqbar delta (N_coord=2), so N_coord > 3 must use the scalar singlet path.
+assert N_coord >= 2, "N_coord must be at least 2"
+if N_coord > 3:
+    assert no_color_vectors, (
+        f"N_coord={N_coord} needs --no_color_vectors: the explicit color-vector build only "
+        f"implements the Nc=3 baryon epsilon tensor and the meson delta")
+    assert N_coord == Nc, (
+        f"N_coord={N_coord} with Nc={Nc}: a colour-singlet baryon of N quarks needs N = Nc")
 assert wavefunction == "compact", "Only compact wavefunction supported"
 
 #######################################################################################
@@ -133,9 +146,9 @@ print("=" * 70)
 if masses == 0.:
     masses = onp.ones(N_coord)
     if N_coord == 2:
-        masses = [1,-1]
-    elif N_coord == 3:
-        masses = [1,1,1]
+        masses = [1,-1]          # qqbar
+    else:
+        masses = [1]*N_coord     # N-quark baryon; onp.ones above already gives this
 
 masses_np = np.array(masses)
 absmasses = np.abs(masses_np)

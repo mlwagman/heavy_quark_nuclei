@@ -365,7 +365,7 @@ def singlet_S(n_walkers, N_coord):
 def make_pairwise_singlet_potential(AVcoeffs, B3coeffs, masses):
     assert not B3coeffs, 'singlet build handles two-body potentials only'
     A = len(masses)
-    assert A in (2, 3), 'singlet build: N_coord must be 2 or 3'
+    assert A >= 2, 'singlet build: N_coord must be at least 2'
     pair_terms = []
     for i in range(A):
         for j in range(i+1, A):

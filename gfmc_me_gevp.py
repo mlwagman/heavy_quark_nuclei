@@ -82,7 +82,12 @@ p.add_argument('--gevp_cut', type=float, default=1e-2,
 p.add_argument('--extra_decay_rel', type=float, default=0.1875,
                help='extra decay as a fraction of the measured growth rate (scale covariant; '
                     'a fixed absolute value breaks at small alpha)')
-p.add_argument('--system', default=None, choices=['meson', 'baryon'])
+p.add_argument('--system', default=None, choices=['meson', 'baryon'],
+               help='picks the dipole variant: p=2 for the meson, free p for the baryon. '
+                    'Irrelevant for --fit z.')
+p.add_argument('--N', type=int, default=None,
+               help='number of constituents, i.e. F(0). Read from the Ncoord<N> in the filename '
+                    'when present, so general-Nc baryons (N_coord = Nc > 3) work without it.')
 p.add_argument('--ref', type=float, default=None, help='reference <r^2> to compare against')
 p.add_argument('--q_max', type=float, default=None,
                help='restrict the radius fit to Q <= this. The p=2 dipole is NOT a faithful '
@@ -246,7 +251,11 @@ def main():
     system = args.system
     if system is None:
         system = 'baryon' if 'baryon' in args.dir else 'meson'
-    N = 3 if system == 'baryon' else 2
+    if args.N is not None:
+        N = args.N
+    else:
+        m = re.search(r'Ncoord(\d+)', os.path.basename(files[qs[0]]))
+        N = int(m.group(1)) if m else (3 if system == 'baryon' else 2)
 
     # one drop set, fixed on Q=0, so every Q describes the same ensemble
     keep = None
