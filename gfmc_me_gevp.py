@@ -102,7 +102,21 @@ p.add_argument('--ref_ff', default=None,
                     'against it per Q, and refits the exact values with the identical fit to give '
                     'a like-for-like target, which is what the GFMC number should be judged '
                     'against rather than the true <r^2>.')
+p.add_argument('--fit', default='dipole', choices=['dipole', 'z'],
+               help="radius ansatz. 'dipole' is the historical one: (1 + Q^2 b^2/4p)^-p with "
+                    "p = 2 for the meson (exact only for Coulomb) and p free for the baryon. "
+                    "'z' is the conformal-map expansion with t_0 = 0, where the radius is the "
+                    "linear coefficient alone and nothing is assumed about the shape.")
+p.add_argument('--t_cut', type=float, default=None,
+               help="branch point in Q^2 for --fit z. The one-body density of an N-body state "
+                    "falls as e^{-sqrt(t_cut) x}: for the meson x = r/2 and |psi|^2 ~ e^{-2 kappa r} "
+                    "give t_cut = 16 kappa^2 with kappa = sqrt(2 mu |E0|); for the baryon the "
+                    "struck quark sits at x = -2y/3 from the CM, giving t_cut = 9 kappa_2^2 = "
+                    "12 |E_sep| with E_sep = E0(qqq) - E0(qq in 3bar).")
+p.add_argument('--k_max', type=int, default=2, help='highest power of z for --fit z')
 args = p.parse_args()
+if args.fit == 'z' and args.t_cut is None:
+    p.error('--fit z needs --t_cut')
 
 
 def q_of(fn):
@@ -191,8 +205,28 @@ def analyse_q(w, c, ms, cut, decay_rel, n_block, n_boot, rng):
     return out
 
 
+def zvar(q2, t_cut):
+    s, s0 = np.sqrt(t_cut + q2), np.sqrt(t_cut)
+    return (s - s0) / (s + s0)
+
+
 def fit_radius(Qs, F, E, system):
-    """p=2 dipole for the meson, free p for the baryon; matches gfmc_korr.py's convention."""
+    """p=2 dipole for the meson, free p for the baryon; matches gfmc_korr.py's convention.
+
+    With ``--fit z`` the same call returns the z-expansion radius instead, so the bootstrap
+    refit and the ``--ref_ff`` like-for-like target automatically use whichever ansatz is
+    selected -- the comparison stays fit-to-fit.
+    """
+    if args.fit == 'z':
+        # F/F(0) = 1 + sum_{k>=1} c_k z^k.  The constant is FIXED to 1 rather than fitted:
+        # z(0) = 0 and F(0)/F(0) = 1 by construction, so a free c_0 is a redundant parameter
+        # that the large-Q points pull on.  Letting it float costs ~1% of bias at k_max = 3
+        # (measured on the exact reference form factors), which is the whole effect we are
+        # trying to resolve.  Same convention as Ben's paper_korr.py zfit.
+        z = zvar(Qs ** 2, args.t_cut)
+        A = np.vstack([z ** k for k in range(1, args.k_max + 1)]).T / E[:, None]
+        c, *_ = np.linalg.lstsq(A, (F - 1) / E, rcond=None)
+        return -1.5 * c[0] / args.t_cut, float(args.k_max)
     ok = (F > 0.05) & (F < 1)
     b0 = np.sqrt(np.median(8 * (F[ok] ** -0.5 - 1) / Qs[ok] ** 2)) if ok.any() else 6.
     if system == 'meson':
@@ -291,17 +325,26 @@ def main():
             line += (f'  {fit_target:8.4g}  {100 * (r2 / fit_target - 1):+6.2f}%'
                      f'  ({(r2 - fit_target) / er:+.1f}s)')
         print(line)
-        last = (m, pos, F, E)
+        last = (m, pos, F, E, F0d)
 
     if ref_ff and 'last' in dir():
-        m, pos, F, E = last
+        m, pos, F, E, F0d = last
         print(f'\n  F(Q)/F(0) at m={m}, model independent:')
-        print(f'    {"Q":>6s} {"GFMC":>18s} {"exact":>9s} {"ratio":>8s}')
+        print(f'    {"Q":>6s} {"GFMC":>18s} {"exact":>9s} {"ratio":>8s}'
+              f'   {"<r^2> ratio":>19s}')
         for q, f, e in zip(pos, F, E):
-            if q in ref_ff:
-                print(f'    {q:6g} {f:9.5f} +/- {e:<6.4f} {ref_ff[q]:9.5f} {f / ref_ff[q]:8.4f}')
-            else:
+            if q not in ref_ff:
                 print(f'    {q:6g} {f:9.5f} +/- {e:<6.4f} {"-":>9s} {"-":>8s}')
+                continue
+            # (1 - F)/(1 - F_exact) at fixed Q tends to <r^2>_GFMC/<r^2>_exact as Q -> 0 and
+            # needs no ansatz at all: at the lowest Q it is the sharpest statement the data
+            # supports about the radius, free of every fit-form question.
+            rr = (1 - f) / (1 - ref_ff[q])
+            d = np.array([(1 - res[q][m][2][b] / F0d[b]) / (1 - ref_ff[q])
+                          for b in range(args.n_boot)])
+            rre = float(np.nanstd(d, ddof=1))
+            print(f'    {q:6g} {f:9.5f} +/- {e:<6.4f} {ref_ff[q]:9.5f} {f / ref_ff[q]:8.4f}'
+                  f'   {rr:8.4f} +/- {rre:<6.4f} ({(rr - 1) / rre:+.1f}s)')
 
     print('\n  F(0) must equal N exactly here -- G and M are one measurement, so any')
     print('  deviation is a bug, not a statistical statement.  Choose m from the <r^2> plateau,')

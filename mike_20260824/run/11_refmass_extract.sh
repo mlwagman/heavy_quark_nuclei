@@ -25,7 +25,7 @@ set -eu
 . "$(dirname "$0")/00_env.sh"
 
 PY312=${PY312:-/usr/local/bin/python3.12}
-GEVP="$ROOT/gfmc_me_gevp.py"
+GEVP="$ROOT/../gfmc_me_gevp.py"
 O="$OUT/refmass_a0.1"
 A="$O/analysis"
 mkdir -p "$A"
