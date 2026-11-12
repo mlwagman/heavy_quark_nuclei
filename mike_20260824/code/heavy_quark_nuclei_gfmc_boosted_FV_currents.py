@@ -68,7 +68,18 @@ globals().update(vars(parser.parse_args()))
 onp.random.seed(seed)
 
 # only mesons and baryons with compact wavefunction
-assert N_coord in (2,3), "Only mesons (N_coord=2) and baryons (N_coord=3) supported"
+# See the matching block in the MRS generator.  N_coord = Nc is the colour-singlet baryon, so
+# general-Nc baryons need N_coord > 3; everything downstream loops over N_coord_local with a
+# generic pair list, and the 'OA' pair factor -alpha CF/(Nc-1) is the eigenvalue every pair takes
+# inside the totally antisymmetric N_coord = Nc singlet.  Only the explicit colour-vector build
+# is Nc=3 specific, so N_coord > 3 must use --no_color_vectors.
+assert N_coord >= 2, "N_coord must be at least 2"
+if N_coord > 3:
+    assert no_color_vectors, (
+        f"N_coord={N_coord} needs --no_color_vectors: the explicit color-vector build only "
+        f"implements the Nc=3 baryon epsilon tensor and the meson delta")
+    assert N_coord == Nc, (
+        f"N_coord={N_coord} with Nc={Nc}: a colour-singlet baryon of N quarks needs N = Nc")
 assert wavefunction == "compact", "Only compact wavefunction supported"
 
 #######################################################################################

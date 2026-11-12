@@ -78,7 +78,57 @@
 #   Nc=5  Lambda_1loop 0.032478012  Lambda_2loop 0.082348501  mu_cut 0.2799849
 #   Nc=6  Lambda_1loop 0.057498678  Lambda_2loop 0.13206518   mu_cut 0.4490216
 # Recompute these for any other alpha_s: mrs_two_body.py --Nc <Nc> --alpha_s <a> prints them.
+# ---------------------------------------------------------------------------------------------
+# 4.  DECIDED: FIXED-ORDER COULOMB AT alpha = 1, AND RESCALE
+# ---------------------------------------------------------------------------------------------
+# Pure Coulomb scales exactly -- E0 ~ alpha^2, <r^2> ~ 1/alpha^2, F a function of q/alpha -- so
+# one set of runs at alpha = 1 covers every coupling and BOTH trajectories in section 3 by
+# rescaling.  That retires the trajectory question instead of answering it.  Use the FO
+# generator (heavy_quark_nuclei_gfmc_boosted_FV_currents.py --alpha 1), not the MRS one.
+#
+# Reference: ../../svm_nbody.py, a general-N correlated-Gaussian solve (Ben's svm_baryon.py
+# matrix elements, with the Jacobi coordinates generated for arbitrary N instead of tabulated
+# for N in (2,3)).  Validated: N=2 gives E0 = -0.44443853 and <r^2>_ch = 1.6875501 against the
+# closed form -4/9 and 27/16, with F(q) matching the exact dipole to 1e-4; N=3 gives
+# <r^2>_ch = 3.8260983, exactly the published Coulomb baryon 3.826.  <K>/|E0| = 1 by the virial
+# is the convergence monitor.
+#
+#   Nc   pairs   E0          gap      <r^2>_ch     status
+#   3      3     -0.476326   0.2210   3.8260983    converged, matches 3.826
+#   4      6     -1.08897    0.3739   2.72(2)      converged to ~0.7% (virial 1.001)
+#   5     10     -2.0539     0.5801   2.015(?)     NOT CONVERGED -- virial 1.006..1.096 across
+#                                                  seeds; random-width sampling is not enough at
+#                                                  nj = 4, needs real SVM one-at-a-time selection
+#
+# Trial widths: a0(spoila=1) = 2/VB = 2(Nc-1)/(alpha CF) is exactly the Coulomb PAIR Bohr radius
+# (3.0, 3.2, 10/3 at Nc = 3, 4, 5 and alpha = 1), and the product-of-pairs trial at that width
+# already has nearly the right N-body radius, so spoila ~ 1 for every Nc.  Measured from the
+# tau = 0 metropolis samples, c = <r^2>_ch(trial)/a0^2:
+#
+#   Nc   c                 spoila = sqrt(target/c)/a0
+#   3    0.4232 +/- 0.0051   1.002226    (the campaign's 1.01131 at alpha=0.1, as it must be --
+#                                         spoila is alpha independent; 0.9% apart, which is the
+#                                         precision of c)
+#   4    0.2675 +/- 0.0051   0.996484
+#   5    0.1874 +/- 0.0037   0.983718
+#
+# dtau and n_step scaled off the validated Nc=3 setup (dtau 0.027, n_step 200, count_skip 10 at
+# alpha=1) holding dtau*|E0| and gap*tau_max fixed, and Q scaled to a common q*sqrt(<r^2>) grid
+# so every Nc is compared at the same place on the form factor:
+#
+#   Nc   dtau       n_step  count_skip  Q values
+#   3    0.027      200     10          0  0.2   0.4   0.6   0.8   1.2   1.6
+#   4    0.011824   270     14          0  0.24  0.47  0.71  0.95  1.42  1.90
+#   5    0.006262   330     17          0  0.27  0.55  0.83  1.11  1.66  2.21
+#
+# The Nc=3 row is a NULL TEST: rescaled by alpha = 0.1 it must reproduce the campaign's
+# fo_baryon_lo numbers (389.2 +/- 5.9 against 384), since Coulomb scaling is exact.
+#
+# STILL OPEN: cost.  N_coord enters the gradient/Laplacian through triply nested N_coord_local
+# loops, so Nc=4 is several times the per-walker cost of Nc=3 on top of twice the pairs -- a
+# 200-walker, 270-step Nc=4 job runs >10 minutes here.  Size the campaign off a timing probe
+# before launching 5000 walkers x 7 Q.
 set -eu
-echo "This is a design document, not a runnable campaign yet -- see section 3."
-echo "Blocking items: trajectory choice, spoila/dtau retuning, and a general-N reference solver."
+echo "Design document: parameters are fixed (section 4) but the campaign is not sized yet."
+echo "Next: timing probe at Nc=4, then launch Nc=3 (null test) and Nc=4 baryons at alpha=1."
 exit 1
