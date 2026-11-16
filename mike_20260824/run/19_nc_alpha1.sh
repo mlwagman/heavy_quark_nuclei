@@ -23,6 +23,32 @@
 # nested loops, on top of Nc(Nc-1)/2 pairs.  --f0_analytic in the extractor means the Q=0 run is
 # optional (F(0) = N is an identity for the consistent-Gram GEVP), so Q=0 is NOT in the default
 # grid.
+# RESULTS (12/12 jobs clean, 5000 walkers, m = 20 for Nc=3 and m = 16 for Nc=4 -- the rank is
+# capped by the stored grid, n_step/count_skip):
+#
+#   config       fit      GFMC <r^2>_ch     target   fit-form bias   pull
+#   nc3_baryon   dipole   3.895 +/- 0.064    3.820       -0.15%      +1.1s
+#   nc3_baryon   z k=4    3.897 +/- 0.068    3.825       -0.03%      +1.0s
+#   nc4_baryon   dipole   2.696 +/- 0.034    2.709       -0.37%      -0.4s
+#   nc4_baryon   z k=4    2.692 +/- 0.033    2.718       -0.05%      -0.8s
+#
+# NULL TEST PASSED.  Nc=3 at alpha=1 gives 3.897 +/- 0.063; the independent alpha=0.1 campaign
+# gave 389.2 +/- 5.9, which rescales to 3.892 +/- 0.059 -- 0.06 sigma apart, across 10x in alpha
+# and 100x in dtau, with different seeds.  Coulomb scaling is confirmed end to end, so these runs
+# really do stand in for every coupling.
+#
+# m plateau: Nc=3 drifts 3.920 (m=4) -> 3.895 (m=20), 0.6% over the whole range against a 1.6%
+# error, monotone and flattening; Nc=4 2.707 -> 2.696, 0.4%.  Both fits agree with each other,
+# so the residual +2% at Nc=3 (reproduced from the alpha=0.1 run) is not the ansatz.
+#
+# Walker state-ID diagnostics (../../gfmc_walker_diag.py, written into analysis/):
+#   N_eff/N 0.90-0.97, top1 0.06-0.08% (flat 0.02%), top10 0.41-0.57% (flat 0.20%),
+#   NO negative Ritz weights anywhere, |dJ(top1)| <= 0.09 sigma, and the |d_w| histogram spans
+#   about one decade with no detached bin.  These are much healthier than the alpha=0.1 runs --
+#   note the RAW w_ij leverage is still 22-24x here, so raw leverage overstates the problem and
+#   the Ritz-projected weight is the thing to look at.
+#
+# Nc >= 5 needs no SVM: anchor on Nc=3 and carry the m plateau and these diagnostics forward.
 set -eu
 . "$(dirname "$0")/00_env.sh"
 
