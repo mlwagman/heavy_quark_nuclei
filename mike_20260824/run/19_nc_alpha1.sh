@@ -14,6 +14,15 @@
 # Nc=3 is a NULL TEST: rescaled by alpha=0.1 it must reproduce fo_baryon_lo, 389.2 +/- 5.9
 # against 384, since Coulomb scaling is exact and that run used the same generator.
 #
+# Nc=2 is the free closed-form anchor at the OTHER end.  Inside the totally antisymmetric
+# N = Nc singlet each pair carries kappa = alpha CF/(Nc-1) = (Nc+1)/(2Nc), which at Nc=2 is 3/4
+# -- and the qqbar singlet coupling alpha CF is ALSO 3/4, so at Nc=2 the diquark and the meson
+# are literally the same Coulomb problem (the 2/3 vs 4/3 split at Nc=3 closes at Nc=2).  So the
+# N=2 baryon has a closed form, a0 = 2/kappa = 8/3 and <r^2>_ch = 3/kappa^2 = 16/3, and running
+# it through the BARYON colour path (--masses 1 1 picks 'OA', not 'OSing') tests the colour
+# bookkeeping against an exact answer.  Its trial is the exact 1s state at spoila = 1, so expect
+# the Gram to go numerically rank-1 and m to cap early, exactly as fo_meson_lo did.
+#
 # Nc=5 runs WITHOUT an exact reference, by decision: svm_nbody.py does not converge at nj = 4
 # (virial 1.006..1.096 across seeds) and building a proper one-at-a-time SVM is not worth it.
 # Anchoring the method on Nc=3, where it reproduces 3.826 and passes the alpha-rescaling null
@@ -68,6 +77,7 @@ COMMON="--nf 0 --n_walkers $NW --no_color_vectors --wavefunction compact --poten
 
 # name|Nc|Q list|config-specific args
 JOBS=$(cat <<'SPEC'
+nc2_baryon|2|0.17 0.34 0.51 0.68 1.02 1.36|--spoila 1 --n_step 124 --dtau_iMev 0.091455 --count_skip 6
 nc3_baryon|3|0.2 0.4 0.6 0.8 1.2 1.6|--spoila 1.002226 --n_step 200 --dtau_iMev 0.027 --count_skip 10
 nc4_baryon|4|0.24 0.47 0.71 0.95 1.42 1.90|--spoila 0.996484 --n_step 270 --dtau_iMev 0.011824 --count_skip 14
 nc5_baryon|5|0.27 0.55 0.83 1.11 1.66 2.21|--spoila 0.983718 --n_step 330 --dtau_iMev 0.006262 --count_skip 17
