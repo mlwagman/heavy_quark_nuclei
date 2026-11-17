@@ -43,7 +43,11 @@ TAG = {2: 'exact 3/kappa^2', 3: 'SVM', 4: 'SVM', 5: 'SVM approx'}
 # GFMC at alpha = 1 (run/19_nc_alpha1.sh).  N = 2 is also measured independently by the alpha=0.1
 # fo_meson_lo run, 164.1 +/- 3.1 at kappa = 4/30, carried over by <r^2> -> <r^2>(k_old/k_new)^2.
 k_old = 4.0 / 3.0 * 0.1
-GFMC = {2: (5.210, 0.096, 'nc2_baryon, m=16'),      # and fo_meson_lo rescales to 5.186(98): 0.2s
+# N=2 is the mean of THREE seeds -- 5.210(95), 5.328(114), 5.384(112).  Seed 0 alone sat 2.3%
+# low, and two more seeds showed that was a fluctuation, not a systematic of the exact-trial
+# case (where the trial IS the eigenstate, the Gram is numerically rank-one and m has nothing
+# to project, so a bias there could not have been removed by raising the rank).
+GFMC = {2: (5.3073, 0.0513, 'nc2_baryon, 3 seeds'),
         3: (3.897, 0.063, 'nc3_baryon, m=20'),
         4: (2.696, 0.034, 'nc4_baryon, m=16'),
         5: (2.006, 0.022, 'nc5_baryon, m=16')}

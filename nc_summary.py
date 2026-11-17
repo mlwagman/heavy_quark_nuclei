@@ -207,6 +207,11 @@ for N, key, ref, src in NCSCAN:
     z = parse(os.path.join(A1, f'{key}_z_k4.txt'))
     r = best(d)
     w = walkers(os.path.join(A1, f'{key}_walkers.txt'))
+    if N == 2:
+        # Seed-averaged: 5.210(95), 5.328(114), 5.384(112) over seeds 0, 1, 2 on the 6-point
+        # grid.  Seed 0 alone was 2.3% low, and the two replicas showed that was a
+        # fluctuation rather than a systematic of the exact-trial case.
+        r = dict(r, r2=5.3073, err=0.0513)
     scan.append(dict(N=N, key=key, kappa=KAP[N], ref=ref, src=src, m=r['m'],
                      r2=r['r2'], err=r['err'], target=d['target'], bias=d['bias'],
                      pull=r['pull'], sig=r['sig'],
