@@ -68,6 +68,14 @@ p.add_argument('--current', default='C3_N')
 p.add_argument('--m', type=int, nargs='+', default=[2, 3, 4, 5, 6, 8, 10, 12],
                help='Krylov ranks to report')
 p.add_argument('--n_block', type=int, default=50, help='walkers per bootstrap block')
+p.add_argument('--n_sample', type=int, default=None,
+               help='target number of bootstrap blocks, overriding --n_block as '
+                    'n_block = n_walkers // n_sample SEPARATELY AT EACH Q.  Needed whenever the '
+                    'Q points do not all have the same walker count -- e.g. a low-Q point run '
+                    'with 20k walkers to pin the slope, alongside 5k elsewhere.  The fit draws '
+                    'the same resample indices at every Q, which is only meaningful if every Q '
+                    'yields the same number of blocks; with a fixed --n_block it would not, and '
+                    'the Q-Q correlations the fit relies on would be mispaired.')
 p.add_argument('--n_boot', type=int, default=200)
 p.add_argument('--seed', type=int, default=17)
 p.add_argument('--spike_leverage', type=float, default=0.0,
@@ -273,11 +281,18 @@ def main():
           + ' '.join(f'{q:g}' for q in qs))
 
     res = {}
+    nws = {}
     for q in qs:
         w, c = read(files[q], args.current, keep)
+        nws[q] = w.shape[-1]
+        nb = max(1, w.shape[-1] // args.n_sample) if args.n_sample else args.n_block
         rng = np.random.default_rng(args.seed)      # same resamples at every Q
         res[q] = analyse_q(w, c, args.m, args.gevp_cut, args.extra_decay_rel,
-                           args.n_block, args.n_boot, rng)
+                           nb, args.n_boot, rng)
+    if len(set(nws.values())) > 1 and not args.n_sample:
+        print(f'  WARNING: walker counts differ across Q ({sorted(set(nws.values()))}) and '
+              f'--n_sample was not given, so the bootstrap blocks are not commensurate '
+              f'and the Q-Q correlations are mispaired.  Pass --n_sample.')
 
     ref_ff = None
     if args.ref_ff:

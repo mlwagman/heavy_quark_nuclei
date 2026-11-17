@@ -55,6 +55,27 @@
 # check free+inactive before launching: quitting a browser took this box from 5.9 to 7.8 GB
 # reclaimable and drained swap from 6.7 to 2.7 GB, after which jobs ran at 100% efficiency.
 #
+# EXTRA Q POINTS (run with QS=... and, for the low one, NW=20000):
+#
+#   Nc    low = Qmin/2   high = Qmax + (Qmax - Qmax-1)      both at q sqrt(<r^2>) ~ 0.195, 3.92
+#    2       0.085            1.70
+#    3       0.1              2.00
+#    4       0.12             2.38
+#    5       0.135            2.76
+#    6       0.155            3.14
+#
+# The low point halves the smallest Q to shorten the lever arm on the radius, which cuts the
+# higher-moment contamination by ~4x.  It does NOT by itself cut the statistical error: the
+# error on F falls roughly like Q^2 at small Q, so the error on 6(1-F)/Q^2 is nearly
+# Q-independent there.  That is why it wants 20000 walkers -- 4x the sample for 2x the error
+# reduction, which is what actually sharpens the slope.  The high point extends the shape fit
+# one step further out on the same matched q sqrt(<r^2>) grid.
+#
+# A 20000-walker point among 5000-walker ones must be extracted with
+# gfmc_me_gevp.py --n_sample N, which fixes the NUMBER of bootstrap blocks rather than their
+# size: the fit draws the same resample indices at every Q, which is only meaningful if every
+# Q yields the same number of blocks.
+#
 # NW and QS are the two cost dials.  A 200-walker, 270-step Nc=4 job takes 14m27s here, so size
 # the tranche before raising them: N_coord enters the gradient and Laplacian through triply
 # nested loops, on top of Nc(Nc-1)/2 pairs.  --f0_analytic in the extractor means the Q=0 run is
