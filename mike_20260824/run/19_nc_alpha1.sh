@@ -14,6 +14,13 @@
 # Nc=3 is a NULL TEST: rescaled by alpha=0.1 it must reproduce fo_baryon_lo, 389.2 +/- 5.9
 # against 384, since Coulomb scaling is exact and that run used the same generator.
 #
+# nc2_baryon_s{1,2} are seed replicas of nc2_baryon.  The FO filename tag carries no seed, so a
+# replica needs its own outdir, hence its own config name; the trailing --seed overrides the one
+# in COMMON because argparse takes the last occurrence.  They exist because BOTH exact-trial
+# two-body runs (fo_meson_lo and nc2_baryon) came in ~2.5% low on the radius at seed 0, and when
+# the trial IS the eigenstate the Gram is numerically rank-1, so m cannot project the bias away.
+# Two more seeds say whether that is a seed fluctuation or a systematic of the exact-trial case.
+#
 # Nc=2 is the free closed-form anchor at the OTHER end.  Inside the totally antisymmetric
 # N = Nc singlet each pair carries kappa = alpha CF/(Nc-1) = (Nc+1)/(2Nc), which at Nc=2 is 3/4
 # -- and the qqbar singlet coupling alpha CF is ALSO 3/4, so at Nc=2 the diquark and the meson
@@ -78,6 +85,8 @@ COMMON="--nf 0 --n_walkers $NW --no_color_vectors --wavefunction compact --poten
 # name|Nc|Q list|config-specific args
 JOBS=$(cat <<'SPEC'
 nc2_baryon|2|0.17 0.34 0.51 0.68 1.02 1.36|--spoila 1 --n_step 124 --dtau_iMev 0.091455 --count_skip 6
+nc2_baryon_s1|2|0.17 0.34 0.51 0.68 1.02 1.36|--spoila 1 --n_step 124 --dtau_iMev 0.091455 --count_skip 6 --seed 1
+nc2_baryon_s2|2|0.17 0.34 0.51 0.68 1.02 1.36|--spoila 1 --n_step 124 --dtau_iMev 0.091455 --count_skip 6 --seed 2
 nc3_baryon|3|0.2 0.4 0.6 0.8 1.2 1.6|--spoila 1.002226 --n_step 200 --dtau_iMev 0.027 --count_skip 10
 nc4_baryon|4|0.24 0.47 0.71 0.95 1.42 1.90|--spoila 0.996484 --n_step 270 --dtau_iMev 0.011824 --count_skip 14
 nc5_baryon|5|0.27 0.55 0.83 1.11 1.66 2.21|--spoila 0.983718 --n_step 330 --dtau_iMev 0.006262 --count_skip 17
@@ -121,4 +130,4 @@ export PY CODE FO OUT NICE
 
 # xargs rather than wait -n: bash 3.2 here.  -S raises the -I replacement buffer.
 tr '\n' '\0' < "$TASKS" | xargs -0 -S 65536 -P "$POOL" -I{} "$O/worker.sh" "{}"
-echo "done; resume anything missing with 14_resume.sh $TASKS"
+echo "done; resume anything missing with: 14_resume.sh \"$TASKS\""

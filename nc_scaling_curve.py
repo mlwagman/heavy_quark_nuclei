@@ -43,9 +43,10 @@ TAG = {2: 'exact 3/kappa^2', 3: 'SVM', 4: 'SVM', 5: 'SVM approx'}
 # GFMC at alpha = 1 (run/19_nc_alpha1.sh).  N = 2 is also measured independently by the alpha=0.1
 # fo_meson_lo run, 164.1 +/- 3.1 at kappa = 4/30, carried over by <r^2> -> <r^2>(k_old/k_new)^2.
 k_old = 4.0 / 3.0 * 0.1
-GFMC = {2: (164.1 * (k_old / K[2]) ** 2, 3.1 * (k_old / K[2]) ** 2, 'fo_meson_lo rescaled'),
-        3: (3.897, 0.063, 'nc3_baryon'),
-        4: (2.696, 0.034, 'nc4_baryon')}
+GFMC = {2: (5.210, 0.096, 'nc2_baryon, m=16'),      # and fo_meson_lo rescales to 5.186(98): 0.2s
+        3: (3.897, 0.063, 'nc3_baryon, m=20'),
+        4: (2.696, 0.034, 'nc4_baryon, m=16'),
+        5: (2.006, 0.022, 'nc5_baryon, m=16')}
 
 print(f"alpha = 1.  <r^2>_ch is the one-body charge radius about the CM.\n")
 print(f"{'N':>2} {'kappa':>7} {'ref':>10} {'source':>16} {'GFMC':>18} {'pull':>8}"
@@ -58,10 +59,19 @@ for N in sorted(REF):
     ps = f'{100 * (g[0] / ref - 1):+7.2f}%' if g else f'{"":>8}'
     print(f'{N:2d} {k:7.4f} {ref:10.5f} {TAG[N]:>16} {gs} {ps} {R:13.5f} {1 / np.sqrt(R):10.4f}')
 
-Ns = np.array(sorted(REF), float)
-y = np.array([1 / np.sqrt(REF[int(n)] * K[int(n)] ** 2) for n in Ns])
+# Fit the law on the GFMC measurements, which now exist at every N -- the N=5 SVM is not
+# converged, so using the references would put an unconverged point in the fit.
+Ns = np.array(sorted(GFMC), float)
+y = np.array([1 / np.sqrt(GFMC[int(n)][0] * K[int(n)] ** 2) for n in Ns])
 a, b = np.polyfit(Ns, y, 1)
 res = 100 * ((a * Ns + b) / y - 1)
+# and a blind test: fit N = 2,3,4 only, predict N = 5
+a3, b3 = np.polyfit(Ns[:3], y[:3], 1)
+p5 = 1 / ((a3 * 5 + b3) ** 2 * K[5] ** 2)
+g5, e5 = GFMC[5][0], GFMC[5][1]
+print(f'\n  BLIND TEST: the law fitted on N = 2,3,4 alone predicts <r^2>_ch(N=5) = {p5:.4f};'
+      f'\n  GFMC measures {g5:.3f} +/- {e5:.3f}, i.e. {100 * (g5 / p5 - 1):+.2f}%'
+      f' ({(g5 - p5) / e5:+.1f} sigma).  The 1/N law has real curvature at the 2% level.')
 print(f'\n  1/(kappa sqrt(<r^2>_ch)) = {b:+.4f} {a:+.4f} N'
       f'   residuals: ' + '  '.join(f'{r:+.2f}%' for r in res))
 print(f'  => sqrt(<r^2>_ch) kappa = 1/({b:.4f} + {a:.4f} N): the charge radius falls like 1/N,')
@@ -70,5 +80,7 @@ for N in (6, 8, 10):
     kk = (N + 1) / (2 * N)
     print(f'     extrapolation: N={N:2d}  <r^2>_ch = {1 / ((a * N + b) ** 2 * kk ** 2):7.4f}'
           f'   rms = {1 / ((a * N + b) * kk):6.4f}')
-print('\n  Caveat: the N=5 reference is NOT converged and is shown only to place the point;')
-print('  the fit above uses it, so re-run when the GFMC N=5 number lands and judge against that.')
+print('\n  The N=5 SVM reference is NOT converged (virial 1.006..1.047), so it is shown only to')
+print('  place the point; the law is fitted to the GFMC measurements, which are now the better')
+print('  numbers at N=5.  Note the GFMC N=5 form factor nonetheless tracks that SVM to 5e-4 at')
+print('  every Q, so the variational SHAPE converged well before its radius did.')
