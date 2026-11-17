@@ -13,6 +13,7 @@
 \newcommand{\rch}{\langle r^2\rangle_{\rm ch}}
 \newcommand{\Nc}{N_c}
 \newcommand{\code}[1]{\texttt{\small #1}}
+\input{status}
 
 \title{GFMC charge form factors and radii:\\
        the $\alpha_s(m_Q)=0.1$ reference point and the $N_c$ scan}
@@ -110,8 +111,13 @@ resampling         & off & branching desynchronises the two legs and corrupts $Q
   $\max_{ij}|w_{ij}|/\mathrm{median}\,|w_{ij}|$ above this \\
 $m$ & plateau end & Krylov rank \\
 \midrule
-\multicolumn{3}{l}{\emph{Inert --- parsed but never used by these generators}}\\
-\code{--log\_mu\_r},\newline \code{--spoilS},\newline \code{--Lcut}, \code{--g} & --- & parsed by the generator and never referenced \\
+\code{--log\_mu\_r} & $1$ (FO NLO) & \textbf{not inert in the fixed-order generator}: it sets
+  $V_B^{\rm NLO}=V_B[1+\tfrac{\alpha}{4\pi}(a_1+2\beta_0\log_{\mu r})]$ and hence the trial
+  width $a_0$.  It \emph{is} dead in the MRS generator \\
+\midrule
+\multicolumn{3}{l}{\emph{Inert --- parsed but never referenced}}\\
+\code{--spoilS},\newline \code{--Lcut}, \code{--g} & --- & \code{--spoilS} scales only the
+  symmetric/octet channels, which the singlet build never selects \\
 \bottomrule
 \caption{Inputs.  Derived quantities the generator prints --- $\Lambda_d$, $\alpha_s(R_*)$,
 $V_B(R_*)$, $a_0$ --- follow from these.}
@@ -129,8 +135,7 @@ from the true reference, i.e.\ the fit-form systematic.  The $p=2$ dipole is exa
 Coulomb meson (bias $0.00\%$) but \emph{not} for MRS, where it inflates the radius by
 $4\!-\!5\%$ over $Q\le0.4$; the free-$p$ dipole is faithful for baryons ($\le0.4\%$).  A
 $z$-expansion with $k_{\max}=4$ removes the ansatz dependence entirely and is quoted in the
-cross-checks.  \textbf{The fixed-order NLO baryon has not been run} --- it is the one gap in
-this table.}
+cross-checks.  \statusline}
 \bigskip
 
 \noindent\textbf{The one live tension.}  Both NLO rows sit high by $\sim2\%$ while both LO rows
@@ -157,7 +162,7 @@ the same sign.
 
 \section{Cross-checks}
 
-\begin{center}\footnotesize
+\begin{center}\scriptsize
 \input{tab_crosschecks}
 \end{center}
 \captionof{table}{Validation.  The $\alpha$-rescaling entry is the sharpest: pure Coulomb scales exactly

@@ -49,10 +49,34 @@ ARGS="--N_coord 3 --masses 1 1 1 --alpha 0.1 --OLO NLO --spoila 0.868199 \
 --n_step 225 --dtau_iMev 1.05 --count_skip 11"
 QS=${QS:-"0.029 0.058 0.088 0.117 0.175 0.234"}
 
+# A lock, because this script can be reached from more than one queue at once and two
+# instances would run the same Q twice -- the same class of bug as the shared tasks file.
+# mkdir is atomic; a stale lock whose PID is gone is reclaimed.
+LOCK="$O/.${NAME}.lock"
+if ! mkdir "$LOCK" 2>/dev/null; then
+  if kill -0 "$(cat "$LOCK/pid" 2>/dev/null)" 2>/dev/null; then
+    echo "$NAME: another instance is running (pid $(cat "$LOCK/pid")); nothing to do."
+    exit 0
+  fi
+  echo "$NAME: reclaiming stale lock"
+fi
+echo $$ > "$LOCK/pid"
+trap 'rm -rf "$LOCK"' EXIT
+
 TASKS="$O/tasks_${NAME}.tsv"
 WORKER="$O/worker_${NAME}.sh"
+# Skip Q values that already have output.  This makes the script resumable, and it also makes
+# a reclaimed stale lock harmless: a second queue reaching this step after the first instance
+# finished finds nothing left to do instead of re-running everything.
 : > "$TASKS"
-for q in $QS; do printf '%s\n' "$q" >> "$TASKS"; done
+for q in $QS; do
+  if ls "$O/$NAME" 2>/dev/null | grep -q "^currents_3pt_.*Qmag${q}\.h5$"; then
+    echo "  have   $NAME Q=$q"
+  else
+    printf '%s\n' "$q" >> "$TASKS"
+  fi
+done
+if [ ! -s "$TASKS" ]; then echo "$NAME: all Q present, nothing to do."; exit 0; fi
 echo "$NAME: $(wc -l < "$TASKS" | tr -d ' ') jobs, $NW walkers, pool $POOL -> $O/$NAME"
 echo "reference <r^2>_ch = 179.42049 (svm_nbody.py --potential fo_nlo)"
 

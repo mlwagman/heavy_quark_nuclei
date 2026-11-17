@@ -119,6 +119,8 @@ NC3 = [
     ('fo_meson_lo',   A0, 'meson',  'FO',  'LO',  168.75,      r'closed form $27/(16\alpha^2)$'),
     ('fo_meson_nlo',  A0, 'meson',  'FO',  'NLO', 84.269031,   r'\texttt{fo\_two\_body.py}'),
     ('fo_baryon_lo',  A0, 'baryon', 'FO',  'LO',  382.60983,   r'\texttt{svm\_nbody.py}'),
+    ('fo_baryon_nlo', A0, 'baryon', 'FO',  'NLO', 179.42049,
+     r'\texttt{svm\_nbody.py --potential fo\_nlo}'),
     ('mrs_meson_lo',  A0, 'meson',  'MRS', 'LO',  56.692063,   r'Numerov / SVM $N\!=\!2$'),
     ('mrs_meson_nlo', A0, 'meson',  'MRS', 'NLO', 52.071288,   r'Numerov / SVM $N\!=\!2$'),
     ('mrs_baryon_lo', A0, 'baryon', 'MRS', 'LO',  114.2523,    r'SVM $N\!=\!3$'),
@@ -350,6 +352,10 @@ def tab_crosschecks(a, b):
                  r'$-0.44443853$, $1.6875501$', r'$-4/9$, $27/16$', r'$6\times10^{-6}$'))
     L.append(row(r'\texttt{svm\_nbody.py} $N=3$ vs published Coulomb baryon',
                  r'$3.8260983$', r'$3.826$', 'all digits'))
+    L.append(row(r'\texttt{svm\_nbody.py --potential fo\_nlo} $N=2$ vs'
+                 r' \texttt{fo\_two\_body.py}',
+                 r'$-0.010609125$, $84.269834$', r'$-0.010609161$, $84.269031$',
+                 r'$1\times10^{-5}$'))
     L.append(row(r'\texttt{mrs\_two\_body.py} vs \texttt{svm\_baryon.py} $N=2$ (MRS LO)',
                  r'$56.69186$', r'$56.692063$', r'$4\times10^{-6}$'))
     L.append(r'\hline')
@@ -392,6 +398,19 @@ def tab_crosschecks(a, b):
     L += [r'\hline\hline', r'\end{tabularx}']
     open(os.path.join(args.out, 'tab_crosschecks.tex'), 'w').write('\n'.join(L) + '\n')
 
+
+have = {e['key'] for e in nc3}
+missing = [k for k, *_ in NC3 if k not in have]
+if missing:
+    st = ('\\textbf{Not yet in this table:} ' + ', '.join(
+        r'\code{' + m.replace('_', r'\_') + '}' for m in missing)
+        + '.  The run is in flight; the reference is already in the cross-checks.')
+else:
+    st = ('Every fixed-order and MRS combination at $N_c=3$ is present: both orders, both '
+          'states, each against an independent reference.')
+# a macro rather than loose text: \input inside a \captionof argument is fragile
+open(os.path.join(args.out, 'status.tex'), 'w').write(
+    '\\newcommand{\\statusline}{' + st + '}\n')
 
 fig_ff()
 a, b, res = fig_radius()
