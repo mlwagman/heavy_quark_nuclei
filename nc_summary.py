@@ -303,8 +303,9 @@ def fig_radius():
     ax[0].errorbar(Ns, r2, yerr=er, fmt='o', color=RAMP[2], ms=5.2, lw=0,
                    elinewidth=1.1, capsize=0, mec=SURFACE, mew=0.7, zorder=3, label='GFMC')
     ax[0].set_xlabel(r'$N_c$   ($N_{\rm coord}=N_c$)')
-    ax[0].set_ylabel(r'$m_\psi^2\,\langle r^2\rangle_{\rm ch}$   ($\alpha=1$)')
-    ax[0].set_title(r'baryon charge radius', color=INK, loc='left')
+    ax[0].set_ylabel(r'$\alpha^2 m_\psi^2\,\langle r^2\rangle_{\rm ch}$')
+    ax[0].set_title(r'baryon charge radius ($\alpha$-independent ordinate)',
+                    color=INK, loc='left')
     ax[0].legend(loc='lower left', labelcolor=INK2)
 
     # (b) the law, where the claim actually lives
