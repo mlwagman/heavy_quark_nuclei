@@ -300,9 +300,31 @@ therefore not be quoted more tightly than a couple of percent.}
 laws above rather than measured, so it is a genuine prediction test.  $N_c\ge5$ has no
 converged variational reference by choice --- the method is anchored at $N_c=3$, where it
 reproduces $3.826$ and passes the $\alpha$-rescaling null test, and carried forward with the
-$m$ plateau and the walker state-ID diagnostics at every $N_c$.  Two seed replicas at $N_c=2$
-are in flight to test whether the $-2.3\%$ there is a seed fluctuation or a systematic of the
-exact-trial case, where the trial \emph{is} the eigenstate, the Gram is numerically rank-one
-and $m$ therefore has nothing to project.
+$m$ plateau and the walker state-ID diagnostics at every $N_c$.
+
+\paragraph{The $N_c=2$ seed replicas.}  The $-2.3\%$ at seed 0 was worth chasing: at
+$\texttt{spoila}=1$ the $N=2$ trial \emph{is} the exact 1s eigenstate, so the Gram is
+numerically rank-one and $m$ has nothing to project --- a bias there could not have been
+removed by raising the rank, and would have been a systematic of every exact-trial run.  Two
+replicas settle it:
+\begin{center}\small
+\begin{tabular}{llll}
+\toprule
+seed & $\rch$ & vs exact $16/3$ & $(1-F)/(1-F_{\rm exact})$ at $Q=0.17$ \\
+\midrule
+0 & $5.210\pm0.095$ & $-2.31\%$ & $0.9638\pm0.0190$ \\
+1 & $5.328\pm0.114$ & $-0.09\%$ & $1.0099\pm0.0258$ \\
+2 & $5.384\pm0.112$ & $+0.95\%$ & $0.9990\pm0.0215$ \\
+\midrule
+mean & $5.3073\pm0.0513$ & $-0.49\%$ $(-0.5\sigma)$ & \\
+\bottomrule
+\end{tabular}
+\end{center}
+\noindent It was a seed fluctuation, not a systematic.  The $N=2$ point in Fig.~2 and in the
+law is now this three-seed mean, which improves its residual from $-1.6\%$ to $-1.3\%$ and
+softens the blind test from $-2.1\sigma$ to $-1.6\sigma$; the curvature in the $1/N_c$ law
+survives either way.  The seed scatter, $0.089$ against a mean quoted error of $0.107$, is
+consistent with the error bars, but three seeds neither supports nor contradicts the
+$1.15\times$ inflation measured from the 16-seed study.
 
 \end{document}
