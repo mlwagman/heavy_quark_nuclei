@@ -175,13 +175,31 @@ different seeds.}
 \section{The $N_c$ scan, in $\alpha=1$ Coulomb units}
 
 Because Coulomb scaling is exact, one set of runs at $\alpha=1$ covers every coupling.  Inside
-the totally antisymmetric $N_{\rm coord}=N_c$ singlet each pair carries
+the totally antisymmetric $N_{\rm coord}=N_c$ singlet each pair sits at $V(r)=-\kappa_N/r$ with
 \begin{equation}
-  \kappa_N=\frac{\alpha C_F}{N_c-1}=\frac{N_c+1}{2N_c},
+  \kappa_N=\frac{\alpha C_F}{N_c-1}=\frac{N_c+1}{2N_c}\Big|_{\alpha=1} .
 \end{equation}
-which at $N_c=2$ equals $3/4$ --- and the $q\bar q$ singlet coupling $\alpha C_F$ is
-\emph{also} $3/4$ there, so at $N_c=2$ the diquark and the meson are the same Coulomb problem
-and the $N=2$ end of the sequence is closed form, $\rch=3/\kappa^2=16/3$.
+\emph{$\kappa_N$ is dimensionless}: with $\hbar=c=1$ the $1/r$ already carries the energy, and
+in the code the potential is literally \code{-VB/norm\_R} with \code{VB} a pure number (in the
+MRS generator $m_\psi$ enters only inside $V_B(r m_\psi)$, which is itself dimensionless).  The
+quark mass appears in what \emph{follows} from $\kappa$, not in $\kappa$:
+\begin{equation}
+  a_0=\frac{1}{\mu\kappa_N}=\frac{2}{m_\psi\kappa_N},\qquad
+  E_0 \sim -\frac{m_\psi\kappa_N^2}{4},\qquad
+  \rch \sim \frac{1}{(m_\psi\kappa_N)^2},
+\end{equation}
+with $\mu=m_\psi/2$ the pair reduced mass.  So the dimensionless combinations are
+$m_\psi^2\rch$, $E_0/m_\psi$, and $Q/(m_\psi\kappa_N)$ --- and since $\kappa_N\propto\alpha$,
+$Q^2/(m_\psi^2\alpha^2)$ is $\alpha$-independent at fixed $N_c$, which is the abscissa of
+Fig.~1 (left).  All numbers in this document are quoted at $m_\psi=1$.
+
+At $N_c=2$, $\kappa_N=3/4$ --- and the $q\bar q$ singlet coupling $\alpha C_F$ is \emph{also}
+$3/4$ there, so the diquark and the meson are the same Coulomb problem and the $N=2$ end of the
+sequence is closed form,
+\begin{equation}
+  a_0=\frac{2}{m_\psi\kappa}=\frac{8}{3m_\psi},\qquad
+  \rch=\frac34 a_0^2=\frac{3}{(m_\psi\kappa)^2}=\frac{16}{3m_\psi^2}.
+\end{equation}
 
 \begin{center}
 \includegraphics[width=\textwidth]{fig_baryon_ff.pdf}
@@ -189,17 +207,21 @@ and the $N=2$ end of the sequence is closed form, $\rch=3/\kappa^2=16/3$.
 \captionof{figure}{Baryon charge form factors.  Points are GFMC (5000 walkers, errors from a block
 bootstrap that refits every resample); curves are the exact ($N_c=2$) or variational
 ($N_c=3,4,5$) references, anchored at $F(0)/F(0)=1$.  Colour is a one-hue ordinal ramp because
-$N_c$ is ordered, and marker shape repeats the identity so nothing is colour-alone.  Right:
-the same data against $Q\sqrt{\rch}$ --- the shape is nearly $N_c$-independent once the scale
-is divided out, which is why the $Q$ grids were chosen matched in this variable.}
+$N_c$ is ordered, and marker shape repeats the identity so nothing is colour-alone.  Reference curves are
+evaluated on a dense grid, not interpolated between the six measured points.  Left: the
+abscissa $Q^2/(m_\psi^2\alpha^2)$ is $\alpha$-independent, so the panel holds at any coupling
+and what it shows is the genuine $N_c$ dependence, which enters through $C_F/(N_c-1)$.  Right:
+the same data against the dimensionless $Q^2\rch$ --- the shape is nearly $N_c$-independent
+once the scale is divided out, which is why the $Q$ grids were chosen matched in this
+variable.}
 \bigskip
 
 \begin{center}
 \includegraphics[width=\textwidth]{fig_radius_vs_nc.pdf}
 \end{center}
 \captionof{figure}{Left: the charge radius against $N_c$, with the reference values (open) and the fitted
-law (grey).  Right: where the claim actually lives --- the inverse rms radius in units of the
-pair coupling is linear in $N_c$, i.e.\ \textbf{the baryon shrinks like $1/N_c$}.  The
+law (grey).  Right: where the claim actually lives --- the dimensionless inverse rms radius
+$1/(m_\psi\kappa_N\sqrt{\rch})$ is linear in $N_c$, i.e.\ \textbf{the baryon shrinks like $1/N_c$}.  The
 residuals show the linearity is good to $\sim2\%$ but not exact.  A blind test makes the same
 point: fitted on $N_c=2,3,4$ alone the law predicts $\rch(N_c{=}5)=2.053$, against a measured
 $2.006\pm0.022$ --- $-2.3\%$, $-2.1\sigma$.  Extrapolations beyond the measured range should

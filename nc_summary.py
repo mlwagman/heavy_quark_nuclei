@@ -210,6 +210,21 @@ with open(os.path.join(args.out, 'data', 'formfactors.csv'), 'w', newline='') as
 # ---------------------------------------------------------------------------------------------
 # figure 1: baryon form factors
 # ---------------------------------------------------------------------------------------------
+def ref_curve(N):
+    """Dense reference F(Q)/F(0), so the curve is computed rather than interpolated between
+    the six measured points -- in Q^2 the low-Q end is compressed and a 6-point polyline
+    visibly kinks.  Falls back to the measured grid if the dense file is absent."""
+    fn = os.path.join(args.out, 'data', f'ref_nc{N}.csv')
+    if not os.path.exists(fn):
+        return None
+    q, f = [], []
+    for r in csv.DictReader(open(fn)):
+        if r['Q'].lstrip().startswith('#'):     # svm_nbody.py appends a comment line
+            continue
+        q.append(float(r['Q'])); f.append(float(r['F_over_F0']))
+    return np.array(q), np.array(f)
+
+
 def fig_ff():
     fig, ax = plt.subplots(1, 2, figsize=(7.0, 3.1), constrained_layout=True)
     for i, e in enumerate(scan):
@@ -218,11 +233,17 @@ def fig_ff():
         F = np.array([f['F'] for f in e['ff']])
         E = np.array([f['Ferr'] for f in e['ff']])
         Fx = np.array([f['Fex'] for f in e['ff']])
-        rms = np.sqrt(e['r2'])
+        rms = np.sqrt(e['r2'])   # alpha = 1 and mQ = 1, so Q^2 == Q^2/(mQ^2 alpha^2)
         # F(0)/F(0) = 1 is exact, so anchor the reference curve there rather than
         # letting it start at the lowest measured Q
-        Q0, Fx0 = np.concatenate(([0.0], Q)), np.concatenate(([1.0], Fx))
-        for k, x, x0 in ((0, Q, Q0), (1, Q * rms, Q0 * rms)):
+        dense = ref_curve(e['N'])
+        if dense is not None:
+            Q0, Fx0 = dense
+            if Q0[0] > 0:
+                Q0, Fx0 = np.concatenate(([0.0], Q0)), np.concatenate(([1.0], Fx0))
+        else:
+            Q0, Fx0 = np.concatenate(([0.0], Q)), np.concatenate(([1.0], Fx))
+        for k, x, x0 in ((0, Q ** 2, Q0 ** 2), (1, (Q * rms) ** 2, (Q0 * rms) ** 2)):
             ax[k].plot(x0, Fx0, '-', color=c, lw=1.3, alpha=0.85, zorder=2)
             ax[k].errorbar(x, F, yerr=E, fmt=mk, color=c, ms=4.4, lw=0,
                            elinewidth=1.0, capsize=0, mec=SURFACE, mew=0.7, zorder=3,
@@ -231,22 +252,22 @@ def fig_ff():
         # too close in Q for four labels to clear each other, and the ramp direction is what
         # a reader needs to anchor
         if e is scan[0] or e is scan[-1]:
-            ax[0].annotate(rf'$N_c\!=\!{e["N"]}$', (Q[-1], Fx[-1]),
+            ax[0].annotate(rf'$N_c\!=\!{e["N"]}$', (Q[-1] ** 2, Fx[-1]),
                            textcoords='offset points', xytext=(6, 0), fontsize=8,
                            color=INK2, va='center', ha='left')
-    ax[0].set_xlabel(r'$Q$   [$\alpha=1$ units, $m_\psi=1$]')
-    ax[1].set_xlabel(r'$Q\,\sqrt{\langle r^2\rangle_{\rm ch}}$')
+    ax[0].set_xlabel(r'$Q^2/(m_\psi^2\alpha^2)$')
+    ax[1].set_xlabel(r'$Q^2\,\langle r^2\rangle_{\rm ch}$')
     ax[0].set_ylabel(r'$F(Q)/F(0)$')
     ax[0].set_title('baryon charge form factor', color=INK, loc='left')
-    ax[1].set_title(r'rescaled by $\sqrt{\langle r^2\rangle_{\rm ch}}$', color=INK, loc='left')
+    ax[1].set_title(r'rescaled by $\langle r^2\rangle_{\rm ch}$', color=INK, loc='left')
     for a in ax:
         a.grid(True, alpha=0.9, lw=0.6)
         a.set_axisbelow(True)
         a.set_ylim(0, 1.04)
         for s in ('top', 'right'):
             a.spines[s].set_visible(False)
-    ax[0].set_xlim(0, 2.65)
-    ax[1].set_xlim(0, 3.45)
+    ax[0].set_xlim(0, 5.4)
+    ax[1].set_xlim(0, 10.2)
     ax[0].legend(loc='upper right', ncol=2, handletextpad=0.4, columnspacing=1.0,
                  labelcolor=INK2)
     fig.savefig(os.path.join(args.out, 'fig_baryon_ff.pdf'))
@@ -274,7 +295,7 @@ def fig_radius():
     xg = np.linspace(1.8, max(Ns) + 0.6, 200)
     kg = (xg + 1) / (2 * xg)
     ax[0].plot(xg, 1 / ((a * xg + b) ** 2 * kg ** 2), '-', color=INK3, lw=1.1, zorder=1,
-               label=r'fit: $1/(\kappa\sqrt{\langle r^2\rangle})$ linear in $N_c$')
+               label=r'fit: $1/(m_\psi\kappa\sqrt{\langle r^2\rangle})$ linear in $N_c$')
     ax[0].plot(Ns, ref, 'o', mfc='none', mec=INK2, mew=1.0, ms=8, zorder=2,
                label='exact / variational')
     # N_c is already on the x axis, so colour carries no extra information here: one series
@@ -282,7 +303,7 @@ def fig_radius():
     ax[0].errorbar(Ns, r2, yerr=er, fmt='o', color=RAMP[2], ms=5.2, lw=0,
                    elinewidth=1.1, capsize=0, mec=SURFACE, mew=0.7, zorder=3, label='GFMC')
     ax[0].set_xlabel(r'$N_c$   ($N_{\rm coord}=N_c$)')
-    ax[0].set_ylabel(r'$\langle r^2\rangle_{\rm ch}$   [$\alpha=1$ units]')
+    ax[0].set_ylabel(r'$m_\psi^2\,\langle r^2\rangle_{\rm ch}$   ($\alpha=1$)')
     ax[0].set_title(r'baryon charge radius', color=INK, loc='left')
     ax[0].legend(loc='lower left', labelcolor=INK2)
 
@@ -292,7 +313,7 @@ def fig_radius():
     ax[1].errorbar(Ns, y, yerr=ye, fmt='o', color=RAMP[2], ms=5.2, lw=0,
                    elinewidth=1.1, capsize=0, mec=SURFACE, mew=0.7, zorder=3)
     ax[1].set_xlabel(r'$N_c$')
-    ax[1].set_ylabel(r'$1/(\kappa_N\sqrt{\langle r^2\rangle_{\rm ch}})$')
+    ax[1].set_ylabel(r'$1/(m_\psi\,\kappa_N\sqrt{\langle r^2\rangle_{\rm ch}})$')
     ax[1].set_title(r'inverse rms radius in units of $\kappa_N$', color=INK, loc='left')
     ax[1].legend(loc='upper left', labelcolor=INK2)
     res = 100 * ((a * Ns + b) / y - 1)
