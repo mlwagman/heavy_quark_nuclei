@@ -58,6 +58,14 @@ p.add_argument('--N', type=int, default=None,
                help='number of constituents; defaults to Nc (the singlet baryon). N=2 is the '
                     'qqbar meson.')
 p.add_argument('--alpha', type=float, default=1.0)
+p.add_argument('--potential', default='coulomb', choices=['coulomb', 'fo_nlo'],
+               help="'fo_nlo' is the FIXED-ORDER NLO pair potential of the Coulomb generator, "
+                    "V = -c VB/r [1 + (alpha/4pi)(2 beta0 ln(r e^gamma mu) + a1)].  Unlike "
+                    "Coulomb it does NOT scale with alpha -- the correction carries its own "
+                    "alpha -- so it must be solved at the coupling it will be run at.")
+p.add_argument('--mu', type=float, default=1.0,
+               help="renormalization scale in Rprime = r e^gamma mu, for --potential fo_nlo")
+p.add_argument('--nf', type=int, default=0)
 p.add_argument('--nbasis', type=int, default=400)
 p.add_argument('--seed', type=int, default=1)
 p.add_argument('--bmin', type=float, default=0.05, help='in units of the basis scale')
@@ -148,9 +156,24 @@ aC = 1.0 / (0.5 * m * kappa)             # Coulomb pair Bohr radius
 L0 = aC * args.ascale
 
 
-def G(beta):
-    """Pair-potential kernel: <exp(-r^2/(2 beta)) | 1/r> / overlap, exact for Coulomb."""
-    return VB * np.sqrt(2.0 / (np.pi * beta))
+BETA0 = 11 / 3 * args.Nc - 2 / 3 * args.nf
+A1 = 31 / 9 * args.Nc - 10 / 9 * args.nf
+
+if args.potential == 'coulomb':
+    def G(beta):
+        """Pair kernel <exp(-r^2/2beta) | VB(r)/r> / overlap.  Exact for Coulomb."""
+        return VB * np.sqrt(2.0 / (np.pi * beta))
+else:
+    # Fixed-order NLO.  The kernel is still closed form: the Gaussian average of the log is
+    #   <ln sqrt(2 beta u)>_{e^-u} = (1/2) ln(2 beta) - gamma/2,
+    # since int_0^inf e^-u ln u du = -gamma, so
+    #   G(beta) = VB sqrt(2/pi beta) [1 + (alpha/4pi)(2 beta0 (gamma/2 + ln mu
+    #                                                 + (1/2) ln 2beta) + a1)].
+    # No tabulation, and no interpolation error to worry about.
+    def G(beta):
+        k = args.alpha / (4 * np.pi)
+        lg = 0.5 * np.euler_gamma + np.log(args.mu) + 0.5 * np.log(2.0 * beta)
+        return VB * np.sqrt(2.0 / (np.pi * beta)) * (1 + k * (2 * BETA0 * lg + A1))
 
 
 # ----------------------------------------------------------------------------------------------
@@ -211,17 +234,20 @@ def FF(q):
     return (g @ (S * f) @ g) / norm
 
 
-print(f'SVM coulomb N={N} Nc={args.Nc} alpha={args.alpha}  pair coupling kappa={kappa:.6g}'
+print(f'SVM {args.potential} N={N} Nc={args.Nc} alpha={args.alpha}  pair coupling kappa={kappa:.6g}'
       f'  ({npair} pairs)')
 print(f'  nbasis={len(b)} kept={keep.sum()} seed={args.seed} ascale={args.ascale} aC={aC:.6g}')
 print(f'  E0 = {E[0]:.8g}   E1 = {E[1]:.8g}   gap = {E[1] - E[0]:.6g}')
 print(f'  <r^2>_ch = {r2:.8g}')
 print(f'  <K> = {K:.8g}   <K>/|E0| = {K / abs(E[0]):.6f}  (= 1 exactly for Coulomb, by virial)')
-if N == 2:
+if N == 2 and args.potential == 'coulomb':
     print(f'  closed form: <r^2>_ch = 27/(16 alpha^2) = {27 / (16 * args.alpha ** 2):.8g}'
           f'   E0 = -4/9 alpha^2 = {-4 / 9 * args.alpha ** 2:.8g}')
-print(f'  SCALING: at coupling alpha these become E0 * (alpha/{args.alpha:g})^2 and'
-      f' <r^2> * ({args.alpha:g}/alpha)^2, with F at q * alpha/{args.alpha:g}')
+if args.potential == 'coulomb':
+    print(f'  SCALING: at coupling alpha these become E0 * (alpha/{args.alpha:g})^2 and'
+          f' <r^2> * ({args.alpha:g}/alpha)^2, with F at q * alpha/{args.alpha:g}')
+else:
+    print('  (fixed-order NLO does not scale with alpha: the correction carries its own)')
 if args.qs:
     qs = [float(x) for x in args.qs.split(',')]
     ffs = [FF(q) for q in qs]
