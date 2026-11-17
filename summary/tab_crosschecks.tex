@@ -1,0 +1,34 @@
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}Xlll}
+\hline\hline
+check & measured & expected & verdict \\
+\hline
+$F(0)=N$ identity (consistent-Gram GEVP) & $\max|F(0)-N| = 4\times10^{-16}$ & $0$ exactly & machine precision \\
+$F(0)=N$ at $N_{\rm coord}=N_c=5$ & $5.0000000000$ & $5$ & exact \\
+\hline
+\texttt{svm\_nbody.py} $N=2$ vs closed form & $-0.44443853$, $1.6875501$ & $-4/9$, $27/16$ & $6\times10^{-6}$ \\
+\texttt{svm\_nbody.py} $N=3$ vs published Coulomb baryon & $3.8260983$ & $3.826$ & all digits \\
+\texttt{mrs\_two\_body.py} vs \texttt{svm\_baryon.py} $N=2$ (MRS LO) & $56.69186$ & $56.692063$ & $4\times10^{-6}$ \\
+\hline
+$N_c=3$ baryon: $\alpha=1$ vs $\alpha=0.1$ rescaled & $3.897\pm0.063$ & $3.892\pm0.059$ & $0.06\sigma$ \\
+$N=2$: baryon path ($\kappa=3/4$) vs meson path rescaled & $5.210\pm0.096$ & $5.186\pm0.098$ & $0.2\sigma$ \\
+\hline
+FO meson LO vs closed form $27/(16\alpha^2)$ & $164.1\pm2.96$ & $168.8$ & $-1.6\sigma$ \\
+FO meson NLO vs \texttt{fo\_two\_body.py} & $84.97\pm2.17$ & $85.19$ & $-0.1\sigma$ \\
+FO baryon LO vs \texttt{svm\_nbody.py} & $389.2\pm6.35$ & $382.1$ & $+1.1\sigma$ \\
+MRS meson LO vs Numerov / SVM $N\!=\!2$ & $56.88\pm1.02$ & $59.11$ & $-2.2\sigma$ \\
+MRS meson NLO vs Numerov / SVM $N\!=\!2$ & $53.63\pm0.981$ & $54.6$ & $-1.0\sigma$ \\
+MRS baryon LO vs SVM $N\!=\!3$ & $114.6\pm1.75$ & $114.2$ & $+0.3\sigma$ \\
+MRS baryon NLO vs SVM $N\!=\!3$ & $105.3\pm1.54$ & $103.1$ & $+1.4\sigma$ \\
+\hline
+$\alpha=1$ baryon $N_c=2$ vs exact & $5.21\pm0.0961$ & $5.333$ & $-1.3\sigma$ \\
+$\alpha=1$ baryon $N_c=3$ vs SVM & $3.895\pm0.0643$ & $3.82$ & $+1.2\sigma$ \\
+$\alpha=1$ baryon $N_c=4$ vs SVM & $2.693\pm0.0309$ & $2.709$ & $-0.5\sigma$ \\
+$\alpha=1$ baryon $N_c=5$ vs SVM, unconverged & $2.005\pm0.0219$ & $2.007$ & $-0.1\sigma$ \\
+\hline
+dipole fit-form bias on the exact $F$ (baryons) & $\le 0.40\%$ & $0$ & controlled via \texttt{--ref\_ff} \\
+$z$-expansion ($k_{\max}=4$) fit-form bias & $\le 0.06\%$ & $0$ & ansatz-independent \\
+walker state-ID: $\Delta J$ dropping the loudest walker & $\le 0.10\sigma$ & $\ll 1\sigma$ & ensemble average \\
+walker state-ID: $N_{\rm eff}/N$, negative Ritz weights & $\ge 0.87$, 0\% & $1$, $0\%$ & healthy \\
+$1/(\kappa\sqrt{\langle r^2\rangle})$ linear in $N_c$ & $+0.1763+0.1994N_c$ & exact linearity & $\sim2\%$ curvature \\
+\hline\hline
+\end{tabularx}

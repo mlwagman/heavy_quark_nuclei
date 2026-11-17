@@ -1,0 +1,214 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{caption}
+\usepackage[table]{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=black,urlcolor=blue!50!black}
+
+\newcommand{\rch}{\langle r^2\rangle_{\rm ch}}
+\newcommand{\Nc}{N_c}
+\newcommand{\code}[1]{\texttt{\small #1}}
+
+\title{GFMC charge form factors and radii:\\
+       the $\alpha_s(m_Q)=0.1$ reference point and the $N_c$ scan}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{What is measured, and in what convention}
+
+The current is the number operator $J_N=\sum_k e^{i\mathbf q\cdot\mathbf x_k}$, and the
+quantity quoted throughout is the \emph{one-body charge radius about the centre of mass},
+\begin{equation}
+  \rch \;=\; \frac1N\sum_k \big\langle (\mathbf r_k-\mathbf X)^2\big\rangle ,
+  \qquad
+  \frac{F(Q)}{F(0)} \;=\; \frac1N\sum_k \big\langle e^{i\mathbf q\cdot(\mathbf r_k-\mathbf X)}
+  \big\rangle ,
+\end{equation}
+the same convention as \code{svm\_baryon.py}'s \code{<r\^{}2>\_ch} and \code{run/fit.py}.  For
+a two-body state each constituent sits at $\pm\mathbf r/2$ from the centre of mass, so
+$\rch=\langle r^2\rangle_{\rm rel}/4$.
+
+Matrix elements come from a \emph{consistent-Gram} GEVP.  On the stored grid $t_k=k\Delta$ the
+generator measures, on the same walkers,
+\begin{equation}
+  G_{ij}=\langle b_i|b_j\rangle = C_2(t_i+t_j),\qquad
+  T_{ij}=\langle b_i|e^{-H\Delta}|b_j\rangle,\qquad
+  M_{ij}=\langle b_i|J|b_j\rangle = C_J(t_i,t_j),
+\end{equation}
+with $|b_k\rangle=e^{-Ht_k}|\psi_T\rangle$; the ground-state Ritz vector solves
+$Tv=\lambda Gv$ at the largest $\lambda$, and $J_{00}=v^\dagger Mv/v^\dagger Gv$.  Because $G$
+and $M$ are one measurement, $F(0)=N$ holds \emph{identically} at every rank $m$ --- it is a
+construction identity, not a test, which is why the rank is chosen from the $\rch$ plateau
+instead.
+
+Every pull quoted below is \textbf{fit-to-fit}: the identical fit is applied to the exact
+reference $F(Q)/F(0)$ on the \emph{same} $Q$ grid, and the GFMC number is judged against that
+target rather than against the true radius, so the ansatz bias is already contained in the
+comparison.  The ``bias'' column records how large that effect is.
+
+\section{Input parameters}
+
+{\small
+\begin{longtable}{@{}p{3.0cm}p{3.0cm}>{\raggedright\arraybackslash}p{9.6cm}@{}}
+\toprule
+parameter & value used & meaning \\
+\midrule
+\endfirsthead
+\toprule
+parameter & value used & meaning \\
+\midrule
+\endhead
+\multicolumn{3}{l}{\emph{Physics inputs --- these define the theory}}\\
+\code{--nf}        & $0$ & active flavours; the dark sector is quenched \\
+\code{--Nc}        & $3$ (scan: $2\dots6$) & colours.  $C_F=(N_c^2-1)/2N_c$ \\
+\code{--N\_coord}  & $2$ meson, $N_c$ baryon & constituents.  A colour-singlet baryon needs
+  $N_{\rm coord}=N_c$ \\
+\code{--alpha\_s}\newline \code{--alpha} & $0.1$ (MRS/FO)\newline $1$ ($N_c$ scan) & coupling at the scale
+  $m_Q$ \\
+\code{--OLO}       & LO / NLO & order of the MRS potential \\
+\code{--mQ}        & $1$ & heavy-quark mass; a unit choice, since $\alpha_s(m_Q)$ fixes only
+  $m_Q/\Lambda$ \\
+\code{--mu}        & $0.0362001$ & $\mu_{\rm cut}$ in $\mu'(r)=\sqrt{\mu^2+\lambda^2/r^2}$,
+  $=3.4\,\Lambda^{(2\text{-loop})}_d$.  \textbf{The default $2.0$ is a different theory}
+  ($\rch=133.04$ instead of $56.69$) \\
+\code{--mufac}     & $1$ & $\lambda$ in $\mu'(r)$ \\
+\code{--masses}    & $[1,-1]$ meson, $[1]^{N}$ baryon & sign selects the pair colour channel:
+  like signs $\to$ \code{'OA'} ($-\alpha C_F/(N_c{-}1)$ per pair), opposite $\to$
+  \code{'OSing'} ($-\alpha C_F$) \\
+\code{--potential} & \code{full} & \\
+\code{--L}         & $0$ & infinite volume; the FV image sum is unreachable \\
+\midrule
+\multicolumn{3}{l}{\emph{Trial state and algorithm}}\\
+\code{--Rstar}     & $0.35$ & scale at which the trial Bohr radius is set; degenerate with
+  \code{spoila} \\
+\code{--spoila}    & per config & trial width, $a_0=\texttt{spoila}\cdot2/V_B(R_*)$.  Tuned by
+  radius matching, which the VMC scan showed \emph{is} the variational optimum \\
+\code{--wavefunction} & \code{compact} & \\
+\code{--dtau\_iMev}\newline \code{--n\_step}\newline \code{--count\_skip} & per config & step, steps, and
+  the stride at which the two-time objects are stored ($N_\tau=$\,\code{n\_step}/\code{count\_skip}
+  caps the usable rank) \\
+\code{--n\_walkers} & $5000$ & \\
+\code{--n\_skip}   & $50$ & Metropolis decorrelation \\
+\code{--seed}      & $0$ (replicas $1,2$) & \\
+\code{--no\_color\_vectors} & on & the singlet is an exact eigenvector of the colour structure,
+  so this is bit-identical and far cheaper.  \textbf{Required} for $N_{\rm coord}>3$ \\
+resampling         & off & branching desynchronises the two legs and corrupts $Q\neq0$ \\
+\midrule
+\multicolumn{3}{l}{\emph{Measurement and extraction}}\\
+\code{--Q\_mag}, \code{--Q\_dir} & per config & current momentum \\
+\code{--gevp\_cut} & $10^{-2}$ & Gram eigenvalue cut.  The \emph{measured} Gram is not positive
+  definite, so $10^{-10}$ makes the GEVP explode; insensitive over $10^{-2}\dots10^{-1}$ \\
+\code{--spike\_leverage} & $100$ & drop walkers with
+  $\max_{ij}|w_{ij}|/\mathrm{median}\,|w_{ij}|$ above this \\
+$m$ & plateau end & Krylov rank \\
+\midrule
+\multicolumn{3}{l}{\emph{Inert --- parsed but never used by these generators}}\\
+\code{--log\_mu\_r},\newline \code{--spoilS},\newline \code{--Lcut}, \code{--g} & --- & parsed by the generator and never referenced \\
+\bottomrule
+\caption{Inputs.  Derived quantities the generator prints --- $\Lambda_d$, $\alpha_s(R_*)$,
+$V_B(R_*)$, $a_0$ --- follow from these.}
+\label{tab:inputs}
+\end{longtable}}
+
+\section{Results at $N_c=3$, $\alpha_s(m_Q)=0.1$}
+
+\begin{center}\small
+\input{tab_results}
+\end{center}
+\captionof{table}{Charge radii at the reference mass.  ``target'' is the like-for-like value: the same
+fit applied to the exact $F(Q)/F(0)$ on the same $Q$ grid; ``bias'' is how far that target sits
+from the true reference, i.e.\ the fit-form systematic.  The $p=2$ dipole is exact for the
+Coulomb meson (bias $0.00\%$) but \emph{not} for MRS, where it inflates the radius by
+$4\!-\!5\%$ over $Q\le0.4$; the free-$p$ dipole is faithful for baryons ($\le0.4\%$).  A
+$z$-expansion with $k_{\max}=4$ removes the ansatz dependence entirely and is quoted in the
+cross-checks.  \textbf{The fixed-order NLO baryon has not been run} --- it is the one gap in
+this table.}
+\bigskip
+
+\noindent\textbf{The one live tension.}  Both NLO rows sit high by $\sim2\%$ while both LO rows
+are at zero, and an independent run reproduces it.  It is not the fit ansatz: the free-$p$
+dipole is unbiased on the exact $F$ to $0.05\%$, and a $k_{\max}=4$ $z$-expansion moves the
+baryon NLO pull from $+1.5\sigma$ to $+1.6\sigma$.  Nor is it a convention mismatch in the
+potential --- the Numerov and variational references \emph{exec the generator} and take
+$V_B^{\rm NLO}$ out of its namespace, so the reference uses a bit-identical potential.  The
+sharpest, ansatz-free statement is $(1-F)/(1-F_{\rm exact})$ at the lowest $Q$, which tends to
+the radius ratio as $Q\to0$:
+\begin{center}\small
+\begin{tabular}{llll}
+\toprule
+ & LO & NLO \\
+\midrule
+MRS meson  & $0.987\pm0.019$ & $1.013\pm0.021$ \\
+MRS baryon & $1.006\pm0.015$ & $1.021\pm0.015$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+Never more than $1.4\sigma$, and $1.2\sigma$ after the $1.15\times$ error inflation measured
+from a 16-seed replica study.  It is a $\sim1\sigma$ effect that happens to appear twice with
+the same sign.
+
+\section{Cross-checks}
+
+\begin{center}\footnotesize
+\input{tab_crosschecks}
+\end{center}
+\captionof{table}{Validation.  The $\alpha$-rescaling entry is the sharpest: pure Coulomb scales exactly
+($E\propto\alpha^2$, $\rch\propto\alpha^{-2}$, $F$ a function of $q/\alpha$), so the $N_c=3$
+baryon run at $\alpha=1$ and the independent $\alpha=0.1$ campaign must agree after rescaling
+--- they do, to $0.06\sigma$, across $10\times$ in $\alpha$, $100\times$ in $d\tau$ and
+different seeds.}
+\bigskip
+
+\section{The $N_c$ scan, in $\alpha=1$ Coulomb units}
+
+Because Coulomb scaling is exact, one set of runs at $\alpha=1$ covers every coupling.  Inside
+the totally antisymmetric $N_{\rm coord}=N_c$ singlet each pair carries
+\begin{equation}
+  \kappa_N=\frac{\alpha C_F}{N_c-1}=\frac{N_c+1}{2N_c},
+\end{equation}
+which at $N_c=2$ equals $3/4$ --- and the $q\bar q$ singlet coupling $\alpha C_F$ is
+\emph{also} $3/4$ there, so at $N_c=2$ the diquark and the meson are the same Coulomb problem
+and the $N=2$ end of the sequence is closed form, $\rch=3/\kappa^2=16/3$.
+
+\begin{center}
+\includegraphics[width=\textwidth]{fig_baryon_ff.pdf}
+\end{center}
+\captionof{figure}{Baryon charge form factors.  Points are GFMC (5000 walkers, errors from a block
+bootstrap that refits every resample); curves are the exact ($N_c=2$) or variational
+($N_c=3,4,5$) references, anchored at $F(0)/F(0)=1$.  Colour is a one-hue ordinal ramp because
+$N_c$ is ordered, and marker shape repeats the identity so nothing is colour-alone.  Right:
+the same data against $Q\sqrt{\rch}$ --- the shape is nearly $N_c$-independent once the scale
+is divided out, which is why the $Q$ grids were chosen matched in this variable.}
+\bigskip
+
+\begin{center}
+\includegraphics[width=\textwidth]{fig_radius_vs_nc.pdf}
+\end{center}
+\captionof{figure}{Left: the charge radius against $N_c$, with the reference values (open) and the fitted
+law (grey).  Right: where the claim actually lives --- the inverse rms radius in units of the
+pair coupling is linear in $N_c$, i.e.\ \textbf{the baryon shrinks like $1/N_c$}.  The
+residuals show the linearity is good to $\sim2\%$ but not exact.  A blind test makes the same
+point: fitted on $N_c=2,3,4$ alone the law predicts $\rch(N_c{=}5)=2.053$, against a measured
+$2.006\pm0.022$ --- $-2.3\%$, $-2.1\sigma$.  Extrapolations beyond the measured range should
+therefore not be quoted more tightly than a couple of percent.}
+\bigskip
+
+\paragraph{Status.}  $N_c=6$ is running ($n_{\rm step}=430$, $d\tau=0.003719$,
+\code{spoila}$=1.018416$, $Q=0.31\dots2.51$); its inputs are extrapolated from the two scaling
+laws above rather than measured, so it is a genuine prediction test.  $N_c\ge5$ has no
+converged variational reference by choice --- the method is anchored at $N_c=3$, where it
+reproduces $3.826$ and passes the $\alpha$-rescaling null test, and carried forward with the
+$m$ plateau and the walker state-ID diagnostics at every $N_c$.  Two seed replicas at $N_c=2$
+are in flight to test whether the $-2.3\%$ there is a seed fluctuation or a systematic of the
+exact-trial case, where the trial \emph{is} the eigenstate, the Gram is numerically rank-one
+and $m$ therefore has nothing to project.
+
+\end{document}
