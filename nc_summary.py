@@ -139,6 +139,42 @@ NCSCAN = [
 ]
 
 
+# Run parameters actually used, with the spectrum they were tuned against.  E0 and gap are at
+# alpha = 1 from svm_nbody.py (Nc=6 extrapolated, since it has no reference); c is
+# <r^2>_ch(trial)/a0^2 measured from the tau = 0 Metropolis samples.
+TUNING = [
+    # Nc, |E0|,   gap,       dtau,      n_step, count_skip, spoila,   c,      c_err
+    (2, 0.140625, 0.10546875, 0.091455, 124, 6,  1.0,      0.75,   None),   # c exact: 1s state
+    (3, 0.476326, 0.22103,    0.027,    200, 10, 1.002226, 0.4232, 0.0051),
+    (4, 1.08897,  0.373871,   0.011824, 270, 14, 0.996484, 0.2675, 0.0051),
+    (5, 2.0539,   0.580056,   0.006262, 330, 17, 0.983718, 0.1874, 0.0037),
+    (6, 3.459,    0.751,      0.003719, 430, 22, 1.018416, 0.1281, 0.0022),  # extrapolated
+]
+
+
+def tab_tuning():
+    """The run parameters, and the three dimensionless numbers they are chosen to hold fixed."""
+    EOL = chr(92) * 2                      # a LaTeX row terminator, free of escaping games
+    L = [r'\begin{tabular}{crrrrrrl}', r'\hline\hline',
+         r'$N_c$ & $|E_0|$ & gap & $d\tau$ & $n_{\rm step}$ & $c_{\rm skip}$ &'
+         r' \texttt{spoila} & $c=\rch^{\rm trial}/a_0^2$ ' + EOL,
+         r'\hline']
+    for N, e0, gap, dt, ns, cs, sp, c, ce in TUNING:
+        cc = f'${c:.4f}$ (exact)' if ce is None else f'${c:.4f}({ce * 1e4:.0f})$'
+        L.append(f'{N} & {e0:.5f} & {gap:.5f} & {dt:.6g} & {ns} & {cs} & {sp:.6g} & {cc} ' + EOL)
+    L += [r'\hline',
+          r'\multicolumn{8}{l}{\emph{and the three numbers they hold fixed:}} ' + EOL,
+          r'$N_c$ & \multicolumn{2}{c}{$d\tau\,|E_0|$} & \multicolumn{2}{c}{$\Delta\,$gap}'
+          r' & \multicolumn{3}{c}{$\tau_{\max}\,$gap} ' + EOL,
+          r'\hline']
+    for N, e0, gap, dt, ns, cs, sp, c, ce in TUNING:
+        L.append(f'{N} & ' + r'\multicolumn{2}{c}{' + f'{dt * e0:.5f}' + '} & '
+                 + r'\multicolumn{2}{c}{' + f'{cs * dt * gap:.5f}' + '} & '
+                 + r'\multicolumn{3}{c}{' + f'{ns * dt * gap:.5f}' + '} ' + EOL)
+    L += [r'\hline\hline', r'\end{tabular}']
+    open(os.path.join(args.out, 'tab_tuning.tex'), 'w').write('\n'.join(L) + '\n')
+
+
 def best(d, prefer=None):
     """the plateau end: the largest rank reported."""
     return max(d['rows'], key=lambda r: r['m'])
@@ -438,6 +474,7 @@ fig_ff()
 a, b, res = fig_radius()
 tab_results()
 tab_crosschecks(a, b)
+tab_tuning()
 print(f'wrote {args.out}/: fig_baryon_ff.pdf, fig_radius_vs_nc.pdf, '
       f'tab_results.tex, tab_crosschecks.tex, data/*.csv')
 print(f'  Nc=3 rows: {len(nc3)}   Nc scan points: {[e["N"] for e in scan]}')

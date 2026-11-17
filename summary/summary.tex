@@ -124,6 +124,69 @@ $V_B(R_*)$, $a_0$ --- follow from these.}
 \label{tab:inputs}
 \end{longtable}}
 
+\section{How $d\tau$ and \texttt{spoila} are chosen}
+
+Neither is tuned by hand, and neither is free: each is fixed by a rule that makes different
+couplings, orders and $N_c$ methodologically comparable rather than merely all present.
+
+\paragraph{Trial width (\texttt{spoila}).}  The compact trial has width
+$a_0=\texttt{spoila}\cdot2/V_B(R_*)$ (divided by $N_c-1$ for the meson).  The rule is
+\emph{radius matching}: choose \texttt{spoila} so the trial's own charge radius equals the
+target radius of the state.  Operationally,
+\begin{equation}
+  c \;\equiv\; \frac{\rch^{\rm trial}}{a_0^2}\Big|_{\texttt{spoila}=1},
+  \qquad
+  \texttt{spoila} \;=\; \frac{\sqrt{\rch^{\rm target}/c}}{a_0(\texttt{spoila}=1)} ,
+\end{equation}
+where $c$ is measured by running two steps and reading the $\tau=0$ Metropolis samples, which
+are drawn from $|\psi_T|^2$.  For a meson $c=3/4$ exactly, because at the right width the trial
+\emph{is} the 1s eigenstate; for the $N$-body product trial it has to be measured, and it falls
+steeply with $N$ (table below).
+
+Radius matching is not a convenience: a VMC scan over \texttt{spoila} at $\tau=0$ found the
+radius-matched value sitting at the variational optimum for all six configurations, within the
+scan's $\pm5\%$ grid.  Two details from that scan are worth keeping.  The criterion must be the
+\emph{IQR spread} of the local energy $E_L$ --- not $\langle E_L\rangle$, which is flat to
+within its own error, and not $\sigma(E_L)$, which is tail-dominated and gave a nonsense
+optimum on ensembles with genuine fat tails.  And the sensitivity is mild: a $3\%$ error on the
+target radius moves \texttt{spoila} by $1.5\%$.
+
+The cost of getting it wrong is visible in the $m$ dependence rather than in any single number.
+The fixed-order baryon run with a $10\%$-compact trial drifted $+0.35\%$ per Krylov rank with
+no plateau at all; retuned, it is flat to $0.5\%$ over $m=2\dots16$.
+
+\paragraph{Step size and projection ($d\tau$, $n_{\rm step}$, \texttt{count\_skip}).}  Three
+dimensionless numbers are held fixed against a validated anchor run:
+\begin{equation}
+  d\tau\,|E_0| \quad\text{(Trotter error)},\qquad
+  \Delta\,\text{gap} \quad\text{(Krylov resolution)},\qquad
+  \tau_{\max}\,\text{gap} \quad\text{(projection)},
+\end{equation}
+with $\Delta=\texttt{count\_skip}\cdot d\tau$ the stored-grid spacing and
+$\tau_{\max}=n_{\rm step}\cdot d\tau$.  The first controls the systematic, the second how well
+the Krylov grid resolves the gap it has to project against, and the third how much excited
+state is left.  Since $E_0$ and the gap are known in advance from the reference solver, this
+fixes all three parameters with no tuning runs --- $d\tau\propto1/|E_0|$ and
+$n_{\rm step}\propto|E_0|/\text{gap}$.  For pure Coulomb that reduces to the familiar
+$d\tau\propto1/\alpha^2$.
+
+Finer $d\tau$ is close to free: the variance goes as $\sigma^2\propto d\tau$, so shrinking it
+costs steps but not statistics, and the Trotter error at these values sits below the noise
+floor.  The binding constraint is $n_{\rm step}$, which is also what sets the run time.
+
+\begin{minipage}{\textwidth}
+\begin{center}\small
+\input{tab_tuning}
+\end{center}
+\captionof{table}{Run parameters for the $\alpha=1$ $N_c$ scan and the spectrum they were set
+from ($N_c=6$ extrapolated, since it has no reference).  The lower block shows the three
+invariants: $d\tau|E_0|$ holds to $0.1\%$ across the family, $\Delta\,$gap to $7\%$ and
+$\tau_{\max}$gap to $0.6\%$.  The fixed-order NLO baryon was set the same way against its LO
+partner ($d\tau|E_0|$ $0.01284$ vs $0.01286$, $\Delta\,$gap $0.05841$ vs $0.05968$,
+$\tau_{\max}$gap $1.1948$ vs $1.1936$).}
+\end{minipage}
+\bigskip
+
 \section{Results at $N_c=3$, $\alpha_s(m_Q)=0.1$}
 
 \begin{center}\small
