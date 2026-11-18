@@ -20,8 +20,7 @@
   const singlet = BOARDS.board({ px: 300, w: U(300, DIST), a: 0, html: `<span class="lbl">colour singlet: schematic</span>` }); singlet.el.style.textAlign = 'center';
   const stat = BOARDS.board({ scene: SC, px: 520, w: U(520, DIST), a: 0, html: `<span class="lbl">static = leading-order potential; the quarks still move (−∇²/2${I('m')})</span>` }); stat.el.style.textAlign = 'center';
   TICKS.push(() => {
-    const A = PAIR.A.getWorldPosition(new THREE.Vector3()), B = PAIR.B.getWorldPosition(new THREE.Vector3()), C = PAIR.C.getWorldPosition(new THREE.Vector3());
-    const s = PAIR.st.scale;
+    const { A, B, C } = PAIR.rest(), s = PAIR.st.scale;   /* where the quarks stand, not where their jitter has them: a label does not shake */
     vr.set((A.x + B.x) / 2, (A.y + B.y) / 2 + 2.2 * s, A.z); cf.set((A.x + B.x) / 2, (A.y + B.y) / 2 - 2.3 * s, A.z);
     cb1.set((A.x + C.x) / 2 - 3.2, (A.y + C.y) / 2, A.z); cb2.set((B.x + C.x) / 2 + 3.2, (B.y + C.y) / 2, A.z); cb3.set((A.x + B.x) / 2, (A.y + B.y) / 2 - 2.3 * s, A.z);
     tri.set((A.x + B.x + C.x) / 3, (A.y + B.y + C.y) / 3 - 0.55, A.z + 1);

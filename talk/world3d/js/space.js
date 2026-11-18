@@ -106,12 +106,12 @@ const W = (() => {
 
   /* ---------- camera rig ---------- */
   const cam = { pos: new THREE.Vector3(0, 72, 90), look: new THREE.Vector3(0, 72, 0) };
-  const amb = { t: 0 };
-  function applyCamera(t) {
-    /* ambient drift on top of the rig state: tiny, never reveals content (W2) */
-    const dx = Math.sin(t * 0.21) * 0.35, dy = Math.cos(t * 0.17) * 0.25;
-    camera.position.set(cam.pos.x + dx, cam.pos.y + dy, cam.pos.z);
-    camera.lookAt(cam.look.x + dx * 0.4, cam.look.y + dy * 0.4, cam.look.z);
+  function applyCamera() {
+    /* the camera stands exactly where the beat put it. Every board is projected from it, so the slow drift it used to have
+       (0.35 units, a 30 s period) moved every text on the stage between clicks, by up to 14 px on the close panels (round 26,
+       tools/check-still.mjs). What still moves at rest: the dust, and the particles the beat is about */
+    camera.position.copy(cam.pos);
+    camera.lookAt(cam.look);
     camera.updateMatrixWorld();
   }
   /* one leg of a camera move as a smooth zoom-pan (van Wijk and Nuij, 2003): the view pulls back while it travels and closes in
@@ -142,7 +142,7 @@ const W = (() => {
   }
 
   function render(t) {
-    applyCamera(t);
+    applyCamera();
     if (W_dust) W_dust.material.uniforms.uT.value = t;
     renderer.clear();
     composer.render();

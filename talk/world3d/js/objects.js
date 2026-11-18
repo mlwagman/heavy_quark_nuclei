@@ -130,8 +130,14 @@ const PAIR = (() => {
   /* world position of a point on the pair axis at fraction f (0 = A, 1 = B) */
   const _p = new THREE.Vector3();
   const axisPoint = (f, dy = 0) => _p.set((-0.5 + f) * st.sep * st.scale, dy * st.scale, 0).add(g.position).clone();
-  const posA = () => A.getWorldPosition(new THREE.Vector3());
-  return { g, A, B, C, st, tick, axisPoint, posA, lk };
+  /* where the quarks stand, without their own motion (world). Everything placed from the pair (its labels, the S06 ruler, hill and
+     gauge, the S07 cloud) is placed from here: placed from the moving quarks, those texts shook by up to 10 px for as long as the
+     beat was about the pair (round 26, tools/check-still.mjs). The quarks and their links alone jitter */
+  const rest = () => { g.scale.setScalar(st.scale); g.updateWorldMatrix(true, false);
+    const w = (x, y) => new THREE.Vector3(x, y, 0).applyMatrix4(g.matrixWorld), k = 1 - eio(st.third);   /* k: the third quark leaves from inside the antiquark */
+    return { A: w(-st.sep / 2, 0), B: w(st.sep / 2, 0), C: w(st.sep / 2 * k, st.sep * 0.82 * (1 - k)) }; };
+  const posA = () => rest().A;
+  return { g, A, B, C, st, tick, axisPoint, posA, rest, lk };
 })();
 
 /* ======================= EFT tower (S03) ======================= */

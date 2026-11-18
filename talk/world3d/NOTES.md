@@ -22,6 +22,8 @@ numbers only), the paper's Tables I to V, the picture catalogue, and the capture
   edge cuts, at the end of each beat and at p = .25, .5, .75 inside it. It fails if a board the beat is showing is cut.
 - **Beat check:** `NODE_PATH=$(npm root -g) node talk/world3d/tools/check-beats.mjs` (S12 b3, S10 b3, S07: round 11; the tower after S03: round 12).
 - **Jump check:** `NODE_PATH=$(npm root -g) node talk/world3d/tools/check-jumps.mjs`: no beat may jump on its click.
+- **Still check:** `NODE_PATH=$(npm root -g) node talk/world3d/tools/check-still.mjs [--only S03] [--selftest]`: between clicks no
+  text may move (round 26). It holds every beat end for 12 s and reads the ink of every text.
 - **Text check:** `NODE_PATH=$(npm root -g) node talk/world3d/tools/check-text.mjs [--mid] [--only S03]`: works on the ink (the
   line boxes of every text node, the pill of every chip, the shapes of every plot), not on the board boxes. It lists text on
   text, text under or over another panel, text or drawings outside their own panel, text cut by the stage edge, a stroke of a
@@ -1139,3 +1141,33 @@ on PATH), which `pkill -x ffmpeg` does not match. `run3d.sh` also takes `JOBS` (
   check-map), so a World talk in any folder gets them; the project memory keeps the same list. check-map's shelf scenes
   were `[1,7,8,9,11,13]` (13 was the old S14): now 12, the conclusion; the count of places was right by luck (the shelf does
   not move in the references).
+
+## Round 26 (2026-11-18): between clicks no text moves
+- The author: "even after the animation ends, the text is slightly moving. Can you make it stop moving when no animation is
+  on going?"
+- **The check, written first** (`tools/check-still.mjs`): the opening frame, every beat end and the map opened by hand are each
+  held for 12 s on a virtual clock (the World's own loop in 50 ms steps, nothing running), and the ink of every text on the
+  stage (the box of each text node, not the board's box) is read every 0.2 s. It fails on a text whose edge travels more than
+  0.05 px, or that is drawn in some of the readings only. On the round 25 build: 75 of 76 stops (all but the opening frame,
+  which draws one fixed text), up to 14.2 px (S06). `--selftest`: a probe swaying by 2 px is flagged, a still one is not.
+- **Cause 1, every panel: the camera's ambient drift** (`space.js` `applyCamera`: 0.35 units across on a 30 s period, 0.25 up
+  and down on a 37 s one). Every board is projected from the camera at every frame, so every text moved, for ever. Removed:
+  the camera stands exactly where the beat put it. After this alone: 10 of 76 stops.
+- **Cause 2, S03 b4 to b7, S04 b1, S06 b1 to b3, S07 b1 and b3: labels placed from the jittering pair** (up to 10.6 px, for as
+  long as the beat is about the pair). `PAIR.rest()` gives where the quarks stand without their own motion; `PAIR.posA()` now
+  returns that, and the S03 labels use it. So the pair's labels, the S06 ruler, hill, gauge and labels, and the S07 cloud and
+  its labels stand still; the quarks and their links alone jitter, as before (check-live's nine tests of S01 to S10 give the
+  same result as on round 25).
+- Still moving at rest, on purpose: the dust, the particles the beat is about, the S07 insets.
+- **Verified:** check-still 0 of 76. A second measurement that shares neither the check's clock nor its stubbed draw: a page on
+  the real clock with real drawing, 5 s at rest, counting the places each drawn board takes. On the round 25 build every board
+  changes place (S02 b3 7 of 7, S03 b7 11 of 11, S06 b3 6 of 6, S07 b1 2 of 2, S10 b1 23 of 23); on this build none does.
+  check-beats 142 of 142 (run alone: with other browsers running, its "2.6 s later it has landed" test of the overview fails,
+  it waits on the wall clock), check-jumps 0 of 74, check-text 0 strong and 0 faint, check-transient 0 and 0 over 16343 frames,
+  check-colour all neutral, check-map clean, check-presenter all pass, shim `14,74,984`. S03, S06 and S07 frames re-rendered;
+  S03 b7 and S06 b3 read at full size.
+- **Zip rebuilt** (check-zip 10 of 10). Not rebuilt: the phone file and the PDF (left alone since round 25), the gallery, the
+  PowerPoint and the MP4 (the MP4 and the PowerPoint clips were rendered with the drift).
+- Found, not changed: `check-live.mjs` still names the beats of the 15-scene talk. Since round 24e it fails on "S11, S13, S15:
+  nothing moves" (S13 b6 is now the family) and then stops on `S14b3`, a beat that no longer exists. The same on the round 25
+  build.
